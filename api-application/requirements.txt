@@ -1,0 +1,26 @@
+# Web framework
+fastapi
+
+# ASGI server
+uvicorn[standard]
+
+# Database & ORM
+sqlalchemy
+psycopg2-binary        # PostgreSQL driver
+
+# Authentication & Security
+python-jose[cryptography]   # JWT
+passlib[bcrypt]             # password hashing
+bcrypt==3.2.2
+
+# File uploads / parsing
+python-multipart
+python-docx
+mammoth
+
+# Environment variables and settings
+pydantic-settings
+python-dotenv              # load .env files easily
+
+# Migrations
+alembic
