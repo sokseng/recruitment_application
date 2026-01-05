@@ -23,22 +23,21 @@ def get_db():
 
 # # user login for get token
 @router.post("/login", response_model=AccessToken)
-def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)):
-    access_token_expires = timedelta(minutes=120)
+def create_login(data: UserLogin, db: Session = Depends(get_db)):
+    access_token_expires = timedelta(days=30)
     now = datetime.now().replace(microsecond=0)
 
     #Get user
     user = user_controller.get_by_email(data.email, db)
     if not user:
         raise HTTPException(status_code=404, detail="Email not found")
-    #get user rights
-    rights = user_controller.get_user_right(user.pk_id, db)
+    
 
     #check exist access token
     if data.access_token:
         existing_access_token = user_controller.verify_access_token(data.access_token, db)
         if existing_access_token:
-            return AccessToken(access_token=existing_access_token.access_token, rights=rights)
+            return AccessToken(access_token=existing_access_token.access_token)
     
     #Verify password
     isMatch = user_controller.verify_password(data.password, user.password)
@@ -48,11 +47,9 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
     #create access token
     access_token = user_controller.create_access_token(user.pk_id, expires_delta=access_token_expires)
     
-    ip_address = request.client.host
 
     # Save access token
     user_controller.create_token(
-        ip_address=ip_address,
         user_id=user.pk_id,
         access_token=access_token,
         expiration_date=(now + access_token_expires).strftime("%Y-%m-%d %H:%M:%S"),
@@ -60,8 +57,7 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
     )
 
     return AccessToken(
-        access_token=access_token,
-        rights=rights
+        access_token=access_token
     )
 
 # erify token
