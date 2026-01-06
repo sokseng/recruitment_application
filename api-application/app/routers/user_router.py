@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Body
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, ChangePassword, UpdateProfile
+from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse
 from app.controllers import user_controller
 from app.database.session import SessionLocal
 from passlib.context import CryptContext
@@ -21,7 +21,7 @@ def get_db():
         db.close()
 
 
-# # user login for get token
+# user login for get token
 @router.post("/login", response_model=AccessToken)
 def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)):
     access_token_expires = timedelta(days=30)
@@ -64,7 +64,24 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
         access_token=access_token
     )
 
-# erify token
+
+#get all users
+@router.get("", response_model=list[UserResponse])
+def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.get_all_users(db)
+
+#create or update user
+@router.post("", response_model=UserResponse)
+def create_or_update_user(user: UserCreate, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.create_or_update_user(user, db)
+
+#delete mutiple users
+@router.delete("/delete")
+def delete_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.delete_users(db, data)
+
+
+# verify token
 @router.post("/verify_token", response_model=bool)
 def verify_token(token: str = Body(..., embed=True), db: Session = Depends(get_db)):
     token = user_controller.verify_refresh_token(token, db)
@@ -77,10 +94,7 @@ def logout(access_token: str = Body(..., embed=True), db: Session = Depends(get_
     return user_controller.check_token_when_logout(access_token, db)
 
 
-#delete mutiple users
-@router.post("/delete")
-def delete_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return user_controller.delete_users(db, data)
+
 
 
 

@@ -25,9 +25,10 @@ class UserLogin(BaseModel):
     email: str
     password: str
     access_token: Optional[str] = None
+    model_config = ConfigDict(exclude_none=False)
 
 class UserCreate(BaseModel):
-    id: Optional[int] = None
+    pk_id: Optional[int] = None
     user_name: str
     email: str
     password: str
@@ -38,6 +39,22 @@ class UserCreate(BaseModel):
     address: Optional[str] = None
 
     model_config = ConfigDict(exclude_none=False)
+
+
+class UserResponse(BaseModel):
+    pk_id: int
+    user_name: str
+    email: str
+    user_type: int
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+    is_active: bool
+    created_date: datetime
+    updated_date: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
 
 class UserResponseData(BaseModel):
     pk_id: int

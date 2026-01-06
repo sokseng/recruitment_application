@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
-from app.schemas.user_schema import DeleteUser, ChangePassword, UpdateHospital, UpdateProfile
+from app.schemas.user_schema import DeleteUser, UserCreate
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import timedelta, datetime, timezone
@@ -15,6 +15,50 @@ SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
+
+
+#create or update user
+def create_or_update_user(user: UserCreate, db: Session):
+    exist_email = db.query(User).filter(User.email == user.email).first()
+    if exist_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    if user.pk_id:
+        db_user = db.query(User).filter(User.pk_id == user.pk_id).first()
+        db_user.user_name = user.user_name
+        db_user.email = user.email
+        db_user.password = user.password
+        db_user.user_type = user.user_type
+        db_user.gender = user.gender
+        db_user.phone = user.phone
+        db_user.date_of_birth = user.date_of_birth
+        db_user.address = user.address
+        db_user.updated_date = datetime.now().replace(microsecond=0)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    
+    db_user = User(
+        user_name = user.user_name,
+        email = user.email,
+        password = bcrypt_context.hash(user.password),
+        user_type = user.user_type,
+        gender = user.gender,
+        phone = user.phone,
+        date_of_birth = user.date_of_birth,
+        address = user.address,
+        created_date = datetime.now().replace(microsecond=0),
+        updated_date = datetime.now().replace(microsecond=0)
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+#get all users
+def get_all_users(db: Session):
+    return db.query(User).all()
 
 # # create access token
 def create_access_token(user_id: int, expires_delta: timedelta):
@@ -106,12 +150,12 @@ def delete_users(db: Session, data: DeleteUser):
     if not data.ids or len(data.ids) == 0:
         raise HTTPException(status_code=400, detail="No IDs provided for deletion")
     
-    users = db.query(User).filter(User.id.in_(data.ids)).all()
+    users = db.query(User).filter(User.pk_id.in_(data.ids)).all()
     if not users:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Delete all users
     for user in users:
-        user.status="inactive"
+        user.is_active = False
     db.commit()
     return {"message": "Users deleted successfully"}

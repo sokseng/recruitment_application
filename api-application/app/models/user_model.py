@@ -14,18 +14,13 @@ from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "t_user"
-
     pk_id = Column(Integer, primary_key=True, autoincrement=True)
-
     user_name = Column(String(100), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String, nullable=False)
-
     user_type = Column(Integer, nullable=False)
-
     gender = Column(String(10), nullable=True)
     phone = Column(String(20), nullable=True)
-
     date_of_birth = Column(Date, nullable=True)
     address = Column(String(255), nullable=True)
 
