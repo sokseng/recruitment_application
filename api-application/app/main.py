@@ -12,10 +12,8 @@ from app.models.user_session_model import UserSession
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
 
-# from app.script.init_global_settings import run as init_global_settings
-# from app.script.init_user_role import run as init_user_role
-# from app.script.init_user_rights import run as init_user_rights
-# from app.script.init_user import run as init_user
+
+from app.script.init_user import run as init_user
 
 
 def create_tables():
@@ -27,10 +25,7 @@ def create_tables():
 
 # Run once on startup
 create_tables()
-# init_global_settings()
-# init_user_role()
-# init_user_rights()
-# init_user()
+init_user()
 
 app = FastAPI(title=settings.APP_NAME)
 

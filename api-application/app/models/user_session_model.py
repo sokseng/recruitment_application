@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime, func
+from sqlalchemy import Column, Integer, ForeignKey, Text, DateTime, func, String
 from app.database.session import Base
 from sqlalchemy.orm import relationship
 
@@ -11,5 +11,6 @@ class UserSession(Base):
     access_token = Column(Text, nullable=False)
     token_expired = Column(DateTime, nullable=True)
     session_creation_date = Column(DateTime, default=func.now(), nullable=False)
-
+    ip_address = Column(String, nullable=True)
+    device_info = Column(String, nullable=True)
     user = relationship("User", back_populates="sessions")

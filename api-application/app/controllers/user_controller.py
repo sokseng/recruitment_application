@@ -2,10 +2,13 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
+from app.schemas.user_schema import DeleteUser, ChangePassword, UpdateHospital, UpdateProfile
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
+from fastapi import HTTPException
+from typing import Optional
 
 
 SECRET_KEY = settings.JWT_SECRET_KEY
@@ -37,7 +40,6 @@ def create_token(ip_address: str, user_id: int, access_token: str, expiration_da
     db.commit()
     db.refresh(token)
     return token
-
 
 
 # get user by email
@@ -77,7 +79,7 @@ def verify_refresh_token(token: str, db: Session) -> bool:
 
     if refresh_session:
         # ✅ Extend expiration correctly
-        refresh_session.token_expired = now + timedelta(minutes=120)
+        refresh_session.token_expired = now + timedelta(days=30)
         db.commit()
         db.refresh(refresh_session)
         return True  # Token is valid
@@ -96,3 +98,20 @@ def verify_access_token(access_token: str, db: Session):
         return None
 
     return access_token_data
+
+
+
+#delete user
+def delete_users(db: Session, data: DeleteUser):
+    if not data.ids or len(data.ids) == 0:
+        raise HTTPException(status_code=400, detail="No IDs provided for deletion")
+    
+    users = db.query(User).filter(User.id.in_(data.ids)).all()
+    if not users:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete all users
+    for user in users:
+        user.status="inactive"
+    db.commit()
+    return {"message": "Users deleted successfully"}
