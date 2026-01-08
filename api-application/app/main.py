@@ -4,6 +4,7 @@ from app.config.settings import settings
 
 from app.routers import (
     user_router,
+    employer_router,
 )
 
 from app.database.session import Base, engine
@@ -39,8 +40,4 @@ app.add_middleware(
 
 # Register routers
 app.include_router(user_router.router)
-# app.include_router(user_role_router.router)
-# app.include_router(user_right_router.router)
-# app.include_router(forgot_password_router.router)
-# app.include_router(global_setting_router.router)
-# app.include_router(audit_trace_router.router)
+app.include_router(employer_router.router)

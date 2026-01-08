@@ -6,6 +6,7 @@ from sqlalchemy import (
     func,
     String,
     ForeignKey,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from app.database.session import Base
@@ -29,6 +30,7 @@ class Employer(Base):
     company_address = Column(String(255), nullable=True)
     company_description = Column(Text, nullable=True)
     company_website = Column(String(255), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     created_date = Column(
         DateTime(timezone=True),

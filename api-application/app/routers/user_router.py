@@ -7,18 +7,19 @@ from app.database.session import SessionLocal
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
 from app.dependencies.auth import verify_access_token
+from app.database.deps import get_db
 
 
 router = APIRouter(prefix="/user", tags=["Users"])
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
 
 # Database Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
 
 # user login for get token
