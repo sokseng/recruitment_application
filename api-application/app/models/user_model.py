@@ -53,3 +53,11 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    candidate = relationship(
+        "Candidate",
+        back_populates="user",
+        uselist=False,                # One-to-one relationship
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
