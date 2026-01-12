@@ -9,13 +9,22 @@ import {
   Card,
   CardContent,
   Typography,
-  Divider,
 } from '@mui/material'
-import GoogleIcon from '@mui/icons-material/Google'
 import { useState } from 'react'
+import InputAdornment from '@mui/material/InputAdornment'
+import IconButton from '@mui/material/IconButton'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
+
 
 export default function Topbar() {
   const [openLogin, setOpenLogin] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  const handleTogglePassword = () => {
+    setShowPassword((prev) => !prev)
+  }
+
 
   // Open modal
   const handleSignIn = () => {
@@ -30,10 +39,6 @@ export default function Topbar() {
   // Placeholder login actions
   const handleLogin = () => {
     alert('Login clicked!')
-    handleClose()
-  }
-  const handleGoogleLogin = () => {
-    alert('Login with Google clicked!')
     handleClose()
   }
 
@@ -72,14 +77,30 @@ export default function Topbar() {
       {/* LOGIN MODAL */}
       <Dialog open={openLogin} onClose={handleClose}>
         <DialogContent>
-          <Card sx={{ width: 360 }}>
+          <Card sx={{ width: 310 }}>
             <CardContent>
               <Typography variant="h5" gutterBottom align="center">
                 Login
               </Typography>
 
               <TextField fullWidth size='small' label="Email" margin="normal" />
-              <TextField fullWidth size='small' label="Password" type="password" margin="normal" />
+              <TextField
+                fullWidth
+                size="small"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                margin="normal"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleTogglePassword} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
 
               <Button
                 fullWidth
@@ -88,17 +109,6 @@ export default function Topbar() {
                 onClick={handleLogin}
               >
                 Login
-              </Button>
-
-              <Divider sx={{ my: 2 }}>OR</Divider>
-
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<GoogleIcon />}
-                onClick={handleGoogleLogin}
-              >
-                Sign in with Google
               </Button>
             </CardContent>
           </Card>

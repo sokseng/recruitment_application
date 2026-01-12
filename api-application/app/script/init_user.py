@@ -1,18 +1,24 @@
 from app.utils.run_sql_script import run_sql_script
 
 SQL_SCRIPT = """
--- ✅ Ensure is_active column is BOOLEAN
-ALTER TABLE t_user
-ALTER COLUMN is_active TYPE BOOLEAN
-USING is_active::BOOLEAN;
+-- ===============================
+-- 1️⃣ Ensure column types & defaults safely
+-- ===============================
 
--- ✅ Set defaults
 ALTER TABLE t_user
-ALTER COLUMN created_date SET DEFAULT NOW();
-ALTER TABLE t_user
-ALTER COLUMN is_active SET DEFAULT TRUE;
+    ALTER COLUMN is_active TYPE BOOLEAN
+    USING is_active::BOOLEAN;
 
--- ✅ Fix existing nulls
+ALTER TABLE t_user
+    ALTER COLUMN created_date SET DEFAULT NOW();
+
+ALTER TABLE t_user
+    ALTER COLUMN is_active SET DEFAULT TRUE;
+
+-- ===============================
+-- 2️⃣ Fix existing NULL values
+-- ===============================
+
 UPDATE t_user
 SET created_date = NOW()
 WHERE created_date IS NULL;
@@ -21,12 +27,17 @@ UPDATE t_user
 SET is_active = TRUE
 WHERE is_active IS NULL;
 
--- ✅ Seed admin user safely
+-- ===============================
+-- 3️⃣ Seed admin user (NO DUPLICATION)
+-- ===============================
+
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1 FROM t_user WHERE email = 'administrator@gmail.com'
     ) THEN
+        RAISE NOTICE 'Admin user already exists. Skipping insert.';
+    ELSE
         INSERT INTO t_user (
             user_name,
             email,
@@ -35,7 +46,8 @@ BEGIN
             gender,
             phone,
             date_of_birth,
-            address
+            address,
+            is_active
         )
         VALUES (
             'Administrator',
@@ -45,18 +57,28 @@ BEGIN
             'Male',
             '093639012',
             '1998-11-11',
-            'TK'
+            'TK',
+            TRUE
         );
+
+        RAISE NOTICE 'Admin user created successfully.';
     END IF;
 END
 $$;
 
--- ✅ Reset sequence to avoid jumps
+-- ===============================
+-- 4️⃣ Reset sequence safely
+-- ===============================
+
 SELECT setval(
     pg_get_serial_sequence('t_user', 'pk_id'),
-    (SELECT COALESCE(MAX(pk_id), 0) FROM t_user)
+    COALESCE((SELECT MAX(pk_id) FROM t_user), 1),
+    true
 );
 """
 
 def run():
-    run_sql_script(SQL_SCRIPT, success_message="User seeded successfully.")
+    run_sql_script(
+        SQL_SCRIPT,
+        success_message="User seed script executed successfully."
+    )
