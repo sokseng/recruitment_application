@@ -40,3 +40,9 @@ class Employer(Base):
 
     # ORM relationship
     user = relationship("User", back_populates="employer")
+    jobs = relationship(
+        "Job",
+        back_populates="employer",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
