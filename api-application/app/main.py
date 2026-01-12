@@ -6,13 +6,17 @@ from app.routers import (
     user_router,
     employer_router,
     job_router,
+    candidate_router,
+    candidate_resume_router,
 )
 
 from app.database.session import Base, engine
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
 from app.models.employer_model import Employer
-
+from app.models.job_model import Job
+from app.models.candidate_model import Candidate
+from app.models.candidate_resume_model import CandidateResume
 
 from app.script.init_user import run as init_user
 
@@ -42,3 +46,5 @@ app.add_middleware(
 app.include_router(user_router.router)
 app.include_router(employer_router.router)
 app.include_router(job_router.router)
+app.include_router(candidate_router.router)
+app.include_router(candidate_resume_router.router)
