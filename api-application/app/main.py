@@ -5,13 +5,13 @@ from app.config.settings import settings
 from app.routers import (
     user_router,
     employer_router,
+    job_router,
 )
 
 from app.database.session import Base, engine
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
 from app.models.employer_model import Employer
-from app.models.candidate_model import Candidate
 
 
 from app.script.init_user import run as init_user
@@ -41,3 +41,4 @@ app.add_middleware(
 # Register routers
 app.include_router(user_router.router)
 app.include_router(employer_router.router)
+app.include_router(job_router.router)
