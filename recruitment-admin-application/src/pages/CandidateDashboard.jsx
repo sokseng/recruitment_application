@@ -1,7 +1,7 @@
 import React from "react";
 
-const EmployerDashboard = () => {
-    return <div>EmployerDashboard</div>;
+const CandidateDashboard = () => {
+    return <div>CandidateDashboard</div>;
 };
 
-export default EmployerDashboard;
+export default CandidateDashboard;

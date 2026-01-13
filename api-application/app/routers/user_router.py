@@ -1,9 +1,8 @@
 
-from fastapi import APIRouter, Depends, Request, HTTPException, Body
+from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header
 from sqlalchemy.orm import Session
 from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse
 from app.controllers import user_controller
-from app.database.session import SessionLocal
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
 from app.dependencies.auth import verify_access_token
@@ -76,7 +75,18 @@ def verify_token(token: str = Body(..., embed=True), db: Session = Depends(get_d
 
 #user logout
 @router.post("/logout", response_model=bool)
-def logout(access_token: str = Body(..., embed=True), db: Session = Depends(get_db)):
+def logout(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+    access_token = authorization.replace("Bearer ", "")
+
     return user_controller.check_token_when_logout(access_token, db)
 
 
