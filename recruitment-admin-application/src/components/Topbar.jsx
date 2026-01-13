@@ -50,7 +50,6 @@ export default function Topbar() {
   // Placeholder login actions
   const handleLogin = async () => {
     try {
-      debugger
       if (formData.email === '') {
         setError({ email: 'Email is required' });
         return
@@ -70,18 +69,16 @@ export default function Topbar() {
 
         // store token in global state
         setGlobalToken(res.data.access_token)
-
-        localStorage.setItem('access_token', res.data.access_token)
         handleClose()
-        if(res.data.user_type === 1) {
+        if (res.data.user_type === 1) {
           navigate('/admin');
-        }else if(res.data.user_type === 2) {
+        } else if (res.data.user_type === 2) {
           navigate('/employer');
         }
-        else if(res.data.user_type === 3) {
+        else if (res.data.user_type === 3) {
           navigate('/candidate');
         }
-        
+
       } else {
         setOpenSnackbar(true)
         setMessage('Login failed')
@@ -97,6 +94,16 @@ export default function Topbar() {
         console.error(err)
       }
 
+    }
+  }
+
+  const handleLogout = async () => {
+    debugger
+    const token = useAuthStore.getState().access_token
+    const res = await api.post('/user/logout',{access_token:token})
+    if (res.status === 200) {
+      setGlobalToken('')
+      navigate('/')
     }
   }
 
@@ -153,10 +160,22 @@ export default function Topbar() {
             <Button variant="contained" color="secondary">
               Search
             </Button>
+
           </Box>
 
           {/* SPACER */}
           <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ mr: 1 }}>
+            <Button variant="contained" color="secondary" onClick={() => navigate('/')}>
+              Home
+            </Button>
+          </Box>
+
+          <Box>
+            <Button variant="contained" color="secondary" onClick={handleLogout}>
+              Logout
+            </Button>
+          </Box>
 
           {/* RIGHT – SIGN IN */}
           <Button color="inherit" onClick={handleSignIn}>
