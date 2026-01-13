@@ -24,8 +24,6 @@ class UserSessionResponse(UserSessionBase):
 class UserLogin(BaseModel):
     email: str
     password: str
-    access_token: Optional[str] = None
-    model_config = ConfigDict(exclude_none=False)
 
 class UserCreate(BaseModel):
     pk_id: Optional[int] = None
@@ -64,6 +62,7 @@ class UserResponseData(BaseModel):
 
 class AccessToken(BaseModel):
     access_token: str
+    user_type: int
 
 
 class DeleteUser(BaseModel):

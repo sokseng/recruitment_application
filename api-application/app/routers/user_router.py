@@ -13,14 +13,6 @@ from app.database.deps import get_db
 router = APIRouter(prefix="/user", tags=["Users"])
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
 
-# Database Dependency
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-
 
 # user login for get token
 @router.post("/login", response_model=AccessToken)
@@ -33,20 +25,12 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
     if not user:
         raise HTTPException(status_code=404, detail="Email not found")
 
-
-    #check exist access token
-    if data.access_token:
-        existing_access_token = user_controller.verify_access_token(data.access_token, db)
-        if existing_access_token:
-            return AccessToken(
-                access_token=existing_access_token.access_token,
-            )
-    
     #Verify password
     isMatch = user_controller.verify_password(data.password, user.password)
     if not isMatch:
-        raise HTTPException(status_code=404, detail="Invalid password")
-
+        raise HTTPException(status_code=400, detail="Invalid password")
+    
+    
     #create access token
     access_token = user_controller.create_access_token(user.pk_id, expires_delta=access_token_expires)
     
@@ -62,7 +46,8 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
     )
 
     return AccessToken(
-        access_token=access_token
+        access_token=access_token,
+        user_type=user.user_type
     )
 
 
