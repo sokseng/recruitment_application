@@ -1,11 +1,11 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
 class EmployerCreate(BaseModel):
     user_id: int
     company_name: str
-    company_email: Optional[EmailStr] = None
+    company_email: Optional[str] = None
     company_contact: Optional[str] = None
     company_address: Optional[str] = None
     company_description: Optional[str] = None
@@ -13,7 +13,7 @@ class EmployerCreate(BaseModel):
 
 class EmployerUpdate(BaseModel):
     company_name: Optional[str] = None
-    company_email: Optional[EmailStr] = None
+    company_email: Optional[str] = None
     company_contact: Optional[str] = None
     company_address: Optional[str] = None
     company_description: Optional[str] = None

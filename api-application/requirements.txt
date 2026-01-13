@@ -24,5 +24,3 @@ python-dotenv              # load .env files easily
 
 # Migrations
 alembic
-
-email-validator
