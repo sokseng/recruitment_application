@@ -73,7 +73,15 @@ export default function Topbar() {
 
         localStorage.setItem('access_token', res.data.access_token)
         handleClose()
-        navigate('/admin');
+        if(res.data.user_type === 1) {
+          navigate('/admin');
+        }else if(res.data.user_type === 2) {
+          navigate('/employer');
+        }
+        else if(res.data.user_type === 3) {
+          navigate('/candidate');
+        }
+        
       } else {
         setOpenSnackbar(true)
         setMessage('Login failed')
