@@ -22,12 +22,14 @@ import IconButton from '@mui/material/IconButton'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
 import { useNavigate } from 'react-router-dom'
-
+import { useTheme, useMediaQuery } from "@mui/material";
 import api from '../services/api'
 import useAuthStore from '../store/useAuthStore'
 
 export default function Topbar() {
   const navigate = useNavigate()
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const {
     access_token,
@@ -264,14 +266,15 @@ export default function Topbar() {
       </Dialog>
 
       {/* REGISTER MODAL */}
-      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth>
+      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={fullScreen} scroll="paper">
         <DialogTitle>Sign Up</DialogTitle>
 
-        <DialogContent>
-          <Stack spacing={2} mt={1} component="form" onSubmit={handleSubmit}>
-            <TextField name="user_name" label="Username" required />
-            <TextField name="email" label="Email" type="email" required />
+        <DialogContent dividers>
+          <Stack spacing={2} component="form" onSubmit={handleSubmit} id="register-form">
+            <TextField size="small" name="user_name" label="Username" required />
+            <TextField size="small" name="email" label="Email" type="email" required />
             <TextField
+              size="small"
               name="password"
               label="Password"
               type={showPassword ? 'text' : 'password'}
@@ -288,16 +291,22 @@ export default function Topbar() {
             />
 
             <TextField
+              size="small"
               name="user_type"
               label="User Type"
               select
               required
+              defaultValue=""
             >
+              <MenuItem value="" disabled>
+                Select User Type
+              </MenuItem>
               <MenuItem value={2}>Employer</MenuItem>
               <MenuItem value={3}>Candidate</MenuItem>
             </TextField>
 
             <TextField
+              size="small"
               name="gender"
               label="Gender"
               select
@@ -307,8 +316,9 @@ export default function Topbar() {
               <MenuItem value="Female">Female</MenuItem>
             </TextField>
 
-            <TextField name="phone" label="Phone" />
+            <TextField size="small" name="phone" label="Phone" />
             <TextField
+              size="small"
               name="date_of_birth"
               label="Date of Birth"
               type="date"
@@ -316,20 +326,20 @@ export default function Topbar() {
               required
             />
             <TextField
+              size="small"
               name="address"
               label="Address"
               multiline
               rows={2}
             />
-
-            <DialogActions sx={{ px: 0 }}>
-              <Button onClick={handleCloseRegisterForm}>Cancel</Button>
-              <Button type="submit" variant="contained">
-                Register
-              </Button>
-            </DialogActions>
           </Stack>
         </DialogContent>
+        <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
+          <Button onClick={handleCloseRegisterForm}>Cancel</Button>
+          <Button type="submit" variant="contained" form="register-form">
+            Register
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   )
