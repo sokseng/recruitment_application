@@ -11,6 +11,10 @@ import {
   Typography,
   Snackbar,
   Alert,
+  DialogTitle,
+  Stack,
+  MenuItem,
+  DialogActions
 } from '@mui/material'
 import { useState } from 'react'
 import InputAdornment from '@mui/material/InputAdornment'
@@ -40,6 +44,10 @@ export default function Topbar() {
     email: '',
     password: '',
   })
+  const [openRegisterForm, setopenRegisterForm] = useState(false);
+  const handleOpenRegisterForm = () => setopenRegisterForm(true);
+  const handleCloseRegisterForm = () => setopenRegisterForm(false);
+  const [severity, setSeverity] = useState('error')
 
   /* =====================
      Login
@@ -111,6 +119,36 @@ export default function Topbar() {
     setError((prev) => ({ ...prev, [name]: '' }))
   }
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const payload = {
+      user_name: formData.get("user_name"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+      user_type: Number(formData.get("user_type")),
+      gender: formData.get("gender") || null,
+      phone: formData.get("phone") || null,
+      date_of_birth: formData.get("date_of_birth") || null,
+      address: formData.get("address") || null,
+    };
+
+    try {
+      const res = await api.post("/user/", payload);
+      if(res.status==200){
+        setOpenSnackbar(true)
+        setSeverity("success")
+        setMessage('Register Successfully!')
+      }
+      handleCloseRegisterForm();
+    } catch (err) {
+      setOpenSnackbar(true)
+      setSeverity("error")
+      setMessage(err.response?.data?.detail || 'Register failed')
+    }
+  };
+
   return (
     <>
       {/* Snackbar */}
@@ -120,7 +158,7 @@ export default function Topbar() {
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert severity="error" variant="filled">
+        <Alert severity={severity} variant="filled">
           {message}
         </Alert>
       </Snackbar>
@@ -157,9 +195,14 @@ export default function Topbar() {
               Logout
             </Button>
           ) : (
-            <Button color="inherit" onClick={() => setOpenLogin(true)}>
-              Sign In
-            </Button>
+             <>
+              <Button color="inherit" onClick={handleOpenRegisterForm}>
+                Sign Up
+              </Button>
+              <Button color="inherit" onClick={() => setOpenLogin(true)}>
+                Sign In
+              </Button>
+            </>
           )}
         </Toolbar>
       </AppBar>
@@ -217,6 +260,75 @@ export default function Topbar() {
               </Button>
             </CardContent>
           </Card>
+        </DialogContent>
+      </Dialog>
+
+      {/* REGISTER MODAL */}
+      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth>
+        <DialogTitle>Sign Up</DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={2} mt={1} component="form" onSubmit={handleSubmit}>
+            <TextField name="user_name" label="Username" required />
+            <TextField name="email" label="Email" type="email" required />
+            <TextField
+              name="password"
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              name="user_type"
+              label="User Type"
+              select
+              required
+            >
+              <MenuItem value={2}>Employer</MenuItem>
+              <MenuItem value={3}>Candidate</MenuItem>
+            </TextField>
+
+            <TextField
+              name="gender"
+              label="Gender"
+              select
+              required
+            >
+              <MenuItem value="Male">Male</MenuItem>
+              <MenuItem value="Female">Female</MenuItem>
+            </TextField>
+
+            <TextField name="phone" label="Phone" />
+            <TextField
+              name="date_of_birth"
+              label="Date of Birth"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              name="address"
+              label="Address"
+              multiline
+              rows={2}
+            />
+
+            <DialogActions sx={{ px: 0 }}>
+              <Button onClick={handleCloseRegisterForm}>Cancel</Button>
+              <Button type="submit" variant="contained">
+                Register
+              </Button>
+            </DialogActions>
+          </Stack>
         </DialogContent>
       </Dialog>
     </>

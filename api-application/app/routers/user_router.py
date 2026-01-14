@@ -57,7 +57,7 @@ def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(
 
 #create or update user
 @router.post("", response_model=UserResponse)
-def create_or_update_user(user: UserCreate, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+def create_or_update_user(user: UserCreate, db: Session = Depends(get_db)):
     return user_controller.create_or_update_user(user, db)
 
 #delete mutiple users
