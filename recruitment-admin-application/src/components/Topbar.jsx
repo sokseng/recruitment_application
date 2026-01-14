@@ -79,13 +79,17 @@ export default function Topbar() {
       { label: 'Default', path: '/' },
     ],
     1: [
+      { label: 'Home', path: '/' },
       { label: 'Dashboard', path: '/' },
       { label: 'Users', path: '/' },
-      { label: 'Admin', path: '/' },
+      { label: 'Employers', path: '/' },
+      { label: 'Candidates', path: '/' },
+      { label: 'All Companies', path: '/' },
     ],
     2: [
       { label: 'Home', path: '/' },
       { label: 'Dashboard', path: '/' },
+      { label: 'Candidate', path: '/' },
       { label: 'Employer', path: '/' },
     ],
     3: [
