@@ -6,21 +6,26 @@ import {
   Box,
   Dialog,
   DialogContent,
-  Card,
-  CardContent,
   Typography,
   Snackbar,
   Alert,
   DialogTitle,
   Stack,
   MenuItem,
-  DialogActions
+  DialogActions,
+  List,
+  ListItemButton,
+  ListItemText,
+  Drawer,
 } from '@mui/material'
 import { useState } from 'react'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import SearchIcon from '@mui/icons-material/Search'
+import AccountCircle from '@mui/icons-material/AccountCircle'
+import MenuIcon from '@mui/icons-material/Menu'
 import { useNavigate } from 'react-router-dom'
 import { useTheme, useMediaQuery } from "@mui/material";
 import api from '../services/api'
@@ -29,12 +34,14 @@ import useAuthStore from '../store/useAuthStore'
 export default function Topbar() {
   const navigate = useNavigate()
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const {
     access_token,
     setAccessToken,
     clearAccessToken,
+    setUserType,
+    user_type
   } = useAuthStore()
 
   const [openLogin, setOpenLogin] = useState(false)
@@ -50,6 +57,37 @@ export default function Topbar() {
   const handleOpenRegisterForm = () => setopenRegisterForm(true);
   const handleCloseRegisterForm = () => setopenRegisterForm(false);
   const [severity, setSeverity] = useState('error')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [profileAnchor, setProfileAnchor] = useState(null)
+  const MENU_BY_ROLE = {
+    guest: [
+      { label: 'Home', path: '/' },
+      { label: 'All Companies', path: '/' },
+      { label: 'Default', path: '/' },
+    ],
+    1: [
+      { label: 'Dashboard', path: '/' },
+      { label: 'Users', path: '/' },
+      { label: 'Admin', path: '/' },
+    ],
+    2: [
+      { label: 'Home', path: '/' },
+      { label: 'Dashboard', path: '/' },
+      { label: 'Employer', path: '/' },
+    ],
+    3: [
+      { label: 'Home', path: '/' },
+      { label: 'Profile', path: '/' },
+      { label: 'Candidate', path: '/' },
+    ],
+  }
+
+  const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest
+
+  const goTo = (path) => {
+    navigate(path)
+    setDrawerOpen(false)
+  }
 
   /* =====================
      Login
@@ -65,6 +103,7 @@ export default function Topbar() {
 
       // save token
       setAccessToken(res.data.access_token)
+      setUserType(res.data.user_type)
 
       setOpenLogin(false)
       setFormData({ email: '', password: '' })
@@ -84,20 +123,19 @@ export default function Topbar() {
           navigate('/', { replace: true })
       }
     } catch (err) {
-      if(err.response && err.response?.status === 404 && err.response?.data?.detail === "Email not found") {
+      if (err.response && err.response?.status === 404 && err.response?.data?.detail === "Email not found") {
         setMessage(err.response?.data?.detail)
         setOpenSnackbar(true)
-      }else if(err.response && err.response?.status === 400 && err.response?.data?.detail === "Invalid password"){
+      } else if (err.response && err.response?.status === 400 && err.response?.data?.detail === "Invalid password") {
         setMessage(err.response?.data?.detail)
         setOpenSnackbar(true)
-      }else{
+      } else {
         setMessage(err.response?.data?.detail || 'Login failed')
         setOpenSnackbar(true)
       }
-      
+
     }
   }
-
 
   /* =====================
      Logout
@@ -152,6 +190,38 @@ export default function Topbar() {
     }
   };
 
+  /* =====================
+     Drawer Content
+     ===================== */
+  const drawerContent = (
+    <Box sx={{ width: 250 }}>
+      <List>
+        {menuItems.map((item) => (
+          <ListItemButton key={item.label} onClick={() => goTo(item.path)}>
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        ))}
+
+        {!access_token && (
+          <>
+            <ListItemButton onClick={() => setopenRegisterForm(true)}>
+              <ListItemText primary="Sign Up" />
+            </ListItemButton>
+            <ListItemButton onClick={() => setOpenLogin(true)}>
+              <ListItemText primary="Login" />
+            </ListItemButton>
+          </>
+        )}
+
+        {access_token && (
+          <ListItemButton onClick={handleLogout}>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
+        )}
+      </List>
+    </Box>
+  )
+
   return (
     <>
       {/* Snackbar */}
@@ -166,56 +236,107 @@ export default function Topbar() {
         </Alert>
       </Snackbar>
 
-      {/* TOPBAR */}
-      <AppBar position="static">
-        <Toolbar>
-          {/* LEFT */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <TextField
-              size="small"
-              placeholder="Search jobs..."
-              sx={{ bgcolor: 'white', borderRadius: 1, mr: 1 }}
-            />
-            <Button variant="contained" color="secondary">
-              Search
-            </Button>
-          </Box>
+      <AppBar position="sticky" color="inherit" elevation={1}>
+        <Toolbar sx={{ gap: 1 }}>
+
+          {/* ☰ Mobile Drawer */}
+          {isMobile && (
+            <IconButton onClick={() => setDrawerOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          {/* 🔍 Search */}
+          <TextField
+            size="small"
+            placeholder="Search jobs..."
+            fullWidth={isMobile}
+            sx={{
+              bgcolor: 'white',
+              borderRadius: 1,
+              maxWidth: isMobile ? '100%' : 280,
+            }}
+          />
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => navigate('/')}
-            sx={{ mr: 1 }}
-          >
-            Home
-          </Button>
-
-          {/* AUTH BUTTON */}
-          {access_token ? (
-            <Button variant="contained" color="secondary" onClick={handleLogout}>
-              Logout
-            </Button>
-          ) : (
-            <>
-              <Button color="inherit" onClick={handleOpenRegisterForm}>
-                Sign Up
-              </Button>
-              <Button color="inherit" onClick={() => setOpenLogin(true)}>
-                Sign In
-              </Button>
-            </>
+          {/* 📱 Mobile Right Action */}
+          {isMobile && access_token && (
+            <IconButton onClick={() => navigate('/profile')}>
+              <AccountCircle />
+            </IconButton>
           )}
+
+
+          {/* 🖥 Desktop Menu */}
+          {!isMobile && (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {menuItems.map((item) => (
+                <Button
+                  key={item.label}
+                  onClick={() => goTo(item.path)}
+                  sx={{
+                    fontWeight: location.pathname === item.path ? 600 : 400,
+                    color:
+                      location.pathname === item.path
+                        ? 'primary.main'
+                        : 'inherit',
+                  }}
+                >
+                  {item.label}
+                </Button>
+              ))}
+
+              {access_token ? (
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  disableElevation
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              ) : (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setOpenLogin(true)}
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setopenRegisterForm(true)}
+                  >
+                    Sign Up
+                  </Button>
+                </Stack>
+              )}
+            </Box>
+          )}
+
         </Toolbar>
       </AppBar>
+
+
+      {/* DRAWER */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        anchor="left"
+      >
+        {drawerContent}
+      </Drawer>
 
       {/* LOGIN MODAL */}
       <Dialog
         open={openLogin}
         onClose={() => setOpenLogin(false)}
         maxWidth="xs"
-        fullScreen={fullScreen}
+        fullScreen={isMobile}
         scroll="paper"
       >
         <DialogContent>
@@ -279,7 +400,7 @@ export default function Topbar() {
 
 
       {/* REGISTER MODAL */}
-      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={fullScreen} scroll="paper">
+      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
         <DialogTitle>Sign Up</DialogTitle>
 
         <DialogContent dividers>
@@ -349,7 +470,7 @@ export default function Topbar() {
         </DialogContent>
         <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
           <Button onClick={handleCloseRegisterForm}>Cancel</Button>
-          <Button type="submit" variant="contained" form="register-form">
+          <Button type="submit" variant="contained" disableElevation form="register-form">
             Register
           </Button>
         </DialogActions>
