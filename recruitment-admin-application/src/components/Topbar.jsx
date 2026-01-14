@@ -280,9 +280,54 @@ export default function Topbar() {
 
           {/* 📱 Mobile Right Action */}
           {isMobile && access_token && (
-            <IconButton onClick={() => navigate('/profile')}>
-              <AccountCircle />
-            </IconButton>
+            <>
+                  {/* Profile Avatar & Menu */}
+                  <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
+                    <Avatar>{user.name.charAt(0)}</Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={profileAnchor}
+                    open={Boolean(profileAnchor)}
+                    onClose={handleProfileClose}
+                    PaperProps={{ sx: { width: 280 } }}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {user.name}
+                      </Typography>
+                      <Typography variant="body2" color="primary.main">
+                        {user.email}
+                      </Typography>
+                    </Box>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <Settings fontSize="small" />
+                      </ListItemIcon>
+                      Update Profile
+                    </MenuItem>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <Download fontSize="small" />
+                      </ListItemIcon>
+                      Download CV Templates
+                    </MenuItem>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <VpnKey fontSize="small" />
+                      </ListItemIcon>
+                      Change Password
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                      <ListItemIcon>
+                        <Logout fontSize="small" color='error' />
+                      </ListItemIcon>
+                      Log out
+                    </MenuItem>
+                  </Menu>
+                </>
           )}
 
 
