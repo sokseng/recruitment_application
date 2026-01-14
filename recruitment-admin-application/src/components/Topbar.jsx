@@ -17,15 +17,22 @@ import {
   ListItemButton,
   ListItemText,
   Drawer,
+  Avatar,
+  Menu,
+  ListItemIcon,
+  Divider
 } from '@mui/material'
 import { useState } from 'react'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import SearchIcon from '@mui/icons-material/Search'
 import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
+import Download from '@mui/icons-material/Download'
+import Settings from '@mui/icons-material/Settings'
+import VpnKey from '@mui/icons-material/VpnKey'
+import Logout from '@mui/icons-material/Logout'
 import { useNavigate } from 'react-router-dom'
 import { useTheme, useMediaQuery } from "@mui/material";
 import api from '../services/api'
@@ -54,11 +61,17 @@ export default function Topbar() {
     password: '',
   })
   const [openRegisterForm, setopenRegisterForm] = useState(false);
-  const handleOpenRegisterForm = () => setopenRegisterForm(true);
   const handleCloseRegisterForm = () => setopenRegisterForm(false);
   const [severity, setSeverity] = useState('error')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [profileAnchor, setProfileAnchor] = useState(null)
+  const handleProfileClick = (event) => {
+    setProfileAnchor(event.currentTarget)
+  }
+
+  const handleProfileClose = () => {
+    setProfileAnchor(null)
+  }
   const MENU_BY_ROLE = {
     guest: [
       { label: 'Home', path: '/' },
@@ -80,6 +93,10 @@ export default function Topbar() {
       { label: 'Profile', path: '/' },
       { label: 'Candidate', path: '/' },
     ],
+  }
+  const user = {
+    name: 'BRO rathana',
+    email: 'nim.rathana9999@gmail.com',
   }
 
   const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest
@@ -104,7 +121,7 @@ export default function Topbar() {
       // save token
       setAccessToken(res.data.access_token)
       setUserType(res.data.user_type)
-
+      setProfileAnchor(null)
       setOpenLogin(false)
       setFormData({ email: '', password: '' })
 
@@ -147,6 +164,7 @@ export default function Topbar() {
       console.warn('Logout API failed, clearing session anyway')
     } finally {
       clearAccessToken()
+      setProfileAnchor(null)
       navigate('/')
     }
   }
@@ -288,15 +306,54 @@ export default function Topbar() {
               ))}
 
               {access_token ? (
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  disableElevation
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
+                <>
+                  {/* Profile Avatar & Menu */}
+                  <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
+                    <Avatar>{user.name.charAt(0)}</Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={profileAnchor}
+                    open={Boolean(profileAnchor)}
+                    onClose={handleProfileClose}
+                    PaperProps={{ sx: { width: 280 } }}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {user.name}
+                      </Typography>
+                      <Typography variant="body2" color="primary.main">
+                        {user.email}
+                      </Typography>
+                    </Box>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <Settings fontSize="small" />
+                      </ListItemIcon>
+                      Update Profile
+                    </MenuItem>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <Download fontSize="small" />
+                      </ListItemIcon>
+                      Download CV Templates
+                    </MenuItem>
+                    <MenuItem>
+                      <ListItemIcon>
+                        <VpnKey fontSize="small" />
+                      </ListItemIcon>
+                      Change Password
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                      <ListItemIcon>
+                        <Logout fontSize="small" color='error' />
+                      </ListItemIcon>
+                      Log out
+                    </MenuItem>
+                  </Menu>
+                </>
               ) : (
                 <Stack direction="row" spacing={1}>
                   <Button
