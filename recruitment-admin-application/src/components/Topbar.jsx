@@ -54,49 +54,50 @@ export default function Topbar() {
   /* =====================
      Login
      ===================== */
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault() // ⭐ REQUIRED
+
     try {
-      if (!formData.email) {
-        setError({ email: 'Email is required' })
-        return
-      }
-
-      if (!formData.password) {
-        setError({ password: 'Password is required' })
-        return
-      }
-
       const res = await api.post('/user/login', {
         email: formData.email.trim(),
         password: formData.password,
       })
 
-      // ✅ save token (zustand + localStorage)
+      // save token
       setAccessToken(res.data.access_token)
 
       setOpenLogin(false)
       setFormData({ email: '', password: '' })
 
-      // ✅ navigate by role
+      // navigate by role
       switch (res.data.user_type) {
         case 1:
-          navigate('/admin')
+          navigate('/admin', { replace: true })
           break
         case 2:
-          navigate('/employer')
+          navigate('/employer', { replace: true })
           break
         case 3:
-          navigate('/candidate')
+          navigate('/candidate', { replace: true })
           break
         default:
-          navigate('/')
+          navigate('/', { replace: true })
       }
-
     } catch (err) {
-      setMessage(err.response?.data?.detail || 'Login failed')
-      setOpenSnackbar(true)
+      if(err.response && err.response?.status === 404 && err.response?.data?.detail === "Email not found") {
+        setMessage(err.response?.data?.detail)
+        setOpenSnackbar(true)
+      }else if(err.response && err.response?.status === 400 && err.response?.data?.detail === "Invalid password"){
+        setMessage(err.response?.data?.detail)
+        setOpenSnackbar(true)
+      }else{
+        setMessage(err.response?.data?.detail || 'Login failed')
+        setOpenSnackbar(true)
+      }
+      
     }
   }
+
 
   /* =====================
      Logout
@@ -138,7 +139,7 @@ export default function Topbar() {
 
     try {
       const res = await api.post("/user/", payload);
-      if(res.status==200){
+      if (res.status == 200) {
         setOpenSnackbar(true)
         setSeverity("success")
         setMessage('Register Successfully!')
@@ -197,7 +198,7 @@ export default function Topbar() {
               Logout
             </Button>
           ) : (
-             <>
+            <>
               <Button color="inherit" onClick={handleOpenRegisterForm}>
                 Sign Up
               </Button>
@@ -210,60 +211,72 @@ export default function Topbar() {
       </AppBar>
 
       {/* LOGIN MODAL */}
-      <Dialog open={openLogin} onClose={() => setOpenLogin(false)}>
+      <Dialog
+        open={openLogin}
+        onClose={() => setOpenLogin(false)}
+        maxWidth="xs"
+        fullScreen={fullScreen}
+        scroll="paper"
+      >
         <DialogContent>
-          <Card sx={{ width: 320 }}>
-            <CardContent>
-              <Typography variant="h5" align="center" gutterBottom>
-                Login
-              </Typography>
+          <Stack
+            spacing={2}
+            component="form"
+            onSubmit={handleLogin}
+            id="login-form"
+          >
+            <Typography variant="h5" align="center" gutterBottom>
+              Login
+            </Typography>
 
-              <TextField
-                fullWidth
-                size="small"
-                label="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!error.email}
-                helperText={error.email}
-                margin="normal"
-              />
+            <TextField
+              fullWidth
+              size="small"
+              label="Email"
+              name="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              margin="normal"
+            />
 
-              <TextField
-                fullWidth
-                size="small"
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleChange}
-                error={!!error.password}
-                helperText={error.password}
-                margin="normal"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+            <TextField
+              fullWidth
+              size="small"
+              label="Password"
+              name="password"
+              required
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              margin="normal"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      type="button"   // ⭐ prevents accidental submit
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={handleLogin}
-              >
-                Login
-              </Button>
-            </CardContent>
-          </Card>
+            <Button
+              fullWidth
+              variant="contained"
+              type="submit"
+              sx={{ mt: 2 }}
+            >
+              Login
+            </Button>
+          </Stack>
         </DialogContent>
       </Dialog>
+
 
       {/* REGISTER MODAL */}
       <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={fullScreen} scroll="paper">
