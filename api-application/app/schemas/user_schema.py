@@ -63,6 +63,15 @@ class UserResponseData(BaseModel):
 class AccessToken(BaseModel):
     access_token: str
     user_type: int
+    pk_id: int
+    user_name: str
+    email: str
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DeleteUser(BaseModel):

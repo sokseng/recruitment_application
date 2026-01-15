@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse
+from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword
 from app.controllers import user_controller
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
@@ -46,7 +46,14 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
 
     return AccessToken(
         access_token=access_token,
-        user_type=user.user_type
+        user_type=user.user_type,
+        pk_id=user.pk_id,
+        user_name=user.user_name,
+        email=user.email,
+        gender=user.gender,
+        phone=user.phone,
+        date_of_birth=user.date_of_birth,
+        address=user.address
     )
 
 
@@ -88,6 +95,13 @@ def logout(
     access_token = authorization.replace("Bearer ", "")
 
     return user_controller.check_token_when_logout(access_token, db)
+
+
+#change password
+@router.post("/change-password")
+def change_password(data: ChangePassword, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.change_password(db, current_user_id, data)
+
 
 
 

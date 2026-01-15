@@ -2,13 +2,12 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
-from app.schemas.user_schema import DeleteUser, UserCreate
+from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
 from fastapi import HTTPException
-from typing import Optional
 
 
 SECRET_KEY = settings.JWT_SECRET_KEY
@@ -159,3 +158,17 @@ def delete_users(db: Session, data: DeleteUser):
         user.is_active = False
     db.commit()
     return {"message": "Users deleted successfully"}
+
+
+#change password
+def change_password(db: Session, user_id: int, data: ChangePassword):
+    user = db.query(User).filter(User.pk_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(data.old_password, user.password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+    user.password = bcrypt_context.hash(data.new_password)
+    db.commit()
+    return True
