@@ -8,7 +8,7 @@ export default function MainLayout({ children }) {
         height: '100vh',           // ← full viewport height
         display: 'flex',
         flexDirection: 'column',   // vertical stack
-        overflow: 'hidden',        // prevent double scrollbar
+        //overflow: 'hidden',        // prevent double scrollbar
       }}
     >
       <Topbar />                   {/* assumed fixed or sticky height (usually 64px) */}
@@ -18,7 +18,7 @@ export default function MainLayout({ children }) {
         component="main"
         sx={{
           flex: 1,                  // ← grows to fill remaining height
-          overflow: 'hidden',       // important: prevents outer scroll
+          //overflow: 'hidden',       // important: prevents outer scroll
           display: 'flex',          // now we can use flex inside pages
           flexDirection: 'column',
         }}
