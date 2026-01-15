@@ -13,7 +13,6 @@ class JobCreate(BaseModel):
     job_description: str
     closing_date: Optional[datetime] = None
     status: Optional[JobStatus] = JobStatus.DRAFT
-    employer_id: int
 
 
 class JobUpdate(BaseModel):

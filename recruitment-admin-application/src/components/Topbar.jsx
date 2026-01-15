@@ -573,6 +573,21 @@ export default function Topbar() {
 
         <DialogContent dividers>
           <Stack spacing={2} component="form" onSubmit={handleSubmit} id="register-form">
+            <TextField
+              size="small"
+              name="user_type"
+              label="User Type"
+              select
+              required
+              defaultValue=""
+            >
+              <MenuItem value="" disabled>
+                Select User Type
+              </MenuItem>
+              <MenuItem value={2}>Employer</MenuItem>
+              <MenuItem value={3}>Candidate</MenuItem>
+            </TextField>
+
             <TextField size="small" name="user_name" label="Username" required />
             <TextField size="small" name="email" label="Email" type="email" required />
             <TextField
@@ -592,20 +607,7 @@ export default function Topbar() {
               }}
             />
 
-            <TextField
-              size="small"
-              name="user_type"
-              label="User Type"
-              select
-              required
-              defaultValue=""
-            >
-              <MenuItem value="" disabled>
-                Select User Type
-              </MenuItem>
-              <MenuItem value={2}>Employer</MenuItem>
-              <MenuItem value={3}>Candidate</MenuItem>
-            </TextField>
+
 
             <TextField
               size="small"

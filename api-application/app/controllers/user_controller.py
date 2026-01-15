@@ -8,6 +8,9 @@ from jose import jwt
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
 from fastapi import HTTPException
+from app.enums.global_enum import UserType
+from app.models.employer_model import Employer
+from app.models.candidate_model import Candidate
 
 
 SECRET_KEY = settings.JWT_SECRET_KEY
@@ -49,9 +52,31 @@ def create_or_update_user(user: UserCreate, db: Session):
         created_date = datetime.now().replace(microsecond=0),
         updated_date = datetime.now().replace(microsecond=0)
     )
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if db_user.user_type ==  int(UserType.EMPLOYER.value):
+        db_employer = Employer( 
+            user_id = db_user.pk_id,
+            company_name = user.user_name,
+        )
+        db.add(db_employer)
+        db.commit()
+        db.refresh(db_employer)
+
+    if db_user.user_type == int(UserType.CANDIDATE.value):
+        db_candidate = Candidate( 
+            user_id = db_user.pk_id,
+        )
+        db.add(db_candidate)
+        db.commit()
+        db.refresh(db_candidate)
+    
     return db_user
 
 

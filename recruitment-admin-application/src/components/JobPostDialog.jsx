@@ -1,5 +1,5 @@
 // src/components/JobPostDialog.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,11 +12,9 @@ import {
   FormControl,
   InputLabel,
   Grid,
-  Box,
   Typography,
   Alert,
   CircularProgress,
-  Divider,
   IconButton,
   InputAdornment,
   useTheme,
@@ -28,7 +26,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import DescriptionIcon from '@mui/icons-material/Description';
-import BusinessIcon from '@mui/icons-material/Business';
 import api from '../services/api';
 
 const JOB_TYPES = [
@@ -48,7 +45,6 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [formData, setFormData] = useState({
-    employer_id: '',
     job_title: '',
     job_type: 'Full-time',
     position_number: '',
@@ -59,35 +55,9 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
     status: 'Open',
   });
 
-  const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [formLoading, setFormLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-
-  // Load employers when dialog opens
-  useEffect(() => {
-    if (!open) return;
-
-    const fetchEmployers = async () => {
-      try {
-        const res = await api.get('/employer/');
-        const data = res.data || [];
-        setEmployers(data);
-
-        // Auto-select if user has only one company
-        if (data.length === 1) {
-          setFormData((prev) => ({ ...prev, employer_id: data[0].pk_id }));
-        }
-      } catch (err) {
-        setError('Failed to load your companies');
-      } finally {
-        setFormLoading(false);
-      }
-    };
-
-    fetchEmployers();
-  }, [open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,11 +69,9 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
     setError(null);
     setSuccess(false);
 
-    if (!formData.employer_id) return setError('Please select a company');
     if (!formData.job_title.trim()) return setError('Job title is required');
     if (!formData.job_description.trim()) return setError('Description is required');
 
-    setLoading(true);
 
     try {
       const payload = {
@@ -123,7 +91,6 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
 
         // Reset form for next opening
         setFormData({
-          employer_id: employers.length === 1 ? employers[0]?.pk_id || '' : '',
           job_title: '',
           job_type: 'Full-time',
           position_number: '',
@@ -189,11 +156,8 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
       </DialogTitle>
 
       <DialogContent dividers sx={{ p: { xs: 2, sm: 4 } }}>
-        {formLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
+        {
+        (
           <>
             {error && (
               <Alert severity="error" sx={{ mb: 3 }}>
@@ -209,32 +173,6 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
 
             <form onSubmit={handleSubmit} id="job-post-form">
               <Grid container spacing={2.5}>
-                {/* Employer / Company */}
-                <Grid item xs={12}>
-                  <FormControl fullWidth required>
-                    <InputLabel>Company</InputLabel>
-                    <Select
-                      name="employer_id"
-                      value={formData.employer_id}
-                      label="Company"
-                      onChange={handleChange}
-                      startAdornment={
-                        <InputAdornment position="start">
-                          <BusinessIcon fontSize="small" />
-                        </InputAdornment>
-                      }
-                    >
-                      <MenuItem value="" disabled>
-                        Select your company
-                      </MenuItem>
-                      {employers.map((emp) => (
-                        <MenuItem key={emp.pk_id} value={emp.pk_id}>
-                          {emp.company_name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
 
                 {/* Job Title */}
                 <Grid item xs={12}>
@@ -406,7 +344,6 @@ export default function JobPostDialog({ open, onClose, onJobCreated }) {
           form="job-post-form"
           variant="contained"
           color="primary"
-          disabled={loading || formLoading}
           sx={{ minWidth: 140 }}
         >
           {loading ? (

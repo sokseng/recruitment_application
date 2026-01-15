@@ -3,10 +3,13 @@ from sqlalchemy import select
 from fastapi import HTTPException, status
 from app.models.job_model import Job
 from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
+from app.models.employer_model import Employer
 
 
-def create_job(db: Session, job_data: JobCreate) -> JobOut:
+def create_job(db: Session, job_data: JobCreate, user_id: int) -> JobOut:
+    db_user = db.query(Employer).filter(Employer.user_id == user_id).first()
     db_job = Job(
+        employer_id=db_user.pk_id,
         **job_data.model_dump(exclude_none=True)
     )
     db.add(db_job)
