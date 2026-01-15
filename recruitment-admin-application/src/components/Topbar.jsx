@@ -96,7 +96,7 @@ export default function Topbar() {
       { label: 'Home', path: '/' },
       { label: 'Dashboard', path: '/' },
       { label: 'Candidate', path: '/' },
-      { label: 'Employer', path: '/' },
+      { label: 'Employer', path: '/employer' },
     ],
     3: [
       { label: 'Home', path: '/' },

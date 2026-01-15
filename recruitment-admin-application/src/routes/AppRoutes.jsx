@@ -2,9 +2,11 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Dashboard from '../pages/Dashboard'
 import AdminDashboard from '../pages/AdminDashboard'
-import EmployerDashboard from '../pages/EmployerDashboard'
+// import EmployerDashboard from '../pages/EmployerDashboard'
 import CandidateDashboard from '../pages/CandidateDashboard'
 import MainLayout from '../layouts/MainLayout'
+import PostJob from '../pages/PostJob'
+import MyJobs from '../pages/MyJobs'
 
 export default function AppRoutes() {
   return (
@@ -25,7 +27,15 @@ export default function AppRoutes() {
           path="/employer"
           element={
             <ProtectedRoute>
-              <EmployerDashboard />
+              <MyJobs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employer/post-job"
+          element={
+            <ProtectedRoute>
+              <PostJob />
             </ProtectedRoute>
           }
         />
