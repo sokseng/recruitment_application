@@ -1,211 +1,308 @@
 // src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Grid,
   Card,
-  CardContent,
   Typography,
-  Chip,
   Avatar,
   Stack,
-  Divider,
-  Button,
+  Chip,
   IconButton,
+  Divider,
   CircularProgress,
   Alert,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
+  Tabs,
+  Tab,
+  Button,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
+import EmailIcon from '@mui/icons-material/Email';
+import SearchIcon from '@mui/icons-material/Search';
 import api from '../services/api';
 
 export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tab, setTab] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchActiveJobs();
+    loadJobs();
   }, []);
 
-  const fetchActiveJobs = async () => {
+  useEffect(() => {
+    if (!jobs.length) return;
+
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) {
+      setFilteredJobs(jobs);
+      return;
+    }
+
+    const filtered = jobs.filter((job) => {
+      const title = job.job_title?.toLowerCase() || '';
+      const company = job.employer?.company_name?.toLowerCase() || '';
+      const location = job.location?.toLowerCase() || '';
+      return title.includes(term) || company.includes(term) || location.includes(term);
+    });
+
+    setFilteredJobs(filtered);
+
+    // If selected job is no longer in filtered list → clear selection
+    if (selectedJob && !filtered.some(j => j.pk_id === selectedJob.pk_id)) {
+      setSelectedJob(filtered[0] || null);
+    }
+  }, [searchTerm, jobs, selectedJob]);
+
+  const loadJobs = async () => {
     try {
-      setLoading(true);
-      const res = await api.get('/jobs/'); // GET /jobs/ returns active/open jobs
-      setJobs(res.data || []);
-      if (res.data?.length > 0) setSelectedJob(res.data[0]);
-    } catch (err) {
+      const res = await api.get('/jobs/');
+      const data = res.data || [];
+      setJobs(data);
+      setFilteredJobs(data);
+      if (data.length) setSelectedJob(data[0]);
+    } catch {
       setError('Failed to load jobs');
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFavorite = (jobId) => {
-    // TODO: implement favorite logic (call API if you have favorite endpoint)
-    alert(`Favorited job ${jobId} (to be implemented)`);
-  };
-
-  if (loading) return <CircularProgress sx={{ display: 'block', mx: 'auto', my: 10 }} />;
+  if (loading) {
+    return (
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (error) {
-    return <Alert severity="error" sx={{ m: 4 }}>{error}</Alert>;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Grid container spacing={3}>
-        {/* LEFT - Job List */}
-        <Grid item xs={12} md={5} lg={4}>
-          <Typography variant="h5" gutterBottom fontWeight="bold">
-            Latest Jobs
-          </Typography>
-
-          <List sx={{ bgcolor: 'background.paper', borderRadius: 2, overflow: 'hidden' }}>
-            {jobs.map((job) => (
-              <ListItem
-                key={job.pk_id}
-                alignItems="flex-start"
+    <Box
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        p: 2,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Main content – list + detail */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          gap: 2,
+          flexDirection: { xs: 'column', md: 'row' },
+          overflow: 'hidden',
+        }}
+      >
+        <Card
+          sx={{
+            width: { xs: '100%', md: 420 },
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            maxHeight: { xs: '45vh', md: '100%' },
+            border: "1px solid",
+            borderColor: 'divider',
+          }}
+        >
+          {/* Filters / Icons (example colored blocks) */}
+          <Stack direction="row" spacing={1.5} p={2}>
+            <TextField
+              size="small"
+              placeholder="Search jobs, companies, locations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
                 sx={{
-                  bgcolor: selectedJob?.pk_id === job.pk_id ? 'action.selected' : 'transparent',
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'action.hover' },
+                  bgcolor: 'white',
+                  borderRadius: 1,
+                  maxWidth: 500,
+                  alignSelf: { xs: 'center', md: 'flex-start' },
+                  width: { xs: '100%', sm: '80%', md: 420 },
                 }}
-                onClick={() => setSelectedJob(job)}
-              >
-                <ListItemAvatar>
-                  <Avatar
-                    variant="rounded"
-                    src={job.employer?.company_logo ? `/uploads/employers/${job.employer.company_logo}` : undefined}
-                    alt={job.employer?.company_name}
-                    sx={{ width: 56, height: 56, bgcolor: 'grey.300' }}
-                  >
-                    {job.employer?.company_name?.charAt(0) || '?'}
-                  </Avatar>
-                </ListItemAvatar>
+              />
+          </Stack>
 
-                <ListItemText
-                  primary={
-                    <Typography variant="subtitle1" fontWeight="medium">
-                      {job.job_title}
-                    </Typography>
-                  }
-                  secondary={
-                    <Stack spacing={0.5} mt={0.5}>
-                      <Typography variant="body2" color="text.primary">
-                        {job.employer?.company_name || 'Company Name'}
-                      </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center">
+          <Divider />
+
+          {/* Scrollable job list */}
+          <Box sx={{ flex: 1, overflowY: 'auto', }}>
+            {filteredJobs.length === 0 ? (
+              <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+                No jobs found matching your search
+              </Box>
+            ) : (
+              filteredJobs.map((job) => {
+                const active = selectedJob?.pk_id === job.pk_id;
+
+                return (
+                  <Box
+                    key={job.pk_id}
+                    onClick={() => setSelectedJob(job)}
+                    sx={{
+                      px: 2,
+                      py: 2,
+                      cursor: 'pointer',
+                      bgcolor: active ? '#f0f7ff' : 'transparent',
+                      borderLeft: active ? '4px solid #1976d2' : '4px solid transparent',
+                      '&:hover': { bgcolor: '#f5f5f5' },
+                    }}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar
+                        src={
+                          job.employer?.company_logo
+                            ? `/uploads/employers/${job.employer.company_logo}`
+                            : undefined
+                        }
+                        sx={{ width: 48, height: 48 }}
+                      />
+
+                      <Box flex={1}>
+                        <Typography fontWeight={600}>{job.job_title}</Typography>
+                        <Typography variant="body2">{job.employer?.company_name}</Typography>
                         <Typography variant="caption" color="text.secondary">
+                          {new Date(job.posting_date).toLocaleDateString('en-GB')} ·{' '}
                           {job.location || 'Phnom Penh'}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          • {new Date(job.posting_date).toLocaleDateString('en-GB')}
-                        </Typography>
-                      </Stack>
-                      {job.status === 'Open' && (
-                        <Chip label="Top" color="warning" size="small" sx={{ width: 'fit-content' }} />
-                      )}
+
+                        {job.status === 'Open' && (
+                          <Typography variant="caption" color="warning.main" sx={{ ml: 1 }}>
+                            Top
+                          </Typography>
+                        )}
+                      </Box>
+
+                      <IconButton size="small">
+                        <FavoriteBorderIcon fontSize="small" />
+                      </IconButton>
                     </Stack>
-                  }
-                />
+                  </Box>
+                );
+              })
+            )}
+          </Box>
+        </Card>
 
-                <ListItemSecondaryAction>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFavorite(job.pk_id);
-                    }}
-                    size="small"
-                  >
-                    <FavoriteBorderIcon fontSize="small" />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </Grid>
-
-        {/* RIGHT - Job Detail */}
-        <Grid item xs={12} md={7} lg={8}>
+        {/* RIGHT – JOB DETAIL */}
+        <Card
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            maxHeight: { xs: '55vh', md: '100%' },
+            border: "1px solid",
+            borderColor: 'divider',
+          }}
+        >
           {selectedJob ? (
-            <Card elevation={3}>
-              <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                  <Avatar
-                    variant="rounded"
-                    src={selectedJob.employer?.company_logo ? `/uploads/employers/${selectedJob.employer.company_logo}` : undefined}
-                    sx={{ width: 80, height: 80 }}
-                  />
-                  <Box>
-                    <Typography variant="h5" fontWeight="bold">
+            <>
+              <Tabs
+                value={tab}
+                onChange={(_, v) => setTab(v)}
+                sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}
+              >
+                <Tab label="Job Description" />
+                <Tab label="Company Info" />
+                <Tab label="Video & Photos" />
+              </Tabs>
+
+              <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+                <Stack direction="row" spacing={3} alignItems="center" sx={{ mb: 3 }}>
+                  <Avatar sx={{ width: 72, height: 72 }} />
+                  <Box flex={1}>
+                    <Typography variant="h6" fontWeight={700}>
                       {selectedJob.job_title}
                     </Typography>
-                    <Typography variant="subtitle1" color="primary">
+                    <Typography color="text.secondary">
                       {selectedJob.employer?.company_name}
                     </Typography>
                   </Box>
+
+                  <Stack spacing={1} alignItems="flex-end">
+                    <Button variant="contained" color="warning">
+                      Direct Apply
+                    </Button>
+                    <IconButton>
+                      <EmailIcon />
+                    </IconButton>
+                  </Stack>
                 </Stack>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 3 }} />
 
-                <Stack direction="row" spacing={4} mb={3}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Posting Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {new Date(selectedJob.posting_date).toLocaleDateString('en-GB')}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Closing Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedJob.closing_date
-                        ? new Date(selectedJob.closing_date).toLocaleDateString('en-GB')
-                        : 'Open'}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Job Type
-                    </Typography>
-                    <Typography variant="body1">{selectedJob.job_type}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Location
-                    </Typography>
-                    <Typography variant="body1">{selectedJob.location || 'Phnom Penh'}</Typography>
-                  </Box>
+                <Stack spacing={1.2} maxWidth={520}>
+                  {[
+                    ['Posting Date', selectedJob.posting_date],
+                    ['Closing Date', selectedJob.closing_date],
+                    ['Salary Range', selectedJob.salary_range || '$700–800'],
+                    ['Job Type', selectedJob.job_type],
+                    ['Seniority Level', selectedJob.seniority || 'Experienced Level'],
+                    ['Job Location', selectedJob.location || 'Phnom Penh'],
+                  ].map(([label, value]) => (
+                    <Stack direction="row" key={label} spacing={2}>
+                      <Typography fontWeight={600} minWidth={140}>
+                        {label}:
+                      </Typography>
+                      <Typography>
+                        {label.includes('Date')
+                          ? new Date(value).toLocaleDateString('en-GB')
+                          : value}
+                      </Typography>
+                    </Stack>
+                  ))}
+
+                  <Stack direction="row" spacing={2}>
+                    <Typography fontWeight={600}>Ad Type:</Typography>
+                    <Chip label="★★★★★ Top" color="warning" />
+                  </Stack>
                 </Stack>
 
-                <Typography variant="h6" gutterBottom>
-                  Job Description
-                </Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+                <Divider sx={{ my: 3 }} />
+
+                <Typography sx={{ whiteSpace: 'pre-line', lineHeight: 1.8 }}>
                   {selectedJob.job_description}
                 </Typography>
-
-                {/* You can add Company Info / Video & Photos tabs later */}
-              </CardContent>
-            </Card>
+              </Box>
+            </>
           ) : (
-            <Alert severity="info">Select a job to view details</Alert>
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 3,
+              }}
+            >
+              <Alert severity="info">Select a job to view details</Alert>
+            </Box>
           )}
-        </Grid>
-      </Grid>
+        </Card>
+      </Box>
     </Box>
   );
 }
