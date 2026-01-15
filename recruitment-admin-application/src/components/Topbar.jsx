@@ -1,4 +1,3 @@
-
 import {
   AppBar,
   Toolbar,
@@ -132,9 +131,6 @@ export default function Topbar() {
       setProfileAnchor(null)
       setOpenLogin(false)
       setFormData({ email: '', password: '' })
-
-
-
 
       // navigate by role
       switch (res.data.user_type) {
@@ -508,9 +504,6 @@ export default function Topbar() {
       >
         {drawerContent}
       </Drawer>
-
-
-
 
       {/* LOGIN MODAL */}
       <Dialog

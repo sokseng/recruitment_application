@@ -11,7 +11,6 @@ from app.controllers.candidate_controller import (
 
 router = APIRouter(prefix="/candidate", tags=["Candidates"])
 
-
 @router.post("/", response_model=CandidateOut, status_code=status.HTTP_201_CREATED)
 @router.put("/", response_model=CandidateOut)
 def upsert_candidate_profile(

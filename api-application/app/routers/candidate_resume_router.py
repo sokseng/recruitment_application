@@ -16,7 +16,6 @@ from app.controllers.candidate_resume_controller import (
 
 router = APIRouter(prefix="/candidate/resumes", tags=["Candidate Resumes"])
 
-
 @router.post("/", response_model=ResumeOut)
 def create_candidate_resume(
     resume_type: str = Form(...),
@@ -41,7 +40,6 @@ def create_candidate_resume(
     )
 
     return create_resume(db, resume_data, candidate_id, resume_file)
-
 
 @router.put("/{resume_id}", response_model=ResumeOut)
 def update_candidate_resume(
@@ -80,7 +78,6 @@ def get_my_resumes(
 ):
     return get_resumes_by_candidate(db, candidate_id)
 
-
 @router.delete("/{resume_id}")
 def delete_candidate_resume(
     resume_id: int,
@@ -92,7 +89,6 @@ def delete_candidate_resume(
     if not success:
         raise HTTPException(status_code=404, detail="Resume not found or not yours")
     return {"message": "Resume deleted successfully"}
-
 
 @router.post("/{resume_id}/set-primary")
 def make_primary_resume(

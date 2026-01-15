@@ -70,6 +70,7 @@ class AccessToken(BaseModel):
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
+    user_data: Optional[UserResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 

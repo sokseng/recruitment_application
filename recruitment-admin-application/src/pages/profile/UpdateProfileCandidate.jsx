@@ -7,15 +7,97 @@ import {
   IconButton,
   Stack,
   Avatar,
+  Snackbar,
+  Alert 
 } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
-import AddIcon from '@mui/icons-material/Add'
-import LocationOnIcon from '@mui/icons-material/LocationOn'
-import EmailIcon from '@mui/icons-material/Email'
+import { useState } from 'react'
+import {
+  Edit as EditIcon,
+  Add as AddIcon,
+  LocationOn as LocationOnIcon,
+  Email as EmailIcon,
+  UploadFile as UploadFileIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material'
+import useAuthStore from '../../store/useAuthStore'
+import api from '../../services/api'
 
 export default function CandidateProfileDashboard() {
+  const { user_data } = useAuthStore()
+  const [cvFile, setCvFile] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [openSnackbar, setOpenSnackbar] = useState(false)
+  const [message, setMessage] = useState('')
+  const [severity, setSeverity] = useState('error')
+
+  // ----- CV Upload -----
+  const handleCvChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+    ]
+
+    if (!allowed.includes(file.type)) {
+      return alert('Only PDF, DOC, DOCX, JPEG, PNG, GIF allowed')
+    }
+
+    if (file.size > 5 * 1024 * 1024) return alert('Max file size is 5MB')
+
+    setCvFile(file)
+  }
+
+  const handleUpload = async () => {
+    if (!cvFile) return
+    const formData = new FormData()
+    formData.append('resume_type', 'Upload')       
+    formData.append('resume_content', '')           
+    formData.append('recommendation_letter', '') 
+    formData.append('is_primary', true)          
+    formData.append('resume_file', cvFile) 
+
+    try {
+      setLoading(true)
+      const response = await api.post('/candidate/resumes/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setMessage('CV uploaded successfully')
+      setSeverity('success')
+      setOpenSnackbar(true)
+      setCvFile(null)
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Upload failed')
+      setSeverity('error')
+      setOpenSnackbar(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const summaryFields = {
+    Gender: user_data?.gender,
+    'Date of Birth': user_data?.date_of_birth,
+    Phone: user_data?.phone,
+    Status: user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
+  }
+
   return (
-    <Box sx={{ mx: 'auto', py: 4, px: 2, bgcolor: '#f0f2f5', borderRadius: 3, minHeight: '100vh' }}>
+    <Box
+      sx={{
+        mx: 'auto',
+        py: 4,
+        px: 2,
+        bgcolor: '#f0f2f5',
+        minHeight: '100vh',
+        borderRadius: 3,
+      }}
+    >
       {/* Profile Header */}
       <Paper
         elevation={3}
@@ -38,19 +120,23 @@ export default function CandidateProfileDashboard() {
               boxShadow: '0 2px 6px rgb(0 0 0 / 0.15)',
             }}
           >
-            B
+            {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
           </Avatar>
           <Box>
-            <Typography variant="h5" fontWeight="700" mb={0.3}>
-              BRO Rathana
+            <Typography variant="h5" fontWeight={700} mb={0.3}>
+              {user_data?.user_name}
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mb={0.5}>
-              <LocationOnIcon fontSize="small" />
-              <Typography variant="body2">Cambodia, Phnom Penh</Typography>
-            </Stack>
+
+            {user_data?.address && (
+              <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mb={0.5}>
+                <LocationOnIcon fontSize="small" />
+                <Typography variant="body2">{user_data.address}</Typography>
+              </Stack>
+            )}
+
             <Stack direction="row" spacing={1} alignItems="center" color="text.secondary">
               <EmailIcon fontSize="small" />
-              <Typography variant="body2">nirout.rathana0001@gmail.com</Typography>
+              <Typography variant="body2">{user_data?.email}</Typography>
             </Stack>
           </Box>
         </Stack>
@@ -58,87 +144,99 @@ export default function CandidateProfileDashboard() {
         <Divider sx={{ mb: 3 }} />
 
         {/* Summary Fields */}
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={{ xs: 1.5, sm: 4 }}
-          justifyContent="space-between"
-          flexWrap="wrap"
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 3,
+          }}
         >
-          {[
-            ['Employment Status', 'Open to Work'],
-            ['Experience Level', 'Entry Level'],
-            ['Job Function or Category', 'IT / Hardware, Software'],
-            ['Expected Salary', '$ -'],
-          ].map(([label, value]) => (
-            <Box key={label} sx={{ minWidth: 150 }}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+          {Object.entries(summaryFields).map(([label, value]) => (
+            <Box key={label}>
+              <Typography variant="subtitle2" color="text.secondary">
                 {label}
               </Typography>
-              <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                {value}
+              <Typography variant="body1" fontWeight={500}>
+                {value || 'Not set'}
               </Typography>
             </Box>
           ))}
-        </Stack>
+        </Box>
       </Paper>
 
-      {/* Sections */}
-      <SectionWithAddButton
-        title="Overview"
-        description="About BRO Rathana. Career Objectives."
-        buttonText="Edit Overview"
-        onAdd={() => alert('Edit Overview')}
-        isEdit
-      />
+      {/* CV Upload */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3,
+          bgcolor: '#fff',
+          boxShadow: '0 2px 8px rgb(0 0 0 / 0.05)',
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} mb={2}>
+          Resume / CV
+        </Typography>
 
-      <SectionWithAddButton
-        title="Work Experiences"
-        description="Add Work Experience to be found by more Employers"
-        buttonText="Add Work Experience"
-        onAdd={() => alert('Add Work Experience')}
-      />
+        {!cvFile ? (
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            sx={{ width: '100%', borderStyle: 'dashed', p: 2, textTransform: 'none' }}
+          >
+            Upload CV (PDF, DOC, DOCX)
+            <input hidden type="file" onChange={handleCvChange} />
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <UploadFileIcon color="primary" />
+              <Typography>{cvFile.name}</Typography>
+            </Stack>
 
-      <SectionWithAddButton
-        title="Education & Qualifications"
-        description="Add Education to be found by more Employers"
-        buttonText="Add Education"
-        onAdd={() => alert('Add Education')}
-      />
+            <Stack direction="row" spacing={1}>
+              <IconButton onClick={() => setCvFile(null)} color="error">
+                <DeleteIcon />
+              </IconButton>
+              <Button variant="contained" onClick={handleUpload} disabled={loading}>
+                {loading ? 'Uploading...' : 'Upload'}
+              </Button>
+            </Stack>
+          </Stack>
+        )}
+      </Paper>
 
-      <SectionWithAddButton
-        title="Skills"
-        description="Add Skills to be found by more Employers"
-        buttonText="Add Skill"
-        onAdd={() => alert('Add Skill')}
-      />
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={2000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={severity} variant="filled">
+          {message}
+        </Alert>
+      </Snackbar>
 
-      <SectionWithAddButton
-        title="Languages"
-        description="Add Languages to be found by more Employers"
-        buttonText="Add Language"
-        onAdd={() => alert('Add Language')}
-        isEdit
-      />
-
-      <SectionWithAddButton
-        title="References"
-        description="Add References to make your profile look more professional"
-        buttonText="Add Reference"
-        onAdd={() => alert('Add Reference')}
-      />
-
-      <SectionWithAddButton
-        title="Preferred Industries to work"
-        description="Add Preferred Industries to make your profile look more professional"
-        buttonText="Add Preferred Industry"
-        onAdd={() => alert('Add Preferred Industry')}
-        isEdit
-      />
+      {/* Profile Sections */}
+      {[
+        { title: 'Overview', description: `About ${user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
+        { title: 'Work Experiences', description: 'Add Work Experience to be found by more Employers', buttonText: 'Add Work Experience' },
+        { title: 'Education & Qualifications', description: 'Add Education to be found by more Employers', buttonText: 'Add Education' },
+        { title: 'Skills', description: 'Add Skills to be found by more Employers', buttonText: 'Add Skill' },
+        { title: 'Languages', description: 'Add Languages to be found by more Employers', buttonText: 'Add Language', isEdit: true },
+        { title: 'References', description: 'Add References to make your profile look more professional', buttonText: 'Add Reference' },
+        { title: 'Preferred Industries to work', description: 'Add Preferred Industries to make your profile look more professional', buttonText: 'Add Preferred Industry', isEdit: true },
+      ].map((section) => (
+        <Section key={section.title} {...section} />
+      ))}
     </Box>
   )
 }
 
-function SectionWithAddButton({ title, description, buttonText, onAdd, isEdit }) {
+// Reusable Section Component
+function Section({ title, description, buttonText, onAdd, isEdit }) {
   return (
     <Paper
       elevation={2}
@@ -147,53 +245,37 @@ function SectionWithAddButton({ title, description, buttonText, onAdd, isEdit })
         mb: 3,
         borderRadius: 3,
         bgcolor: '#fff',
-        position: 'relative',
         boxShadow: '0 2px 8px rgb(0 0 0 / 0.05)',
       }}
     >
       <Typography
         variant="h6"
-        fontWeight="700"
+        fontWeight={700}
         mb={1}
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
       >
         {title}
         {isEdit && (
-          <IconButton
-            size="small"
-            color="primary"
-            aria-label={`Edit ${title}`}
-            sx={{
-              '&:hover': {
-                bgcolor: 'rgba(59, 89, 152, 0.1)',
-              },
-              transition: 'background-color 0.3s',
-            }}
-            onClick={onAdd}
-          >
+          <IconButton size="small" color="primary" onClick={onAdd || (() => alert(title))}>
             <EditIcon fontSize="small" />
           </IconButton>
         )}
       </Typography>
 
-      <Typography variant="body2" color="text.secondary" mb={2} sx={{ lineHeight: 1.5 }}>
+      <Typography variant="body2" color="text.secondary" mb={2}>
         {description}
       </Typography>
 
       {!isEdit && (
         <Button
           variant="contained"
-          color="primary"
           startIcon={<AddIcon />}
-          onClick={onAdd}
+          onClick={onAdd || (() => alert(title))}
           sx={{
             textTransform: 'none',
             fontWeight: 600,
             boxShadow: '0 2px 8px rgb(59 89 152 / 0.2)',
-            '&:hover': {
-              bgcolor: '#2d4373',
-              boxShadow: '0 4px 12px rgb(59 89 152 / 0.4)',
-            },
+            '&:hover': { boxShadow: '0 4px 12px rgb(59 89 152 / 0.4)' },
             borderRadius: 2,
             px: 3,
           }}
