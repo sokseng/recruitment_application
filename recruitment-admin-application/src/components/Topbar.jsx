@@ -27,7 +27,6 @@ import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import AccountCircle from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
 import Download from '@mui/icons-material/Download'
 import Settings from '@mui/icons-material/Settings'
@@ -48,7 +47,9 @@ export default function Topbar() {
     setAccessToken,
     clearAccessToken,
     setUserType,
-    user_type
+    user_type,
+    setUserData,
+    user_data
   } = useAuthStore()
 
   const [openLogin, setOpenLogin] = useState(false)
@@ -68,7 +69,12 @@ export default function Topbar() {
   const handleProfileClick = (event) => {
     setProfileAnchor(event.currentTarget)
   }
-
+  const [openChangePassword, setOpenChangePassword] = useState(false)
+  const [showPass, setShowPass] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  })
   const handleProfileClose = () => {
     setProfileAnchor(null)
   }
@@ -98,10 +104,6 @@ export default function Topbar() {
       { label: 'Candidate', path: '/' },
     ],
   }
-  const user = {
-    name: 'BRO rathana',
-    email: 'nim.rathana9999@gmail.com',
-  }
 
   const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest
 
@@ -125,6 +127,7 @@ export default function Topbar() {
       // save token
       setAccessToken(res.data.access_token)
       setUserType(res.data.user_type)
+      setUserData(res.data)
       setProfileAnchor(null)
       setOpenLogin(false)
       setFormData({ email: '', password: '' })
@@ -212,6 +215,47 @@ export default function Topbar() {
     }
   };
 
+  const handleSubmitChangePassword = async (e) => {
+    e.preventDefault()
+
+    const formData = new FormData(e.currentTarget)
+
+    const old_password = formData.get('old_password')
+    const new_password = formData.get('new_password')
+    const confirm_password = formData.get('confirm_password')
+
+    // Basic validation
+    if (!old_password || !new_password || !confirm_password) {
+      setSeverity('error')
+      setMessage('All fields are required')
+      setOpenSnackbar(true)
+      return
+    }
+
+    if (new_password !== confirm_password) {
+      setSeverity('error')
+      setMessage('New passwords do not match')
+      setOpenSnackbar(true)
+      return
+    }
+
+    try {
+      await api.post('/user/change-password', {
+        old_password,
+        new_password,
+      })
+
+      setSeverity('success')
+      setMessage('Password changed successfully')
+      setOpenSnackbar(true)
+      setOpenChangePassword(false)
+    } catch (err) {
+      setSeverity('error')
+      setMessage(err.response?.data?.detail || 'Failed to change password')
+      setOpenSnackbar(true)
+    }
+  }
+
   /* =====================
      Drawer Content
      ===================== */
@@ -285,53 +329,58 @@ export default function Topbar() {
           {/* 📱 Mobile Right Action */}
           {isMobile && access_token && (
             <>
-                  {/* Profile Avatar & Menu */}
-                  <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                    <Avatar>{user.name.charAt(0)}</Avatar>
-                  </IconButton>
-                  <Menu
-                    anchorEl={profileAnchor}
-                    open={Boolean(profileAnchor)}
-                    onClose={handleProfileClose}
-                    PaperProps={{ sx: { width: 280 } }}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  >
-                    <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {user.name}
-                      </Typography>
-                      <Typography variant="body2" color="primary.main">
-                        {user.email}
-                      </Typography>
-                    </Box>
-                    <MenuItem>
-                      <ListItemIcon>
-                        <Settings fontSize="small" />
-                      </ListItemIcon>
-                      Update Profile
-                    </MenuItem>
-                    <MenuItem>
-                      <ListItemIcon>
-                        <Download fontSize="small" />
-                      </ListItemIcon>
-                      Download CV Templates
-                    </MenuItem>
-                    <MenuItem>
-                      <ListItemIcon>
-                        <VpnKey fontSize="small" />
-                      </ListItemIcon>
-                      Change Password
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                      <ListItemIcon>
-                        <Logout fontSize="small" color='error' />
-                      </ListItemIcon>
-                      Log out
-                    </MenuItem>
-                  </Menu>
-                </>
+              {/* Profile Avatar & Menu */}
+              <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
+                <Avatar>{user_data?.user_name ? user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
+              </IconButton>
+              <Menu
+                anchorEl={profileAnchor}
+                open={Boolean(profileAnchor)}
+                onClose={handleProfileClose}
+                PaperProps={{ sx: { width: 280 } }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {user_data.user_name}
+                  </Typography>
+                  <Typography variant="body2" color="primary.main">
+                    {user_data.email}
+                  </Typography>
+                </Box>
+                <MenuItem>
+                  <ListItemIcon>
+                    <Settings fontSize="small" />
+                  </ListItemIcon>
+                  Update Profile
+                </MenuItem>
+                <MenuItem>
+                  <ListItemIcon>
+                    <Download fontSize="small" />
+                  </ListItemIcon>
+                  Download CV Templates
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setOpenChangePassword(true)
+                    handleProfileClose()
+                  }}
+                >
+                  <ListItemIcon>
+                    <VpnKey fontSize="small" />
+                  </ListItemIcon>
+                  Change Password
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                  <ListItemIcon>
+                    <Logout fontSize="small" color='error' />
+                  </ListItemIcon>
+                  Log out
+                </MenuItem>
+              </Menu>
+            </>
           )}
 
 
@@ -358,7 +407,7 @@ export default function Topbar() {
                 <>
                   {/* Profile Avatar & Menu */}
                   <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                    <Avatar>{user.name.charAt(0)}</Avatar>
+                    <Avatar>{user_data?.user_name ? user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
                   </IconButton>
                   <Menu
                     anchorEl={profileAnchor}
@@ -370,10 +419,10 @@ export default function Topbar() {
                   >
                     <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Typography variant="subtitle1" fontWeight="bold">
-                        {user.name}
+                        {user_data.user_name}
                       </Typography>
                       <Typography variant="body2" color="primary.main">
-                        {user.email}
+                        {user_data.email}
                       </Typography>
                     </Box>
                     <MenuItem>
@@ -388,7 +437,12 @@ export default function Topbar() {
                       </ListItemIcon>
                       Download CV Templates
                     </MenuItem>
-                    <MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setOpenChangePassword(true)
+                        handleProfileClose()
+                      }}
+                    >
                       <ListItemIcon>
                         <VpnKey fontSize="small" />
                       </ListItemIcon>
@@ -426,7 +480,6 @@ export default function Topbar() {
 
         </Toolbar>
       </AppBar>
-
 
       {/* DRAWER */}
       <Drawer
@@ -504,7 +557,6 @@ export default function Topbar() {
         </DialogContent>
       </Dialog>
 
-
       {/* REGISTER MODAL */}
       <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
         <DialogTitle>Sign Up</DialogTitle>
@@ -578,6 +630,94 @@ export default function Topbar() {
           <Button onClick={handleCloseRegisterForm}>Cancel</Button>
           <Button type="submit" variant="contained" disableElevation form="register-form">
             Register
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openChangePassword}
+        onClose={() => setOpenChangePassword(false)}
+        maxWidth="xs"
+        fullWidth fullScreen={isMobile} scroll="paper"
+      >
+        <DialogTitle>Change Password</DialogTitle>
+
+        <DialogContent dividers>
+          <Stack spacing={2} component="form" onSubmit={handleSubmitChangePassword} id="change-password-form">
+            <TextField
+              size="small"
+              label="Old Password"
+              name="old_password"
+              type={showPass.old ? 'text' : 'password'}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        setShowPass((p) => ({ ...p, old: !p.old }))
+                      }
+                    >
+                      {showPass.old ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
+
+            <TextField
+              size="small"
+              label="New Password"
+              name="new_password"
+              type={showPass.new ? 'text' : 'password'}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        setShowPass((p) => ({ ...p, new: !p.new }))
+                      }
+                    >
+                      {showPass.new ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
+
+            <TextField
+              size="small"
+              label="Confirm New Password"
+              name="confirm_password"
+              type={showPass.confirm ? 'text' : 'password'}
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        setShowPass((p) => ({ ...p, confirm: !p.confirm }))
+                      }
+                    >
+                      {showPass.confirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
+          <Button onClick={() => setOpenChangePassword(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" disableElevation form="change-password-form">
+            Update Password
           </Button>
         </DialogActions>
       </Dialog>
