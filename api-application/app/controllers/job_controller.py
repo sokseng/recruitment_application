@@ -5,9 +5,8 @@ from app.models.job_model import Job
 from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
 
 
-def create_job(db: Session, job_data: JobCreate, employer_id: int) -> JobOut:
+def create_job(db: Session, job_data: JobCreate) -> JobOut:
     db_job = Job(
-        employer_id=employer_id,
         **job_data.model_dump(exclude_none=True)
     )
     db.add(db_job)

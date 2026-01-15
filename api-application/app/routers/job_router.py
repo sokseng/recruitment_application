@@ -19,7 +19,7 @@ def create_new_job(
 ):
     # In real project → check if user has employer profile
     # For now we assume current_user_id is employer_id
-    return create_job(db, job_data, current_user_id)
+    return create_job(db, job_data)
 
 
 @router.get("/my-jobs", response_model=List[JobOut])
