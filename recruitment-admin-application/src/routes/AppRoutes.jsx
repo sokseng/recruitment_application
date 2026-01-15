@@ -4,6 +4,7 @@ import Dashboard from '../pages/Dashboard'
 import AdminDashboard from '../pages/AdminDashboard'
 import EmployerDashboard from '../pages/EmployerDashboard'
 import CandidateDashboard from '../pages/CandidateDashboard'
+import UpdateProfile from '../pages/profile/UpdateProfile'
 import MainLayout from '../layouts/MainLayout'
 
 export default function AppRoutes() {
@@ -34,6 +35,14 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <CandidateDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/update-profile"
+          element={
+            <ProtectedRoute>
+              <UpdateProfile />
             </ProtectedRoute>
           }
         />

@@ -349,7 +349,12 @@ export default function Topbar() {
                     {user_data.email}
                   </Typography>
                 </Box>
-                <MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    navigate('/update-profile')
+                    handleProfileClose()
+                  }}
+                >
                   <ListItemIcon>
                     <Settings fontSize="small" />
                   </ListItemIcon>
@@ -425,7 +430,12 @@ export default function Topbar() {
                         {user_data.email}
                       </Typography>
                     </Box>
-                    <MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        navigate('/update-profile')
+                        handleProfileClose()
+                      }}
+                    >
                       <ListItemIcon>
                         <Settings fontSize="small" />
                       </ListItemIcon>
@@ -717,7 +727,7 @@ export default function Topbar() {
             Cancel
           </Button>
           <Button type="submit" variant="contained" disableElevation form="change-password-form">
-            Update Password
+            Update
           </Button>
         </DialogActions>
       </Dialog>
