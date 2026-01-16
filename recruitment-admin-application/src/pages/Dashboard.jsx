@@ -1,18 +1,15 @@
 // src/pages/Dashboard.jsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
   Typography,
   Avatar,
   Stack,
-  Chip,
   IconButton,
   Divider,
   CircularProgress,
   Alert,
-  Tabs,
-  Tab,
   Button,
   TextField,
   InputAdornment,
@@ -26,6 +23,8 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import EmailIcon from '@mui/icons-material/Email';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../services/api';
+import ReactQuill from 'react-quill-new';
+import 'quill/dist/quill.snow.css';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -255,10 +254,10 @@ export default function Dashboard() {
               {[
                 ['Posting Date', selectedJob.posting_date],
                 ['Closing Date', selectedJob.closing_date],
-                ['Salary Range', selectedJob.salary_range || '$700–800'],
+                ['Salary Range', selectedJob.salary_range + " $"],
                 ['Job Type', selectedJob.job_type],
-                ['Seniority Level', selectedJob.seniority || 'Experienced Level'],
-                ['Job Location', selectedJob.location || 'Phnom Penh'],
+                ['Level', selectedJob.level],
+                ['Job Location', selectedJob.location],
               ].map(([label, value]) => (
                 <Stack direction="row" key={label} spacing={2}>
                   <Typography fontWeight={600} minWidth={140}>
@@ -275,9 +274,40 @@ export default function Dashboard() {
 
             <Divider sx={{ my: 3 }} />
 
-            <Typography sx={{ whiteSpace: 'pre-line', lineHeight: 1.8 }}>
-              {selectedJob.job_description || 'No description available.'}
-            </Typography>
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Job Description
+              </Typography>
+
+              <Box
+                sx={{
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  bgcolor: 'background.paper',
+                  '& .ql-toolbar': { display: 'none' },           // hide toolbar in view mode
+                  '& .ql-container': {
+                    border: 'none',
+                    minHeight: 'auto',
+                  },
+                  '& .ql-editor': {
+                    minHeight: '120px',
+                    px: 2.5,
+                    py: 2,
+                    fontSize: '0.96rem',
+                    lineHeight: 1.7,
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={selectedJob.job_description || ''}
+                  readOnly={true}
+                  modules={{ toolbar: false }}           // no toolbar
+                />
+              </Box>
+            </Box>
           </Box>
         </>
       ) : (

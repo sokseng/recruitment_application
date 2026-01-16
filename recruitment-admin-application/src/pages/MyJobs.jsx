@@ -20,7 +20,6 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Grid,
   useTheme,
   useMediaQuery,
   InputAdornment,
@@ -34,6 +33,11 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import DescriptionIcon from "@mui/icons-material/Description";
+
+// Rich text editor
+import ReactQuill from 'react-quill-new';
+import 'quill/dist/quill.snow.css';
+
 import api from "../services/api";
 
 const JOB_TYPES = [
@@ -41,6 +45,14 @@ const JOB_TYPES = [
   { value: "Part-time", label: "Part-time" },
   { value: "Contract", label: "Contract" },
   { value: "Internship", label: "Internship" },
+];
+
+const JOB_LEVELS = [
+  { value: "Entry Level", label: "Entry Level" },
+  { value: "Junior", label: "Junior" },
+  { value: "Mid Level", label: "Mid Level" },
+  { value: "Senior", label: "Senior" },
+  { value: "Lead", label: "Lead" },
 ];
 
 const JOB_STATUSES_CREATE = [
@@ -62,14 +74,6 @@ function JobFormDialog({
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const JOB_LEVELS = [
-    { value: "Entry Level", label: "Entry Level" },
-    { value: "Junior", label: "Junior" },
-    { value: "Mid Level", label: "Mid Level" },
-    { value: "Senior", label: "Senior" },
-    { value: "Lead", label: "Lead" },
-  ];
 
   const defaultData = {
     job_title: "",
@@ -112,9 +116,13 @@ function JobFormDialog({
     e.preventDefault();
     setError(null);
 
+    // Strip HTML tags for basic required check
+    const textOnly = (formData.job_description || "")
+      .replace(/<[^>]+>/g, "")
+      .trim();
+
     if (!formData.job_title?.trim()) return setError("Job title is required");
-    if (!formData.job_description?.trim())
-      return setError("Description is required");
+    if (!textOnly) return setError("Description is required");
 
     setLoading(true);
 
@@ -124,7 +132,7 @@ function JobFormDialog({
         position_number: formData.position_number
           ? Number(formData.position_number)
           : undefined,
-        closing_date: formData.closing_date,
+        closing_date: formData.closing_date || undefined,
       };
 
       let res;
@@ -172,7 +180,7 @@ function JobFormDialog({
           position: "relative",
         }}
       >
-        <Typography variant={isMobile ? "h7" : "h6"} fontWeight="bold">
+        <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
           {title}
         </Typography>
         <IconButton
@@ -200,7 +208,7 @@ function JobFormDialog({
               gap: 2,
             }}
           >
-            {/* Job Title (full width) */}
+            {/* Job Title */}
             <TextField
               fullWidth
               required
@@ -234,7 +242,8 @@ function JobFormDialog({
                 ))}
               </Select>
             </FormControl>
-            {/* ── NEW: Job Level ──────────────────────────────────── */}
+
+            {/* Job Level */}
             <FormControl fullWidth>
               <InputLabel>Level</InputLabel>
               <Select
@@ -296,7 +305,7 @@ function JobFormDialog({
               name="salary_range"
               value={formData.salary_range || ""}
               onChange={handleChange}
-              placeholder="Please Enter Salary Range"
+              placeholder="e.g. $2000 - $3500"
               size="small"
               InputProps={{
                 startAdornment: (
@@ -313,7 +322,7 @@ function JobFormDialog({
               label="Application Closing Date"
               name="closing_date"
               type="date"
-              value={formData.closing_date}
+              value={formData.closing_date || ""}
               onChange={handleChange}
               InputLabelProps={{ shrink: true }}
               size="small"
@@ -326,15 +335,14 @@ function JobFormDialog({
               }}
             />
 
-            {/* Location (full width) */}
+            {/* Location */}
             <TextField
               fullWidth
               label="Location"
               name="location"
               value={formData.location || ""}
               onChange={handleChange}
-              placeholder="Please enter location"
-              sx={{ gridColumn: "1 / -1" }}
+              placeholder="e.g. Phnom Penh, Cambodia"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -345,30 +353,62 @@ function JobFormDialog({
               size="small"
             />
 
-            {/* Job Description (full width) */}
-            <TextField
-              fullWidth
-              required
-              label="Job Description"
-              name="job_description"
-              value={formData.job_description || ""}
-              onChange={handleChange}
-              multiline
-              size="small"
-              rows={6}
-              placeholder="Please enter job description"
-              sx={{ gridColumn: "1 / -1" }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    sx={{ alignSelf: "flex-start", mt: 1.5, ml: 0.5 }}
-                  >
-                    <DescriptionIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            {/* Job Description - Rich Text Editor */}
+            <Box sx={{ gridColumn: "1 / -1" }}>
+              <FormControl fullWidth>
+                <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
+                  Job Description *
+                </InputLabel>
+
+                <Box
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    "& .ql-toolbar": {
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      bgcolor: "grey.50",
+                    },
+                    "& .ql-container": {
+                      minHeight: 180,
+                      maxHeight: 400,
+                      overflowY: "auto",
+                      fontFamily: theme.typography.fontFamily,
+                      fontSize: "0.95rem",
+                    },
+                    "& .ql-editor": {
+                      minHeight: 160,
+                      px: 2,
+                      py: 1.5,
+                    },
+                  }}
+                >
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.job_description || ""}
+                    onChange={(content) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        job_description: content,
+                      }))
+                    }
+                    placeholder="Describe responsibilities, requirements, benefits, qualifications..."
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        [{ align: [] }],
+                        ["link"],
+                        ["clean"],
+                      ],
+                    }}
+                  />
+                </Box>
+              </FormControl>
+            </Box>
           </Box>
         </form>
       </DialogContent>
@@ -444,12 +484,10 @@ export default function MyJobs() {
 
   const handleFormSuccess = (updatedJob) => {
     if (editingJob) {
-      // update
       setJobs((prev) =>
         prev.map((j) => (j.pk_id === updatedJob.pk_id ? updatedJob : j))
       );
     } else {
-      // create → refresh full list (safest)
       fetchMyJobs();
     }
   };
@@ -500,9 +538,7 @@ export default function MyJobs() {
           startIcon={<AddIcon />}
           onClick={openCreate}
           fullWidth={{ xs: true, sm: false }}
-          sx={{
-            borderRadius: 3,
-          }}
+          sx={{ borderRadius: 3 }}
         >
           Post
         </Button>
@@ -514,7 +550,7 @@ export default function MyJobs() {
         </Alert>
       )}
 
-      {/* JOBS GRID – compact cards */}
+      {/* JOBS GRID */}
       <Box
         sx={{
           display: "grid",
@@ -528,64 +564,6 @@ export default function MyJobs() {
         }}
       >
         {jobs.map((job) => (
-          // <Card
-          //   key={job.pk_id}
-          //   variant="outlined"
-          //   sx={{
-          //     borderRadius: 2,
-          //     height: 'fit-content',
-          //     minHeight: 220,
-          //     display: 'flex',
-          //     flexDirection: 'column',
-          //     boxShadow: 1,
-          //   }}
-          // >
-          //   <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-          //     <Typography variant="subtitle1" color='primary' fontWeight={600} noWrap>
-          //       {job.job_title}
-          //     </Typography>
-
-          //     <Stack direction="row" spacing={1} my={1} flexWrap="wrap">
-          //       <Chip label={job.job_type} size="small" variant="outlined" />
-          //       <Chip label={job.level} size="small" color="primary" variant="outlined" />
-          //       <Chip
-          //         label={job.status}
-          //         size="small"
-          //         color={
-          //           job.status === 'Open'
-          //             ? 'success'
-          //             : job.status === 'Closed'
-          //             ? 'error'
-          //             : 'default'
-          //         }
-          //       />
-          //     </Stack>
-
-          //     <Typography variant="body2" color="text.secondary" noWrap>
-          //       {job.location || '—'}
-          //     </Typography>
-
-          //     <Typography variant="body2" color="text.secondary">
-          //       {job.salary_range || 'Negotiable'}
-          //     </Typography>
-
-          //     <Typography variant="caption" color="text.disabled" mt={1.5} display="block">
-          //       Posted {new Date(job.created_at).toLocaleDateString()}
-          //     </Typography>
-          //   </CardContent>
-
-          //   <CardActions sx={{ justifyContent: 'flex-end'}}>
-          //     <IconButton size="small" onClick={() => openEdit(job)}>
-          //       <EditIcon fontSize="small" sx={{color: 'teal'}} />
-          //     </IconButton>
-
-          //     {job.status !== 'Closed' && (
-          //       <IconButton size="small" color="warning" onClick={() => openClose(job)}>
-          //         <CloseIcon fontSize="small" />
-          //       </IconButton>
-          //     )}
-          //   </CardActions>
-          // </Card>
           <Card
             key={job.pk_id}
             variant="outlined"
@@ -599,7 +577,7 @@ export default function MyJobs() {
             }}
           >
             <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-              {/* Title + Status row */}
+              {/* Title + Status */}
               <Box
                 sx={{
                   display: "flex",
@@ -612,12 +590,12 @@ export default function MyJobs() {
                   variant="subtitle1"
                   color="primary"
                   fontWeight={600}
-                  sx={{ pr: 2 }} // small padding to avoid touching right side
+                  sx={{ pr: 2 }}
+                  noWrap
                 >
                   {job.job_title}
                 </Typography>
 
-                {/* Status moved to RIGHT */}
                 <Chip
                   label={job.status}
                   size="small"
@@ -630,13 +608,13 @@ export default function MyJobs() {
                   }
                   sx={{
                     fontWeight: 600,
-                    minWidth: 80, // consistent width
+                    minWidth: 80,
                     justifyContent: "center",
                   }}
                 />
               </Box>
 
-              {/* Other chips (type + level) stay below title */}
+              {/* Type & Level */}
               <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
                 <Chip label={job.job_type} size="small" variant="outlined" />
                 {job.level && (
@@ -696,8 +674,8 @@ export default function MyJobs() {
           </Box>
         )}
       </Box>
-      {/* ── DIALOGS ──────────────────────────────────────── */}
 
+      {/* DIALOGS */}
       <JobFormDialog
         open={openFormDialog}
         onClose={() => {
@@ -709,7 +687,6 @@ export default function MyJobs() {
         isEdit={!!editingJob}
       />
 
-      {/* Close Confirmation */}
       <Dialog open={openCloseDialog} onClose={() => setOpenCloseDialog(false)}>
         <DialogTitle>Close Job Posting</DialogTitle>
         <DialogContent>
