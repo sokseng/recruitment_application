@@ -38,6 +38,16 @@ class UserCreate(BaseModel):
 
     model_config = ConfigDict(exclude_none=False)
 
+class UpdateUserProfile(BaseModel):
+    pk_id: Optional[int] = None
+    user_name: str
+    email: Optional[str] = None
+    gender: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    address: Optional[str] = None
+
+    model_config = ConfigDict(exclude_none=False)
 
 class UserResponse(BaseModel):
     pk_id: int
@@ -86,6 +96,16 @@ class SelectClinic(BaseModel):
 class ChangePassword(BaseModel):
     old_password: str
     new_password: str
+
+
+class ResponseUserProfile(BaseModel):
+    pk_id: int
+    user_name: str
+    email: str
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
 
 class UpdateHospital(BaseModel):
     id: int

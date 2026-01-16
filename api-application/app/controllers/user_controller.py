@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
-from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword
+from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import timedelta, datetime, timezone
@@ -197,3 +197,24 @@ def change_password(db: Session, user_id: int, data: ChangePassword):
     user.password = bcrypt_context.hash(data.new_password)
     db.commit()
     return True
+
+
+#get user by id
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(User).filter(User.pk_id == user_id).first()
+
+
+#update user profile
+def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile):
+    user = db.query(User).filter(User.pk_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.user_name = user_data.user_name
+    user.phone = user_data.phone
+    user.date_of_birth = user_data.date_of_birth
+    user.gender = user_data.gender
+    user.address = user_data.address
+    db.commit()
+    db.refresh(user)
+    return user

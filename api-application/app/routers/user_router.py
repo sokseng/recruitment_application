@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header
 from sqlalchemy.orm import Session
-from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword
+from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword, ResponseUserProfile, UpdateUserProfile
 from app.controllers import user_controller
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
@@ -102,6 +102,18 @@ def logout(
 @router.post("/change-password")
 def change_password(data: ChangePassword, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     return user_controller.change_password(db, current_user_id, data)
+
+
+#get user by id
+@router.get("/profile", response_model=ResponseUserProfile)
+def get_user_by_id(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.get_user_by_id(db, current_user_id)
+
+
+#update user profile
+@router.put("/profile", response_model=ResponseUserProfile)
+def update_user_profile(data: UpdateUserProfile, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.update_user_profile(db, current_user_id, data)
 
 
 

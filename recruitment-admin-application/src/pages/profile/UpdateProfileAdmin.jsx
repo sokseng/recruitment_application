@@ -3,28 +3,30 @@ import {
     Button,
     TextField,
     Typography,
-    Avatar,
     Divider,
     Stack,
     MenuItem,
     Paper,
-    Card,
-    CardContent,
+    Snackbar,
+    Alert,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
+import useAuthStore from "../../store/useAuthStore";
 
 const SectionBox = ({ title, children }) => (
     <Paper
         elevation={0}
         sx={{
-            p: 1,
+            p: 2,
             borderRadius: 3,
             border: "1px solid",
             borderColor: "divider",
             backgroundColor: "#fafafa",
+            mb: 2,
         }}
     >
-        <Typography variant="subtitle1" fontWeight={600} mb={1}>
+        <Typography variant="h6" fontWeight={600} mb={2}>
             {title}
         </Typography>
         <Divider sx={{ mb: 2 }} />
@@ -40,166 +42,212 @@ const UpdateProfileAdmin = () => {
         gender: "",
         date_of_birth: "",
         address: "",
-        company_name: "",
-        company_email: "",
-        company_contact: "",
-        company_address: "",
-        company_description: "",
-        company_website: "",
     };
 
     const [formData, setFormData] = useState(initialFormData);
-    const [logoPreview, setLogoPreview] = useState(null);
-    const [logoFile, setLogoFile] = useState(null);
+    const [severity, setSeverity] = useState('error')
+    const [openSnackbar, setOpenSnackbar] = useState(false)
+    const [message, setMessage] = useState('')
+    const {
+        setUserData,
+    } = useAuthStore()
+
+    // Load data from API on mount
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await api.get("/user/profile");
+                const data = response.data;
+
+                setFormData({
+                    user_name: data.user_name || "",
+                    email: data.email || "",
+                    phone: data.phone || "",
+                    gender: data.gender || "",
+                    date_of_birth: data.date_of_birth || "",
+                    address: data.address || "",
+                });
+                
+            } catch (error) {
+                console.error("Failed to load profile:", error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleLogoChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        setLogoPreview(URL.createObjectURL(file));
-        setLogoFile(file);
-    };
-
-    const handleResetLogo = () => {
-        setLogoPreview(null);
-    };
-
     const handleResetForm = () => {
         setFormData(initialFormData);
-        setLogoPreview(null);
     };
 
-    const handleSubmit = (e) => {
-        debugger;
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Prepare form data for API (including file)
-        const dataToSubmit = new FormData();
-
-        // Append all fields
-        Object.entries(formData).forEach(([key, value]) => {
-            dataToSubmit.append(key, value);
-        });
-
-        // Append logo if exists
-        if (logoFile) {
-            dataToSubmit.append("logo", logoFile);
-        }
-
-        // Example: log all entries
-        for (let pair of dataToSubmit.entries()) {
-            console.log(pair[0], pair[1]);
+        try {
+            const response = await api.put("/user/profile", formData);
+            if (response.status === 200) {
+                setOpenSnackbar(true)
+                setSeverity("success")
+                setMessage('Update Successfully!')
+                setUserData(response.data)
+            }
+            
+        } catch (error) {
+            setOpenSnackbar(true)
+            setSeverity("error")
+            setMessage(error.response?.data?.detail || 'Update failed')
         }
     };
 
     return (
-        <Box
-            sx={{
-                maxWidth: 1200,
-                mx: "auto",
-                p: 2,
-                bgcolor: "#f0f2f5",
-                borderRadius: 3,
-            }}
-        >
-            <Card elevation={4} sx={{ borderRadius: 4 }}>
-                <CardContent>
-                    {/* Wrap in form */}
-                    <form onSubmit={handleSubmit}>
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                                gap: 3,
-                            }}
-                        >
+        <>
+            {/* Snackbar */}
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={2000}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert severity={severity} variant="filled">
+                    {message}
+                </Alert>
+            </Snackbar>
 
-                            {/* Personal Info */}
-                            <SectionBox title="Personal Information">
-                                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+            <Box
+                sx={{
+                    minHeight: "auto",
+                    bgcolor: "#f0f2f5",
+                    py: { xs: 4, md: 6 },
+                    px: { xs: 2, md: 4 },
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                }}
+            >
+                <Box
+                    component="form"
+                    onSubmit={handleSubmit}
+                    sx={{
+                        width: "100%",
+                        maxWidth: 700,
+                    }}
+                >
+                    <Paper
+                        sx={{
+                            p: { xs: 3, md: 4 },
+                            borderRadius: 4,
+                            boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+                            bgcolor: "#fff",
+                        }}
+                    >
+                        <SectionBox title="Personal Information">
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                                    gap: 2,
+                                }}
+                            >
+                                <TextField
+                                    label="User Name"
+                                    required
+                                    name="user_name"
+                                    value={formData.user_name}
+                                    onChange={handleChange}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Email"
+                                    name="email"
+                                    disabled
+                                    required
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Phone"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    select
+                                    label="Gender"
+                                    required
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleChange}
+                                    size="small"
+                                    fullWidth
+                                >
+                                    <MenuItem value="Male">Male</MenuItem>
+                                    <MenuItem value="Female">Female</MenuItem>
+                                </TextField>
+                                <TextField
+                                    label="Date of Birth"
+                                    required
+                                    name="date_of_birth"
+                                    type="date"
+                                    InputLabelProps={{ shrink: true }}
+                                    value={formData.date_of_birth}
+                                    onChange={handleChange}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <Box sx={{ gridColumn: "1 / -1" }}>
                                     <TextField
-                                        label="User Name"
-                                        required
-                                        name="user_name"
-                                        value={formData.user_name}
+                                        label="Address"
+                                        name="address"
+                                        value={formData.address}
                                         onChange={handleChange}
+                                        multiline
+                                        rows={3}
                                         size="small"
                                         fullWidth
                                     />
-                                    <TextField
-                                        label="Email"
-                                        name="email"
-                                        required
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Phone"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        select
-                                        label="Gender"
-                                        required
-                                        name="gender"
-                                        value={formData.gender}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    >
-                                        <MenuItem value="Male">Male</MenuItem>
-                                        <MenuItem value="Female">Female</MenuItem>
-                                    </TextField>
-                                    <TextField
-                                        label="Date of Birth"
-                                        required
-                                        name="date_of_birth"
-                                        type="date"
-                                        InputLabelProps={{ shrink: true }}
-                                        value={formData.date_of_birth}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <Box sx={{ gridColumn: "1 / -1" }}>
-                                        <TextField
-                                            label="Address"
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleChange}
-                                            multiline
-                                            rows={2}
-                                            size="small"
-                                            fullWidth
-                                        />
-                                    </Box>
                                 </Box>
-                            </SectionBox>
-                        </Box>
+                            </Box>
+                        </SectionBox>
 
-                        {/* Action Buttons */}
-                        <Stack direction="row" justifyContent="flex-end" mt={2} spacing={1}>
-                            <Button variant="contained" size="small" type="submit">
+                        <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            justifyContent="flex-end"
+                            spacing={2}
+                            mt={2}
+                        >
+                            <Button
+                                variant="contained"
+                                size="small"
+                                type="submit"
+                                fullWidth={{ xs: true, sm: false }}
+                            >
                                 Save Changes
                             </Button>
-                            <Button variant="outlined" size="small" color="secondary" type="button" onClick={handleResetForm}>
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                type="button"
+                                size="small"
+                                onClick={handleResetForm}
+                                fullWidth={{ xs: true, sm: false }}
+                            >
                                 Reset Form
                             </Button>
                         </Stack>
-                    </form>
-                </CardContent>
-            </Card>
-        </Box>
+                    </Paper>
+                </Box>
+            </Box>
+        </>
+
     );
 };
 
