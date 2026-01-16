@@ -11,7 +11,8 @@ import {
     Card,
     CardContent,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../../services/api";
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -72,27 +73,37 @@ const UpdateProfileEmployer = () => {
         setLogoPreview(null);
     };
 
+    useEffect(() => {
+        const fetchUserProfileEmployer = async () => {
+            try {
+                const response = await api.get("/employer/profile");
+                const data = response.data;
+
+                setFormData({
+                    user_name: data.user_name || "",
+                    email: data.email || "",
+                    phone: data.phone || "",
+                    gender: data.gender || "",
+                    date_of_birth: data.date_of_birth || "",
+                    address: data.address || "",
+                    company_contact: data.company_contact || "",
+                    company_address: data.company_address || "",
+                    company_description: data.company_description || "",
+                    company_website: data.company_website || "",
+                });
+
+            } catch (error) {
+                console.error("Failed to load user profile employer:", error);
+            }
+        };
+
+        fetchUserProfileEmployer();
+    }, []);
+
     const handleSubmit = (e) => {
-        debugger;
         e.preventDefault();
 
-        // Prepare form data for API (including file)
-        const dataToSubmit = new FormData();
 
-        // Append all fields
-        Object.entries(formData).forEach(([key, value]) => {
-            dataToSubmit.append(key, value);
-        });
-
-        // Append logo if exists
-        if (logoFile) {
-            dataToSubmit.append("logo", logoFile);
-        }
-
-        // Example: log all entries
-        for (let pair of dataToSubmit.entries()) {
-            console.log(pair[0], pair[1]);
-        }
     };
 
     return (

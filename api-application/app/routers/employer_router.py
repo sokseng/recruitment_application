@@ -4,8 +4,8 @@ from typing import List, Optional
 from app.dependencies.auth import verify_access_token
 
 from app.database.deps import get_db
-from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut
-from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer
+from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer
+from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles
 
 router = APIRouter(prefix="/employer", tags=["Employers"])
 
@@ -75,3 +75,18 @@ def api_delete_employer(employer_id: int, db: Session = Depends(get_db), current
     if not db_employer:
         raise HTTPException(status_code=404, detail="Employer not found")
     return db_employer
+
+
+#get user profile employer by id
+@router.get("/profile", response_model=UserProfileEmployer)
+def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    try:
+        db_employer = get_employer_profiles(db, current_user_id)
+    
+        if not db_employer:
+            raise HTTPException(status_code=404, detail="Employer not found")
+        return db_employer
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Employer not found")
+    
+    

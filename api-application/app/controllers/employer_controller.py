@@ -1,9 +1,10 @@
 import os
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.employer_model import Employer
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate
 from shutil import copyfileobj
+from app.models.user_model import User
 
 UPLOAD_DIR = "uploads/employers"  # folder to store logos
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -68,3 +69,34 @@ def delete_employer(db: Session, employer_id: int):
     db_employer.is_active = False
     db.commit()
     return db_employer
+
+
+#get user profile employer
+def get_employer_profiles(db: Session, user_id: int):
+    db_user = db.query(User).filter(User.pk_id == user_id).first()
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    db_employer = db.query(Employer).filter(Employer.user_id == user_id).first()
+    if not db_employer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employer profile not found"
+        )
+
+    return {
+        "company_contact": db_employer.company_contact,
+        "company_address": db_employer.company_address,
+        "company_description": db_employer.company_description,
+        "company_website": db_employer.company_website,
+        "company_logo": db_employer.company_logo,
+        "user_name": db_user.user_name,
+        "email": db_user.email,
+        "gender": db_user.gender,
+        "phone": db_user.phone,
+        "date_of_birth": db_user.date_of_birth,
+        "address": db_user.address
+    }

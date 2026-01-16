@@ -64,6 +64,7 @@ def create_or_update_user(user: UserCreate, db: Session):
         db_employer = Employer( 
             user_id = db_user.pk_id,
             company_name = user.user_name,
+            company_email = user.email
         )
         db.add(db_employer)
         db.commit()
