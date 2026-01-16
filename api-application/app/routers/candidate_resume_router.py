@@ -1,4 +1,6 @@
+import os
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.dependencies.auth import verify_access_token
@@ -6,6 +8,7 @@ from app.database.deps import get_db
 from app.schemas.candidate_resume_schema import ResumeCreate, ResumeUpdate, ResumeOut
 from app.dependencies.candidate import get_current_candidate_id
 from app.models.candidate_resume_model import ResumeType
+from app.models.candidate_resume_model import CandidateResume
 from app.controllers.candidate_resume_controller import (
     create_resume,
     update_resume,
@@ -69,7 +72,6 @@ def update_candidate_resume(
         raise HTTPException(status_code=404, detail="Resume not found or not yours")
     return updated
 
-
 @router.get("/", response_model=List[ResumeOut])
 def get_my_resumes(
     db: Session = Depends(get_db),
@@ -101,3 +103,31 @@ def make_primary_resume(
     if not success:
         raise HTTPException(status_code=404, detail="Resume not found or not yours")
     return {"message": "Set as primary successfully"}
+
+@router.get("/{resume_id}/file")
+def download_resume(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+    candidate_id: int = Depends(get_current_candidate_id)
+):
+    resume = db.query(CandidateResume).filter(
+        CandidateResume.pk_id == resume_id,
+        CandidateResume.candidate_id == candidate_id
+    ).first()
+
+    if not resume or not resume.resume_file:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    # Path on your server where files are stored
+    file_path = os.path.join("uploads/resumes", resume.resume_file) 
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Return the file for download
+    return FileResponse(
+        path=file_path,
+        filename=resume.resume_file,
+        media_type="application/octet-stream"
+    )
