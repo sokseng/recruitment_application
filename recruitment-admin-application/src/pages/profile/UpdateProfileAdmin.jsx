@@ -75,7 +75,7 @@ const UpdateProfileAdmin = () => {
     const handleSubmit = (e) => {
         debugger;
         e.preventDefault();
-        
+
         // Prepare form data for API (including file)
         const dataToSubmit = new FormData();
 
@@ -116,91 +116,6 @@ const UpdateProfileAdmin = () => {
                                 gap: 3,
                             }}
                         >
-                            {/* Company Info */}
-                            <SectionBox title="Company Information">
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                                    <Avatar
-                                        src={logoPreview}
-                                        sx={{ width: 60, height: 60, border: "2px solid", borderColor: "primary.main" }}
-                                    />
-                                    <Stack direction="column" spacing={1}>
-                                        <Button variant="outlined" component="label" size="small" sx={{ minWidth: 100 }}>
-                                            Upload Logo
-                                            <input hidden type="file" accept="image/*" onChange={handleLogoChange} />
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            color="secondary"
-                                            sx={{ minWidth: 100 }}
-                                            onClick={handleResetLogo}
-                                            disabled={!logoPreview}
-                                        >
-                                            Remove Logo
-                                        </Button>
-                                    </Stack>
-                                </Box>
-                                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-                                    <TextField
-                                        label="Company Name"
-                                        name="company_name"
-                                        required
-                                        value={formData.company_name}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Company Email"
-                                        type="email"
-                                        name="company_email"
-                                        value={formData.company_email}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Company Contact"
-                                        name="company_contact"
-                                        value={formData.company_contact}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Company Website"
-                                        name="company_website"
-                                        value={formData.company_website}
-                                        onChange={handleChange}
-                                        size="small"
-                                        fullWidth
-                                    />
-                                    <Box sx={{ gridColumn: "1 / -1" }}>
-                                        <TextField
-                                            label="Company Address"
-                                            name="company_address"
-                                            value={formData.company_address}
-                                            onChange={handleChange}
-                                            multiline
-                                            rows={2}
-                                            size="small"
-                                            fullWidth
-                                        />
-                                    </Box>
-                                    <Box sx={{ gridColumn: "1 / -1" }}>
-                                        <TextField
-                                            label="Company Description"
-                                            name="company_description"
-                                            value={formData.company_description}
-                                            onChange={handleChange}
-                                            multiline
-                                            rows={2}
-                                            size="small"
-                                            fullWidth
-                                        />
-                                    </Box>
-                                </Box>
-                            </SectionBox>
 
                             {/* Personal Info */}
                             <SectionBox title="Personal Information">
