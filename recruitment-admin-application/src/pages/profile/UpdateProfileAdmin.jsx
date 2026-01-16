@@ -4,16 +4,36 @@ import {
     TextField,
     Typography,
     Avatar,
-    Card,
-    CardContent,
     Divider,
     Stack,
-    MenuItem
-} from "@mui/material"
-import { useState } from "react"
+    MenuItem,
+    Paper,
+    Card,
+    CardContent,
+} from "@mui/material";
+import { useState } from "react";
+
+const SectionBox = ({ title, children }) => (
+    <Paper
+        elevation={0}
+        sx={{
+            p: 1,
+            borderRadius: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "#fafafa",
+        }}
+    >
+        <Typography variant="subtitle1" fontWeight={600} mb={1}>
+            {title}
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        {children}
+    </Paper>
+);
 
 const UpdateProfileAdmin = () => {
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         user_name: "",
         email: "",
         phone: "",
@@ -25,198 +45,247 @@ const UpdateProfileAdmin = () => {
         company_contact: "",
         company_address: "",
         company_description: "",
-        company_website: ""
-    })
+        company_website: "",
+    };
 
-    const [logoPreview, setLogoPreview] = useState(null)
+    const [formData, setFormData] = useState(initialFormData);
+    const [logoPreview, setLogoPreview] = useState(null);
+    const [logoFile, setLogoFile] = useState(null);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
-    }
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setLogoPreview(URL.createObjectURL(file));
+        setLogoFile(file);
+    };
 
+    const handleResetLogo = () => {
+        setLogoPreview(null);
+    };
 
-    }
+    const handleResetForm = () => {
+        setFormData(initialFormData);
+        setLogoPreview(null);
+    };
+
+    const handleSubmit = (e) => {
+        debugger;
+        e.preventDefault();
+        
+        // Prepare form data for API (including file)
+        const dataToSubmit = new FormData();
+
+        // Append all fields
+        Object.entries(formData).forEach(([key, value]) => {
+            dataToSubmit.append(key, value);
+        });
+
+        // Append logo if exists
+        if (logoFile) {
+            dataToSubmit.append("logo", logoFile);
+        }
+
+        // Example: log all entries
+        for (let pair of dataToSubmit.entries()) {
+            console.log(pair[0], pair[1]);
+        }
+    };
 
     return (
-        <Box sx={{ maxWidth: 620, mx: "auto", mt: 4 }}>
-            <Card elevation={3} sx={{ borderRadius: 2 }}>
-                <CardContent  sx={{ px: 4, py: 3, overflowY: "auto" }} component="form" onSubmit={handleSubmit} id="update-profile-form">
-                    <Typography variant="h6" fontWeight={600} mb={0.5}>
-                        Update Profile
-                    </Typography>
-
-                    <Typography variant="body2" color="text.secondary" mb={3}>
-                        Manage your personal and company information
-                    </Typography>
-
-                    {/* Logo */}
-                    <Stack alignItems="center" spacing={1.5} mb={4}>
-                        <Avatar src={logoPreview} sx={{ width: 96, height: 96 }} />
-                        <Button variant="outlined" component="label" size="small">
-                            Upload Company Logo
-                            <input hidden type="file" accept="image/*" />
-                        </Button>
-                    </Stack>
-
-                    <Divider sx={{ mb: 3 }} />
-
-                    {/* Personal Information */}
-                    <Stack spacing={2.5}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                            Personal Information
-                        </Typography>
-
-                        <TextField
-                            fullWidth
-                            required
-                            size="small"
-                            label="User Name"
-                            name="user_name"
-                            value={formData.user_name}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            required
-                            size="small"
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            select
-                            required
-                            size="small"
-                            label="Gender"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
+        <Box
+            sx={{
+                maxWidth: 1200,
+                mx: "auto",
+                p: 2,
+                bgcolor: "#f0f2f5",
+                borderRadius: 3,
+            }}
+        >
+            <Card elevation={4} sx={{ borderRadius: 4 }}>
+                <CardContent>
+                    {/* Wrap in form */}
+                    <form onSubmit={handleSubmit}>
+                        <Box
+                            sx={{
+                                display: "grid",
+                                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                                gap: 3,
+                            }}
                         >
-                            <MenuItem value="Male">Male</MenuItem>
-                            <MenuItem value="Female">Female</MenuItem>
-                        </TextField>
+                            {/* Company Info */}
+                            <SectionBox title="Company Information">
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                                    <Avatar
+                                        src={logoPreview}
+                                        sx={{ width: 60, height: 60, border: "2px solid", borderColor: "primary.main" }}
+                                    />
+                                    <Stack direction="column" spacing={1}>
+                                        <Button variant="outlined" component="label" size="small" sx={{ minWidth: 100 }}>
+                                            Upload Logo
+                                            <input hidden type="file" accept="image/*" onChange={handleLogoChange} />
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            color="secondary"
+                                            sx={{ minWidth: 100 }}
+                                            onClick={handleResetLogo}
+                                            disabled={!logoPreview}
+                                        >
+                                            Remove Logo
+                                        </Button>
+                                    </Stack>
+                                </Box>
+                                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                                    <TextField
+                                        label="Company Name"
+                                        name="company_name"
+                                        required
+                                        value={formData.company_name}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Company Email"
+                                        type="email"
+                                        name="company_email"
+                                        value={formData.company_email}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Company Contact"
+                                        name="company_contact"
+                                        value={formData.company_contact}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Company Website"
+                                        name="company_website"
+                                        value={formData.company_website}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <Box sx={{ gridColumn: "1 / -1" }}>
+                                        <TextField
+                                            label="Company Address"
+                                            name="company_address"
+                                            value={formData.company_address}
+                                            onChange={handleChange}
+                                            multiline
+                                            rows={2}
+                                            size="small"
+                                            fullWidth
+                                        />
+                                    </Box>
+                                    <Box sx={{ gridColumn: "1 / -1" }}>
+                                        <TextField
+                                            label="Company Description"
+                                            name="company_description"
+                                            value={formData.company_description}
+                                            onChange={handleChange}
+                                            multiline
+                                            rows={2}
+                                            size="small"
+                                            fullWidth
+                                        />
+                                    </Box>
+                                </Box>
+                            </SectionBox>
 
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Date of Birth"
-                            required
-                            name="date_of_birth"
-                            type="date"
-                            InputLabelProps={{ shrink: true }}
-                            value={formData.date_of_birth}
-                            onChange={handleChange}
-                        />
+                            {/* Personal Info */}
+                            <SectionBox title="Personal Information">
+                                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                                    <TextField
+                                        label="User Name"
+                                        required
+                                        name="user_name"
+                                        value={formData.user_name}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Email"
+                                        name="email"
+                                        required
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Phone"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        select
+                                        label="Gender"
+                                        required
+                                        name="gender"
+                                        value={formData.gender}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    >
+                                        <MenuItem value="Male">Male</MenuItem>
+                                        <MenuItem value="Female">Female</MenuItem>
+                                    </TextField>
+                                    <TextField
+                                        label="Date of Birth"
+                                        required
+                                        name="date_of_birth"
+                                        type="date"
+                                        InputLabelProps={{ shrink: true }}
+                                        value={formData.date_of_birth}
+                                        onChange={handleChange}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <Box sx={{ gridColumn: "1 / -1" }}>
+                                        <TextField
+                                            label="Address"
+                                            name="address"
+                                            value={formData.address}
+                                            onChange={handleChange}
+                                            multiline
+                                            rows={2}
+                                            size="small"
+                                            fullWidth
+                                        />
+                                    </Box>
+                                </Box>
+                            </SectionBox>
+                        </Box>
 
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Address"
-                            name="address"
-                            multiline
-                            rows={3}
-                            value={formData.address}
-                            onChange={handleChange}
-                        />
-                    </Stack>
-
-                    <Divider sx={{ my: 4 }} />
-
-                    {/* Company Information */}
-                    <Stack spacing={2.5}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                            Company Information
-                        </Typography>
-
-                        <TextField
-                            fullWidth
-                            required
-                            size="small"
-                            label="Company Name"
-                            name="company_name"
-                            value={formData.company_name}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Company Email"
-                            name="company_email"
-                            value={formData.company_email}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Company Contact"
-                            name="company_contact"
-                            value={formData.company_contact}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Company Website"
-                            name="company_website"
-                            value={formData.company_website}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            multiline
-                            rows={3}
-                            label="Company Address"
-                            name="company_address"
-                            value={formData.company_address}
-                            onChange={handleChange}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            multiline
-                            rows={3}
-                            label="Company Description"
-                            name="company_description"
-                            value={formData.company_description}
-                            onChange={handleChange}
-                        />
-
-
-                    </Stack>
-
-                    {/* Action */}
-                    <Stack alignItems="flex-end" mt={4}>
-                        <Button variant="contained" size="small" type="submit" disableElevation form="update-profile-form" >
-                            Save Changes
-                        </Button>
-                    </Stack>
+                        {/* Action Buttons */}
+                        <Stack direction="row" justifyContent="flex-end" mt={2} spacing={1}>
+                            <Button variant="contained" size="small" type="submit">
+                                Save Changes
+                            </Button>
+                            <Button variant="outlined" size="small" color="secondary" type="button" onClick={handleResetForm}>
+                                Reset Form
+                            </Button>
+                        </Stack>
+                    </form>
                 </CardContent>
             </Card>
         </Box>
-    )
-}
+    );
+};
 
-export default UpdateProfileAdmin
+export default UpdateProfileAdmin;
