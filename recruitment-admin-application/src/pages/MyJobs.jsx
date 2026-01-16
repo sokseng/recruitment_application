@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -21,331 +21,716 @@ import {
   FormControl,
   InputLabel,
   Grid,
-} from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteIcon from '@mui/icons-material/Delete'
-import api from '../services/api'
-import JobPostDialog from '../components/JobPostDialog'
+  useTheme,
+  useMediaQuery,
+  InputAdornment,
+  DialogContentText,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import CloseIcon from "@mui/icons-material/Close";
+import WorkIcon from "@mui/icons-material/Work";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DescriptionIcon from "@mui/icons-material/Description";
+import api from "../services/api";
 
-const JOB_TYPES = ['Full-time', 'Part-time', 'Contract', 'Internship']
-const JOB_STATUSES = ['Draft', 'Open', 'Closed']
+const JOB_TYPES = [
+  { value: "Full-time", label: "Full-time" },
+  { value: "Part-time", label: "Part-time" },
+  { value: "Contract", label: "Contract" },
+  { value: "Internship", label: "Internship" },
+];
 
-export default function MyJobs() {
-  const [jobs, setJobs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+const JOB_STATUSES_CREATE = [
+  { value: "Open", label: "Open (Publish now)" },
+  { value: "Closed", label: "Closed" },
+];
 
-  const [openPostDialog, setOpenPostDialog] = useState(false)
-  const [openEditDialog, setOpenEditDialog] = useState(false)
-  const [editingJob, setEditingJob] = useState(null)
+const JOB_STATUSES_EDIT = ["Draft", "Open", "Closed"];
 
-  /* ================= FETCH JOBS ================= */
+// ────────────────────────────────────────────────
+//       Shared Job Form Dialog (Create + Edit)
+// ────────────────────────────────────────────────
+function JobFormDialog({
+  open,
+  onClose,
+  onSuccess,
+  initialData = null,
+  isEdit = false,
+}) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const JOB_LEVELS = [
+    { value: "Entry Level", label: "Entry Level" },
+    { value: "Junior", label: "Junior" },
+    { value: "Mid Level", label: "Mid Level" },
+    { value: "Senior", label: "Senior" },
+    { value: "Lead", label: "Lead" },
+  ];
+
+  const defaultData = {
+    job_title: "",
+    job_type: "Full-time",
+    level: "Mid Level",
+    position_number: "",
+    salary_range: "",
+    location: "",
+    job_description: "",
+    closing_date: "",
+    status: isEdit ? "Open" : "Open",
+  };
+
+  const [formData, setFormData] = useState(
+    initialData ? { ...initialData } : defaultData
+  );
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    fetchMyJobs()
-  }, [])
+    if (open && initialData) {
+      setFormData({
+        ...initialData,
+        closing_date: initialData.closing_date
+          ? initialData.closing_date.slice(0, 10)
+          : "",
+      });
+    } else if (open) {
+      setFormData(defaultData);
+    }
+  }, [open, initialData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.job_title?.trim()) return setError("Job title is required");
+    if (!formData.job_description?.trim())
+      return setError("Description is required");
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        ...formData,
+        position_number: formData.position_number
+          ? Number(formData.position_number)
+          : undefined,
+        closing_date: formData.closing_date,
+      };
+
+      let res;
+      if (isEdit && initialData?.pk_id) {
+        res = await api.put(`/jobs/${initialData.pk_id}`, payload);
+      } else {
+        res = await api.post("/jobs/", payload);
+      }
+
+      onSuccess?.(res.data);
+      onClose();
+    } catch (err) {
+      setError(
+        err.response?.data?.detail ||
+          `Failed to ${isEdit ? "update" : "create"} job`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const title = isEdit ? "Edit Job" : "Post a New Job";
+  const submitText = isEdit ? "Save Changes" : "Post Job";
+  const statuses = isEdit ? JOB_STATUSES_EDIT : JOB_STATUSES_CREATE;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : onClose}
+      maxWidth="md"
+      fullWidth
+      fullScreen={isMobile}
+      scroll="paper"
+      sx={{
+        "& .MuiDialog-paper": {
+          borderRadius: isMobile ? 0 : 3,
+          overflow: "hidden",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          background: "#023F6B",
+          color: "white",
+          position: "relative",
+        }}
+      >
+        <Typography variant={isMobile ? "h7" : "h6"} fontWeight="bold">
+          {title}
+        </Typography>
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{ position: "absolute", right: 16, top: 16, color: "white" }}
+          disabled={loading}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit} id="job-form">
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            {/* Job Title (full width) */}
+            <TextField
+              fullWidth
+              required
+              label="Job Title"
+              name="job_title"
+              value={formData.job_title || ""}
+              onChange={handleChange}
+              placeholder="Please enter job title"
+              size="small"
+            />
+
+            {/* Job Type */}
+            <FormControl fullWidth>
+              <InputLabel>Job Type</InputLabel>
+              <Select
+                name="job_type"
+                value={formData.job_type || "Full-time"}
+                label="Job Type"
+                onChange={handleChange}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <WorkIcon fontSize="small" />
+                  </InputAdornment>
+                }
+                size="small"
+              >
+                {JOB_TYPES.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>
+                    {type.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {/* ── NEW: Job Level ──────────────────────────────────── */}
+            <FormControl fullWidth>
+              <InputLabel>Level</InputLabel>
+              <Select
+                name="level"
+                value={formData.level || "Mid Level"}
+                label="Level"
+                onChange={handleChange}
+                size="small"
+              >
+                {JOB_LEVELS.map((lvl) => (
+                  <MenuItem key={lvl.value} value={lvl.value}>
+                    {lvl.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Status */}
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                name="status"
+                value={formData.status || "Open"}
+                label="Status"
+                onChange={handleChange}
+                size="small"
+              >
+                {statuses.map((s) =>
+                  typeof s === "string" ? (
+                    <MenuItem key={s} value={s}>
+                      {s}
+                    </MenuItem>
+                  ) : (
+                    <MenuItem key={s.value} value={s.value}>
+                      {s.label}
+                    </MenuItem>
+                  )
+                )}
+              </Select>
+            </FormControl>
+
+            {/* Number of Positions */}
+            <TextField
+              fullWidth
+              label="Number of Positions"
+              name="position_number"
+              type="number"
+              value={formData.position_number || ""}
+              onChange={handleChange}
+              placeholder="Please enter Number of Positions"
+              inputProps={{ min: 1 }}
+              size="small"
+            />
+
+            {/* Salary Range */}
+            <TextField
+              fullWidth
+              label="Salary Range"
+              name="salary_range"
+              value={formData.salary_range || ""}
+              onChange={handleChange}
+              placeholder="Please Enter Salary Range"
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AttachMoneyIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Closing Date */}
+            <TextField
+              fullWidth
+              label="Application Closing Date"
+              name="closing_date"
+              type="date"
+              value={formData.closing_date}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CalendarTodayIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Location (full width) */}
+            <TextField
+              fullWidth
+              label="Location"
+              name="location"
+              value={formData.location || ""}
+              onChange={handleChange}
+              placeholder="Please enter location"
+              sx={{ gridColumn: "1 / -1" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+              size="small"
+            />
+
+            {/* Job Description (full width) */}
+            <TextField
+              fullWidth
+              required
+              label="Job Description"
+              name="job_description"
+              value={formData.job_description || ""}
+              onChange={handleChange}
+              multiline
+              size="small"
+              rows={6}
+              placeholder="Please enter job description"
+              sx={{ gridColumn: "1 / -1" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment
+                    position="start"
+                    sx={{ alignSelf: "flex-start", mt: 1.5, ml: 0.5 }}
+                  >
+                    <DescriptionIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
+        </form>
+      </DialogContent>
+
+      <DialogActions
+        sx={{
+          background: "#023F6B",
+          borderTop: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Button
+          type="submit"
+          form="job-form"
+          variant="contained"
+          color="primary"
+          size="small"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+              {isEdit ? "Saving..." : "Posting..."}
+            </>
+          ) : (
+            submitText
+          )}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ────────────────────────────────────────────────
+//                   My Jobs Page
+// ────────────────────────────────────────────────
+export default function MyJobs() {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [openFormDialog, setOpenFormDialog] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+
+  const [openCloseDialog, setOpenCloseDialog] = useState(false);
+  const [closingJob, setClosingJob] = useState(null);
+
+  useEffect(() => {
+    fetchMyJobs();
+  }, []);
 
   const fetchMyJobs = async () => {
     try {
-      setLoading(true)
-      const res = await api.get('/jobs/my-jobs?limit=100')
-      setJobs(res.data || [])
+      setLoading(true);
+      const res = await api.get("/jobs/my-jobs?limit=100");
+      setJobs(res.data || []);
     } catch {
-      setError('Failed to load your posted jobs')
+      setError("Failed to load your posted jobs");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  /* ================= DELETE ================= */
-  const handleDelete = async (jobId) => {
-    if (!window.confirm('Are you sure you want to delete this job?')) return
-    await api.delete(`/jobs/${jobId}`)
-    setJobs((prev) => prev.filter((j) => j.pk_id !== jobId))
-  }
+  const openCreate = () => {
+    setEditingJob(null);
+    setOpenFormDialog(true);
+  };
 
-  /* ================= EDIT ================= */
   const openEdit = (job) => {
-    setEditingJob({ ...job })
-    setOpenEditDialog(true)
-  }
+    setEditingJob(job);
+    setOpenFormDialog(true);
+  };
 
-  const closeEdit = () => {
-    setOpenEditDialog(false)
-    setEditingJob(null)
-  }
-
-  const handleEditChange = (e) => {
-    const { name, value } = e.target
-    setEditingJob((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const saveEdit = async () => {
-    const payload = {
-      job_title: editingJob.job_title,
-      job_type: editingJob.job_type,
-      position_number: Number(editingJob.position_number),
-      salary_range: editingJob.salary_range,
-      location: editingJob.location,
-      job_description: editingJob.job_description,
-      status: editingJob.status,
+  const handleFormSuccess = (updatedJob) => {
+    if (editingJob) {
+      // update
+      setJobs((prev) =>
+        prev.map((j) => (j.pk_id === updatedJob.pk_id ? updatedJob : j))
+      );
+    } else {
+      // create → refresh full list (safest)
+      fetchMyJobs();
     }
+  };
 
-    const res = await api.put(`/jobs/${editingJob.pk_id}`, payload)
+  const openClose = (job) => {
+    setClosingJob(job);
+    setOpenCloseDialog(true);
+  };
 
-    setJobs((prev) =>
-      prev.map((j) => (j.pk_id === editingJob.pk_id ? res.data : j))
-    )
+  const confirmClose = async () => {
+    try {
+      const res = await api.put(`/jobs/${closingJob.pk_id}`, {
+        status: "Closed",
+      });
+      setJobs((prev) =>
+        prev.map((j) => (j.pk_id === closingJob.pk_id ? res.data : j))
+      );
+      setOpenCloseDialog(false);
+    } catch {
+      setError("Failed to close job");
+    }
+  };
 
-    closeEdit()
-  }
-
-  /* ================= LOADING ================= */
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" py={10}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
         <CircularProgress />
       </Box>
-    )
+    );
   }
 
-  /* ================= RENDER ================= */
   return (
-    <Box
-      sx={{
-        maxWidth: 1400,
-        mx: 'auto',
-        py: 2,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* ================= HEADER ================= */}
+    <Box>
+      {/* HEADER */}
       <Stack
-        direction={{ xs: 'column', sm: 'row' }}
+        direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems={{ xs: 'stretch', sm: 'center' }}
+        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
         mb={2}
-        px={2}
-
       >
-        <Typography variant="h4" fontWeight={700}>
+        <Typography variant="h6" fontWeight={700}>
           My Posted Jobs
         </Typography>
 
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setOpenPostDialog(true)}
+          onClick={openCreate}
+          fullWidth={{ xs: true, sm: false }}
+          sx={{
+            borderRadius: 3,
+          }}
         >
-          Post New Job
+          Post
         </Button>
       </Stack>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-      {/* ================= GRID ================= */}
+      {/* JOBS GRID – compact cards */}
       <Box
         sx={{
-            flexGrow: 1,
-            height: '70vh', // or whatever fits your layout
-            overflowY: 'auto',
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "repeat(2, 1fr)",
+            sm: "repeat(3, 1fr)",
+            md: "repeat(4, 1fr)",
+            lg: "repeat(6, 1fr)",
+          },
+          gap: 1,
         }}
       >
-        <Box
+        {jobs.map((job) => (
+          // <Card
+          //   key={job.pk_id}
+          //   variant="outlined"
+          //   sx={{
+          //     borderRadius: 2,
+          //     height: 'fit-content',
+          //     minHeight: 220,
+          //     display: 'flex',
+          //     flexDirection: 'column',
+          //     boxShadow: 1,
+          //   }}
+          // >
+          //   <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+          //     <Typography variant="subtitle1" color='primary' fontWeight={600} noWrap>
+          //       {job.job_title}
+          //     </Typography>
+
+          //     <Stack direction="row" spacing={1} my={1} flexWrap="wrap">
+          //       <Chip label={job.job_type} size="small" variant="outlined" />
+          //       <Chip label={job.level} size="small" color="primary" variant="outlined" />
+          //       <Chip
+          //         label={job.status}
+          //         size="small"
+          //         color={
+          //           job.status === 'Open'
+          //             ? 'success'
+          //             : job.status === 'Closed'
+          //             ? 'error'
+          //             : 'default'
+          //         }
+          //       />
+          //     </Stack>
+
+          //     <Typography variant="body2" color="text.secondary" noWrap>
+          //       {job.location || '—'}
+          //     </Typography>
+
+          //     <Typography variant="body2" color="text.secondary">
+          //       {job.salary_range || 'Negotiable'}
+          //     </Typography>
+
+          //     <Typography variant="caption" color="text.disabled" mt={1.5} display="block">
+          //       Posted {new Date(job.created_at).toLocaleDateString()}
+          //     </Typography>
+          //   </CardContent>
+
+          //   <CardActions sx={{ justifyContent: 'flex-end'}}>
+          //     <IconButton size="small" onClick={() => openEdit(job)}>
+          //       <EditIcon fontSize="small" sx={{color: 'teal'}} />
+          //     </IconButton>
+
+          //     {job.status !== 'Closed' && (
+          //       <IconButton size="small" color="warning" onClick={() => openClose(job)}>
+          //         <CloseIcon fontSize="small" />
+          //       </IconButton>
+          //     )}
+          //   </CardActions>
+          // </Card>
+          <Card
+            key={job.pk_id}
+            variant="outlined"
             sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-                xs: 'repeat(2, 1fr)',
-                sm: 'repeat(3, 1fr)',
-                md: 'repeat(3, 1fr)',
-                lg: 'repeat(4, 1fr)',
-            },
-            gap: 1,
-            px:{xs: 2}
+              borderRadius: 2,
+              height: "fit-content",
+              minHeight: 220,
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: 1,
             }}
-        >
-            {jobs.map((job) => (
-            <Card
-                key={job.pk_id}
+          >
+            <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+              {/* Title + Status row */}
+              <Box
                 sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 3,
-                    height: '100%',
-                    border: "1px solid",
-                    borderColor: 'divider',
-
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 1,
                 }}
-            >
-                {/* ===== CONTENT ===== */}
-                <CardContent sx={{ flexGrow: 1 }}>
-                <Typography variant="h6" fontWeight={600} noWrap>
-                    {job.job_title}
-                </Typography>
-
-                <Stack direction="row" spacing={1} my={1} flexWrap="wrap">
-                    <Chip label={job.job_type} size="small" />
-                    <Chip
-                    label={job.status}
-                    size="small"
-                    color={
-                        job.status === 'Open'
-                        ? 'success'
-                        : job.status === 'Closed'
-                        ? 'error'
-                        : 'default'
-                    }
-                    />
-                </Stack>
-
-                <Typography variant="body2" color="text.secondary">
-                    Location: {job.location || 'N/A'}
-                </Typography>
-
-                <Typography variant="body2" color="text.secondary">
-                    Salary: {job.salary_range || 'Negotiable'}
-                </Typography>
-
+              >
                 <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    mt={2}
-                    display="block"
+                  variant="subtitle1"
+                  color="primary"
+                  fontWeight={600}
+                  sx={{ pr: 2 }} // small padding to avoid touching right side
                 >
-                    Posted {new Date(job.created_at).toLocaleDateString()}
+                  {job.job_title}
                 </Typography>
-                </CardContent>
 
-                {/* ===== ACTIONS ===== */}
-                <CardActions sx={{ justifyContent: 'flex-end' }}>
-                <IconButton onClick={() => openEdit(job)}>
-                    <EditIcon fontSize="small" />
+                {/* Status moved to RIGHT */}
+                <Chip
+                  label={job.status}
+                  size="small"
+                  color={
+                    job.status === "Open"
+                      ? "success"
+                      : job.status === "Closed"
+                      ? "error"
+                      : "default"
+                  }
+                  sx={{
+                    fontWeight: 600,
+                    minWidth: 80, // consistent width
+                    justifyContent: "center",
+                  }}
+                />
+              </Box>
+
+              {/* Other chips (type + level) stay below title */}
+              <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
+                <Chip label={job.job_type} size="small" variant="outlined" />
+                {job.level && (
+                  <Chip
+                    label={job.level}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                )}
+              </Stack>
+
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {job.location || "—"}
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                {job.salary_range || "Negotiable"}
+              </Typography>
+
+              <Typography
+                variant="caption"
+                color="text.disabled"
+                mt={1.5}
+                display="block"
+              >
+                Posted {new Date(job.created_at).toLocaleDateString()}
+              </Typography>
+            </CardContent>
+
+            <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1 }}>
+              <IconButton size="small" onClick={() => openEdit(job)}>
+                <EditIcon fontSize="small" sx={{ color: "teal" }} />
+              </IconButton>
+
+              {job.status !== "Closed" && (
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={() => openClose(job)}
+                >
+                  <CloseIcon fontSize="small" />
                 </IconButton>
-                <IconButton color="error" onClick={() => handleDelete(job.pk_id)}>
-                    <DeleteIcon fontSize="small" />
-                </IconButton>
-                </CardActions>
-            </Card>
-            ))}
-        </Box>
+              )}
+            </CardActions>
+          </Card>
+        ))}
+
+        {jobs.length === 0 && (
+          <Box
+            gridColumn="1 / -1"
+            textAlign="center"
+            py={6}
+            color="text.secondary"
+          >
+            You haven't posted any jobs yet.
+          </Box>
+        )}
       </Box>
-      
+      {/* ── DIALOGS ──────────────────────────────────────── */}
 
-      {/* ================= CREATE JOB ================= */}
-      <JobPostDialog
-        open={openPostDialog}
-        onClose={() => setOpenPostDialog(false)}
-        onJobCreated={fetchMyJobs}
+      <JobFormDialog
+        open={openFormDialog}
+        onClose={() => {
+          setOpenFormDialog(false);
+          setEditingJob(null);
+        }}
+        onSuccess={handleFormSuccess}
+        initialData={editingJob}
+        isEdit={!!editingJob}
       />
 
-      {/* ================= EDIT JOB ================= */}
-      <Dialog open={openEditDialog} onClose={closeEdit} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Job</DialogTitle>
-
-        <DialogContent dividers>
-          {editingJob && (
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Job Title"
-                  name="job_title"
-                  value={editingJob.job_title}
-                  onChange={handleEditChange}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Job Type</InputLabel>
-                  <Select
-                    name="job_type"
-                    value={editingJob.job_type}
-                    label="Job Type"
-                    onChange={handleEditChange}
-                  >
-                    {JOB_TYPES.map((t) => (
-                      <MenuItem key={t} value={t}>
-                        {t}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    name="status"
-                    value={editingJob.status}
-                    label="Status"
-                    onChange={handleEditChange}
-                  >
-                    {JOB_STATUSES.map((s) => (
-                      <MenuItem key={s} value={s}>
-                        {s}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Position Number"
-                  name="position_number"
-                  value={editingJob.position_number || ''}
-                  onChange={handleEditChange}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Salary Range"
-                  name="salary_range"
-                  value={editingJob.salary_range || ''}
-                  onChange={handleEditChange}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Location"
-                  name="location"
-                  value={editingJob.location || ''}
-                  onChange={handleEditChange}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={5}
-                  label="Job Description"
-                  name="job_description"
-                  value={editingJob.job_description || ''}
-                  onChange={handleEditChange}
-                />
-              </Grid>
-            </Grid>
-          )}
+      {/* Close Confirmation */}
+      <Dialog open={openCloseDialog} onClose={() => setOpenCloseDialog(false)}>
+        <DialogTitle>Close Job Posting</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to close{" "}
+            <strong>{closingJob?.job_title}</strong>?<br />
+            It will no longer accept new applications.
+          </DialogContentText>
         </DialogContent>
-
         <DialogActions>
-          <Button onClick={closeEdit}>Cancel</Button>
-          <Button variant="contained" onClick={saveEdit}>
-            Save Changes
+          <Button onClick={() => setOpenCloseDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={confirmClose}
+            startIcon={<CloseIcon />}
+          >
+            Close Job
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
-  )
+  );
 }

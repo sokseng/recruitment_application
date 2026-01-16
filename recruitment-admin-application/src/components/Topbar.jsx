@@ -260,7 +260,7 @@ export default function Topbar() {
      Drawer Content
      ===================== */
   const drawerContent = (
-    <Box sx={{ width: 250 }}>
+    <Box sx={{ width: 250, height: "100vh", backgroundColor: "#F6F7F8" }}>
       <List>
         {menuItems.map((item) => (
           <ListItemButton key={item.label} onClick={() => goTo(item.path)}>
@@ -305,13 +305,19 @@ export default function Topbar() {
         </Alert>
       </Snackbar>
 
-      <AppBar position="sticky" color="inherit" elevation={1}>
+      <AppBar position="sticky" elevation={1}
+       sx={{
+        background: "#023F6B"
+       }}
+      >
         <Toolbar sx={{ gap: 1 }}>
 
           {/* ☰ Mobile Drawer */}
           {isMobile && (
-            <IconButton onClick={() => setDrawerOpen(true)}>
-              <MenuIcon />
+            <IconButton  onClick={() => setDrawerOpen(true)}>
+              <MenuIcon sx={{
+                color: 'white'
+              }}/>
             </IconButton>
           )}
 
@@ -323,7 +329,10 @@ export default function Topbar() {
             sx={{
               height: { xs: 36, sm: 44 },
               width: 'auto',
+              borderRadius: 6,
+              cursor: 'pointer',
             }}
+            onClick={() => navigate('/')}
           />
 
 
@@ -501,6 +510,7 @@ export default function Topbar() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         anchor="left"
+        backgroundColor= "#F6F7F8"
       >
         {drawerContent}
       </Drawer>
@@ -511,7 +521,6 @@ export default function Topbar() {
         onClose={() => setOpenLogin(false)}
         maxWidth="xs"
         fullScreen={isMobile}
-        scroll="paper"
       >
         <DialogContent>
           <Stack

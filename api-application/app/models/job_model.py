@@ -13,6 +13,14 @@ from sqlalchemy.orm import relationship
 from app.database.session import Base
 import enum
 
+class JobLevel(str, enum.Enum):
+    ENTRY_LEVEL = "Entry Level"
+    JUNIOR      = "Junior"
+    MID_LEVEL   = "Mid Level"
+    SENIOR      = "Senior"
+    LEAD        = "Lead"
+    MANAGER       = "Manager"
+
 
 class JobType(str, enum.Enum):
     FULL_TIME = "Full-time"
@@ -38,6 +46,7 @@ class Job(Base):
     )
     job_title = Column(String(255), nullable=False)
     job_type = Column(SQLEnum(JobType), nullable=False)
+    level = Column(SQLEnum(JobLevel), nullable=False, default=JobLevel.MID_LEVEL)
     position_number = Column(Integer, nullable=True) 
     salary_range = Column(String(100), nullable=True)  
     location = Column(String(255), nullable=True)
