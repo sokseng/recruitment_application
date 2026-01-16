@@ -343,7 +343,7 @@ export default function Topbar() {
             <>
               {/* Profile Avatar & Menu */}
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                <Avatar>{user_data?.user_name ? user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
+                <Avatar>{user_data?.user_data?.user_name ? user_data.user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
               </IconButton>
               <Menu
                 anchorEl={profileAnchor}
@@ -355,10 +355,10 @@ export default function Topbar() {
               >
                 <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                   <Typography variant="subtitle1" fontWeight="bold">
-                    {user_data.user_name}
+                    {user_data.user_data.user_name}
                   </Typography>
                   <Typography variant="body2" color="primary.main">
-                    {user_data.email}
+                    {user_data.user_data.email}
                   </Typography>
                 </Box>
                 <MenuItem
@@ -426,7 +426,7 @@ export default function Topbar() {
                 <>
                   {/* Profile Avatar & Menu */}
                   <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                    <Avatar>{user_data?.user_name ? user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
+                    <Avatar>{user_data?.user_data?.user_name ? user_data?.user_data?.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
                   </IconButton>
                   <Menu
                     anchorEl={profileAnchor}
@@ -438,10 +438,10 @@ export default function Topbar() {
                   >
                     <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Typography variant="subtitle1" fontWeight="bold">
-                        {user_data.user_name}
+                        {user_data?.user_data?.user_name}
                       </Typography>
                       <Typography variant="body2" color="primary.main">
-                        {user_data.email}
+                        {user_data?.user_data?.email}
                       </Typography>
                     </Box>
                     <MenuItem
@@ -631,9 +631,6 @@ export default function Topbar() {
               <MenuItem value="Male">Male</MenuItem>
               <MenuItem value="Female">Female</MenuItem>
             </TextField>
-
-
-
 
             <TextField size="small" name="phone" label="Phone" />
             <TextField

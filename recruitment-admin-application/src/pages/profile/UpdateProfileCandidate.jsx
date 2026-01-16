@@ -13,7 +13,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip
+  Chip,
+  TextField,
+  MenuItem,
+  Switch
 } from '@mui/material'
 import { useState, useEffect } from 'react'
 import {
@@ -23,9 +26,12 @@ import {
   Email as EmailIcon,
   UploadFile as UploadFileIcon,
   Delete as DeleteIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material'
 import useAuthStore from '../../store/useAuthStore'
 import api from '../../services/api'
+import { useTheme, useMediaQuery } from "@mui/material";
+import { styled } from '@mui/material/styles';
 
 export default function CandidateProfileDashboard() {
   const { user_data } = useAuthStore()
@@ -35,11 +41,11 @@ export default function CandidateProfileDashboard() {
   const [uploadedCvs, setUploadedCvs] = useState([])
   const [cvToDelete, setCvToDelete] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
-
   const [loading, setLoading] = useState(false)
   const [openSnackbar, setOpenSnackbar] = useState(false)
   const [message, setMessage] = useState('')
   const [severity, setSeverity] = useState('error')
+  const [editOpen, setEditOpen] = useState(false)
 
   // ----- CV Handlers -----
   const handleCvChange = (e) => {
@@ -145,6 +151,13 @@ export default function CandidateProfileDashboard() {
     }
   };
 
+  // Inside CandidateProfileDashboard
+  const showSnackbar = (msg, severityType = 'success') => {
+    setMessage(msg)
+    setSeverity(severityType)
+    setOpenSnackbar(true)
+  }
+
   useEffect(() => {
     const fetchCvs = async () => {
       try {
@@ -158,45 +171,124 @@ export default function CandidateProfileDashboard() {
   }, [])
 
   const summaryFields = {
-    Gender: user_data?.gender,
-    'Date of Birth': user_data?.date_of_birth,
-    Phone: user_data?.phone,
-    Status: user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
+    Gender: user_data.user_data?.gender,
+    'Date of Birth': user_data.user_data?.date_of_birth,
+    Phone: user_data.user_data?.phone,
+    Status: user_data.user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
   }
 
   return (
     <Box sx={{ mx: 'auto', py: 4, px: 2, bgcolor: '#f0f2f5', minHeight: '100vh', borderRadius: 3 }}>
       {/* Profile Header */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }}>
-        <Stack direction="row" spacing={3} alignItems="center" mb={3}>
-          <Avatar
-            sx={{ width: 72, height: 72, bgcolor: '#3b5998', fontSize: 32, fontWeight: 'bold', boxShadow: '0 2px 6px rgb(0 0 0 / 0.15)' }}
-          >
-            {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
-          </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight={700} mb={0.3}>{user_data?.user_name}</Typography>
-            {user_data?.address && (
-              <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mb={0.5}>
-                <LocationOnIcon fontSize="small" />
-                <Typography variant="body2">{user_data.address}</Typography>
+      <Paper
+        sx={{
+          p: 4,
+          mb: 5,
+          borderRadius: 4,
+          bgcolor: '#fff',
+          boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={{ xs: 3, sm: 4 }}
+          alignItems="center"
+          justifyContent="space-between"
+          mb={3}
+        >
+          {/* Avatar and Basic Info */}
+          <Stack direction="row" spacing={3} alignItems="center" flexGrow={1}>
+            <Avatar
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: '#1976d2',
+                fontSize: 32,
+                fontWeight: 'bold',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
+            </Avatar>
+
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {user_data?.user_name || 'Unnamed'}
+              </Typography>
+
+              {user_data?.user_data?.address && (
+                <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
+                  <LocationOnIcon fontSize="small" />
+                  <Typography variant="body2">{user_data?.user_data?.address}</Typography>
+                </Stack>
+              )}
+
+              <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
+                <EmailIcon fontSize="small" />
+                <Typography variant="body2">{user_data?.user_data?.email}</Typography>
               </Stack>
-            )}
-            <Stack direction="row" spacing={1} alignItems="center" color="text.secondary">
-              <EmailIcon fontSize="small" />
-              <Typography variant="body2">{user_data?.email}</Typography>
-            </Stack>
-          </Box>
+            </Box>
+          </Stack>
+
+          {/* Edit Profile Button */}
+          <Button
+            size="medium"
+            variant="contained"
+            color="primary"
+            startIcon={<EditIcon />}
+            onClick={() => setEditOpen(true)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',
+              '&:hover': {
+                boxShadow: '0 6px 18px rgba(25, 118, 210, 0.5)',
+              },
+              borderRadius: 2,
+              minWidth: 140,
+            }}
+          >
+            Edit Profile
+          </Button>
         </Stack>
 
         <Divider sx={{ mb: 3 }} />
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 3 }}>
+        {/* Summary Info */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 3,
+          }}
+        >
           {Object.entries(summaryFields).map(([label, value]) => (
-            <Box key={label}>
-              <Typography variant="subtitle2" color="text.secondary">{label}</Typography>
-              <Typography variant="body1" fontWeight={500}>{value || 'Not set'}</Typography>
-            </Box>
+            <Paper
+              key={label}
+              elevation={0}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: '#f9f9f9',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: '#f0f4ff',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                },
+              }}
+            >
+              <Typography variant="subtitle2" color="text.secondary">
+                {label}
+              </Typography>
+              <Typography variant="body1" fontWeight={500}>
+                {value || 'Not set'}
+              </Typography>
+            </Paper>
           ))}
         </Box>
       </Paper>
@@ -388,6 +480,12 @@ export default function CandidateProfileDashboard() {
         </DialogActions>
       </Dialog>
 
+      <EditProfileDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        showSnackbar={showSnackbar}
+      />
+
       {/* Other Profile Sections */}
       {[
         { title: 'Overview', description: `About ${user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
@@ -401,6 +499,106 @@ export default function CandidateProfileDashboard() {
         <Section key={section.title} {...section} />
       ))}
     </Box>
+  )
+}
+
+function EditProfileDialog({ open, onClose, showSnackbar }) {
+  const { user_data, setUserData } = useAuthStore()
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [form, setForm] = useState(user_data || {})
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      form.password = "123";
+      setLoading(true)
+      const { data } = await api.post('/user', form)
+      showSnackbar('Profile updated successfully', 'success')
+      setUserData({
+        ...user_data,
+        user_data: data,
+      });
+      onClose()
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || 'Failed to update profile'
+      showSnackbar(errorMsg, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
+      setForm(user_data.user_data || {})
+    }
+  }, [open, user_data])
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Edit Profile
+        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <Divider />
+      <DialogContent dividers>
+        <Stack spacing={3} mt={2} component="form" onSubmit={handleSave} id="edit-form">
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar sx={{ width: 64, height: 64, bgcolor: '#3b5998', fontSize: 24 }}>
+              {form.user_name?.charAt(0)?.toUpperCase() || '?'}
+            </Avatar>
+            <TextField size="small" fullWidth label="Full Name" name="user_name" required value={form.user_name} onChange={handleChange} />
+          </Stack>
+          <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
+          <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+          <Stack direction="row" spacing={2}>
+            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+            <TextField
+              fullWidth
+              size="small"
+              name="gender"
+              label="Gender"
+              select
+              required
+              value={form.gender} onChange={handleChange}
+            >
+              <MenuItem value="Male">Male</MenuItem>
+              <MenuItem value="Female">Female</MenuItem>
+            </TextField>
+          </Stack>
+          <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              bgcolor: '#f9f9f9',
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography fontWeight={600}>Profile Status</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Control whether your profile is visible to employers
+                </Typography>
+              </Box>
+
+              <IOSSwitch
+                sx={{ m: 1 }}
+                checked={!!form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              />
+            </Stack>
+          </Paper>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={onClose} variant="outlined">Cancel</Button>
+        <Button variant="contained" type="submit" form="edit-form" color="primary" disableElevation loading={loading} loadingPosition="end" disabled={loading}>Save</Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 
@@ -444,3 +642,63 @@ function Section({ title, description, buttonText, onAdd, isEdit }) {
     </Paper>
   )
 }
+
+const IOSSwitch = styled((props) => (
+  <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+  width: 42,
+  height: 26,
+  padding: 0,
+  '& .MuiSwitch-switchBase': {
+    padding: 0,
+    margin: 2,
+    transitionDuration: '300ms',
+    '&.Mui-checked': {
+      transform: 'translateX(16px)',
+      color: '#fff',
+      '& + .MuiSwitch-track': {
+        backgroundColor: '#65C466',
+        opacity: 1,
+        border: 0,
+        ...theme.applyStyles('dark', {
+          backgroundColor: '#2ECA45',
+        }),
+      },
+      '&.Mui-disabled + .MuiSwitch-track': {
+        opacity: 0.5,
+      },
+    },
+    '&.Mui-focusVisible .MuiSwitch-thumb': {
+      color: '#33cf4d',
+      border: '6px solid #fff',
+    },
+    '&.Mui-disabled .MuiSwitch-thumb': {
+      color: theme.palette.grey[100],
+      ...theme.applyStyles('dark', {
+        color: theme.palette.grey[600],
+      }),
+    },
+    '&.Mui-disabled + .MuiSwitch-track': {
+      opacity: 0.7,
+      ...theme.applyStyles('dark', {
+        opacity: 0.3,
+      }),
+    },
+  },
+  '& .MuiSwitch-thumb': {
+    boxSizing: 'border-box',
+    width: 22,
+    height: 22,
+  },
+  '& .MuiSwitch-track': {
+    borderRadius: 26 / 2,
+    backgroundColor: '#E9E9EA',
+    opacity: 1,
+    transition: theme.transitions.create(['background-color'], {
+      duration: 500,
+    }),
+    ...theme.applyStyles('dark', {
+      backgroundColor: '#39393D',
+    }),
+  },
+}));

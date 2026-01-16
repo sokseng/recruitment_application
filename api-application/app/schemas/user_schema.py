@@ -35,6 +35,7 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
     address: Optional[str] = None
+    is_active: bool = True
 
     model_config = ConfigDict(exclude_none=False)
 

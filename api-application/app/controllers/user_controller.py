@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
-from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile
+from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile, UserResponse
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import timedelta, datetime, timezone
@@ -21,24 +21,38 @@ bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
 
 #create or update user
 def create_or_update_user(user: UserCreate, db: Session):
-    exist_email = db.query(User).filter(User.email == user.email).first()
-    if exist_email:
-        raise HTTPException(status_code=400, detail="Email already exists")
-    
     if user.pk_id:
         db_user = db.query(User).filter(User.pk_id == user.pk_id).first()
         db_user.user_name = user.user_name
         db_user.email = user.email
-        db_user.password = user.password
-        db_user.user_type = user.user_type
+        # db_user.password = user.password
+        # db_user.user_type = user.user_type
         db_user.gender = user.gender
         db_user.phone = user.phone
         db_user.date_of_birth = user.date_of_birth
         db_user.address = user.address
+        db_user.is_active = user.is_active
         db_user.updated_date = datetime.now().replace(microsecond=0)
         db.commit()
         db.refresh(db_user)
-        return db_user
+        
+        return UserResponse(
+            user_type=db_user.user_type,
+            pk_id=db_user.pk_id,
+            user_name=db_user.user_name,
+            email=db_user.email,
+            gender=db_user.gender,
+            phone=db_user.phone,
+            date_of_birth=db_user.date_of_birth,
+            address=db_user.address,
+            is_active=db_user.is_active,
+            created_date=db_user.created_date,
+            updated_date=db_user.updated_date
+        )
+    
+    exist_email = db.query(User).filter(User.email == user.email).first()
+    if exist_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
     
     db_user = User(
         user_name = user.user_name,
