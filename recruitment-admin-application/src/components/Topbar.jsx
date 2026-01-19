@@ -32,6 +32,14 @@ import Download from '@mui/icons-material/Download'
 import Settings from '@mui/icons-material/Settings'
 import VpnKey from '@mui/icons-material/VpnKey'
 import Logout from '@mui/icons-material/Logout'
+import HomeIcon from '@mui/icons-material/Home';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PersonIcon from '@mui/icons-material/Person';
+import BusinessIcon from '@mui/icons-material/Business';
+import PeopleIcon from '@mui/icons-material/People';
+import DescriptionIcon from '@mui/icons-material/Description';
+import DownloadIcon from '@mui/icons-material/Download';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom'
 import { useTheme, useMediaQuery } from "@mui/material";
 import api from '../services/api'
@@ -80,30 +88,30 @@ export default function Topbar() {
   }
   const MENU_BY_ROLE = {
     guest: [
-      { label: 'Home', path: '/' },
-      { label: 'All Companies', path: '/' },
-      { label: 'Default', path: '/' },
+      { label: 'Home', path: '/', icon: <HomeIcon /> },
+      { label: 'All Companies', path: '/', icon: <BusinessIcon /> },
+      { label: 'Default', path: '/', icon: <DescriptionIcon /> },
     ],
     1: [
-      { label: 'Home', path: '/' },
-      { label: 'Dashboard', path: '/' },
-      { label: 'Users', path: '/' },
-      { label: 'Employers', path: '/' },
-      { label: 'Candidates', path: '/' },
-      { label: 'All Companies', path: '/' },
+      { label: 'Home', path: '/', icon: <HomeIcon /> },
+      { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+      { label: 'Users', path: '/', icon: <PeopleIcon /> },
+      { label: 'Employers', path: '/', icon: <BusinessIcon /> },
+      { label: 'Candidates', path: '/', icon: <PersonIcon /> },
+      { label: 'All Companies', path: '/', icon: <BusinessIcon /> },
     ],
     2: [
-      { label: 'Home', path: '/' },
-      { label: 'Dashboard', path: '/' },
-      { label: 'Candidate', path: '/' },
-      { label: 'Employer', path: '/employer' },
+      { label: 'Home', path: '/', icon: <HomeIcon /> },
+      { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+      { label: 'Candidate', path: '/', icon: <PersonIcon /> },
+      { label: 'Employer', path: '/employer', icon: <BusinessIcon /> },
     ],
     3: [
-      { label: 'Home', path: '/' },
-      { label: 'Profile', path: '/' },
-      { label: 'Candidate', path: '/' },
+      { label: 'Home', path: '/', icon: <HomeIcon /> },
+      { label: 'Profile', path: '/update-profile', icon: <PersonIcon /> },
+      { label: 'Candidate', path: '/', icon: <PersonIcon /> },
     ],
-  }
+  };
 
   const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest
 
@@ -260,36 +268,193 @@ export default function Topbar() {
      Drawer Content
      ===================== */
   const drawerContent = (
-    <Box sx={{ width: 250, height: "100vh", backgroundColor: "#F6F7F8" }}>
-      <List>
-        {menuItems.map((item) => (
-          <ListItemButton key={item.label} onClick={() => goTo(item.path)}>
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
+    <Box
+      sx={{
+        width: 280,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#F6F7F8',
+        p: 1,
+      }}
+    >
+      {/* Profile Header */}
+      {access_token && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            p: 2,
+            mb: 2,
+            backgroundColor: 'white',
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          }}
+        >
+          <Avatar
+            sx={{
+              width: 48,
+              height: 48,
+              bgcolor: 'primary.main',
+              fontSize: 20,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            }}
+          >
+            {user_data?.user_data?.user_name
+              ? user_data.user_data.user_name.charAt(0).toUpperCase()
+              : '?'}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              noWrap
+              sx={{ textOverflow: 'ellipsis', overflow: 'hidden' }}
+            >
+              {user_data?.user_data?.user_name}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="primary.main"
+              noWrap
+              sx={{ textOverflow: 'ellipsis', overflow: 'hidden' }}
+            >
+              {user_data?.user_data?.email}
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
-
-
-
-        {!access_token && (
-          <>
-            <ListItemButton onClick={() => setopenRegisterForm(true)}>
-              <ListItemText primary="Sign Up" />
+      {/* Scrollable Menu Items */}
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        <List>
+          {menuItems.map((item) => (
+            <ListItemButton
+              key={item.label}
+              onClick={() => goTo(item.path)}
+              sx={{
+                borderRadius: 2,
+                my: 0.5,
+                mx: 2,
+                transition: '0.3s',
+                backgroundColor: location.pathname === item.path ? 'primary.main' : 'white',
+                color: location.pathname === item.path ? 'white' : 'text.primary',
+                boxShadow: location.pathname === item.path ? '0 4px 12px rgba(0,0,0,0.08)' : '0 2px 6px rgba(0,0,0,0.04)',
+                '&:hover': {
+                  backgroundColor: 'primary.light',
+                  color: 'white',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.12)',
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: location.pathname === item.path ? 'white' : 'primary.main',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.label} />
             </ListItemButton>
-            <ListItemButton onClick={() => setOpenLogin(true)}>
-              <ListItemText primary="Login" />
-            </ListItemButton>
-          </>
-        )}
+          ))}
 
-        {access_token && (
-          <ListItemButton onClick={handleLogout}>
-            <ListItemText primary="Logout" />
+          {!access_token && (
+            <>
+              <ListItemButton
+                onClick={() => setopenRegisterForm(true)}
+                sx={{
+                  borderRadius: 2,
+                  my: 0.5,
+                  mx: 2,
+                  backgroundColor: 'white',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  transition: '0.3s',
+                  '&:hover': { backgroundColor: 'primary.light', color: 'white' },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sign Up" />
+              </ListItemButton>
+
+              <ListItemButton
+                onClick={() => setOpenLogin(true)}
+                sx={{
+                  borderRadius: 2,
+                  my: 0.5,
+                  mx: 2,
+                  backgroundColor: 'white',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  transition: '0.3s',
+                  '&:hover': { backgroundColor: 'primary.light', color: 'white' },
+                }}
+              >
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Login" />
+              </ListItemButton>
+            </>
+          )}
+
+          {access_token && user_data.user_data?.user_type === 3 && (
+            <ListItemButton
+              onClick={() => console.log('Download CV')}
+              sx={{
+                borderRadius: 2,
+                my: 0.5,
+                mx: 2,
+                transition: '0.3s',
+                backgroundColor: location.pathname === '/download-cv' ? 'primary.main' : 'white',
+                color: location.pathname === '/download-cv' ? 'white' : 'text.primary',
+                boxShadow: location.pathname === '/download-cv' ? '0 4px 12px rgba(0,0,0,0.08)' : '0 2px 6px rgba(0,0,0,0.04)',
+                '&:hover': {
+                  backgroundColor: 'primary.light',
+                  color: 'white',
+                  boxShadow: '0 6px 14px rgba(0,0,0,0.12)',
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: location.pathname === '/download-cv' ? 'white' : 'primary.main',
+                }}
+              >
+                <DownloadIcon />
+              </ListItemIcon>
+              <ListItemText primary="Download CV Templates" />
+            </ListItemButton>
+          )}
+        </List>
+      </Box>
+
+      {/* Logout at bottom */}
+      {access_token && (
+        <Box sx={{ p: 2, mt: 'auto' }}>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2,
+              backgroundColor: 'white',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+              transition: '0.3s',
+              '&:hover': { backgroundColor: 'error.light', color: 'white' },
+              color: 'error.main',
+            }}
+          >
+            <ListItemIcon sx={{ color: 'error.main', minWidth: 40 }}>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Log out" />
           </ListItemButton>
-        )}
-      </List>
+        </Box>
+      )}
     </Box>
-  )
+  );
 
   return (
     <>
@@ -306,18 +471,17 @@ export default function Topbar() {
       </Snackbar>
 
       <AppBar position="sticky" elevation={1}
-       sx={{
-        background: "#023F6B"
-       }}
+        sx={{
+          background: "#023F6B"
+        }}
       >
         <Toolbar sx={{ gap: 1 }}>
-
           {/* ☰ Mobile Drawer */}
           {isMobile && (
-            <IconButton  onClick={() => setDrawerOpen(true)}>
+            <IconButton onClick={() => setDrawerOpen(true)}>
               <MenuIcon sx={{
                 color: 'white'
-              }}/>
+              }} />
             </IconButton>
           )}
 
@@ -335,7 +499,6 @@ export default function Topbar() {
             onClick={() => navigate('/')}
           />
 
-
           <Box sx={{ flexGrow: 1 }} />
 
           {/* 📱 Mobile Right Action */}
@@ -343,7 +506,7 @@ export default function Topbar() {
             <>
               {/* Profile Avatar & Menu */}
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                <Avatar>{user_data?.user_data?.user_name ? user_data.user_data.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
+                <Avatar>{user_data?.user_data?.user_name ? user_data.user_data?.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
               </IconButton>
               <Menu
                 anchorEl={profileAnchor}
@@ -354,12 +517,27 @@ export default function Topbar() {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
                 <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {user_data.user_data.user_name}
-                  </Typography>
-                  <Typography variant="body2" color="primary.main">
-                    {user_data.user_data.email}
-                  </Typography>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Avatar sx={{ bgcolor: 'primary.main' }}>{user_data?.user_data?.user_name ? user_data.user_data?.user_name.charAt(0).toUpperCase() : '?'}</Avatar>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        noWrap
+                        sx={{ maxWidth: { xs: 150, sm: 250, md: 350 }, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {user_data.user_data?.user_name}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="primary.main"
+                        noWrap
+                        sx={{ maxWidth: { xs: 150, sm: 250, md: 350 }, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {user_data.user_data?.email}
+                      </Typography>
+                    </Box>
+                  </Stack>
                 </Box>
                 <MenuItem
                   onClick={() => {
@@ -372,12 +550,14 @@ export default function Topbar() {
                   </ListItemIcon>
                   Update Profile
                 </MenuItem>
-                <MenuItem>
-                  <ListItemIcon>
-                    <Download fontSize="small" />
-                  </ListItemIcon>
-                  Download CV Templates
-                </MenuItem>
+                {user_data.user_data?.user_type === 3 && (
+                  <MenuItem>
+                    <ListItemIcon>
+                      <Download fontSize="small" />
+                    </ListItemIcon>
+                    Download CV Templates
+                  </MenuItem>
+                )}
                 <MenuItem
                   onClick={() => {
                     setOpenChangePassword(true)
@@ -400,9 +580,6 @@ export default function Topbar() {
             </>
           )}
 
-
-
-
           {/* 🖥 Desktop Menu */}
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -412,10 +589,7 @@ export default function Topbar() {
                   onClick={() => goTo(item.path)}
                   sx={{
                     fontWeight: location.pathname === item.path ? 600 : 400,
-                    color:
-                      location.pathname === item.path
-                        ? 'primary.main'
-                        : 'inherit',
+                    color: location.pathname === item.path ? 'primary.main' : 'inherit',
                   }}
                 >
                   {item.label}
@@ -437,12 +611,29 @@ export default function Topbar() {
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                   >
                     <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {user_data?.user_data?.user_name}
-                      </Typography>
-                      <Typography variant="body2" color="primary.main">
-                        {user_data?.user_data?.email}
-                      </Typography>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main', fontSize: 18 }}>
+                          {user_data?.user_data?.user_name ? user_data.user_data.user_name.charAt(0).toUpperCase() : '?'}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight="bold"
+                            noWrap
+                            sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          >
+                            {user_data?.user_data?.user_name}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="primary.main"
+                            noWrap
+                            sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          >
+                            {user_data?.user_data?.email}
+                          </Typography>
+                        </Box>
+                      </Stack>
                     </Box>
                     <MenuItem
                       onClick={() => {
@@ -455,12 +646,14 @@ export default function Topbar() {
                       </ListItemIcon>
                       Update Profile
                     </MenuItem>
-                    <MenuItem>
-                      <ListItemIcon>
-                        <Download fontSize="small" />
-                      </ListItemIcon>
-                      Download CV Templates
-                    </MenuItem>
+                    {user_data.user_data?.user_type === 3 && (
+                      <MenuItem>
+                        <ListItemIcon>
+                          <Download fontSize="small" />
+                        </ListItemIcon>
+                        Download CV Templates
+                      </MenuItem>
+                    )}
                     <MenuItem
                       onClick={() => {
                         setOpenChangePassword(true)
@@ -510,7 +703,11 @@ export default function Topbar() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         anchor="left"
-        backgroundColor= "#F6F7F8"
+        PaperProps={{
+          sx: {
+            backgroundColor: '#F6F7F8',
+          },
+        }}
       >
         {drawerContent}
       </Drawer>

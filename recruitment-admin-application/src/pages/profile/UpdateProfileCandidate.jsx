@@ -208,7 +208,7 @@ export default function CandidateProfileDashboard() {
   }
 
   return (
-    <Box sx={{ mx: 'auto', py: 4, px: 2, bgcolor: '#f0f2f5', minHeight: '100vh', borderRadius: 3 }}>
+    <Box sx={{ mx: 'auto', py: 4, px: 2, bgcolor: '#f0f2f5', borderRadius: 3 }}>
       {/* Profile Header */}
       <Paper
         sx={{
@@ -338,7 +338,7 @@ export default function CandidateProfileDashboard() {
             }}
           >
             <Stack spacing={2}>
-              {uploadedCvs.map((cv) => (
+              {uploadedCvs.slice().sort((a, b) => b.is_primary - a.is_primary).map((cv) => (
                 <Stack
                   key={cv.pk_id}
                   direction="row"
