@@ -16,6 +16,7 @@ import {
   Chip,
   TextField,
   MenuItem,
+  Menu,
   Switch,
   SpeedDial,
   SpeedDialAction
@@ -39,6 +40,8 @@ import { styled } from '@mui/material/styles';
 
 export default function CandidateProfileDashboard() {
   const { user_data } = useAuthStore()
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // ----- States -----
   const [cvFile, setCvFile] = useState([])
@@ -50,7 +53,11 @@ export default function CandidateProfileDashboard() {
   const [message, setMessage] = useState('')
   const [severity, setSeverity] = useState('error')
   const [editOpen, setEditOpen] = useState(false)
+  const [anchorEls, setAnchorEls] = useState({});
 
+  const setAnchorEl = (cvId, el) => {
+    setAnchorEls((prev) => ({ ...prev, [cvId]: el }));
+  };
   // ----- CV Handlers -----
   const handleCvChange = (e) => {
     const files = Array.from(e.target.files)
@@ -208,13 +215,13 @@ export default function CandidateProfileDashboard() {
   }
 
   return (
-    <Box sx={{ mx: 'auto', py: 4, px: 2, bgcolor: '#f0f2f5', borderRadius: 3 }}>
+    <Box sx={{ width: '100%' }}>
       {/* Profile Header */}
       <Paper
         sx={{
-          p: 4,
-          mb: 5,
-          borderRadius: 4,
+          p: 3,
+          mb: 3,
+          borderRadius: 3,
           bgcolor: '#fff',
           boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
         }}
@@ -275,7 +282,8 @@ export default function CandidateProfileDashboard() {
                 boxShadow: '0 6px 18px rgba(25, 118, 210, 0.5)',
               },
               borderRadius: 2,
-              minWidth: 140,
+              minWidth: { xs: '100%', sm: 140 },
+              width: { xs: '100%', sm: 'auto' },
             }}
           >
             Edit Profile
@@ -288,7 +296,7 @@ export default function CandidateProfileDashboard() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fit, minmax(160px, 1fr))' },
             gap: 3,
           }}
         >
@@ -324,32 +332,42 @@ export default function CandidateProfileDashboard() {
       </Paper>
 
       {/* CV Upload Section */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: '#fff' }}>
+      <Paper sx={{ borderRadius: 3, bgcolor: '#fff', mb: 3, boxShadow: '0 8px 20px rgba(0,0,0,0.1)', width: '100%', boxSizing: 'border-box', p: 3 }}>
         <Typography variant="h6" fontWeight={700} mb={2}>Resume / CV</Typography>
 
         {/* Uploaded CVs with scroll */}
         {uploadedCvs.length > 0 && (
           <Box
             sx={{
-              maxHeight: 4 * 72, // approx 5 items height (72px each) + spacing
+              maxHeight: 4 * 72,
               overflowY: 'auto',
-              mb: 2,
-              pr: 1,
+              mb: 1,
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
-            <Stack spacing={2}>
+            <Stack spacing={1}>
               {uploadedCvs.slice().sort((a, b) => b.is_primary - a.is_primary).map((cv) => (
                 <Stack
                   key={cv.pk_id}
                   direction="row"
-                  spacing={2}
+                  spacing={1}
                   alignItems="center"
                   justifyContent="space-between"
-                  sx={{ p: 1.5, border: '1px solid #eee', borderRadius: 2 }}
+                  sx={{ border: '1px solid #eee', borderRadius: 2, width: '100%', flexWrap: 'nowrap', boxSizing: 'border-box', flexShrink: 0, p: 1 }}
                 >
                   <Stack direction="row" spacing={1} alignItems="center">
                     <UploadFileIcon color="success" />
-                    <Typography>{cv.file_name || cv.resume_file?.split('/').pop() || 'Uploaded CV'}</Typography>
+                    <Typography 
+                      sx={{
+                        maxWidth: { xs: '180px', sm: '260px', md: '100%' },
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {cv.file_name || cv.resume_file?.split('/').pop() || 'Uploaded CV'}
+                    </Typography>
                     <Chip
                       label={cv.is_primary ? 'Active' : 'Inactive'}
                       size="small"
@@ -358,131 +376,211 @@ export default function CandidateProfileDashboard() {
                     />
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    {/* Actions */}
-                    <SpeedDial
-                      ariaLabel="CV actions"
-                      icon={<MoreVertIcon />}
-                      direction="left"
-                      FabProps={{ size: 'small' }}
-                      sx={{
-                        '& .MuiSpeedDial-fab': {
-                          boxShadow: 'none',
-                          bgcolor: 'transparent',
-                          color: 'text.primary',
-                          '&:hover': {
-                            bgcolor: 'action.hover',
-                            boxShadow: 'none',
-                          },
-                        },
-                        '& .MuiSpeedDialAction-fab': {
-                          width: 40,
-                          height: 40,
-                          bgcolor: 'background.paper',
-                          color: 'text.primary',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                          '&:hover': {
-                            bgcolor: 'action.hover',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                          },
-                        },
-                        '& .MuiSpeedDialAction-staticTooltipLabel': {
-                          bgcolor: 'background.paper',
-                          color: 'text.primary',
-                          boxShadow: 2,
-                          fontSize: '0.875rem',
-                        },
-                      }}
-                    >
-                      {!cv.is_primary && (
-                        <SpeedDialAction
-                          icon={<StarIcon />}
-                          tooltipTitle="Set Default"
-                          onClick={() => setDefaultCv(cv.pk_id)}
-                        />
-                      )}
-
-                      {cv.download_url && (
-                        <SpeedDialAction
-                          icon={<UploadFileIcon />}
-                          tooltipTitle="Download"
-                          onClick={() =>
-                            downloadFile(cv.pk_id, cv.resume_file)
-                          }
-                        />
-                      )}
-
-                      <SpeedDialAction
-                        icon={
-                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                            <EditIcon />
-                            <input
-                              type="file"
-                              hidden
-                              accept=".pdf,.doc,.docx"
-                              onChange={async (e) => {
-                                const file = e.target.files[0];
-                                if (!file) return;
-
-                                const allowedTypes = [
-                                  'application/pdf',
-                                  'application/msword',
-                                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                ];
-                                if (!allowedTypes.includes(file.type)) {
-                                  setMessage(file.name + ' is not allowed.');
-                                  setSeverity('error');
-                                  setOpenSnackbar(true);
-                                  return;
-                                }
-                                if (file.size > 5 * 1024 * 1024) {
-                                  setMessage(file.name + ' exceeds 5MB.');
-                                  setSeverity('error');
-                                  setOpenSnackbar(true);
-                                  return;
-                                }
-
-                                try {
-                                  setLoading(true);
-                                  const formData = new FormData();
-                                  formData.append('resume_type', 'Upload');
-                                  formData.append('resume_content', cv.resume_content || '');
-                                  formData.append('recommendation_letter', cv.recommendation_letter || '');
-                                  formData.append('is_primary', cv.is_primary);
-                                  formData.append('resume_file', file);
-
-                                  const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
-                                    headers: { 'Content-Type': 'multipart/form-data' },
-                                  });
-
-                                  setUploadedCvs((prev) =>
-                                    prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
-                                  );
-
-                                  setMessage('CV replaced successfully');
-                                  setSeverity('success');
-                                } catch (err) {
-                                  setMessage(err.response?.data?.detail || 'Replace failed');
-                                  setSeverity('error');
-                                } finally {
-                                  setOpenSnackbar(true);
-                                  setLoading(false);
-                                }
+                    {isMobile ? (
+                      <>
+                        <IconButton
+                          aria-controls={`cv-menu-${cv.pk_id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => setAnchorEl(cv.pk_id, e.currentTarget)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                        <Menu
+                          id={`cv-menu-${cv.pk_id}`}
+                          anchorEl={anchorEls[cv.pk_id] || null}
+                          open={Boolean(anchorEls[cv.pk_id])}
+                          onClose={() => setAnchorEl(cv.pk_id, null)}
+                          anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                          }}
+                          transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                          }}
+                          PaperProps={{
+                            sx: {
+                              borderRadius: 2,
+                              minWidth: 180,
+                              boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
+                              bgcolor: 'background.paper',
+                              py: 0.5,
+                            },
+                          }}
+                        >
+                          {!cv.is_primary && (
+                            <MenuItem
+                              onClick={() => { setDefaultCv(cv.pk_id); setAnchorEl(cv.pk_id, null); }}
+                              sx={{
+                                px: 2,
+                                py: 1,
+                                '&:hover': { bgcolor: 'action.hover' },
                               }}
-                            />
-                          </label>
-                        }
-                        tooltipTitle="Replace"
-                      />
+                            >
+                              <StarIcon fontSize="small" sx={{ mr: 1, color: 'warning.main' }} /> 
+                              Set Default
+                            </MenuItem>
+                          )}
 
-                      <SpeedDialAction
-                        icon={<DeleteIcon color="error" />}
-                        tooltipTitle="Delete"
-                        onClick={() => {
-                          setCvToDelete(cv.pk_id)
-                          setConfirmOpen(true)
-                        }}
-                      />
-                    </SpeedDial>
+                          {cv.download_url && (
+                            <MenuItem
+                              onClick={() => { downloadFile(cv.pk_id, cv.resume_file); setAnchorEl(cv.pk_id, null); }}
+                              sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                            >
+                              <UploadFileIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> 
+                              Download
+                            </MenuItem>
+                          )}
+
+                          <MenuItem sx={{ px: 2, py: 1 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
+                              <EditIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} /> 
+                              Replace
+                              <input
+                                type="file"
+                                hidden
+                                accept=".pdf,.doc,.docx"
+                                onChange={(e) => handleReplaceCv(e, cv.pk_id)}
+                              />
+                            </label>
+                          </MenuItem>
+
+                          <MenuItem
+                            onClick={() => { setCvToDelete(cv.pk_id); setConfirmOpen(true); setAnchorEl(cv.pk_id, null); }}
+                            sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                          >
+                            <DeleteIcon fontSize="small" sx={{ mr: 1, color: 'error.main' }} /> 
+                            Delete
+                          </MenuItem>
+                        </Menu>
+                      </>
+                      ) : (
+                        <SpeedDial
+                          ariaLabel="CV actions"
+                          icon={<MoreVertIcon />}
+                          direction={'left'}
+                          FabProps={{ size: 'small' }}
+                          sx={{
+                            '& .MuiSpeedDial-fab': {
+                              boxShadow: 'none',
+                              bgcolor: 'transparent',
+                              color: 'text.primary',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                boxShadow: 'none',
+                              },
+                            },
+                            '& .MuiSpeedDialAction-fab': {
+                              width: 40,
+                              height: 40,
+                              bgcolor: 'background.paper',
+                              color: 'text.primary',
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                              },
+                            },
+                            '& .MuiSpeedDialAction-staticTooltipLabel': {
+                              bgcolor: 'background.paper',
+                              color: 'text.primary',
+                              boxShadow: 2,
+                              fontSize: '0.875rem',
+                            },
+                          }}
+                        >
+                          {!cv.is_primary && (
+                            <SpeedDialAction
+                              icon={<StarIcon />}
+                              tooltipTitle="Set Default"
+                              onClick={() => setDefaultCv(cv.pk_id)}
+                            />
+                          )}
+
+                          {cv.download_url && (
+                            <SpeedDialAction
+                              icon={<UploadFileIcon />}
+                              tooltipTitle="Download"
+                              onClick={() =>
+                                downloadFile(cv.pk_id, cv.resume_file)
+                              }
+                            />
+                          )}
+
+                          <SpeedDialAction
+                            icon={
+                              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                <EditIcon />
+                                <input
+                                  type="file"
+                                  hidden
+                                  accept=".pdf,.doc,.docx"
+                                  onChange={async (e) => {
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+
+                                    const allowedTypes = [
+                                      'application/pdf',
+                                      'application/msword',
+                                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    ];
+                                    if (!allowedTypes.includes(file.type)) {
+                                      setMessage(file.name + ' is not allowed.');
+                                      setSeverity('error');
+                                      setOpenSnackbar(true);
+                                      return;
+                                    }
+                                    if (file.size > 5 * 1024 * 1024) {
+                                      setMessage(file.name + ' exceeds 5MB.');
+                                      setSeverity('error');
+                                      setOpenSnackbar(true);
+                                      return;
+                                    }
+
+                                    try {
+                                      setLoading(true);
+                                      const formData = new FormData();
+                                      formData.append('resume_type', 'Upload');
+                                      formData.append('resume_content', cv.resume_content || '');
+                                      formData.append('recommendation_letter', cv.recommendation_letter || '');
+                                      formData.append('is_primary', cv.is_primary);
+                                      formData.append('resume_file', file);
+
+                                      const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
+                                        headers: { 'Content-Type': 'multipart/form-data' },
+                                      });
+
+                                      setUploadedCvs((prev) =>
+                                        prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
+                                      );
+
+                                      setMessage('CV replaced successfully');
+                                      setSeverity('success');
+                                    } catch (err) {
+                                      setMessage(err.response?.data?.detail || 'Replace failed');
+                                      setSeverity('error');
+                                    } finally {
+                                      setOpenSnackbar(true);
+                                      setLoading(false);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            }
+                            tooltipTitle="Replace"
+                          />
+
+                          <SpeedDialAction
+                            icon={<DeleteIcon color="error" />}
+                            tooltipTitle="Delete"
+                            onClick={() => {
+                              setCvToDelete(cv.pk_id)
+                              setConfirmOpen(true)
+                            }}
+                          />
+                        </SpeedDial>
+                      )
+                    }
                   </Stack>
                 </Stack>
               ))}
@@ -492,7 +590,7 @@ export default function CandidateProfileDashboard() {
 
         {/* Selected Files for New Upload */}
         {cvFile.length > 0 && (
-          <Stack spacing={1} mb={2}>
+          <Stack spacing={1} mb={1}>
             {cvFile.map((file, idx) => (
               <Stack
                 key={idx}
@@ -500,13 +598,13 @@ export default function CandidateProfileDashboard() {
                 spacing={2}
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{ p: 1, border: '1px solid #eee', borderRadius: 2 }}
+                sx={{ p: 1, border: '1px solid #eee', borderRadius: 2,width: '100%', flexWrap: 'wrap', boxSizing: 'border-box', }}
               >
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <UploadFileIcon color="primary" />
-                  <Typography>{file.name}</Typography>
+                  <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
                   <Button
                     variant="contained"
                     size="small"
@@ -683,7 +781,7 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
 // Reusable Section Component
 function Section({ title, description, buttonText, onAdd, isEdit }) {
   return (
-    <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 2px 8px rgb(0 0 0 / 0.05)' }}>
+    <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
       <Typography
         variant="h6"
         fontWeight={700}
