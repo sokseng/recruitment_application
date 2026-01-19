@@ -4,8 +4,8 @@ from typing import List, Optional
 from app.dependencies.auth import verify_access_token
 
 from app.database.deps import get_db
-from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer
-from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles
+from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer, UserUpdateProfile
+from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles, update_profile_employer
 
 router = APIRouter(prefix="/employer", tags=["Employers"])
 
@@ -78,7 +78,7 @@ def api_delete_employer(employer_id: int, db: Session = Depends(get_db), current
 
 
 #get user profile employer by id
-@router.get("/profile", response_model=UserProfileEmployer)
+@router.get("/profile/update", response_model=UserProfileEmployer)
 def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     try:
         db_employer = get_employer_profiles(db, current_user_id)
@@ -89,4 +89,40 @@ def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = D
     except Exception as e:
         raise HTTPException(status_code=404, detail="Employer not found")
     
-    
+
+@router.post("/profile/updates")
+async def update_profile(
+    user_name: str = Form(...),
+    gender: str = Form(None),
+    phone: str = Form(None),
+    date_of_birth: str = Form(None),
+    address: str = Form(None),
+    company_name: str = Form(None),
+    company_email: str = Form(None),
+    company_contact: str = Form(None),
+    company_address: str = Form(None),
+    company_description: str = Form(None),
+    company_website: str = Form(None),
+    company_logo: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    user_data = UserUpdateProfile(
+        user_name=user_name,
+        gender=gender,
+        phone=phone,
+        date_of_birth=date_of_birth,
+        address=address, 
+    )
+
+    employer_data = EmployerUpdate(
+        company_name=company_name,
+        company_email=company_email,
+        company_contact=company_contact,
+        company_address=company_address,
+        company_description=company_description,
+        company_website=company_website,
+    )
+
+    return update_profile_employer(db, user_data, employer_data, company_logo, current_user_id)
+

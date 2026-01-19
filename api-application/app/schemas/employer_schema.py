@@ -43,6 +43,8 @@ class UserProfileEmployer(BaseModel):
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     address: Optional[str] = None
+    company_name: Optional[str] = None
+    company_email: Optional[str] = None
     company_contact: Optional[str] = None
     company_address: Optional[str] = None
     company_description: Optional[str] = None
@@ -50,4 +52,12 @@ class UserProfileEmployer(BaseModel):
     company_logo: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdateProfile(BaseModel):
+    user_name: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
 

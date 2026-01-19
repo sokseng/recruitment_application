@@ -2,7 +2,7 @@ import os
 from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.employer_model import Employer
-from app.schemas.employer_schema import EmployerCreate, EmployerUpdate
+from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, UserProfileEmployer, UserUpdateProfile
 from shutil import copyfileobj
 from app.models.user_model import User
 
@@ -89,6 +89,8 @@ def get_employer_profiles(db: Session, user_id: int):
 
     return {
         "company_contact": db_employer.company_contact,
+        "company_name": db_employer.company_name,
+        "company_email": db_employer.company_email,
         "company_address": db_employer.company_address,
         "company_description": db_employer.company_description,
         "company_website": db_employer.company_website,
@@ -100,3 +102,41 @@ def get_employer_profiles(db: Session, user_id: int):
         "date_of_birth": db_user.date_of_birth,
         "address": db_user.address
     }
+
+
+def update_profile_employer(db: Session, user_data: UserUpdateProfile, employer_data: UserProfileEmployer, logo_file: UploadFile = None, user_id: int = None):
+    db_user = db.query(User).filter(User.pk_id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found")
+    if db_user:
+        db_user.user_name = user_data.user_name
+        db_user.gender = user_data.gender
+        db_user.phone = user_data.phone
+        db_user.date_of_birth = user_data.date_of_birth
+        db_user.address = user_data.address
+
+        db.commit()
+
+    db_employer = db.query(Employer).filter(Employer.user_id == db_user.pk_id).first()
+    if not db_employer:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employer profile not found")
+    if db_employer:
+    
+        logo_filename = None
+
+        if logo_file:
+            logo_filename = logo_file.filename
+            file_path = os.path.join(UPLOAD_DIR, logo_filename)
+            with open(file_path, "wb") as f:
+                copyfileobj(logo_file.file, f)
+            db_employer.company_logo = logo_filename
+
+        db_employer.company_contact = employer_data.company_contact
+        db_employer.company_name = employer_data.company_name
+        db_employer.company_email = employer_data.company_email
+        db_employer.company_address = employer_data.company_address
+        db_employer.company_description = employer_data.company_description
+        db_employer.company_website = employer_data.company_website
+        db_employer.company_logo = logo_filename
+        db.commit()
+        return db_employer
