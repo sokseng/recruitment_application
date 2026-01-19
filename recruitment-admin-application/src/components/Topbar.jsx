@@ -94,15 +94,13 @@ export default function Topbar() {
     ],
     1: [
       { label: 'Home', path: '/', icon: <HomeIcon /> },
-      { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { label: 'Users', path: '/', icon: <PeopleIcon /> },
-      { label: 'Employers', path: '/', icon: <BusinessIcon /> },
+      { label: 'Employers', path: '/admin/employer', icon: <BusinessIcon /> },
       { label: 'Candidates', path: '/', icon: <PersonIcon /> },
       { label: 'All Companies', path: '/', icon: <BusinessIcon /> },
     ],
     2: [
       { label: 'Home', path: '/', icon: <HomeIcon /> },
-      { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
       { label: 'Candidate', path: '/', icon: <PersonIcon /> },
       { label: 'Employer', path: '/employer', icon: <BusinessIcon /> },
     ],
@@ -143,7 +141,7 @@ export default function Topbar() {
       // navigate by role
       switch (res.data.user_type) {
         case 1:
-          navigate('/admin', { replace: true })
+          navigate('/admin/employer', { replace: true })
           break
         case 2:
           navigate('/employer', { replace: true })

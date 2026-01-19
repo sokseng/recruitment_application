@@ -1,8 +1,10 @@
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header
 from sqlalchemy.orm import Session
+from app.schemas.user_schema import JobOut
 from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword, ResponseUserProfile, UpdateUserProfile
 from app.controllers import user_controller
+from typing import List
 from passlib.context import CryptContext
 from datetime import timedelta, datetime
 from app.dependencies.auth import verify_access_token
@@ -115,6 +117,14 @@ def get_user_by_id(db: Session = Depends(get_db), current_user_id: int = Depends
 def update_user_profile(data: UpdateUserProfile, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     return user_controller.update_user_profile(db, current_user_id, data)
 
+
+@router.get("/my-jobs", response_model=List[JobOut])
+def get_my_jobs(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    
+    return user_controller.get_jobs_by_employer(db, current_user_id)
 
 
 

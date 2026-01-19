@@ -127,5 +127,21 @@ class UpdateProfile(BaseModel):
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
-    
+
+
+class JobOut(BaseModel):
+    pk_id: int
+    job_title: str
+    job_type: str
+    level: Optional[str]
+    position_number: Optional[int]
+    salary_range: Optional[str]
+    location: Optional[str]
+    job_description: str
+    posting_date: datetime
+    closing_date: Optional[datetime]
+    status: str          # ✅ string, not bool
+    created_at: datetime
+    company_name: str
+    company_logo: Optional[str] = None
     

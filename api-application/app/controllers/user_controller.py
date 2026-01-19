@@ -4,7 +4,9 @@ from app.models.user_model import User
 from app.models.user_session_model import UserSession
 from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile, UserResponse
 from passlib.context import CryptContext
+from app.models.job_model import Job
 from jose import jwt
+from sqlalchemy import select
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
 from fastapi import HTTPException
@@ -233,3 +235,57 @@ def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile)
     db.commit()
     db.refresh(user)
     return user
+
+
+def get_jobs_by_employer(db: Session, user_id: int):
+    db_user = db.query(User).filter(User.pk_id == user_id).first()
+    if not db_user:
+        return []
+
+    # ADMIN → get ALL jobs
+    if db_user.user_type == int(UserType.ADMIN.value):
+        stmt = (
+            db.query(
+                Job.pk_id,
+                Job.job_title,
+                Job.job_type,
+                Job.level,
+                Job.position_number,
+                Job.salary_range,
+                Job.location,
+                Job.job_description,
+                Job.posting_date,
+                Job.closing_date,
+                Job.status,
+                Job.created_at,
+                Employer.company_name,
+                Employer.company_logo,
+            )
+            .join(Employer, Employer.pk_id == Job.employer_id)
+            .order_by(Job.created_at.desc())
+        )
+
+        rows = stmt.all()
+
+        result = []
+        for row in rows:
+            result.append({
+                "pk_id": row.pk_id,
+                "job_title": row.job_title,
+                "job_type": row.job_type,
+                "level": row.level,
+                "position_number": row.position_number,
+                "salary_range": row.salary_range,
+                "location": row.location,
+                "job_description": row.job_description,
+                "posting_date": row.posting_date,
+                "closing_date": row.closing_date,
+                "status": row.status.value if hasattr(row.status, "value") else row.status,
+                "created_at": row.created_at,
+                "company_name": row.company_name,
+                "company_logo": row.company_logo,
+            })
+
+        return result
+
+    return []

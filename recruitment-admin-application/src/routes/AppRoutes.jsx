@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '../components/ProtectedRoute'
 import Dashboard from '../pages/Dashboard'
 import AdminDashboard from '../pages/AdminDashboard'
+import AdminEmployer from '../pages/AdminEmployer'
 import CandidateDashboard from '../pages/CandidateDashboard'
 import UpdateProfile from '../pages/profile/UpdateProfile'
 import MainLayout from '../layouts/MainLayout'
@@ -22,6 +23,16 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin/employer"
+          element={
+            <ProtectedRoute>
+              <AdminEmployer />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/employer"
           element={
