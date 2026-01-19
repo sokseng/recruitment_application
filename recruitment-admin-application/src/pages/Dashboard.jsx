@@ -252,7 +252,22 @@ export default function Dashboard() {
                     {companyName}
                   </Typography>
                 </Box>
-              </Stack>
+                {/* Desktop Apply Action */}
+                {!isMobile && (
+                  <Stack direction="row" justifyContent="flex-end" p={1}>
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      startIcon={<EmailIcon />}
+                      onClick={() => setOpenApplyDialog(true)}
+                      size='small'
+                    >
+                      Direct Apply
+                    </Button>
+                  </Stack>
+                )}
+                </Stack>
+              
 
               {/* Quick info chips / rows */}
               <Stack spacing={1.5} sx={{ mt: 3 }}>
@@ -338,20 +353,6 @@ export default function Dashboard() {
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
             <Typography color="text.secondary">Select a job to view details</Typography>
           </Box>
-        )}
-        {/* Desktop Apply Action */}
-        {!isMobile && (
-          <Stack direction="row" justifyContent="flex-end" p={1}>
-            <Button
-              variant="contained"
-              color="warning"
-              startIcon={<EmailIcon />}
-              onClick={() => setOpenApplyDialog(true)}
-              size='small'
-            >
-              Direct Apply
-            </Button>
-          </Stack>
         )}
 
         {/* Floating / Sticky Apply button on mobile */}

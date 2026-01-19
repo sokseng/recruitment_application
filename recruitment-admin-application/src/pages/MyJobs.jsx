@@ -58,6 +58,7 @@ const JOB_LEVELS = [
 const JOB_STATUSES_CREATE = [
   { value: "Open", label: "Open (Publish now)" },
   { value: "Closed", label: "Closed" },
+  { value: "Draft", label: "Draft" },
 ];
 
 const JOB_STATUSES_EDIT = ["Draft", "Open", "Closed"];
@@ -599,11 +600,9 @@ export default function MyJobs() {
                   label={job.status}
                   size="small"
                   color={
-                    job.status === "Open"
-                      ? "success"
-                      : job.status === "Closed"
-                      ? "error"
-                      : "default"
+                    job.status === "Open" ? "success" : 
+                    job.status === "Closed" ? "error" :
+                    job.status === "Draft" ? "warning" : "default"
                   }
                   sx={{
                     fontWeight: 500,

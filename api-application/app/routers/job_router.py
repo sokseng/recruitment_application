@@ -7,6 +7,7 @@ from app.controllers.job_controller import (
     create_job, get_job, get_jobs_by_employer,
     update_job, delete_job, get_all_active_jobs
 )
+from app.models.employer_model import Employer
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -29,7 +30,10 @@ def get_my_jobs(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    return get_jobs_by_employer(db, current_user_id, skip, limit)
+    employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
+    if not employer:
+        return []  # or raise 403 / 404 depending on your logic
+    return get_jobs_by_employer(db, employer.pk_id, skip, limit)
 
 
 @router.get("/{job_id}", response_model=JobOut)
@@ -57,11 +61,14 @@ def update_existing_job(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    updated_job = update_job(db, job_id, job_data, current_user_id)
-    if not updated_job:
-        raise HTTPException(status_code=404, detail="Job not found or not yours")
-    return updated_job
+    employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
+    if not employer:
+        raise HTTPException(403, "You don't have an employer profile")
 
+    updated_job = update_job(db, job_id, job_data, employer.pk_id)  
+    if not updated_job:
+        raise HTTPException(404, "Job not found or not yours")
+    return updated_job
 
 @router.delete("/{job_id}", response_model=JobOut)
 def delete_existing_job(
