@@ -16,7 +16,9 @@ import {
   Chip,
   TextField,
   MenuItem,
-  Switch
+  Switch,
+  SpeedDial,
+  SpeedDialAction
 } from '@mui/material'
 import { useState, useEffect } from 'react'
 import {
@@ -27,6 +29,8 @@ import {
   UploadFile as UploadFileIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  MoreVert as MoreVertIcon,
+  Star as StarIcon
 } from '@mui/icons-material'
 import useAuthStore from '../../store/useAuthStore'
 import api from '../../services/api'
@@ -58,11 +62,15 @@ export default function CandidateProfileDashboard() {
 
     const validFiles = files.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`${file.name} is not allowed.`)
+        setMessage(file.name + ' is not allowed.')
+        setSeverity('error')
+        setOpenSnackbar(true)
         return false
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} exceeds 5MB.`)
+        setMessage(file.name + ' exceeds 5MB.')
+        setSeverity('error')
+        setOpenSnackbar(true)
         return false
       }
       return true
@@ -82,7 +90,7 @@ export default function CandidateProfileDashboard() {
       formData.append('resume_type', 'Upload')
       formData.append('resume_content', '')
       formData.append('recommendation_letter', '')
-      formData.append('is_primary', true)
+      formData.append('is_primary', false)
       formData.append('resume_file', file)
 
       const { data } = await api.post('/candidate/resumes/', formData, {
@@ -144,14 +152,36 @@ export default function CandidateProfileDashboard() {
 
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error(error);
       setMessage('Failed to download file');
       setSeverity('error');
       setOpenSnackbar(true);
     }
   };
 
-  // Inside CandidateProfileDashboard
+  const setDefaultCv = async (cvId) => {
+    try {
+      setLoading(true)
+
+      await api.post(`/candidate/resumes/${cvId}/set-primary`)
+
+      setUploadedCvs((prev) =>
+        prev.map((cv) => ({
+          ...cv,
+          is_primary: cv.pk_id === cvId,
+        }))
+      )
+
+      setMessage('Default CV updated successfully')
+      setSeverity('success')
+    } catch (err) {
+      setMessage(err.response?.data?.detail || 'Failed to set default CV')
+      setSeverity('error')
+    } finally {
+      setOpenSnackbar(true)
+      setLoading(false)
+    }
+  }
+
   const showSnackbar = (msg, severityType = 'success') => {
     setMessage(msg)
     setSeverity(severityType)
@@ -213,7 +243,7 @@ export default function CandidateProfileDashboard() {
 
             <Box>
               <Typography variant="h5" fontWeight={700}>
-                {user_data?.user_name || 'Unnamed'}
+                {user_data.user_data?.user_name || 'Unnamed'}
               </Typography>
 
               {user_data?.user_data?.address && (
@@ -327,84 +357,132 @@ export default function CandidateProfileDashboard() {
                       sx={{ ml: 1 }}
                     />
                   </Stack>
-                  <Stack direction="row" spacing={1}>
-                    {cv.download_url && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        component="a"
-                        onClick={() => downloadFile(cv.pk_id, cv.resume_file)}
-                        rel="noopener noreferrer"
-                        startIcon={<UploadFileIcon />}
-                      >
-                        Download
-                      </Button>
-                    )}
-                    {/* Replace CV */}
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      size="small"
-                      startIcon={<EditIcon />}
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {/* Actions */}
+                    <SpeedDial
+                      ariaLabel="CV actions"
+                      icon={<MoreVertIcon />}
+                      direction="left"
+                      FabProps={{ size: 'small' }}
+                      sx={{
+                        '& .MuiSpeedDial-fab': {
+                          boxShadow: 'none',
+                          bgcolor: 'transparent',
+                          color: 'text.primary',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                            boxShadow: 'none',
+                          },
+                        },
+                        '& .MuiSpeedDialAction-fab': {
+                          width: 40,
+                          height: 40,
+                          bgcolor: 'background.paper',
+                          color: 'text.primary',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                          },
+                        },
+                        '& .MuiSpeedDialAction-staticTooltipLabel': {
+                          bgcolor: 'background.paper',
+                          color: 'text.primary',
+                          boxShadow: 2,
+                          fontSize: '0.875rem',
+                        },
+                      }}
                     >
-                      Replace
-                      <input
-                        hidden
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={async (e) => {
-                          const file = e.target.files[0]
-                          if (!file) return
-                          const allowedTypes = [
-                            'application/pdf',
-                            'application/msword',
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                          ]
-                          if (!allowedTypes.includes(file.type)) {
-                            alert(`${file.name} is not allowed.`)
-                            return
-                          }
-                          if (file.size > 5 * 1024 * 1024) {
-                            alert(`${file.name} exceeds 5MB.`)
-                            return
-                          }
-                          try {
-                            setLoading(true)
-                            const formData = new FormData()
-                            formData.append('resume_type', 'Upload')
-                            formData.append('resume_content', '')
-                            formData.append('recommendation_letter', '')
-                            formData.append('is_primary', true)
-                            formData.append('resume_file', file)
+                      {!cv.is_primary && (
+                        <SpeedDialAction
+                          icon={<StarIcon />}
+                          tooltipTitle="Set Default"
+                          onClick={() => setDefaultCv(cv.pk_id)}
+                        />
+                      )}
 
-                            const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
-                              headers: { 'Content-Type': 'multipart/form-data' },
-                            })
-
-                            setUploadedCvs((prev) =>
-                              prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
-                            )
-
-                            setMessage('CV replaced successfully')
-                            setSeverity('success')
-                          } catch (err) {
-                            setMessage(err.response?.data?.detail || 'Replace failed')
-                            setSeverity('error')
-                          } finally {
-                            setOpenSnackbar(true)
-                            setLoading(false)
+                      {cv.download_url && (
+                        <SpeedDialAction
+                          icon={<UploadFileIcon />}
+                          tooltipTitle="Download"
+                          onClick={() =>
+                            downloadFile(cv.pk_id, cv.resume_file)
                           }
+                        />
+                      )}
+
+                      <SpeedDialAction
+                        icon={
+                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <EditIcon />
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf,.doc,.docx"
+                              onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
+
+                                const allowedTypes = [
+                                  'application/pdf',
+                                  'application/msword',
+                                  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                ];
+                                if (!allowedTypes.includes(file.type)) {
+                                  setMessage(file.name + ' is not allowed.');
+                                  setSeverity('error');
+                                  setOpenSnackbar(true);
+                                  return;
+                                }
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setMessage(file.name + ' exceeds 5MB.');
+                                  setSeverity('error');
+                                  setOpenSnackbar(true);
+                                  return;
+                                }
+
+                                try {
+                                  setLoading(true);
+                                  const formData = new FormData();
+                                  formData.append('resume_type', 'Upload');
+                                  formData.append('resume_content', cv.resume_content || '');
+                                  formData.append('recommendation_letter', cv.recommendation_letter || '');
+                                  formData.append('is_primary', cv.is_primary);
+                                  formData.append('resume_file', file);
+
+                                  const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                  });
+
+                                  setUploadedCvs((prev) =>
+                                    prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
+                                  );
+
+                                  setMessage('CV replaced successfully');
+                                  setSeverity('success');
+                                } catch (err) {
+                                  setMessage(err.response?.data?.detail || 'Replace failed');
+                                  setSeverity('error');
+                                } finally {
+                                  setOpenSnackbar(true);
+                                  setLoading(false);
+                                }
+                              }}
+                            />
+                          </label>
+                        }
+                        tooltipTitle="Replace"
+                      />
+
+                      <SpeedDialAction
+                        icon={<DeleteIcon color="error" />}
+                        tooltipTitle="Delete"
+                        onClick={() => {
+                          setCvToDelete(cv.pk_id)
+                          setConfirmOpen(true)
                         }}
                       />
-                    </Button>
-
-                    {/* Delete CV */}
-                    <IconButton
-                      color="error"
-                      onClick={() => { setCvToDelete(cv.pk_id); setConfirmOpen(true) }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    </SpeedDial>
                   </Stack>
                 </Stack>
               ))}
@@ -488,7 +566,7 @@ export default function CandidateProfileDashboard() {
 
       {/* Other Profile Sections */}
       {[
-        { title: 'Overview', description: `About ${user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
+        { title: 'Overview', description: `About ${user_data.user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
         { title: 'Work Experiences', description: 'Add Work Experience to be found by more Employers', buttonText: 'Add Work Experience' },
         { title: 'Education & Qualifications', description: 'Add Education to be found by more Employers', buttonText: 'Add Education' },
         { title: 'Skills', description: 'Add Skills to be found by more Employers', buttonText: 'Add Skill' },
