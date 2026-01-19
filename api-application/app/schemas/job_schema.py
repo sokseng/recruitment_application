@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 from app.models.job_model import JobLevel, JobType, JobStatus
@@ -27,10 +27,18 @@ class JobUpdate(BaseModel):
     closing_date: Optional[datetime] = None
     status: Optional[JobStatus] = None
 
+class EmployerBasic(BaseModel):
+    pk_id: int
+    company_name: str
+    company_logo: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class JobOut(BaseModel):
     pk_id: int
     employer_id: int
+    employer: EmployerBasic
     job_title: str
     job_type: JobType
     level: JobLevel

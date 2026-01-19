@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from app.models.job_model import Job
 from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
 from app.models.employer_model import Employer
+from sqlalchemy.orm import joinedload
 
 
 def create_job(db: Session, job_data: JobCreate, user_id: int) -> JobOut:
@@ -36,6 +37,7 @@ def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: in
 def get_all_active_jobs(db: Session, skip: int = 0, limit: int = 50) -> list[Job]:
     stmt = (
         select(Job)
+        .options(joinedload(Job.employer))
         .where(Job.status == "Open")
         .offset(skip)
         .limit(limit)

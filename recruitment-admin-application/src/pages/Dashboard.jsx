@@ -40,6 +40,8 @@ export default function Dashboard() {
   const [showDetailMobile, setShowDetailMobile] = useState(false);
   const [openApplyDialog, setOpenApplyDialog] = useState(false)
 
+  const baseURL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     loadJobs();
   }, []);
@@ -54,6 +56,7 @@ export default function Dashboard() {
       filtered = jobs.filter((job) => {
         const title = job.job_title?.toLowerCase() || '';
         const company = job.employer?.company_name?.toLowerCase() || '';
+
         const location = job.location?.toLowerCase() || '';
         return title.includes(term) || company.includes(term) || location.includes(term);
       });
@@ -150,13 +153,15 @@ export default function Dashboard() {
         ) : (
           filteredJobs.map((job) => {
             const active = selectedJob?.pk_id === job.pk_id;
+            const companyName = job.employer?.company_name;
+            const logoFilename = job.employer?.company_logo;
             return (
               <Box
                 key={job.pk_id}
                 onClick={() => handleSelectJob(job)}
                 sx={{
                   px: 2,
-                  py: 2.5,
+                  py: 2,
                   cursor: 'pointer',
                   bgcolor: active ? 'action.selected' : 'transparent',
                   borderLeft: active ? '4px solid' : '4px solid transparent',
@@ -166,18 +171,27 @@ export default function Dashboard() {
               >
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Avatar
-                    src={
-                      job.employer?.company_logo
-                        ? `/uploads/employers/${job.employer.company_logo}`
-                        : undefined
-                    }
-                    sx={{ width: 48, height: 48 }}
-                  />
+                    src={logoFilename ? `${baseURL}/uploads/employers/${logoFilename}` : undefined}
+                    alt={`${companyName} logo`}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      bgcolor: 'primary.main',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                      {companyName.charAt(0).toUpperCase()}
+                  </Avatar>
                   <Box flex={1}>
-                    <Typography fontWeight={600}>{job.job_title}</Typography>
-                    <Typography variant="body2">{job.employer?.company_name}</Typography>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {job.job_title}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      {companyName}
+                    </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(job.posting_date).toLocaleDateString('en-GB')} · {job.location}
+                      {new Date(job.posting_date).toLocaleDateString('en-GB')} · {job.location || 'Phnom Penh'}
                     </Typography>
                   </Box>
                 </Stack>
@@ -192,224 +206,233 @@ export default function Dashboard() {
   // ────────────────────────────────────────────────
   // Job Detail Content (shared, but with mobile back bar)
   // ────────────────────────────────────────────────
-  const DetailContent = () => (
-  <Box
-    sx={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      bgcolor: 'background.default',
-    }}
-  >
-    {/* Mobile top bar */}
-    {isMobile && (
-      <AppBar position="sticky" color="default" elevation={1}>
-        <Toolbar variant="dense"></Toolbar>
-      </AppBar>
-    )}
-
-    {selectedJob ? (
-      <Box sx={{ flex: 1, overflowY: 'auto', pb: { xs: 10, sm: 4 } }}>
-        {/* Hero section – like screenshot */}
-        <Box sx={{ p: 3, pb: 2, bgcolor: 'background.paper' }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar
-              src={
-                selectedJob.employer?.company_logo
-                  ? `/uploads/employers/${selectedJob.employer.company_logo}`
-                  : undefined
-              }
-              sx={{ width: 64, height: 64, border: '1px solid', borderColor: 'divider' }}
-            />
-            <Box flex={1}>
-              <Typography variant="h6" fontWeight={700} lineHeight={1}>
-                {selectedJob.job_title}
-              </Typography>
-              <Typography variant="subtitle1" color="primary.main" fontWeight={500}>
-                {selectedJob.employer?.company_name}
-              </Typography>
-            </Box>
-          </Stack>
-
-          {/* Quick info chips / rows */}
-          <Stack spacing={1.5} sx={{ mt: 3 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                Posting Date:
-              </Typography>
-              <Typography variant="body2">
-                {new Date(selectedJob.posting_date).toLocaleDateString('en-GB')}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                Closing Date:
-              </Typography>
-              <Typography variant="body2">
-                {new Date(selectedJob.closing_date).toLocaleDateString('en-GB')}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                Job Type:
-              </Typography>
-              <Typography variant="body2">{selectedJob.job_type}</Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                Location:
-              </Typography>
-              <Typography variant="body2">{selectedJob.location || 'Phnom Penh'}</Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                Level:
-              </Typography>
-              <Typography variant="body2">{selectedJob.level}</Typography>
-            </Stack>
-
-            {selectedJob.salary_range && (
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                  Salary:
-                </Typography>
-                <Typography variant="body2" color="success.main" fontWeight={600}>
-                  {selectedJob.salary_range} $
-                </Typography>
-              </Stack>
-            )}
-          </Stack>
-        </Box>
-
-        <Divider />
-
-        {/* Description */}
-        <Box sx={{ p: 3 }}>
-          <Typography variant="h7" fontWeight={700} gutterBottom>
-            Job Description
-          </Typography>
-
-          <Box
-            sx={{
-              '& .ql-editor': {
-                fontSize: '0.95rem',
-                lineHeight: 1.8,
-                color: 'text.primary',
-              },
-            }}
-          >
-            <ReactQuill
-              theme="snow"
-              value={selectedJob.job_description || 'No description provided.'}
-              readOnly
-              modules={{ toolbar: false }}
-            />
-          </Box>
-        </Box>
-      </Box>
-    ) : (
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
-        <Typography color="text.secondary">Select a job to view details</Typography>
-      </Box>
-    )}
-    {/* Desktop Apply Action */}
-    {!isMobile && (
-      <Stack direction="row" justifyContent="flex-end" p={1}>
-        <Button
-          variant="contained"
-          color="warning"
-          startIcon={<EmailIcon />}
-          onClick={() => setOpenApplyDialog(true)}
-          size='small'
-        >
-          Direct Apply
-        </Button>
-      </Stack>
-    )}
-
-    {/* Floating / Sticky Apply button on mobile */}
-    {isMobile && selectedJob && (
+  const DetailContent = () => {
+    const companyName = selectedJob?.employer?.company_name;
+    const logoFilename = selectedJob?.employer?.company_logo;
+    return(
       <Box
         sx={{
-          position: 'sticky',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          p: 2,
-          bgcolor: 'background.paper',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          zIndex: 10,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'background.default',
         }}
       >
-        <Stack direction="row" spacing={1}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="warning"
-            size="medium"
-            onClick={handleBackToList}
-          >
-            Home
-          </Button>
+        {/* Mobile top bar */}
+        {isMobile && (
+          <AppBar position="sticky" color="default" elevation={1}>
+            <Toolbar variant="dense"></Toolbar>
+          </AppBar>
+        )}
 
-          <Button
-            fullWidth
-            variant="contained"
-            color="warning"
-            size="medium"
-            onClick={() => setOpenApplyDialog(true)}
+        {selectedJob ? (
+          <Box sx={{ flex: 1, overflowY: 'auto', pb: { xs: 10, sm: 4 } }}>
+            {/* Hero section – like screenshot */}
+            <Box sx={{ p: 3, pb: 2, bgcolor: 'background.paper' }}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Avatar
+                  src={logoFilename ? `${baseURL}/uploads/employers/${logoFilename}` : undefined}
+                  alt={`${companyName} logo`}
+                  sx={{
+                    width: 72,
+                    height: 72,
+                    bgcolor: 'primary.main',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  {companyName.charAt(0).toUpperCase()}
+                </Avatar>
+                
+                <Box flex={1}>
+                  <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+                    {selectedJob.job_title}
+                  </Typography>
+                  <Typography variant="subtitle1" color="primary.main" fontWeight={500}>
+                    {companyName}
+                  </Typography>
+                </Box>
+              </Stack>
+
+              {/* Quick info chips / rows */}
+              <Stack spacing={1.5} sx={{ mt: 3 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Posting Date:
+                  </Typography>
+                  <Typography variant="body2">
+                    {new Date(selectedJob.posting_date).toLocaleDateString('en-GB')}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Closing Date:
+                  </Typography>
+                  <Typography variant="body2">
+                    {new Date(selectedJob.closing_date).toLocaleDateString('en-GB')}
+                  </Typography>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Job Type:
+                  </Typography>
+                  <Typography variant="body2">{selectedJob.job_type}</Typography>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Location:
+                  </Typography>
+                  <Typography variant="body2">{selectedJob.location || 'Phnom Penh'}</Typography>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Level:
+                  </Typography>
+                  <Typography variant="body2">{selectedJob.level}</Typography>
+                </Stack>
+
+                {selectedJob.salary_range && (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                      Salary:
+                    </Typography>
+                    <Typography variant="body2" color="success.main" fontWeight={600}>
+                      {selectedJob.salary_range} $
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Description */}
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h7" fontWeight={700} gutterBottom>
+                Job Description
+              </Typography>
+
+              <Box
+                sx={{
+                  '& .ql-editor': {
+                    fontSize: '0.95rem',
+                    lineHeight: 1.8,
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={selectedJob.job_description}
+                  readOnly
+                  modules={{ toolbar: false }}
+                />
+              </Box>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+            <Typography color="text.secondary">Select a job to view details</Typography>
+          </Box>
+        )}
+        {/* Desktop Apply Action */}
+        {!isMobile && (
+          <Stack direction="row" justifyContent="flex-end" p={1}>
+            <Button
+              variant="contained"
+              color="warning"
+              startIcon={<EmailIcon />}
+              onClick={() => setOpenApplyDialog(true)}
+              size='small'
+            >
+              Direct Apply
+            </Button>
+          </Stack>
+        )}
+
+        {/* Floating / Sticky Apply button on mobile */}
+        {isMobile && selectedJob && (
+          <Box
+            sx={{
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              p: 2,
+              bgcolor: 'background.paper',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              zIndex: 10,
+            }}
           >
-            Direct Apply
-          </Button>
-        </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button
+                fullWidth
+                variant="outlined"
+                color="warning"
+                size="medium"
+                onClick={handleBackToList}
+              >
+                Home
+              </Button>
+
+              <Button
+                fullWidth
+                variant="contained"
+                color="warning"
+                size="medium"
+                onClick={() => setOpenApplyDialog(true)}
+              >
+                Direct Apply
+              </Button>
+            </Stack>
+          </Box>
+        )}
+        {/* Apply via Dialog */}
+        <Dialog
+          open={openApplyDialog}
+          onClose={() => setOpenApplyDialog(false)}
+          fullWidth
+          maxWidth="xs"
+        >
+          <DialogTitle>Apply via</DialogTitle>
+
+          <DialogContent>
+            <Stack spacing={2} mt={1}>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<EmailIcon />}
+                onClick={() => {
+                  setOpenApplyDialog(false)
+                  window.location.href = `mailto:${selectedJob?.contactEmail}`
+                }}
+              >
+                Email
+              </Button>
+
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<TelegramIcon />}
+                onClick={() => {
+                  setOpenApplyDialog(false)
+                  window.open(
+                    `https://t.me/${selectedJob?.telegramUsername}`,
+                  )
+                }}
+              >
+                Telegram
+              </Button>
+            </Stack>
+          </DialogContent>
+        </Dialog>
       </Box>
-    )}
-    {/* Apply via Dialog */}
-    <Dialog
-      open={openApplyDialog}
-      onClose={() => setOpenApplyDialog(false)}
-      fullWidth
-      maxWidth="xs"
-    >
-      <DialogTitle>Apply via</DialogTitle>
-
-      <DialogContent>
-        <Stack spacing={2} mt={1}>
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<EmailIcon />}
-            onClick={() => {
-              setOpenApplyDialog(false)
-              window.location.href = `mailto:${selectedJob?.contactEmail}`
-            }}
-          >
-            Email
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            startIcon={<TelegramIcon />}
-            onClick={() => {
-              setOpenApplyDialog(false)
-              window.open(
-                `https://t.me/${selectedJob?.telegramUsername}`,
-              )
-            }}
-          >
-            Telegram
-          </Button>
-        </Stack>
-      </DialogContent>
-    </Dialog>
-  </Box>
-  );
+  )};
 
   // ────────────────────────────────────────────────
   // Main Layout

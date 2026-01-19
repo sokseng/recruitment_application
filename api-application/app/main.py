@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config.settings import settings
 
 from app.routers import (
@@ -33,6 +34,8 @@ create_tables()
 init_user()
 
 app = FastAPI(title=settings.APP_NAME)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
