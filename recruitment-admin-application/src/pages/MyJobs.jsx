@@ -589,8 +589,7 @@ export default function MyJobs() {
                 <Typography
                   variant="subtitle1"
                   color="primary"
-                  fontWeight={600}
-                  sx={{ pr: 2 }}
+                  fontWeight={500}
                   noWrap
                 >
                   {job.job_title}
@@ -607,8 +606,7 @@ export default function MyJobs() {
                       : "default"
                   }
                   sx={{
-                    fontWeight: 600,
-                    minWidth: 80,
+                    fontWeight: 500,
                     justifyContent: "center",
                   }}
                 />
