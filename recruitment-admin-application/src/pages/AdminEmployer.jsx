@@ -1,252 +1,125 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Box,
     Typography,
     Card,
     CardContent,
+    Avatar,
     Chip,
     Stack,
-    Avatar,
+    Skeleton,
     Divider,
 } from "@mui/material";
 import api from "../services/api";
 
-const AdminEmployer = () => {
-    const [jobs, setJobs] = useState([]);
+const AdminEmployers = () => {
+    const [employers, setEmployers] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const fetchMyJobs = async () => {
+    const fetchEmployers = async () => {
         try {
             setLoading(true);
-            const res = await api.get("/user/my-jobs");
-            setJobs(res.data || []);
-        } catch (error) {
-            console.error("Failed to load jobs", error);
+            const res = await api.get("/employer");
+            setEmployers(res.data || []);
+        } catch (err) {
+            console.error("Failed to load employers", err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchMyJobs();
+        fetchEmployers();
     }, []);
-
-    /* =======================
-       SUMMARY COUNTS
-    ======================= */
-    const summary = useMemo(() => {
-        return {
-            total: jobs.length,
-            open: jobs.filter(j => j.status === "Open").length,
-            closed: jobs.filter(j => j.status === "Closed").length,
-            draft: jobs.filter(j => j.status === "Draft").length,
-        };
-    }, [jobs]);
-
-    const getStatusColor = (status) => {
-        if (status === "Open") return "success";
-        if (status === "Closed") return "error";
-        if (status === "Draft") return "warning";
-        return "default";
-    };
 
     return (
         <Box>
-            {/* =======================
-               PAGE TITLE
-            ======================= */}
-            <Typography variant="h6" fontWeight={600} mb={2}>
-                Employer Jobs
-            </Typography>
-
-            {/* =======================
-               SUMMARY CARDS
-            ======================= */}
-            <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-                <Card sx={{ p: 2, minWidth: 160 }}>
-                    <Typography variant="caption" color="text.secondary">
-                        Total Jobs
-                    </Typography>
-                    <Typography variant="h6">{summary.total}</Typography>
-                </Card>
-
-                <Card sx={{ p: 2, minWidth: 160 }}>
-                    <Typography variant="caption" color="text.secondary">
-                        Open
-                    </Typography>
-                    <Typography variant="h6" color="success.main">
-                        {summary.open}
-                    </Typography>
-                </Card>
-
-                <Card sx={{ p: 2, minWidth: 160 }}>
-                    <Typography variant="caption" color="text.secondary">
-                        Closed
-                    </Typography>
-                    <Typography variant="h6" color="error.main">
-                        {summary.closed}
-                    </Typography>
-                </Card>
-
-                <Card sx={{ p: 2, minWidth: 160 }}>
-                    <Typography variant="caption" color="text.secondary">
-                        Draft
-                    </Typography>
-                    <Typography variant="h6" color="warning.main">
-                        {summary.draft}
-                    </Typography>
-                </Card>
-            </Box>
-
-            {/* =======================
-               JOB GRID
-            ======================= */}
+            {/* GRID */}
             <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                        xs: "repeat(1, 1fr)",
-                        sm: "repeat(2, 1fr)",
-                        md: "repeat(3, 1fr)",
-                        lg: "repeat(4, 1fr)",
-                    },
-                    gap: 2,
+                display="grid"
+                gridTemplateColumns={{
+                    xs: "repeat(1, 1fr)",
+                    sm: "repeat(2, 1fr)",
+                    md: "repeat(3, 1fr)",
+                    lg: "repeat(4, 1fr)",
                 }}
+                gap={2}
             >
-                {jobs.map((job) => (
-                    <Card
-                        key={job.pk_id}
-                        sx={{
-                            borderRadius: 2,
-                            minHeight: 240,
-                            display: "flex",
-                            flexDirection: "column",
-                            boxShadow: 2,
-                            transition: "0.2s",
-                            "&:hover": {
-                                boxShadow: 6,
-                                transform: "translateY(-2px)",
-                            },
-                        }}
-                    >
-                        <CardContent sx={{ flexGrow: 1 }}>
-                            {/* HEADER */}
-                            <Box
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="space-between"
-                                mb={1.5}
-                            >
-                                <Box display="flex" alignItems="center" gap={1.2}>
+                {loading &&
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <Skeleton key={i} variant="rounded" height={200} />
+                    ))}
+
+                {!loading &&
+                    employers.map((emp) => (
+                        <Card
+                            key={emp.pk_id}
+                            sx={{
+                                borderRadius: 2,
+                                boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+                                transition: "0.2s",
+                                "&:hover": {
+                                    transform: "translateY(-2px)",
+                                    boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
+                                },
+                            }}
+                        >
+                            <CardContent sx={{ p: 2 }}>
+                                {/* HEADER */}
+                                <Box display="flex" gap={1.5} mb={1.5}>
                                     <Avatar
                                         src={
-                                            job.company_logo
-                                                ? `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${job.company_logo}`
+                                            emp.company_logo
+                                                ? `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${emp.company_logo}`
                                                 : "/default-company.png"
                                         }
-                                        alt={job.company_name}
-                                        sx={{
-                                            width: 44,
-                                            height: 44,
-                                            borderRadius: 1,
-                                        }}
+                                        sx={{ width: 40, height: 40, borderRadius: 1.5 }}
                                     />
-
                                     <Box minWidth={0}>
-                                        <Typography
-                                            variant="subtitle1"
-                                            fontWeight={600}
-                                            noWrap
-                                        >
-                                            {job.job_title}
+                                        <Typography fontWeight={600} noWrap>
+                                            {emp.company_name}
                                         </Typography>
-
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            noWrap
-                                        >
-                                            {job.company_name}
+                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                            {emp.company_email || "—"}
                                         </Typography>
                                     </Box>
                                 </Box>
 
-                                <Chip
-                                    label={job.status}
-                                    size="small"
-                                    color={getStatusColor(job.status)}
-                                />
-                            </Box>
+                                <Divider sx={{ mb: 1.5 }} />
 
-                            <Divider sx={{ mb: 1.5 }} />
+                                {/* META */}
+                                <Stack spacing={0.5}>
+                                    <Typography variant="body2" fontSize={13}>
+                                        📞 {emp.company_contact || "—"}
+                                    </Typography>
 
-                            {/* META */}
-                            <Stack direction="row" spacing={1} flexWrap="wrap" mb={1.5}>
-                                <Chip label={job.job_type} size="small" variant="outlined" />
-                                {job.level && (
+                                    <Typography variant="body2" fontSize={13}>
+                                        🧾 Jobs: {emp.job_count || 0}
+                                    </Typography>
+
+                                    <Typography variant="caption" color="text.disabled">
+                                        Created:{" "}
+                                        {new Date(emp.created_date).toLocaleDateString()}
+                                    </Typography>
+                                </Stack>
+
+                                {/* STATUS */}
+                                <Box mt={1.5}>
                                     <Chip
-                                        label={job.level}
+                                        label={emp.is_active ? "Active" : "Inactive"}
                                         size="small"
-                                        variant="outlined"
-                                        color="primary"
+                                        color={emp.is_active ? "success" : "error"}
                                     />
-                                )}
-                                <Chip
-                                    label={job.location || "Remote"}
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            </Stack>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
 
-                            {/* INFO */}
-                            <Typography variant="body2" color="text.secondary">
-                                💰 {job.salary_range || "Negotiable"}
-                            </Typography>
-
-                            <Typography variant="body2" color="text.secondary">
-                                👥 Positions: {job.position_number || 1}
-                            </Typography>
-
-                            {/* DATES */}
-                            <Typography
-                                variant="caption"
-                                color="text.disabled"
-                                display="block"
-                                mt={1}
-                            >
-                                Posted:{" "}
-                                {job.posting_date
-                                    ? new Date(job.posting_date).toLocaleDateString()
-                                    : "-"}
-                            </Typography>
-
-                            <Typography
-                                variant="caption"
-                                color="text.disabled"
-                                display="block"
-                            >
-                                Closing:{" "}
-                                {job.closing_date
-                                    ? new Date(job.closing_date).toLocaleDateString()
-                                    : "-"}
-                            </Typography>
-                        </CardContent>
-                    </Card>
-                ))}
-
-                {/* EMPTY STATE */}
-                {!loading && jobs.length === 0 && (
-                    <Box
-                        gridColumn="1 / -1"
-                        textAlign="center"
-                        py={8}
-                        color="text.secondary"
-                    >
-                        <Typography variant="h6" mb={1}>
-                            No jobs found
-                        </Typography>
-                        <Typography>
-                            You haven’t posted any jobs yet.
+                {!loading && employers.length === 0 && (
+                    <Box gridColumn="1 / -1" textAlign="center" py={8}>
+                        <Typography variant="h6">No employers found</Typography>
+                        <Typography color="text.secondary">
+                            Companies will appear here once registered.
                         </Typography>
                     </Box>
                 )}
@@ -255,4 +128,4 @@ const AdminEmployer = () => {
     );
 };
 
-export default AdminEmployer;
+export default AdminEmployers;

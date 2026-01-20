@@ -22,16 +22,13 @@ class EmployerUpdate(BaseModel):
 
 class EmployerOut(BaseModel):
     pk_id: int
-    user_id: int
     company_name: str
-    company_email: Optional[str]
-    company_contact: Optional[str]
-    company_address: Optional[str]
-    company_description: Optional[str]
-    company_website: Optional[str]
-    company_logo: Optional[str]
+    company_logo: Optional[str] = None
+    company_email: Optional[str] = None
+    company_contact: Optional[str] = None
     is_active: bool
     created_date: datetime
+    job_count: int
 
     model_config = ConfigDict(from_attributes=True)
 

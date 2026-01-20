@@ -99,7 +99,7 @@ const UpdateProfileEmployer = () => {
                     company_description: data.company_description || "",
                     company_website: data.company_website || "",
                 });
-
+                debugger
                 // Set initial logo preview
                 if (data.company_logo) {
                     const logoUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${data.company_logo}`;
@@ -139,7 +139,7 @@ const UpdateProfileEmployer = () => {
         submitData.append("company_address", formData.company_address);
         submitData.append("company_description", formData.company_description);
         submitData.append("company_website", formData.company_website);
-
+        debugger
         // Logo file
         if (logoFile) {
             submitData.append("company_logo", logoFile);

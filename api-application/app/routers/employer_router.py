@@ -33,8 +33,8 @@ def api_create_employer(
     return create_employer(db, employer_data, company_logo)
 
 @router.get("/", response_model=List[EmployerOut])
-def api_get_employers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return get_employers(db, skip, limit)
+def api_get_employers(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return get_employers(db)
 
 @router.get("/{employer_id}", response_model=EmployerOut)
 def api_get_employer(employer_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):

@@ -3,6 +3,9 @@ import ProtectedRoute from '../components/ProtectedRoute'
 import Dashboard from '../pages/Dashboard'
 import AdminDashboard from '../pages/AdminDashboard'
 import AdminEmployer from '../pages/AdminEmployer'
+import AdminJobs from '../pages/AdminJobs'
+import AdminUsers from '../pages/AdminUser'
+import AdminCandidate from '../pages/AdminCandidate'
 import CandidateDashboard from '../pages/CandidateDashboard'
 import UpdateProfile from '../pages/profile/UpdateProfile'
 import MainLayout from '../layouts/MainLayout'
@@ -29,6 +32,33 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdminEmployer />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/jobs"
+          element={
+            <ProtectedRoute>
+              <AdminJobs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/user"
+          element={
+            <ProtectedRoute>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/candidate"
+          element={
+            <ProtectedRoute>
+              <AdminCandidate />
             </ProtectedRoute>
           }
         />

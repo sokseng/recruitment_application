@@ -5,6 +5,8 @@ from app.models.employer_model import Employer
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, UserProfileEmployer, UserUpdateProfile
 from shutil import copyfileobj
 from app.models.user_model import User
+from sqlalchemy import func
+from app.models.job_model import Job
 
 UPLOAD_DIR = "uploads/employers"  # folder to store logos
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -12,8 +14,37 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def get_employer(db: Session, employer_id: int):
     return db.query(Employer).filter(Employer.pk_id == employer_id).first()
 
-def get_employers(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Employer).offset(skip).limit(limit).all()
+def get_employers(db: Session):
+    rows = (
+        db.query(
+            Employer.pk_id,
+            Employer.company_name,
+            Employer.company_logo,
+            Employer.company_email,
+            Employer.company_contact,
+            Employer.is_active,
+            Employer.created_date,
+            func.count(Job.pk_id).label("job_count"),
+        )
+        .outerjoin(Job, Job.employer_id == Employer.pk_id)
+        .group_by(Employer.pk_id)
+        .order_by(Employer.created_date.desc())
+        .all()
+    )
+
+    return [
+        {
+            "pk_id": r.pk_id,
+            "company_name": r.company_name,
+            "company_logo": r.company_logo,
+            "company_email": r.company_email,
+            "company_contact": r.company_contact,
+            "is_active": r.is_active,
+            "created_date": r.created_date,
+            "job_count": r.job_count,
+        }
+        for r in rows
+    ]
 
 def create_employer(db: Session, employer: EmployerCreate, logo_file: UploadFile = None):
     logo_filename = None

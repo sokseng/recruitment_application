@@ -94,9 +94,10 @@ export default function Topbar() {
     ],
     1: [
       { label: 'Home', path: '/', icon: <HomeIcon /> },
-      { label: 'Users', path: '/', icon: <PeopleIcon /> },
+      { label: 'Users', path: '/admin/user', icon: <PeopleIcon /> },
+      { label: 'Jobs', path: '/admin/jobs', icon: <PersonIcon /> },
       { label: 'Employers', path: '/admin/employer', icon: <BusinessIcon /> },
-      { label: 'Candidates', path: '/', icon: <PersonIcon /> },
+      { label: 'Candidates', path: '/admin/candidate', icon: <PersonIcon /> },
       { label: 'All Companies', path: '/', icon: <BusinessIcon /> },
     ],
     2: [
