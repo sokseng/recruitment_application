@@ -45,30 +45,6 @@ export default function Dashboard() {
     loadJobs();
   }, []);
 
-  // useEffect(() => {
-  //   if (!jobs.length) return;
-
-  //   const term = searchTerm.toLowerCase().trim();
-  //   let filtered = jobs;
-
-  //   if (term) {
-  //     filtered = jobs.filter((job) => {
-  //       const title = job.job_title?.toLowerCase() || '';
-  //       const company = job.employer?.company_name?.toLowerCase() || '';
-
-  //       const location = job.location?.toLowerCase() || '';
-  //       return title.includes(term) || company.includes(term) || location.includes(term);
-  //     });
-  //   }
-
-  //   setFilteredJobs(filtered);
-
-  //   // Reset selected job if it's no longer in the filtered list
-  //   if (selectedJob && !filtered.some(j => j.pk_id === selectedJob.pk_id)) {
-  //     setSelectedJob(filtered[0] || null);
-  //   }
-  // }, [searchTerm, jobs, selectedJob]);
-
   useEffect(() => {
     if (!jobs.length) return;
 
@@ -149,7 +125,6 @@ export default function Dashboard() {
   const ListContent = () => (
     <Card
       sx={{
-        width: '100%',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -172,38 +147,40 @@ export default function Dashboard() {
                 key={job.pk_id}
                 onClick={() => handleSelectJob(job)}
                 sx={{
-                  px: 2,
-                  py: 2,
-                  cursor: 'pointer',
-                  bgcolor: active ? 'action.selected' : 'transparent',
-                  borderLeft: active ? '4px solid' : '4px solid transparent',
-                  borderColor: active ? 'primary.main' : 'transparent',
-                  '&:hover': { bgcolor: 'action.hover' },
+                  px: 1,
+                  py: { xs: 1, sm: 1.15 },               
+                  cursor: "pointer",
+                  bgcolor: active ? "action.selected" : "transparent",
+                  borderLeft: active ? "3px solid" : "3px solid transparent",
+                  borderColor: active ? "primary.main" : "transparent",
+                  borderBottom: "1px solid",
+                  borderBottomColor: "divider",
+                  "&:hover": { bgcolor: "action.hover" },
                 }}
               >
-                <Stack direction="row" spacing={2} alignItems="center">
+                <Stack direction="row" spacing={1.5} alignItems="center">
                   <Avatar
                     src={logoFilename ? `${baseURL}/uploads/employers/${logoFilename}` : undefined}
                     alt={`${companyName} logo`}
                     sx={{
-                      width: 48,
-                      height: 48,
-                      bgcolor: 'primary.main',
+                      width: { xs: 32, sm: 36 },
+                      height: { xs: 32, sm: 36 },
+                      fontSize: "0.9rem",
                       border: '1px solid',
                       borderColor: 'divider',
                     }}
                   >
                       {companyName.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box flex={1}>
-                    <Typography variant="subtitle1" fontWeight={600}>
+                  <Box flex={1} minWidth={0}>
+                    <Typography variant="body2" fontWeight={600}>
                       {job.job_title}
                     </Typography>
                     <Typography variant="body2" color="text.primary">
-                      {companyName}
+                      Company: {companyName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(job.posting_date).toLocaleDateString('en-GB')} · {job.location || 'Phnom Penh'}
+                      Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
                     </Typography>
                   </Box>
                 </Stack>
@@ -246,9 +223,8 @@ export default function Dashboard() {
                   src={logoFilename ? `${baseURL}/uploads/employers/${logoFilename}` : undefined}
                   alt={`${companyName} logo`}
                   sx={{
-                    width: 72,
-                    height: 72,
-                    bgcolor: 'primary.main',
+                    width: { xs: 40, sm: 50 },
+                    height: { xs: 40, sm: 50 },
                     border: '1px solid',
                     borderColor: 'divider',
                   }}
@@ -257,7 +233,7 @@ export default function Dashboard() {
                 </Avatar>
                 
                 <Box flex={1}>
-                  <Typography variant="h5" fontWeight={700} lineHeight={1.2}>
+                  <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
                     {selectedJob.job_title}
                   </Typography>
                   <Typography variant="subtitle1" color="primary.main" fontWeight={500}>
@@ -274,7 +250,7 @@ export default function Dashboard() {
                     Posting Date:
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(selectedJob.posting_date).toLocaleDateString('en-GB')}
+                    {selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—"}
                   </Typography>
                 </Stack>
 
@@ -283,7 +259,7 @@ export default function Dashboard() {
                     Closing Date:
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(selectedJob.closing_date).toLocaleDateString('en-GB')}
+                    {selectedJob.closing_date ? new Date(selectedJob.closing_date).toISOString().split("T")[0] : "—"}
                   </Typography>
                 </Stack>
 
@@ -308,16 +284,14 @@ export default function Dashboard() {
                   <Typography variant="body2">{selectedJob.level}</Typography>
                 </Stack>
 
-                {selectedJob.salary_range && (
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                       Salary:
                     </Typography>
                     <Typography variant="body2" color="success.main" fontWeight={600}>
-                      {selectedJob.salary_range} $
+                      {selectedJob.salary_range ? `${selectedJob.salary_range}$` : "Negotiable"}
                     </Typography>
                   </Stack>
-                )}
               </Stack>
             </Box>
 
@@ -410,154 +384,141 @@ export default function Dashboard() {
   // Main Layout
   // ────────────────────────────────────────────────
   return (
-    <Box
-      sx={{
-        height: 'calc(103vh - 120px)', // ← adjust this value based on your actual header height
-        display: 'flex',
-        flexDirection: 'column',
-        boxSizing: 'border-box',
-        gap: 2,
-      }}
-    >
-      <Card
-        sx={{
-          p: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={2}
-          alignItems="stretch"
-        >
-          {/* Search */}
-          <TextField
-            size="small"
-            placeholder="Search jobs, companies, locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            fullWidth
-          />
-
-          {/* Job Type */}
-          <TextField
-            select
-            size="small"
-            label="Type"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            sx={{ minWidth: 140 }}
-          >
-            <MenuItem value="All">All</MenuItem>
-            <MenuItem value="Full-time">Full-time</MenuItem>
-            <MenuItem value="Part-time">Part-time</MenuItem>
-            <MenuItem value="Contract">Contract</MenuItem>
-            <MenuItem value="Internship">Internship</MenuItem>
-          </TextField>
-
-          {/* Level */}
-          <TextField
-            select
-            size="small"
-            label="Level"
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            sx={{ minWidth: 140 }}
-          >
-            <MenuItem value="All">All</MenuItem>
-            <MenuItem value="Entry Level">Entry Level</MenuItem>
-            <MenuItem value="Junior">Junior</MenuItem>
-            <MenuItem value="Mid Level">Mid Level</MenuItem>
-            <MenuItem value="Senior">Senior</MenuItem>
-            <MenuItem value="Lead">Lead</MenuItem>
-          </TextField>
-
-          {/* Location */}
-          <TextField
-            select
-            size="small"
-            label="Location"
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="All">All</MenuItem>
-            {[...new Set(jobs.map(j => j.location).filter(Boolean))].map(loc => (
-              <MenuItem key={loc} value={loc}>
-                {loc}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Reset */}
-          <Button
-            variant="outlined"
-            onClick={() => {
-              setSearchTerm('');
-              setTypeFilter('All');
-              setLevelFilter('All');
-              setLocationFilter('All');
-            }}
-          >
-            Reset
-          </Button>
-        </Stack>
-      </Card>
       <Box
         sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          height: "calc(103vh - 120px)",
+          display: "flex",
+          flexDirection: "column",
+          boxSizing: "border-box",
           gap: 2,
-          minHeight: 0,
         }}
       >
-        {/* Job List – hidden on mobile when detail is open */}
-        
-        <Box
+        <Card
           sx={{
-            // width: { xs: '100%', md: 420 },
-            flexShrink: 0,
-            display: isMobile && showDetailMobile ? 'none' : 'block',
+            p: 1,
+            border: "1px solid",
+            borderColor: "divider",
           }}
         >
-          {ListContent()}
-        </Box>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.25}
+            alignItems="stretch"
+          >
+            {/* Search */}
+            <TextField
+              size="small"
+              placeholder="Search jobs, companies, locations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
 
-        {/* Job Detail – full-screen on mobile when selected */}
+            {/* Job Type */}
+            <TextField
+              select
+              size="small"
+              label="Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              sx={{ minWidth: 140 }}
+            >
+              <MenuItem value="All">All</MenuItem>
+              <MenuItem value="Full-time">Full-time</MenuItem>
+              <MenuItem value="Part-time">Part-time</MenuItem>
+              <MenuItem value="Contract">Contract</MenuItem>
+              <MenuItem value="Internship">Internship</MenuItem>
+            </TextField>
+
+            {/* Location */}
+            <TextField
+              select
+              size="small"
+              label="Location"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="All">All</MenuItem>
+              {[...new Set(jobs.map((j) => j.location).filter(Boolean))].map(
+                (loc) => (
+                  <MenuItem key={loc} value={loc}>
+                    {loc}
+                  </MenuItem>
+                ),
+              )}
+            </TextField>
+
+            {/* Reset */}
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setSearchTerm("");
+                setTypeFilter("All");
+                setLevelFilter("All");
+                setLocationFilter("All");
+              }}
+            >
+              Reset
+            </Button>
+          </Stack>
+        </Card>
         <Box
           sx={{
             flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 2,
             minHeight: 0,
-            ...(isMobile
-              ? {
-                  position: 'fixed',
-                  inset: 0,
-                  zIndex: showDetailMobile ? 20 : -1,
-                  transform: showDetailMobile ? 'translateX(0)' : 'translateX(100%)',
-                  transition: 'transform 0.3s ease-in-out',
-                  bgcolor: 'background.default',
-                  overflowY: 'auto',
-                }
-              : {
-                borderRadius: 2,
-                boxShadow: 1,
-              }),
           }}
         >
-          {DetailContent()}
+          {/* Job List – hidden on mobile when detail is open */}
+
+          <Box
+            sx={{
+              width: { xs: '100%', md: 400 },
+              flexShrink: 0,
+              display: isMobile && showDetailMobile ? "none" : "block",
+            }}
+          >
+            {ListContent()}
+          </Box>
+
+          {/* Job Detail – full-screen on mobile when selected */}
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              ...(isMobile
+                ? {
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: showDetailMobile ? 20 : -1,
+                    transform: showDetailMobile
+                      ? "translateX(0)"
+                      : "translateX(100%)",
+                    transition: "transform 0.3s ease-in-out",
+                    bgcolor: "background.default",
+                    overflowY: "auto",
+                  }
+                : {
+                    borderRadius: 2,
+                    boxShadow: 1,
+                  }),
+            }}
+          >
+            {DetailContent()}
+          </Box>
         </Box>
       </Box>
-    </Box>
   );
 }

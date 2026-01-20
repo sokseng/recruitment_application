@@ -41,6 +41,8 @@ import ReactQuill from 'react-quill-new';
 import 'quill/dist/quill.snow.css';
 
 import api from "../services/api";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
@@ -328,7 +330,7 @@ function JobFormDialog({
             />
 
             {/* Closing Date */}
-            <TextField
+            {/* <TextField
               fullWidth
               label="Application Closing Date"
               name="closing_date"
@@ -343,6 +345,24 @@ function JobFormDialog({
                     <CalendarTodayIcon fontSize="small" />
                   </InputAdornment>
                 ),
+              }}
+            /> */}
+
+            <DatePicker
+              label="Application Closing Date"
+              format="YYYY-MM-DD"
+              value={formData.closing_date ? dayjs(formData.closing_date) : null}
+              onChange={(newValue) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  closing_date: newValue ? newValue.format("YYYY-MM-DD") : "",
+                }));
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                },
               }}
             />
 
@@ -811,9 +831,10 @@ export default function MyJobs() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                {"salary: "}
-                {job.salary_range + "$" || "Negotiable"}
+                {"Salary: "}
+                {job.salary_range ? `${job.salary_range}$` : "Negotiable"}
               </Typography>
+
 
               <Typography
                 variant="caption"
@@ -821,7 +842,7 @@ export default function MyJobs() {
                 mt={1.5}
                 display="block"
               >
-                Posted {new Date(job.created_at).toLocaleDateString()}
+                Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
               </Typography>
             </CardContent>
 
