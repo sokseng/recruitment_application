@@ -16,16 +16,12 @@ import {
   useTheme,
   AppBar,
   Toolbar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
+  MenuItem,
 } from '@mui/material';
-import EmailIcon from '@mui/icons-material/Email';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../services/api';
 import ReactQuill from 'react-quill-new';
 import 'quill/dist/quill.snow.css';
-import TelegramIcon from '@mui/icons-material/Telegram';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -38,7 +34,10 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetailMobile, setShowDetailMobile] = useState(false);
-  const [openApplyDialog, setOpenApplyDialog] = useState(false)
+
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [levelFilter, setLevelFilter] = useState('All');
+  const [locationFilter, setLocationFilter] = useState('All');
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -46,29 +45,62 @@ export default function Dashboard() {
     loadJobs();
   }, []);
 
+  // useEffect(() => {
+  //   if (!jobs.length) return;
+
+  //   const term = searchTerm.toLowerCase().trim();
+  //   let filtered = jobs;
+
+  //   if (term) {
+  //     filtered = jobs.filter((job) => {
+  //       const title = job.job_title?.toLowerCase() || '';
+  //       const company = job.employer?.company_name?.toLowerCase() || '';
+
+  //       const location = job.location?.toLowerCase() || '';
+  //       return title.includes(term) || company.includes(term) || location.includes(term);
+  //     });
+  //   }
+
+  //   setFilteredJobs(filtered);
+
+  //   // Reset selected job if it's no longer in the filtered list
+  //   if (selectedJob && !filtered.some(j => j.pk_id === selectedJob.pk_id)) {
+  //     setSelectedJob(filtered[0] || null);
+  //   }
+  // }, [searchTerm, jobs, selectedJob]);
+
   useEffect(() => {
     if (!jobs.length) return;
 
     const term = searchTerm.toLowerCase().trim();
-    let filtered = jobs;
 
-    if (term) {
-      filtered = jobs.filter((job) => {
-        const title = job.job_title?.toLowerCase() || '';
-        const company = job.employer?.company_name?.toLowerCase() || '';
+    const filtered = jobs.filter((job) => {
+      const title = job.job_title?.toLowerCase() || "";
+      const company = job.employer?.company_name?.toLowerCase() || "";
+      const location = job.location?.toLowerCase() || "";
 
-        const location = job.location?.toLowerCase() || '';
-        return title.includes(term) || company.includes(term) || location.includes(term);
-      });
-    }
+      const keywordMatch =
+        !term ||
+        title.includes(term) ||
+        company.includes(term) ||
+        location.includes(term);
+
+      const typeMatch = typeFilter === "All" || job.job_type === typeFilter;
+
+      const levelMatch = levelFilter === "All" || job.level === levelFilter;
+
+      const locationMatch =
+        locationFilter === "All" || job.location === locationFilter;
+
+      return keywordMatch && typeMatch && levelMatch && locationMatch;
+    });
 
     setFilteredJobs(filtered);
 
-    // Reset selected job if it's no longer in the filtered list
-    if (selectedJob && !filtered.some(j => j.pk_id === selectedJob.pk_id)) {
+    if (selectedJob && !filtered.some((j) => j.pk_id === selectedJob.pk_id)) {
       setSelectedJob(filtered[0] || null);
     }
-  }, [searchTerm, jobs, selectedJob]);
+  }, [searchTerm, typeFilter, levelFilter, locationFilter, jobs, selectedJob]);
 
   const loadJobs = async () => {
     try {
@@ -125,26 +157,6 @@ export default function Dashboard() {
         borderColor: 'divider',
       }}
     >
-      <Stack direction="row" spacing={1.5} p={2} flexShrink={0}>
-        <TextField
-          size="small"
-          placeholder="Search jobs, companies, locations..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" />
-              </InputAdornment>
-            ),
-          }}
-          fullWidth
-          sx={{ bgcolor: 'InfoBackground', borderRadius: 1 }}
-        />
-      </Stack>
-
-      <Divider />
-
       <Box sx={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         {filteredJobs.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
@@ -252,20 +264,6 @@ export default function Dashboard() {
                     {companyName}
                   </Typography>
                 </Box>
-                {/* Desktop Apply Action */}
-                {/* {!isMobile && (
-                  <Stack direction="row" justifyContent="flex-end" p={1}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<EmailIcon />}
-                      onClick={() => setOpenApplyDialog(true)}
-                      size='small'
-                    >
-                      Direct Apply
-                    </Button>
-                  </Stack>
-                )} */}
                 </Stack>
               
 
@@ -381,58 +379,9 @@ export default function Dashboard() {
               >
                 Home
               </Button>
-
-              {/* <Button
-                // fullWidth
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={() => setOpenApplyDialog(true)}
-              >
-                Direct Apply
-              </Button> */}
             </Stack>
           </Box>
         )}
-        {/* Apply via Dialog */}
-        <Dialog
-          open={openApplyDialog}
-          onClose={() => setOpenApplyDialog(false)}
-          fullWidth
-          maxWidth="xs"
-        >
-          <DialogTitle>Apply via</DialogTitle>
-
-          <DialogContent>
-            <Stack spacing={2} mt={1}>
-              <Button
-                variant="contained"
-                fullWidth
-                startIcon={<EmailIcon />}
-                onClick={() => {
-                  setOpenApplyDialog(false)
-                  window.location.href = `mailto:${selectedJob?.contactEmail}`
-                }}
-              >
-                Email
-              </Button>
-
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<TelegramIcon />}
-                onClick={() => {
-                  setOpenApplyDialog(false)
-                  window.open(
-                    `https://t.me/${selectedJob?.telegramUsername}`,
-                  )
-                }}
-              >
-                Telegram
-              </Button>
-            </Stack>
-          </DialogContent>
-        </Dialog>
       </Box>
   )};
 
@@ -449,6 +398,98 @@ export default function Dashboard() {
         gap: 2,
       }}
     >
+      <Card
+        sx={{
+          p: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          alignItems="stretch"
+        >
+          {/* Search */}
+          <TextField
+            size="small"
+            placeholder="Search jobs, companies, locations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            fullWidth
+          />
+
+          {/* Job Type */}
+          <TextField
+            select
+            size="small"
+            label="Type"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="All">All</MenuItem>
+            <MenuItem value="Full-time">Full-time</MenuItem>
+            <MenuItem value="Part-time">Part-time</MenuItem>
+            <MenuItem value="Contract">Contract</MenuItem>
+            <MenuItem value="Internship">Internship</MenuItem>
+          </TextField>
+
+          {/* Level */}
+          <TextField
+            select
+            size="small"
+            label="Level"
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="All">All</MenuItem>
+            <MenuItem value="Entry Level">Entry Level</MenuItem>
+            <MenuItem value="Junior">Junior</MenuItem>
+            <MenuItem value="Mid Level">Mid Level</MenuItem>
+            <MenuItem value="Senior">Senior</MenuItem>
+            <MenuItem value="Lead">Lead</MenuItem>
+          </TextField>
+
+          {/* Location */}
+          <TextField
+            select
+            size="small"
+            label="Location"
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            sx={{ minWidth: 160 }}
+          >
+            <MenuItem value="All">All</MenuItem>
+            {[...new Set(jobs.map(j => j.location).filter(Boolean))].map(loc => (
+              <MenuItem key={loc} value={loc}>
+                {loc}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Reset */}
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setSearchTerm('');
+              setTypeFilter('All');
+              setLevelFilter('All');
+              setLocationFilter('All');
+            }}
+          >
+            Reset
+          </Button>
+        </Stack>
+      </Card>
       <Box
         sx={{
           flex: 1,
@@ -459,6 +500,7 @@ export default function Dashboard() {
         }}
       >
         {/* Job List – hidden on mobile when detail is open */}
+        
         <Box
           sx={{
             // width: { xs: '100%', md: 420 },

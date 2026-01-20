@@ -25,13 +25,16 @@ import {
   InputAdornment,
   DialogContentText,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import Badge from "@mui/material/Badge";
 
 // Rich text editor
 import ReactQuill from 'react-quill-new';
@@ -180,9 +183,12 @@ function JobFormDialog({
           position: "relative",
         }}
       >
-        <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
-          {title}
-        </Typography>
+        <div>
+          <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
+            {title}
+          </Typography>
+        </div>
+       
         <IconButton
           aria-label="close"
           onClick={onClose}
@@ -457,9 +463,15 @@ export default function MyJobs() {
   const [closingJob, setClosingJob] = useState(null);
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusTab, setStatusTab] = useState("Open");
   const [typeFilter, setTypeFilter] = useState("All");
   const [levelFilter, setLevelFilter] = useState("All");
+
+  const statusCounts = {
+    Draft: jobs.filter(j => j.status === "Draft").length,
+    Open: jobs.filter(j => j.status === "Open").length,
+    Closed: jobs.filter(j => j.status === "Closed").length,
+  };
 
   useEffect(() => {
     fetchMyJobs();
@@ -530,7 +542,7 @@ export default function MyJobs() {
       (job.location || "").toLowerCase().includes(search.toLowerCase());
 
     const statusMatch =
-      statusFilter === "All" || job.status === statusFilter;
+      statusTab === "All" || job.status === statusTab;
 
     const typeMatch =
       typeFilter === "All" || job.job_type === typeFilter;
@@ -543,10 +555,6 @@ export default function MyJobs() {
 
   return (
     <Box>
-      {/* HEADER */}
-      <Typography variant="h6" fontWeight={700}>
-          My Posted Jobs
-        </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -554,90 +562,106 @@ export default function MyJobs() {
         spacing={2}
         mb={2}
       >
-        
-
+        <Typography variant="h6" fontWeight={700}>
+          My Posted Jobs
+        </Typography>
         {/* Search */}
-    <TextField
-      size="small"
-      placeholder="Search by title or location"
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      fullWidth
-    />
+        <TextField
+          size="small"
+          placeholder="Search by title or location"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ flexGrow: 1 }}
+        />
 
-    {/* Status */}
-    <FormControl size="small" sx={{ minWidth: 130 }}>
-      <InputLabel>Status</InputLabel>
-      <Select
-        value={statusFilter}
-        label="Status"
-        onChange={(e) => setStatusFilter(e.target.value)}
-      >
-        {["All", "Open", "Closed", "Draft"].map((s) => (
-          <MenuItem key={s} value={s}>
-            {s}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+        {/* Job Type */}
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Type</InputLabel>
+          <Select
+            value={typeFilter}
+            label="Type"
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <MenuItem value="All">All</MenuItem>
+            {JOB_TYPES.map((t) => (
+              <MenuItem key={t.value} value={t.value}>
+                {t.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-    {/* Job Type */}
-    <FormControl size="small" sx={{ minWidth: 150 }}>
-      <InputLabel>Type</InputLabel>
-      <Select
-        value={typeFilter}
-        label="Type"
-        onChange={(e) => setTypeFilter(e.target.value)}
-      >
-        <MenuItem value="All">All</MenuItem>
-        {JOB_TYPES.map((t) => (
-          <MenuItem key={t.value} value={t.value}>
-            {t.label}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+        {/* Level */}
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Level</InputLabel>
+          <Select
+            value={levelFilter}
+            label="Level"
+            onChange={(e) => setLevelFilter(e.target.value)}
+          >
+            <MenuItem value="All">All</MenuItem>
+            {JOB_LEVELS.map((l) => (
+              <MenuItem key={l.value} value={l.value}>
+                {l.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-    {/* Level */}
-    <FormControl size="small" sx={{ minWidth: 150 }}>
-      <InputLabel>Level</InputLabel>
-      <Select
-        value={levelFilter}
-        label="Level"
-        onChange={(e) => setLevelFilter(e.target.value)}
-      >
-        <MenuItem value="All">All</MenuItem>
-        {JOB_LEVELS.map((l) => (
-          <MenuItem key={l.value} value={l.value}>
-            {l.label}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-
-    {/* Reset */}
-    <Button
-      variant="outlined"
-      onClick={() => {
-        setSearch("");
-        setStatusFilter("All");
-        setTypeFilter("All");
-        setLevelFilter("All");
-      }}
-    >
-      Reset
-    </Button>
-
+        {/* Reset */}
+        <Button
+          variant="outlined"
+          onClick={() => {
+            setSearch("");
+            setStatusTab("Open");
+            setTypeFilter("All");
+            setLevelFilter("All");
+          }}
+        >
+          Reset
+        </Button>
         <Button
           variant="contained"
-          startIcon={<AddIcon />}
+          startIcon={<AddCircleIcon />}
           onClick={openCreate}
           fullWidth={{ xs: true, sm: false }}
-          sx={{ borderRadius: 3 }}
+          sx={{ borderRadius: 2 }}
         >
           Post
         </Button>
       </Stack>
+      {/* Small Responsive Tabs */}
+      <Tabs
+        value={statusTab}
+        onChange={(_, newValue) => setStatusTab(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{
+          minHeight: 36,
+          "& .MuiTab-root": {
+            minHeight: 36,
+            fontSize: "0.875rem",
+            px: 1.5,
+          },
+          "& .MuiBadge-root": { mr: 0.5 },
+          mb: 1,
+        }}
+      >
+        <Tab
+          label={<Badge badgeContent={statusCounts.Open} color="success">Open</Badge>}
+          value="Open"
+        />
+        <Tab
+          label={<Badge badgeContent={statusCounts.Closed} color="error">Closed</Badge>}
+          value="Closed"
+        />
+        <Tab
+          label={<Badge badgeContent={statusCounts.Draft} color="warning">Draft</Badge>}
+          value="Draft"
+        />
+      </Tabs>
+
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -691,9 +715,13 @@ export default function MyJobs() {
                   label={job.status}
                   size="small"
                   color={
-                    job.status === "Open" ? "success" : 
-                    job.status === "Closed" ? "error" :
-                    job.status === "Draft" ? "warning" : "default"
+                    job.status === "Open"
+                      ? "success"
+                      : job.status === "Closed"
+                        ? "error"
+                        : job.status === "Draft"
+                          ? "warning"
+                          : "default"
                   }
                   sx={{
                     fontWeight: 500,
@@ -716,11 +744,13 @@ export default function MyJobs() {
               </Stack>
 
               <Typography variant="body2" color="text.secondary">
-                {"location: "}{job.location || "—"}
+                {"location: "}
+                {job.location || "—"}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                {"salary: "}{job.salary_range + "$" || "Negotiable"}
+                {"salary: "}
+                {job.salary_range + "$" || "Negotiable"}
               </Typography>
 
               <Typography
@@ -766,10 +796,12 @@ export default function MyJobs() {
       {/* DIALOGS */}
       <JobFormDialog
         open={openFormDialog}
-        onClose={() => {
+        onClose={(event, reason) => {
+          if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
           setOpenFormDialog(false);
-          setEditingJob(null);
+            setEditingJob(null);
         }}
+        
         onSuccess={handleFormSuccess}
         initialData={editingJob}
         isEdit={!!editingJob}
