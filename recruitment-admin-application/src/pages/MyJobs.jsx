@@ -86,6 +86,7 @@ function JobFormDialog({
     salary_range: "",
     location: "",
     job_description: "",
+    experience_required: "",
     closing_date: "",
     status: isEdit ? "Open" : "Open",
   };
@@ -123,9 +124,13 @@ function JobFormDialog({
     const textOnly = (formData.job_description || "")
       .replace(/<[^>]+>/g, "")
       .trim();
+    const requirementsOnly = (formData.experience_required || "")
+      .replace(/<[^>]+>/g, "")
+      .trim();
 
     if (!formData.job_title?.trim()) return setError("Job title is required");
     if (!textOnly) return setError("Description is required");
+    if (!requirementsOnly) return setError("Requirements are required");
 
     setLoading(true);
 
@@ -398,6 +403,63 @@ function JobFormDialog({
                       setFormData((prev) => ({
                         ...prev,
                         job_description: content,
+                      }))
+                    }
+                    placeholder="Describe responsibilities, requirements, benefits, qualifications..."
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ["bold", "italic", "underline", "strike"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        [{ align: [] }],
+                        ["link"],
+                        ["clean"],
+                      ],
+                    }}
+                  />
+                </Box>
+              </FormControl>
+            </Box>
+
+            {/* Requirements - Rich Text Editor */}
+            <Box sx={{ gridColumn: "1 / -1" }}>
+              <FormControl fullWidth>
+                <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
+                  Requirements
+                </InputLabel>
+
+                <Box
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    "& .ql-toolbar": {
+                      borderBottom: 1,
+                      borderColor: "divider",
+                      bgcolor: "grey.50",
+                    },
+                    "& .ql-container": {
+                      minHeight: 180,
+                      maxHeight: 400,
+                      overflowY: "auto",
+                      fontFamily: theme.typography.fontFamily,
+                      fontSize: "0.95rem",
+                    },
+                    "& .ql-editor": {
+                      minHeight: 160,
+                      px: 2,
+                      py: 1.5,
+                    },
+                  }}
+                >
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.experience_required || ""}
+                    onChange={(content) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        experience_required: content,
                       }))
                     }
                     placeholder="Describe responsibilities, requirements, benefits, qualifications..."

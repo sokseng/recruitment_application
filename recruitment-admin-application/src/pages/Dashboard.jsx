@@ -345,6 +345,27 @@ export default function Dashboard() {
                   modules={{ toolbar: false }}
                 />
               </Box>
+              <br />
+              <Typography variant="h7" fontWeight={700} gutterBottom>
+                Requirements
+              </Typography>
+
+              <Box
+                sx={{
+                  '& .ql-editor': {
+                    fontSize: '0.95rem',
+                    lineHeight: 1.8,
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={selectedJob.experience_required}
+                  readOnly
+                  modules={{ toolbar: false }}
+                />
+              </Box>
             </Box>
           </Box>
         ) : (

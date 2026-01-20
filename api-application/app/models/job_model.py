@@ -51,6 +51,7 @@ class Job(Base):
     salary_range = Column(String(100), nullable=True)  
     location = Column(String(255), nullable=True)
     job_description = Column(Text, nullable=False)
+    experience_required = Column(String(100), nullable=False, server_default="Not specified")
     posting_date = Column(Date, server_default=func.current_date(), nullable=False)
     closing_date = Column(Date, nullable=True)
     status = Column(SQLEnum(JobStatus), default=JobStatus.DRAFT, nullable=False)
