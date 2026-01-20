@@ -32,7 +32,6 @@ import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import DescriptionIcon from "@mui/icons-material/Description";
 
 // Rich text editor
 import ReactQuill from 'react-quill-new';
@@ -457,6 +456,11 @@ export default function MyJobs() {
   const [openCloseDialog, setOpenCloseDialog] = useState(false);
   const [closingJob, setClosingJob] = useState(null);
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
+  const [levelFilter, setLevelFilter] = useState("All");
+
   useEffect(() => {
     fetchMyJobs();
   }, []);
@@ -520,9 +524,29 @@ export default function MyJobs() {
     );
   }
 
+  const filteredJobs = jobs.filter((job) => {
+    const keywordMatch =
+      job.job_title.toLowerCase().includes(search.toLowerCase()) ||
+      (job.location || "").toLowerCase().includes(search.toLowerCase());
+
+    const statusMatch =
+      statusFilter === "All" || job.status === statusFilter;
+
+    const typeMatch =
+      typeFilter === "All" || job.job_type === typeFilter;
+
+    const levelMatch =
+      levelFilter === "All" || job.level === levelFilter;
+
+    return keywordMatch && statusMatch && typeMatch && levelMatch;
+  });
+
   return (
     <Box>
       {/* HEADER */}
+      <Typography variant="h6" fontWeight={700}>
+          My Posted Jobs
+        </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -530,9 +554,79 @@ export default function MyJobs() {
         spacing={2}
         mb={2}
       >
-        <Typography variant="h6" fontWeight={700}>
-          My Posted Jobs
-        </Typography>
+        
+
+        {/* Search */}
+    <TextField
+      size="small"
+      placeholder="Search by title or location"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      fullWidth
+    />
+
+    {/* Status */}
+    <FormControl size="small" sx={{ minWidth: 130 }}>
+      <InputLabel>Status</InputLabel>
+      <Select
+        value={statusFilter}
+        label="Status"
+        onChange={(e) => setStatusFilter(e.target.value)}
+      >
+        {["All", "Open", "Closed", "Draft"].map((s) => (
+          <MenuItem key={s} value={s}>
+            {s}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+
+    {/* Job Type */}
+    <FormControl size="small" sx={{ minWidth: 150 }}>
+      <InputLabel>Type</InputLabel>
+      <Select
+        value={typeFilter}
+        label="Type"
+        onChange={(e) => setTypeFilter(e.target.value)}
+      >
+        <MenuItem value="All">All</MenuItem>
+        {JOB_TYPES.map((t) => (
+          <MenuItem key={t.value} value={t.value}>
+            {t.label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+
+    {/* Level */}
+    <FormControl size="small" sx={{ minWidth: 150 }}>
+      <InputLabel>Level</InputLabel>
+      <Select
+        value={levelFilter}
+        label="Level"
+        onChange={(e) => setLevelFilter(e.target.value)}
+      >
+        <MenuItem value="All">All</MenuItem>
+        {JOB_LEVELS.map((l) => (
+          <MenuItem key={l.value} value={l.value}>
+            {l.label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+
+    {/* Reset */}
+    <Button
+      variant="outlined"
+      onClick={() => {
+        setSearch("");
+        setStatusFilter("All");
+        setTypeFilter("All");
+        setLevelFilter("All");
+      }}
+    >
+      Reset
+    </Button>
 
         <Button
           variant="contained"
@@ -556,22 +650,20 @@ export default function MyJobs() {
         sx={{
           display: "grid",
           gridTemplateColumns: {
-            xs: "repeat(2, 1fr)",
+            xs: "repeat(1, 1fr)",
             sm: "repeat(3, 1fr)",
             md: "repeat(4, 1fr)",
-            lg: "repeat(6, 1fr)",
+            lg: "repeat(4, 1fr)",
           },
           gap: 1,
         }}
       >
-        {jobs.map((job) => (
+        {filteredJobs.map((job) => (
           <Card
             key={job.pk_id}
             variant="outlined"
             sx={{
               borderRadius: 2,
-              height: "fit-content",
-              minHeight: 220,
               display: "flex",
               flexDirection: "column",
               boxShadow: 1,
@@ -591,7 +683,6 @@ export default function MyJobs() {
                   variant="subtitle1"
                   color="primary"
                   fontWeight={500}
-                  noWrap
                 >
                   {job.job_title}
                 </Typography>
@@ -624,12 +715,12 @@ export default function MyJobs() {
                 )}
               </Stack>
 
-              <Typography variant="body2" color="text.secondary" noWrap>
-                {job.location || "—"}
+              <Typography variant="body2" color="text.secondary">
+                {"location: "}{job.location || "—"}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                {job.salary_range || "Negotiable"}
+                {"salary: "}{job.salary_range + "$" || "Negotiable"}
               </Typography>
 
               <Typography

@@ -253,11 +253,11 @@ export default function Dashboard() {
                   </Typography>
                 </Box>
                 {/* Desktop Apply Action */}
-                {!isMobile && (
+                {/* {!isMobile && (
                   <Stack direction="row" justifyContent="flex-end" p={1}>
                     <Button
                       variant="contained"
-                      color="warning"
+                      color="primary"
                       startIcon={<EmailIcon />}
                       onClick={() => setOpenApplyDialog(true)}
                       size='small'
@@ -265,7 +265,7 @@ export default function Dashboard() {
                       Direct Apply
                     </Button>
                   </Stack>
-                )}
+                )} */}
                 </Stack>
               
 
@@ -363,33 +363,34 @@ export default function Dashboard() {
               bottom: 0,
               left: 0,
               right: 0,
-              p: 2,
+              p: 1,
               bgcolor: 'background.paper',
               borderTop: '1px solid',
               borderColor: 'divider',
               zIndex: 10,
+              display: 'flex',
+              justifyContent: 'center',
             }}
           >
             <Stack direction="row" spacing={1}>
               <Button
-                fullWidth
+                // fullWidth
                 variant="outlined"
-                color="warning"
-                size="medium"
+                size="small"
                 onClick={handleBackToList}
               >
                 Home
               </Button>
 
-              <Button
-                fullWidth
+              {/* <Button
+                // fullWidth
                 variant="contained"
-                color="warning"
-                size="medium"
+                color="primary"
+                size="small"
                 onClick={() => setOpenApplyDialog(true)}
               >
                 Direct Apply
-              </Button>
+              </Button> */}
             </Stack>
           </Box>
         )}
