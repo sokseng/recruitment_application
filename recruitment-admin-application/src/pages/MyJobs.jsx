@@ -24,6 +24,7 @@ import {
   useMediaQuery,
   InputAdornment,
   DialogContentText,
+  OutlinedInput,
 } from "@mui/material";
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
@@ -31,10 +32,19 @@ import CloseIcon from "@mui/icons-material/Close";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Badge from "@mui/material/Badge";
+import EventIcon from "@mui/icons-material/Event";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import PaymentsIcon from "@mui/icons-material/Payments"
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
+import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
+import SearchIcon from "@mui/icons-material/Search";
 
 // Rich text editor
 import ReactQuill from 'react-quill-new';
@@ -47,7 +57,6 @@ import dayjs from "dayjs";
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
   { value: "Part-time", label: "Part-time" },
-  { value: "Contract", label: "Contract" },
   { value: "Internship", label: "Internship" },
 ];
 
@@ -555,6 +564,9 @@ export default function MyJobs() {
     Closed: jobs.filter(j => j.status === "Closed").length,
   };
 
+  const [openDuplicateDialog, setOpenDuplicateDialog] = useState(false);
+  const [duplicateJob, setDuplicateJob] = useState(null);
+
   useEffect(() => {
     fetchMyJobs();
   }, []);
@@ -571,6 +583,24 @@ export default function MyJobs() {
     }
   };
 
+  const openDuplicate = (job) => {
+    setDuplicateJob(job);
+    setOpenDuplicateDialog(true);
+  };
+
+  const confirmDuplicate = () => {
+    const clonedJob = {
+      ...duplicateJob,
+      pk_id: undefined,
+      posting_date: undefined,
+      closing_date: duplicateJob.closing_date || "",
+    };
+
+    setEditingJob(clonedJob);
+    setOpenFormDialog(true);
+    setOpenDuplicateDialog(false);
+  };
+
   const openCreate = () => {
     setEditingJob(null);
     setOpenFormDialog(true);
@@ -582,12 +612,13 @@ export default function MyJobs() {
   };
 
   const handleFormSuccess = (updatedJob) => {
-    if (editingJob) {
+    if (editingJob?.pk_id) {
       setJobs((prev) =>
         prev.map((j) => (j.pk_id === updatedJob.pk_id ? updatedJob : j))
       );
     } else {
-      fetchMyJobs();
+      // fetchMyJobs();
+      setJobs((prev) => [updatedJob, ...prev]);
     }
   };
 
@@ -654,15 +685,32 @@ export default function MyJobs() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ flexGrow: 1 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
         />
 
         {/* Job Type */}
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl size="small" sx={{ minWidth: 200 }} >
           <InputLabel>Type</InputLabel>
           <Select
             value={typeFilter}
             label="Type"
             onChange={(e) => setTypeFilter(e.target.value)}
+            input={
+              <OutlinedInput
+                startAdornment={
+                  <InputAdornment position="start">
+                    <WorkOutlineIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                }
+                label="Type"
+              />
+            }
           >
             <MenuItem value="All">All</MenuItem>
             {JOB_TYPES.map((t) => (
@@ -674,12 +722,22 @@ export default function MyJobs() {
         </FormControl>
 
         {/* Level */}
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
           <InputLabel>Level</InputLabel>
           <Select
             value={levelFilter}
             label="Level"
             onChange={(e) => setLevelFilter(e.target.value)}
+            input={
+              <OutlinedInput
+                startAdornment={
+                  <InputAdornment position="start">
+                    <TrendingUpIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                }
+                label="Level"
+              />
+            }
           >
             <MenuItem value="All">All</MenuItem>
             {JOB_LEVELS.map((l) => (
@@ -693,6 +751,7 @@ export default function MyJobs() {
         {/* Reset */}
         <Button
           variant="outlined"
+          startIcon={<AutorenewRoundedIcon />}
           onClick={() => {
             setSearch("");
             setStatusTab("Open");
@@ -851,6 +910,14 @@ export default function MyJobs() {
                 <EditIcon fontSize="small" sx={{ color: "teal" }} />
               </IconButton>
 
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => openDuplicate(job)}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+
               {job.status !== "Closed" && (
                 <IconButton
                   size="small"
@@ -908,6 +975,31 @@ export default function MyJobs() {
             startIcon={<CloseIcon />}
           >
             Close Job
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openDuplicateDialog}
+        onClose={() => setOpenDuplicateDialog(false)}
+      >
+        <DialogTitle>Duplicate Job</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Do you want to duplicate{" "}
+            <strong>{duplicateJob?.job_title}</strong>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDuplicateDialog(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={confirmDuplicate}
+            startIcon={<ContentCopyIcon />}
+          >
+            Duplicate
           </Button>
         </DialogActions>
       </Dialog>

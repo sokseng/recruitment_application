@@ -25,7 +25,6 @@ class JobLevel(str, enum.Enum):
 class JobType(str, enum.Enum):
     FULL_TIME = "Full-time"
     PART_TIME = "Part-time"
-    CONTRACT = "Contract"
     INTERNSHIP = "Internship"
 
 

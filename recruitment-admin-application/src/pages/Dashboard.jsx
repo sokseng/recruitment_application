@@ -17,11 +17,22 @@ import {
   AppBar,
   Toolbar,
   MenuItem,
+  Chip,
+  alpha,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../services/api';
 import ReactQuill from 'react-quill-new';
 import 'quill/dist/quill.snow.css';
+import EventIcon from "@mui/icons-material/Event";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import PaymentsIcon from "@mui/icons-material/Payments"
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
+import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -128,7 +139,7 @@ export default function Dashboard() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        border: '1px solid',
+        border: '3px solid',
         borderColor: 'divider',
       }}
     >
@@ -172,16 +183,38 @@ export default function Dashboard() {
                   >
                       {companyName.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box flex={1} minWidth={0}>
+                  <Box minWidth={0}>
                     <Typography variant="body2" fontWeight={600}>
                       {job.job_title}
                     </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      Company: {companyName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
-                    </Typography>
+                    <Stack direction="column" spacing={0.3} mt={0.5}>
+                      <Chip
+                        icon={<BusinessRoundedIcon />}
+                        label={companyName}
+                        size="small"
+                        sx={(theme) => ({
+                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                          color: alpha(theme.palette.primary.main, 0.9),
+                          "& .MuiChip-icon": {
+                            color: alpha(theme.palette.primary.main, 0.7),
+                          },
+                        })}
+                      />
+                      <Chip
+                        icon={<EventIcon />}
+                        label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
+                        size="small"
+                        sx={(theme) => ({
+                          backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                          color: alpha(theme.palette.warning.main, 0.9),
+                          "& .MuiChip-icon": {
+                            color: alpha(theme.palette.warning.main, 0.7),
+                          },
+                        })}
+                      />
+                    </Stack>
+                    
+                    
                   </Box>
                 </Stack>
               </Box>
@@ -205,6 +238,9 @@ export default function Dashboard() {
           display: 'flex',
           flexDirection: 'column',
           bgcolor: 'background.default',
+          border: '3px solid',
+          borderColor: 'divider',
+          borderRadius: 1,
         }}
       >
         {/* Mobile top bar */}
@@ -236,9 +272,20 @@ export default function Dashboard() {
                   <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
                     {selectedJob.job_title}
                   </Typography>
-                  <Typography variant="subtitle1" color="primary.main" fontWeight={500}>
-                    {companyName}
-                  </Typography>
+                  <Chip
+                    icon={<BusinessRoundedIcon />}
+                    label={companyName}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      color: alpha(theme.palette.primary.main, 0.9),
+                      "& .MuiChip-icon": {
+                        color: alpha(theme.palette.primary.main, 0.7),
+                      },
+                    })}
+                  />
+
+                  
                 </Box>
                 </Stack>
               
@@ -246,90 +293,148 @@ export default function Dashboard() {
               {/* Quick info chips / rows */}
               <Stack spacing={1.5} sx={{ mt: 3 }}>
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <EventIcon color="action" fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     Posting Date:
                   </Typography>
-                  <Typography variant="body2">
-                    {selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—"}
-                  </Typography>
+                  <Chip
+                    label={selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                      color: alpha(theme.palette.warning.main, 0.9),
+                    })}
+                  />
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <EventIcon color="action" fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     Closing Date:
                   </Typography>
-                  <Typography variant="body2">
-                    {selectedJob.closing_date ? new Date(selectedJob.closing_date).toISOString().split("T")[0] : "—"}
-                  </Typography>
+                  <Chip
+                    label={selectedJob.closing_date ? new Date(selectedJob.closing_date).toISOString().split("T")[0] : "—"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                      color: alpha(theme.palette.warning.main, 0.9),
+                    })}
+                  />
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <WorkOutlineIcon color="action" fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     Job Type:
                   </Typography>
-                  <Typography variant="body2">{selectedJob.job_type}</Typography>
+                  <Chip
+                    label={selectedJob.job_type || "—"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+                      color: alpha(theme.palette.secondary.main, 0.9),
+                    })}
+                  />
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <LocationOnIcon color="action" fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     Location:
                   </Typography>
-                  <Typography variant="body2">{selectedJob.location || 'Phnom Penh'}</Typography>
+                  <Chip
+                    label={selectedJob.location || "Phnom Penh"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.info.main, 0.08),
+                      color: alpha(theme.palette.info.main, 0.9),
+                    })}
+                  />
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1}>
+                  <TrendingUpIcon color="action" fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     Level:
                   </Typography>
-                  <Typography variant="body2">{selectedJob.level}</Typography>
+                  <Chip
+                    label={selectedJob.level || "—"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.success.main, 0.08),
+                      color: alpha(theme.palette.success.main, 0.9),
+                    })}
+                  />
                 </Stack>
 
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
-                      Salary:
-                    </Typography>
-                    <Typography variant="body2" color="success.main" fontWeight={600}>
-                      {selectedJob.salary_range ? `${selectedJob.salary_range}$` : "Negotiable"}
-                    </Typography>
-                  </Stack>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <PaymentsIcon color="action" fontSize="small" />
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    Salary:
+                  </Typography>
+                  <Chip
+                    label={selectedJob.salary_range ? `${selectedJob.salary_range}$` : "Negotiable"}
+                    size="small"
+                    sx={(theme) => ({
+                      backgroundColor: alpha(theme.palette.success.main, 0.08),
+                      color: alpha(theme.palette.success.main, 0.9),
+                    })}
+                  />
+                </Stack>
               </Stack>
             </Box>
 
             <Divider />
 
             {/* Description */}
-            <Box sx={{ p: 3 }}>
-              <Typography variant="h7" fontWeight={700} gutterBottom>
-                Job Description
-              </Typography>
-
-              <Box
-                sx={{
-                  '& .ql-editor': {
-                    fontSize: '0.95rem',
-                    lineHeight: 1.8,
-                    color: 'text.primary',
-                  },
-                }}
-              >
-                <ReactQuill
-                  theme="snow"
-                  value={selectedJob.job_description}
-                  readOnly
-                  modules={{ toolbar: false }}
-                />
+            <Box sx={{ p: 2.5 }}>
+              <Box mb={2}>
+                <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                  <DescriptionOutlinedIcon color="action" fontSize='medium' />
+                  <Typography gutterBottom>
+                    Job Description
+                  </Typography>
+                </Stack>
+                <Box
+                  sx={{
+                    "& .ql-container": {
+                      borderRadius: 2,          // ← border radius
+                      borderColor: "divider",
+                    },
+                    '& .ql-editor': {
+                      fontSize: '0.95rem',
+                      lineHeight: 1.8,
+                      color: 'text.primary',
+                      padding: 2,
+                    },
+                  }}
+                >
+                  <ReactQuill
+                    theme="snow"
+                    value={selectedJob.job_description}
+                    readOnly
+                    modules={{ toolbar: false }}
+                  />
+                </Box>
               </Box>
-              <br />
-              <Typography variant="h7" fontWeight={700} gutterBottom>
-                Requirements
-              </Typography>
 
+              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                <ChecklistOutlinedIcon color="action" fontSize='medium' />
+                <Typography fontWeight={500} gutterBottom>
+                  Requirements
+                </Typography>
+              </Stack>
               <Box
                 sx={{
+                  "& .ql-container": {
+                    borderRadius: 2,          // ← border radius
+                    borderColor: "divider",
+                  },
                   '& .ql-editor': {
                     fontSize: '0.95rem',
                     lineHeight: 1.8,
                     color: 'text.primary',
+                    padding: 2,
                   },
                 }}
               >
@@ -390,13 +495,13 @@ export default function Dashboard() {
           display: "flex",
           flexDirection: "column",
           boxSizing: "border-box",
-          gap: 2,
+          gap: 0.5,
         }}
       >
         <Card
           sx={{
-            p: 1,
-            border: "1px solid",
+            p: 0.9,
+            border: "3px solid",
             borderColor: "divider",
           }}
         >
@@ -428,12 +533,19 @@ export default function Dashboard() {
               label="Type"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              sx={{ minWidth: 140 }}
+              sx={{ minWidth: 200 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <WorkOutlineIcon color="action" />
+                  </InputAdornment>
+                ),
+                
+              }}
             >
               <MenuItem value="All">All</MenuItem>
               <MenuItem value="Full-time">Full-time</MenuItem>
               <MenuItem value="Part-time">Part-time</MenuItem>
-              <MenuItem value="Contract">Contract</MenuItem>
               <MenuItem value="Internship">Internship</MenuItem>
             </TextField>
 
@@ -445,6 +557,13 @@ export default function Dashboard() {
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
               sx={{ minWidth: 160 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
             >
               <MenuItem value="All">All</MenuItem>
               {[...new Set(jobs.map((j) => j.location).filter(Boolean))].map(
@@ -459,6 +578,7 @@ export default function Dashboard() {
             {/* Reset */}
             <Button
               variant="outlined"
+              startIcon={<AutorenewRoundedIcon />}
               onClick={() => {
                 setSearchTerm("");
                 setTypeFilter("All");
@@ -475,7 +595,7 @@ export default function Dashboard() {
             flex: 1,
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
-            gap: 2,
+            gap: 0.5,
             minHeight: 0,
           }}
         >
