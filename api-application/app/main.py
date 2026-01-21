@@ -10,6 +10,7 @@ from app.routers import (
     job_router,
     candidate_router,
     candidate_resume_router,
+    category_router,
 )
 
 from app.database.session import Base, engine
@@ -60,3 +61,5 @@ app.include_router(employer_router.router)
 app.include_router(job_router.router)
 app.include_router(candidate_router.router)
 app.include_router(candidate_resume_router.router)
+app.include_router(category_router.router)
+

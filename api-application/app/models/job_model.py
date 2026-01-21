@@ -2,6 +2,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    Table,
     Text,
     Date,
     DateTime,
@@ -12,6 +13,13 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 import enum
+
+job_category = Table(
+    "job_category",                    # ← table name (you can customize if you want)
+    Base.metadata,
+    Column("job_id", Integer, ForeignKey("t_job.pk_id"), primary_key=True),
+    Column("category_id", Integer, ForeignKey("t_category.pk_id"), primary_key=True),
+)
 
 class JobLevel(str, enum.Enum):
     ENTRY_LEVEL = "Entry Level"
@@ -43,6 +51,12 @@ class Job(Base):
         ForeignKey("t_employer.pk_id", ondelete="CASCADE"),
         nullable=False,
     )
+    categories = relationship(
+        "Category",
+        secondary=job_category,
+        back_populates="jobs",
+        lazy="selectin"          # good for loading in lists
+    )
     job_title = Column(String(255), nullable=False)
     job_type = Column(SQLEnum(JobType), nullable=False)
     level = Column(SQLEnum(JobLevel), nullable=False, default=JobLevel.MID_LEVEL)
@@ -68,4 +82,5 @@ class Job(Base):
 
     # Optional: help with enum serialization in responses
     def __repr__(self):
-        return f"<Job {self.job_title} - {self.status}>"
+        cats = ", ".join(c.name for c in self.categories) if self.categories else "no categories"
+        return f"<Job {self.job_title} - {self.status} - categories: {cats}>"

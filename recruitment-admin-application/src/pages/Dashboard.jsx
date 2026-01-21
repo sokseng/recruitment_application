@@ -19,6 +19,9 @@ import {
   MenuItem,
   Chip,
   alpha,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../services/api';
@@ -33,6 +36,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -48,12 +52,26 @@ export default function Dashboard() {
 
   const [typeFilter, setTypeFilter] = useState('All');
   const [levelFilter, setLevelFilter] = useState('All');
-  const [locationFilter, setLocationFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState(["All"]);
+
+  const [categories, setCategories] = useState([]);
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     loadJobs();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/categories/");
+        setCategories(res.data || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -75,11 +93,10 @@ export default function Dashboard() {
       const typeMatch = typeFilter === "All" || job.job_type === typeFilter;
 
       const levelMatch = levelFilter === "All" || job.level === levelFilter;
+      
+      const categoryMatch = categoryFilter.includes("All") || (job.categories || []).some((cat) => categoryFilter.includes(cat.pk_id));
 
-      const locationMatch =
-        locationFilter === "All" || job.location === locationFilter;
-
-      return keywordMatch && typeMatch && levelMatch && locationMatch;
+      return keywordMatch && typeMatch && levelMatch && categoryMatch;
     });
 
     setFilteredJobs(filtered);
@@ -87,7 +104,7 @@ export default function Dashboard() {
     if (selectedJob && !filtered.some((j) => j.pk_id === selectedJob.pk_id)) {
       setSelectedJob(filtered[0] || null);
     }
-  }, [searchTerm, typeFilter, levelFilter, locationFilter, jobs, selectedJob]);
+  }, [searchTerm, typeFilter, levelFilter, categoryFilter, jobs, selectedJob]);
 
   const loadJobs = async () => {
     try {
@@ -174,8 +191,8 @@ export default function Dashboard() {
                     src={logoFilename ? `${baseURL}/uploads/employers/${logoFilename}` : undefined}
                     alt={`${companyName} logo`}
                     sx={{
-                      width: { xs: 32, sm: 36 },
-                      height: { xs: 32, sm: 36 },
+                      width: { xs: 32, sm: 40 },
+                      height: { xs: 32, sm: 40 },
                       fontSize: "0.9rem",
                       border: '1px solid',
                       borderColor: 'divider',
@@ -189,28 +206,11 @@ export default function Dashboard() {
                     </Typography>
                     <Stack direction="column" spacing={0.3} mt={0.5}>
                       <Chip
-                        icon={<BusinessRoundedIcon />}
-                        label={companyName}
-                        size="small"
-                        sx={(theme) => ({
-                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                          color: alpha(theme.palette.primary.main, 0.9),
-                          "& .MuiChip-icon": {
-                            color: alpha(theme.palette.primary.main, 0.7),
-                          },
-                        })}
-                      />
-                      <Chip
                         icon={<EventIcon />}
                         label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
                         size="small"
-                        sx={(theme) => ({
-                          backgroundColor: alpha(theme.palette.warning.main, 0.08),
-                          color: alpha(theme.palette.warning.main, 0.9),
-                          "& .MuiChip-icon": {
-                            color: alpha(theme.palette.warning.main, 0.7),
-                          },
-                        })}
+                        variant="outlined"
+                        color="default"
                       />
                     </Stack>
                     
@@ -274,7 +274,7 @@ export default function Dashboard() {
                   </Typography>
                   <Chip
                     icon={<BusinessRoundedIcon />}
-                    label={companyName}
+                    label={`Company: ${companyName}`}
                     size="small"
                     sx={(theme) => ({
                       backgroundColor: alpha(theme.palette.primary.main, 0.08),
@@ -284,8 +284,6 @@ export default function Dashboard() {
                       },
                     })}
                   />
-
-                  
                 </Box>
                 </Stack>
               
@@ -300,10 +298,8 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.warning.main, 0.08),
-                      color: alpha(theme.palette.warning.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
 
@@ -315,10 +311,8 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.closing_date ? new Date(selectedJob.closing_date).toISOString().split("T")[0] : "—"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.warning.main, 0.08),
-                      color: alpha(theme.palette.warning.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
 
@@ -330,10 +324,8 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.job_type || "—"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.secondary.main, 0.08),
-                      color: alpha(theme.palette.secondary.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
 
@@ -345,10 +337,8 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.location || "Phnom Penh"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.info.main, 0.08),
-                      color: alpha(theme.palette.info.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
 
@@ -360,10 +350,8 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.level || "—"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.success.main, 0.08),
-                      color: alpha(theme.palette.success.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
 
@@ -375,12 +363,28 @@ export default function Dashboard() {
                   <Chip
                     label={selectedJob.salary_range ? `${selectedJob.salary_range}$` : "Negotiable"}
                     size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.success.main, 0.08),
-                      color: alpha(theme.palette.success.main, 0.9),
-                    })}
+                    variant="outlined"
+                    color="default"
                   />
                 </Stack>
+
+                {selectedJob.categories?.length > 0 && (
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <CategoryRoundedIcon color="action" fontSize="small" />
+                    <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                      Categories:
+                    </Typography>
+                    {selectedJob.categories.map((cat) => (
+                      <Chip
+                        key={cat.pk_id}
+                        label={cat.name}
+                        size="small"
+                        variant="outlined"
+                        color="default"
+                      />
+                    ))}
+                  </Stack>
+                )}
               </Stack>
             </Box>
 
@@ -526,6 +530,51 @@ export default function Dashboard() {
               fullWidth
             />
 
+             {/* New: Category - multi select */}
+            <FormControl size="small" sx={{ minWidth: 300 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                multiple
+                value={categoryFilter}
+                label="Category"
+                onChange={(e) => {
+                  let value = e.target.value;
+
+                  if (value[value.length - 1] === "All") {
+                    setCategoryFilter(["All"]);
+                    return;
+                  }
+
+                  value = value.filter((v) => v !== "All");
+
+                  setCategoryFilter(value.length === 0 ? ["All"] : value);
+                }}
+                renderValue={(selected) => {
+                  if (selected.includes("All") || selected.length === 0) {
+                    return "All";
+                  }
+                  return selected
+                    .map((id) => categories.find((c) => c.pk_id === Number(id))?.name)
+                    .filter(Boolean)
+                    .join(", ");
+                }}
+                startAdornment={
+                  <InputAdornment position="start">
+                    <CategoryRoundedIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="All">
+                  All
+                </MenuItem>
+                {categories.map((cat) => (
+                  <MenuItem key={cat.pk_id} value={cat.pk_id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             {/* Job Type */}
             <TextField
               select
@@ -548,32 +597,7 @@ export default function Dashboard() {
               <MenuItem value="Part-time">Part-time</MenuItem>
               <MenuItem value="Internship">Internship</MenuItem>
             </TextField>
-
-            {/* Location */}
-            <TextField
-              select
-              size="small"
-              label="Location"
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              sx={{ minWidth: 160 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocationOnIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            >
-              <MenuItem value="All">All</MenuItem>
-              {[...new Set(jobs.map((j) => j.location).filter(Boolean))].map(
-                (loc) => (
-                  <MenuItem key={loc} value={loc}>
-                    {loc}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
+           
 
             {/* Reset */}
             <Button
@@ -583,8 +607,9 @@ export default function Dashboard() {
                 setSearchTerm("");
                 setTypeFilter("All");
                 setLevelFilter("All");
-                setLocationFilter("All");
+                setCategoryFilter(["All"]);
               }}
+              sx={{ minWidth: 100 }}
             >
               Reset
             </Button>

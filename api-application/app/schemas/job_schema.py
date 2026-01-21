@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 from app.models.job_model import JobLevel, JobType, JobStatus
 
@@ -7,6 +7,7 @@ from app.models.job_model import JobLevel, JobType, JobStatus
 class JobCreate(BaseModel):
     job_title: str = Field(..., min_length=3, max_length=255)
     job_type: JobType
+    category_ids: List[int] = Field(default_factory=list, description="List of category IDs")
     level: JobLevel = JobLevel.MID_LEVEL
     position_number: Optional[int] = None
     salary_range: Optional[str] = Field(None, max_length=100)
@@ -25,6 +26,7 @@ class JobCreate(BaseModel):
 class JobUpdate(BaseModel):
     job_title: Optional[str] = Field(None, min_length=3, max_length=255)
     job_type: Optional[JobType] = None
+    category_ids: Optional[List[int]] = None
     level: Optional[JobLevel] = None
     position_number: Optional[int] = None
     salary_range: Optional[str] = Field(None, max_length=100)
@@ -44,6 +46,12 @@ class EmployerBasic(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class CategoryBasic(BaseModel):
+    pk_id: int
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class JobOut(BaseModel):
     pk_id: int
@@ -51,6 +59,7 @@ class JobOut(BaseModel):
     employer: EmployerBasic
     job_title: str
     job_type: JobType
+    categories: List[CategoryBasic] = []
     level: JobLevel
     position_number: Optional[int]
     salary_range: Optional[str]

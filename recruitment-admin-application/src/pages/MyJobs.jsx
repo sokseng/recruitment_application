@@ -36,15 +36,11 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Badge from "@mui/material/Badge";
-import EventIcon from "@mui/icons-material/Event";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import PaymentsIcon from "@mui/icons-material/Payments"
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
 import SearchIcon from "@mui/icons-material/Search";
+import AllInboxRoundedIcon from '@mui/icons-material/AllInboxRounded';
 
 // Rich text editor
 import ReactQuill from 'react-quill-new';
@@ -85,6 +81,8 @@ function JobFormDialog({
   onSuccess,
   initialData = null,
   isEdit = false,
+  isDuplicate = false,
+  categories = [],
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -100,6 +98,7 @@ function JobFormDialog({
     experience_required: "",
     closing_date: "",
     status: isEdit ? "Open" : "Open",
+    category_ids: [],
   };
 
   const [formData, setFormData] = useState(
@@ -116,6 +115,7 @@ function JobFormDialog({
         closing_date: initialData.closing_date
           ? initialData.closing_date.slice(0, 10)
           : "",
+        category_ids: initialData.categories?.map(c => c.pk_id) || [],
       });
     } else if (open) {
       setFormData(defaultData);
@@ -173,8 +173,8 @@ function JobFormDialog({
     }
   };
 
-  const title = isEdit ? "Edit Job" : "Post a New Job";
-  const submitText = isEdit ? "Save Changes" : "Post Job";
+  const title = isEdit ? "Edit Job" : isDuplicate ? "Duplicate Job" : "Post a New Job";
+  const submitText = isEdit ? "Save Changes" : isDuplicate ? "Create Copy" : "Post Job";
   const statuses = isEdit ? JOB_STATUSES_EDIT : JOB_STATUSES_CREATE;
 
   return (
@@ -230,6 +230,41 @@ function JobFormDialog({
               gap: 2,
             }}
           >
+            <FormControl fullWidth>
+              <InputLabel>Categories*</InputLabel>
+              <Select
+                required
+                multiple
+                name="category_ids"
+                value={formData.category_ids || []}
+                label="Categories"
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    category_ids: e.target.value,
+                  }));
+                }}
+                renderValue={(selected) =>
+                  selected
+                    .map((id) => categories.find((c) => c.pk_id === id)?.name)
+                    .filter(Boolean)
+                    .join(", ")
+                }
+                startAdornment={
+                  <InputAdornment position="start">
+                    <WorkIcon fontSize="small" />
+                  </InputAdornment>
+                }
+                size="small"
+              >
+                {categories.map((cat) => (
+                  <MenuItem key={cat.pk_id} value={cat.pk_id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+           
             {/* Job Title */}
             <TextField
               fullWidth
@@ -338,25 +373,6 @@ function JobFormDialog({
               }}
             />
 
-            {/* Closing Date */}
-            {/* <TextField
-              fullWidth
-              label="Application Closing Date"
-              name="closing_date"
-              type="date"
-              value={formData.closing_date || ""}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CalendarTodayIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-            /> */}
-
             <DatePicker
               label="Application Closing Date"
               format="YYYY-MM-DD"
@@ -377,20 +393,21 @@ function JobFormDialog({
 
             {/* Location */}
             <TextField
-              fullWidth
-              label="Location"
-              name="location"
-              value={formData.location || ""}
-              onChange={handleChange}
-              placeholder="e.g. Phnom Penh, Cambodia"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocationOnIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-              size="small"
+              sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
+                fullWidth
+                label="Location"
+                name="location"
+                value={formData.location || ""}
+                onChange={handleChange}
+                placeholder="e.g. Phnom Penh, Cambodia"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocationOnIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+                size="small"
             />
 
             {/* Job Description - Rich Text Editor */}
@@ -557,6 +574,7 @@ export default function MyJobs() {
   const [statusTab, setStatusTab] = useState("Open");
   const [typeFilter, setTypeFilter] = useState("All");
   const [levelFilter, setLevelFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState(["All"]);
 
   const statusCounts = {
     Draft: jobs.filter(j => j.status === "Draft").length,
@@ -566,9 +584,22 @@ export default function MyJobs() {
 
   const [openDuplicateDialog, setOpenDuplicateDialog] = useState(false);
   const [duplicateJob, setDuplicateJob] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchMyJobs();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/categories/"); // ← assume you have this endpoint
+        setCategories(res.data || []);
+      } catch (err) {
+        console.error("Failed to load categories");
+      }
+    };
+    fetchCategories();
   }, []);
 
   const fetchMyJobs = async () => {
@@ -654,20 +685,22 @@ export default function MyJobs() {
       job.job_title.toLowerCase().includes(search.toLowerCase()) ||
       (job.location || "").toLowerCase().includes(search.toLowerCase());
 
-    const statusMatch =
-      statusTab === "All" || job.status === statusTab;
+    const statusMatch = statusTab === "All" || job.status === statusTab;
 
-    const typeMatch =
-      typeFilter === "All" || job.job_type === typeFilter;
+    const typeMatch = typeFilter === "All" || job.job_type === typeFilter;
 
-    const levelMatch =
-      levelFilter === "All" || job.level === levelFilter;
+    const levelMatch = levelFilter === "All" || job.level === levelFilter;
+    
+    const categoryMatch = categoryFilter.includes("All") ||                           // "All" selected → show everything
+    (job.categories || []).some((cat) =>
+      categoryFilter.includes(cat.pk_id)
+    );
 
-    return keywordMatch && statusMatch && typeMatch && levelMatch;
+    return keywordMatch && statusMatch && typeMatch && levelMatch && categoryMatch;
   });
 
   return (
-    <Box>
+    <Box >
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -676,7 +709,7 @@ export default function MyJobs() {
         mb={2}
       >
         <Typography variant="h6" fontWeight={700}>
-          My Posted Jobs
+          Posted Jobs
         </Typography>
         {/* Search */}
         <TextField
@@ -748,6 +781,64 @@ export default function MyJobs() {
           </Select>
         </FormControl>
 
+        {/* Category Filter - Multi select */}
+        <FormControl size="small" sx={{ minWidth: 220 }}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            multiple
+            value={categoryFilter}
+            label="Category"
+            onChange={(e) => {
+              let value = e.target.value;
+
+              // Special case: if "All" is newly selected → reset to only "All"
+              if (value[value.length - 1] === "All") {
+                setCategoryFilter(["All"]);
+                return;
+              }
+
+              // Remove "All" if any real category is selected
+              value = value.filter((v) => v !== "All");
+
+              // If nothing left → default to "All"
+              if (value.length === 0) {
+                setCategoryFilter(["All"]);
+              } else {
+                setCategoryFilter(value);
+              }
+            }}
+            input={
+              <OutlinedInput
+                startAdornment={
+                  <InputAdornment position="start">
+                    <AllInboxRoundedIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                }
+                label="Category"
+              />
+            }
+            renderValue={(selected) => {
+              if (selected.includes("All") || selected.length === 0) {
+                return "All";
+              }
+              return selected
+                .map((id) => categories.find((c) => c.pk_id === Number(id))?.name)
+                .filter(Boolean)
+                .join(", ");
+            }}
+          >
+            <MenuItem value="All">
+              All
+            </MenuItem>
+
+            {categories.map((cat) => (
+              <MenuItem key={cat.pk_id} value={cat.pk_id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         {/* Reset */}
         <Button
           variant="outlined"
@@ -757,6 +848,7 @@ export default function MyJobs() {
             setStatusTab("Open");
             setTypeFilter("All");
             setLevelFilter("All");
+            setCategoryFilter(["All"]);
           }}
         >
           Reset
@@ -893,6 +985,19 @@ export default function MyJobs() {
                 {"Salary: "}
                 {job.salary_range ? `${job.salary_range}$` : "Negotiable"}
               </Typography>
+              {job.categories?.length > 0 && (
+                <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={1}>
+                  {job.categories.map((cat) => (
+                    <Chip
+                      key={cat.pk_id}
+                      label={cat.name}
+                      size="small"
+                      variant="outlined"
+                      color="default"
+                    />
+                  ))}
+                </Stack>
+              )}
 
 
               <Typography
@@ -949,12 +1054,14 @@ export default function MyJobs() {
         onClose={(event, reason) => {
           if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
           setOpenFormDialog(false);
-            setEditingJob(null);
+          setEditingJob(null);
         }}
         
         onSuccess={handleFormSuccess}
         initialData={editingJob}
-        isEdit={!!editingJob}
+        isEdit={!!editingJob && !!editingJob.pk_id}
+        isDuplicate={!!editingJob && !editingJob.pk_id}
+        categories={categories}
       />
 
       <Dialog open={openCloseDialog} onClose={() => setOpenCloseDialog(false)}>
