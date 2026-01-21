@@ -13,12 +13,7 @@ class JobCreate(BaseModel):
     salary_range: Optional[str] = Field(None, max_length=100)
     location: Optional[str] = Field(None, max_length=255)
     job_description: str
-    experience_required: str = Field(
-        ...,
-        min_length=2,
-        max_length=100,
-        description="e.g. '2+ years', '3-5 years', 'Senior level only', 'No experience required'"
-    )
+    experience_required: str
     closing_date: Optional[datetime] = None
     status: Optional[JobStatus] = JobStatus.DRAFT
 
@@ -32,10 +27,7 @@ class JobUpdate(BaseModel):
     salary_range: Optional[str] = Field(None, max_length=100)
     location: Optional[str] = Field(None, max_length=255)
     job_description: Optional[str] = None
-    experience_required: Optional[str] = Field(
-        None,
-        max_length=100
-    )
+    experience_required: Optional[str] = None
     closing_date: Optional[datetime] = None
     status: Optional[JobStatus] = None
 

@@ -131,17 +131,11 @@ function JobFormDialog({
     e.preventDefault();
     setError(null);
 
-    // Strip HTML tags for basic required check
     const textOnly = (formData.job_description || "")
       .replace(/<[^>]+>/g, "")
       .trim();
-    const requirementsOnly = (formData.experience_required || "")
-      .replace(/<[^>]+>/g, "")
-      .trim();
 
-    if (!formData.job_title?.trim()) return setError("Job title is required");
     if (!textOnly) return setError("Description is required");
-    if (!requirementsOnly) return setError("Requirements are required");
 
     setLoading(true);
 
@@ -181,7 +175,7 @@ function JobFormDialog({
     <Dialog
       open={open}
       onClose={loading ? undefined : onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       fullScreen={isMobile}
       scroll="paper"
@@ -344,6 +338,7 @@ function JobFormDialog({
 
             {/* Number of Positions */}
             <TextField
+              required
               fullWidth
               label="Number of Positions"
               name="position_number"
@@ -385,6 +380,7 @@ function JobFormDialog({
               }}
               slotProps={{
                 textField: {
+                  required: true,
                   size: "small",
                   fullWidth: true,
                 },
@@ -394,6 +390,7 @@ function JobFormDialog({
             {/* Location */}
             <TextField
               sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
+                required
                 fullWidth
                 label="Location"
                 name="location"
@@ -411,7 +408,7 @@ function JobFormDialog({
             />
 
             {/* Job Description - Rich Text Editor */}
-            <Box sx={{ gridColumn: "1 / -1" }}>
+            <Box>
               <FormControl fullWidth>
                 <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
                   Job Description *
@@ -468,7 +465,7 @@ function JobFormDialog({
             </Box>
 
             {/* Requirements - Rich Text Editor */}
-            <Box sx={{ gridColumn: "1 / -1" }}>
+            <Box>
               <FormControl fullWidth>
                 <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
                   Requirements
