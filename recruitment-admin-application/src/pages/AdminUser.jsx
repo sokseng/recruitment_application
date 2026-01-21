@@ -6,7 +6,6 @@ import {
     Typography,
     Avatar,
     Stack,
-    Divider,
     Chip,
     Button,
 } from "@mui/material";
@@ -86,7 +85,7 @@ const UserCard = ({ user, onEdit }) => (
     </Card>
 );
 
-/* ================= Column ================= */
+/* ================= Role Column ================= */
 const RoleColumn = ({ title, color, users, onEdit }) => {
     const styles = ROLE_STYLES[color];
 
@@ -94,12 +93,12 @@ const RoleColumn = ({ title, color, users, onEdit }) => {
         <Card
             sx={{
                 height: "100%",
-                borderRadius: 4, // ⬅ was 5
+                borderRadius: 4,
                 display: "flex",
                 flexDirection: "column",
                 background: styles.bg,
                 backdropFilter: "blur(6px)",
-                boxShadow: "0 8px 22px rgba(0,0,0,0.06)", // ⬅ softer & smaller
+                boxShadow: "0 8px 22px rgba(0,0,0,0.06)",
             }}
         >
             {/* Sticky Header */}
@@ -108,16 +107,16 @@ const RoleColumn = ({ title, color, users, onEdit }) => {
                     position: "sticky",
                     top: 0,
                     zIndex: 2,
-                    px: 1.5,   // ⬅ was 2
-                    py: 1,     // ⬅ was 1.5
+                    px: 1.5,
+                    py: 1,
                     background: "rgba(255,255,255,0.75)",
                     backdropFilter: "blur(8px)",
                     borderBottom: "1px solid rgba(0,0,0,0.08)",
                 }}
             >
                 <Typography
-                    variant="subtitle1" // ⬅ was h6
-                    fontWeight={700}    // ⬅ slightly lighter
+                    variant="subtitle1"
+                    fontWeight={700}
                     sx={{ color: styles.header }}
                 >
                     {title}
@@ -128,24 +127,44 @@ const RoleColumn = ({ title, color, users, onEdit }) => {
             </Box>
 
             {/* Scroll Area */}
-            <Box sx={{ flex: 1, overflowY: "auto", p: 1.5 }}> {/* ⬅ was 2 */}
+            <Box
+                sx={{
+                    flex: 1,
+                    overflowY: "auto",
+                    p: 1.5,
+
+                    /* 🔹 Small, elegant scrollbar */
+                    "&::-webkit-scrollbar": {
+                        width: "6px",
+                    },
+                    "&::-webkit-scrollbar-track": {
+                        background: "transparent",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                        backgroundColor: "rgba(0,0,0,0.25)",
+                        borderRadius: 3,
+                    },
+                    "&::-webkit-scrollbar-thumb:hover": {
+                        backgroundColor: "rgba(0,0,0,0.35)",
+                    },
+                    scrollbarWidth: "thin", // Firefox
+                    scrollbarColor: "rgba(0,0,0,0.25) transparent", // Firefox
+                }}
+            >
                 {users.length ? (
-                    users.map((user) => (
-                        <UserCard key={user.pk_id} user={user} onEdit={onEdit} />
-                    ))
+                    users.map((user) => <UserCard key={user.pk_id} user={user} onEdit={onEdit} />)
                 ) : (
                     <Typography
                         variant="body2"
                         color="text.secondary"
                         textAlign="center"
-                        mt={4} // ⬅ was 6
+                        mt={4}
                     >
                         No users
                     </Typography>
                 )}
             </Box>
         </Card>
-
     );
 };
 
@@ -170,8 +189,7 @@ const AdminUsers = () => {
                 height: "100vh",
                 display: "flex",
                 flexDirection: "column",
-                background:
-                    "linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%)",
+                background: "linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%)",
             }}
         >
             {/* Top Bar */}

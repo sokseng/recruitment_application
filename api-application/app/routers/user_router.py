@@ -127,6 +127,11 @@ def get_my_jobs(
     return user_controller.get_jobs_by_employer(db, current_user_id)
 
 
+#create or update user by admin
+@router.post("/create-or-update")
+def create_or_update_user_admin(user: UserCreate, db: Session = Depends(get_db)):
+    return user_controller.create_or_update_user_admin(user, db)
+
 
 
 
