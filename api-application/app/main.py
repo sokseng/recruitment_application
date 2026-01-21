@@ -19,8 +19,10 @@ from app.models.employer_model import Employer
 from app.models.job_model import Job
 from app.models.candidate_model import Candidate
 from app.models.candidate_resume_model import CandidateResume
+from app.models.category_model import Category
 
 from app.script.init_user import run as init_user
+from app.script.init_category import run as init_category
 
 
 def create_tables():
@@ -33,6 +35,7 @@ def create_tables():
 # Run once on startup
 create_tables()
 init_user()
+init_category()
 
 app = FastAPI(title=settings.APP_NAME)
 
