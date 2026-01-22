@@ -489,12 +489,12 @@ export default function Topbar() {
           {/* Logo – shown on both mobile & desktop */}
           <Box
             component="img"
-            src="/LOGO.png"  // Place your logo in the public folder
+            src="/logo.jpg"  // Place your logo in the public folder
             alt="Company Logo"
             sx={{
-              height: { xs: 36, sm: 44 },
-              width: 'auto',
-              borderRadius: 6,
+              height: { xs: 40, sm: 50 },
+              width: { xs: 40, sm: 50 },
+              borderRadius: "2rem",
               cursor: 'pointer',
             }}
             onClick={() => navigate('/')}
