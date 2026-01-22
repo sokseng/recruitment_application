@@ -22,6 +22,8 @@ import {
   ListItemIcon,
   Divider
 } from '@mui/material'
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 import { useState } from 'react'
 import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
@@ -781,7 +783,33 @@ export default function Topbar() {
       <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
         <DialogTitle>Sign Up</DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent dividers
+          sx={{
+            maxHeight: "65vh",
+            overflowY: "auto",
+            pr: 2,
+
+            /* Scrollbar width */
+            "&::-webkit-scrollbar": {
+              width: "7px",
+            },
+
+            /* Scrollbar track */
+            "&::-webkit-scrollbar-track": {
+              background: "transparent",
+            },
+
+            /* Scrollbar thumb */
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#c1c1c1",
+              borderRadius: "10px",
+            },
+
+            "&::-webkit-scrollbar-thumb:hover": {
+              backgroundColor: "#a8a8a8",
+            },
+          }}
+        >
           <Stack spacing={2} component="form" onSubmit={handleSubmit} id="register-form">
             <TextField
               size="small"
@@ -822,21 +850,25 @@ export default function Topbar() {
               name="gender"
               label="Gender"
               select
-              required
             >
               <MenuItem value="Male">Male</MenuItem>
               <MenuItem value="Female">Female</MenuItem>
             </TextField>
 
             <TextField size="small" name="phone" label="Phone" />
-            <TextField
-              size="small"
-              name="date_of_birth"
+
+            <DatePicker
               label="Date of Birth"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              required
+              format="YYYY-MM-DD"
+              name="date_of_birth"
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
             />
+
             <TextField
               size="small"
               name="address"

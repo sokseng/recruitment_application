@@ -10,8 +10,11 @@ import {
     InputAdornment,
     IconButton,
     Snackbar,
-    Alert
+    Alert,
+    Box
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import api from "../services/api";
@@ -133,114 +136,156 @@ const UserDialog = ({ open, onClose, user, refresh }) => {
                 </Alert>
             </Snackbar>
 
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle>{form.pk_id ? "Update User" : "Create User"}</DialogTitle>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+                <DialogTitle>
+                    {form.pk_id ? "Update User" : "Create User"}
+                </DialogTitle>
 
-                <DialogContent dividers>
-                    <Stack spacing={2}>
-                        <TextField
-                            size="small"
-                            name="user_type"
-                            label="User Type"
-                            select
-                            value={form.user_type}
-                            onChange={handleChange}
-                            required
-                        >
-                            <MenuItem value={1}>Admin</MenuItem>
-                            <MenuItem value={2}>Employer</MenuItem>
-                            <MenuItem value={3}>Candidate</MenuItem>
-                        </TextField>
+                {/* ✅ FORM wrapper */}
+                <Box component="form" onSubmit={handleSubmit}>
+                    <DialogContent dividers
+                        sx={{
+                            maxHeight: "65vh",
+                            overflowY: "auto",
+                            pr: 2,
 
-                        <TextField
-                            size="small"
-                            name="user_name"
-                            label="Username"
-                            value={form.user_name}
-                            onChange={handleChange}
-                            required
-                        />
+                            /* Scrollbar width */
+                            "&::-webkit-scrollbar": {
+                                width: "6px",
+                            },
 
-                        <TextField
-                            size="small"
-                            name="email"
-                            label="Email"
-                            type="email"
-                            value={form.email}
-                            onChange={handleChange}
-                            required
-                        />
+                            /* Scrollbar track */
+                            "&::-webkit-scrollbar-track": {
+                                background: "transparent",
+                            },
 
-                        {!form.pk_id && (
+                            /* Scrollbar thumb */
+                            "&::-webkit-scrollbar-thumb": {
+                                backgroundColor: "#c1c1c1",
+                                borderRadius: "10px",
+                            },
+
+                            "&::-webkit-scrollbar-thumb:hover": {
+                                backgroundColor: "#a8a8a8",
+                            },
+                        }}
+                    >
+                        <Stack spacing={2}>
                             <TextField
                                 size="small"
-                                name="password"
-                                label="Password"
-                                type={showPassword ? "text" : "password"}
-                                value={form.password}
+                                name="user_type"
+                                label="User Type"
+                                select
+                                value={form.user_type}
                                 onChange={handleChange}
                                 required
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton onClick={() => setShowPassword(!showPassword)}>
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
+                            >
+                                <MenuItem value={1}>Admin</MenuItem>
+                                <MenuItem value={2}>Employer</MenuItem>
+                                <MenuItem value={3}>Candidate</MenuItem>
+                            </TextField>
+
+                            <TextField
+                                size="small"
+                                name="user_name"
+                                label="Username"
+                                value={form.user_name}
+                                onChange={handleChange}
+                                required
+                            />
+
+                            <TextField
+                                size="small"
+                                name="email"
+                                label="Email"
+                                type="email"
+                                value={form.email}
+                                onChange={handleChange}
+                                required
+                            />
+
+                            {!form.pk_id && (
+                                <TextField
+                                    size="small"
+                                    name="password"
+                                    label="Password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    required
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            )}
+
+                            <TextField
+                                size="small"
+                                name="gender"
+                                label="Gender"
+                                select
+                                value={form.gender}
+                                onChange={handleChange}
+                            >
+                                <MenuItem value="Male">Male</MenuItem>
+                                <MenuItem value="Female">Female</MenuItem>
+                            </TextField>
+
+                            <TextField
+                                size="small"
+                                name="phone"
+                                label="Phone"
+                                value={form.phone}
+                                onChange={handleChange}
+                            />
+
+                            <DatePicker
+                                label="Date of Birth"
+                                format="YYYY-MM-DD"
+                                value={form.date_of_birth ? dayjs(form.date_of_birth) : null}
+                                onChange={(newValue) => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        date_of_birth: newValue ? newValue.format("YYYY-MM-DD") : "",
+                                    }));
+                                }}
+                                slotProps={{
+                                    textField: {
+                                        size: "small",
+                                        fullWidth: true,
+                                    },
                                 }}
                             />
-                        )}
 
-                        <TextField
-                            size="small"
-                            name="gender"
-                            label="Gender"
-                            select
-                            value={form.gender}
-                            onChange={handleChange}
-                        >
-                            <MenuItem value="Male">Male</MenuItem>
-                            <MenuItem value="Female">Female</MenuItem>
-                        </TextField>
+                            <TextField
+                                size="small"
+                                name="address"
+                                label="Address"
+                                multiline
+                                rows={2}
+                                value={form.address}
+                                onChange={handleChange}
+                            />
+                        </Stack>
+                    </DialogContent>
 
-                        <TextField
-                            size="small"
-                            name="phone"
-                            label="Phone"
-                            value={form.phone}
-                            onChange={handleChange}
-                        />
+                    <DialogActions>
+                        <Button onClick={onClose}>Cancel</Button>
 
-                        <TextField
-                            size="small"
-                            name="date_of_birth"
-                            type="date"
-                            label="Date of Birth"
-                            value={form.date_of_birth || ""}
-                            onChange={handleChange}
-                            InputLabelProps={{ shrink: true }}
-                        />
-
-                        <TextField
-                            size="small"
-                            name="address"
-                            label="Address"
-                            multiline
-                            rows={2}
-                            value={form.address}
-                            onChange={handleChange}
-                        />
-                    </Stack>
-                </DialogContent>
-
-                <DialogActions>
-                    <Button onClick={onClose}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmit}>
-                        {form.pk_id ? "Update" : "Create"}
-                    </Button>
-                </DialogActions>
+                        {/* ✅ submit triggers browser validation */}
+                        <Button variant="contained" type="submit">
+                            {form.pk_id ? "Update" : "Create"}
+                        </Button>
+                    </DialogActions>
+                </Box>
             </Dialog>
+
 
         </>
 
