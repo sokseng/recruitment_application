@@ -25,6 +25,7 @@ import {
   InputAdornment,
   DialogContentText,
   OutlinedInput,
+  Avatar,
 } from "@mui/material";
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
@@ -194,7 +195,7 @@ function JobFormDialog({
         }}
       >
         <div>
-          <Typography variant={isMobile ? "h6" : "h5"} fontWeight="bold">
+          <Typography variant={isMobile ? "h7" : "h6"} fontWeight="bold">
             {title}
           </Typography>
         </div>
@@ -209,7 +210,7 @@ function JobFormDialog({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ backgroundColor: "#F4F1F1", }}>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
@@ -410,7 +411,7 @@ function JobFormDialog({
             {/* Job Description - Rich Text Editor */}
             <Box>
               <FormControl fullWidth>
-                <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
+                <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
                   Job Description *
                 </InputLabel>
 
@@ -423,14 +424,13 @@ function JobFormDialog({
                     "& .ql-toolbar": {
                       borderBottom: 1,
                       borderColor: "divider",
-                      bgcolor: "grey.50",
                     },
                     "& .ql-container": {
                       minHeight: 180,
                       maxHeight: 400,
                       overflowY: "auto",
                       fontFamily: theme.typography.fontFamily,
-                      fontSize: "0.95rem",
+                      bgcolor: "white",
                     },
                     "& .ql-editor": {
                       minHeight: 160,
@@ -448,7 +448,6 @@ function JobFormDialog({
                         job_description: content,
                       }))
                     }
-                    placeholder="Describe responsibilities, requirements, benefits, qualifications..."
                     modules={{
                       toolbar: [
                         [{ header: [1, 2, 3, false] }],
@@ -467,7 +466,7 @@ function JobFormDialog({
             {/* Requirements - Rich Text Editor */}
             <Box>
               <FormControl fullWidth>
-                <InputLabel shrink sx={{ bgcolor: "background.paper", px: 1 }}>
+                <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
                   Requirements
                 </InputLabel>
 
@@ -480,14 +479,13 @@ function JobFormDialog({
                     "& .ql-toolbar": {
                       borderBottom: 1,
                       borderColor: "divider",
-                      bgcolor: "grey.50",
                     },
                     "& .ql-container": {
                       minHeight: 180,
                       maxHeight: 400,
                       overflowY: "auto",
                       fontFamily: theme.typography.fontFamily,
-                      fontSize: "0.95rem",
+                      backgroundColor: "white",
                     },
                     "& .ql-editor": {
                       minHeight: 160,
@@ -505,7 +503,6 @@ function JobFormDialog({
                         experience_required: content,
                       }))
                     }
-                    placeholder="Describe responsibilities, requirements, benefits, qualifications..."
                     modules={{
                       toolbar: [
                         [{ header: [1, 2, 3, false] }],
@@ -921,67 +918,101 @@ export default function MyJobs() {
               display: "flex",
               flexDirection: "column",
               boxShadow: 1,
+              backgroundColor: "#DFE6DF",
             }}
           >
             <CardContent sx={{ flexGrow: 1, pb: 1 }}>
               {/* Title + Status */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  mb: 1,
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  color="primary"
-                  fontWeight={500}
-                >
-                  {job.job_title}
-                </Typography>
-
-                <Chip
-                  label={job.status}
-                  size="small"
-                  color={
-                    job.status === "Open"
-                      ? "success"
-                      : job.status === "Closed"
-                        ? "error"
-                        : job.status === "Draft"
-                          ? "warning"
-                          : "default"
+              <Stack direction="row" spacing={2} alignItems="center" mb={1}>
+                <Avatar
+                  src={
+                    job.employer?.company_logo
+                      ? `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${job.employer.company_logo}`
+                      : undefined
                   }
+                  alt={`${job.employer?.company_name || "Company"} logo`}
                   sx={{
-                    fontWeight: 500,
-                    justifyContent: "center",
+                    width: { xs: 32, sm: 40 },
+                    height: { xs: 32, sm: 40 },
+                    border: "1px solid",
+                    borderColor: "divider",
+                    bgcolor: "grey.200",
+                    fontWeight: 600,
+                    fontSize: "1.1rem",
                   }}
-                />
-              </Box>
+                >
+                  {(job.employer?.company_name || "?").charAt(0).toUpperCase()}
+                </Avatar>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    mb: 1,
+                    flexGrow: 1,         
+                    minWidth: 0, 
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    color="primary"
+                    fontWeight={500}
+                  >
+                    {job.job_title}
+                  </Typography>
+
+                  <Chip
+                    label={job.status}
+                    size="small"
+                    color={
+                      job.status === "Open"
+                        ? "success"
+                        : job.status === "Closed"
+                          ? "error"
+                          : job.status === "Draft"
+                            ? "warning"
+                            : "default"
+                    }
+                    sx={{
+                      fontWeight: 500,
+                      justifyContent: "center",
+                    }}
+                  />
+                </Box>
+              </Stack>
+              
 
               {/* Type & Level */}
               <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
-                <Chip label={job.job_type} size="small" variant="outlined" />
+                <Chip 
+                  icon={<WorkIcon fontSize="small" />}
+                  label={job.job_type} 
+                  size="small" 
+                  variant="outlined" 
+                />
                 {job.level && (
                   <Chip
+                    icon={<TrendingUpIcon fontSize="small" />}
                     label={job.level}
                     size="small"
                     color="primary"
                     variant="outlined"
                   />
                 )}
+                 <Chip 
+                  icon={<AttachMoneyIcon fontSize="small" />}
+                  label={job.salary_range ? `${job.salary_range}$` : "Negotiable"} 
+                  size="small" 
+                  variant="outlined" 
+                />
               </Stack>
-
-              <Typography variant="body2" color="text.secondary">
-                {"location: "}
-                {job.location || "—"}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary">
-                {"Salary: "}
-                {job.salary_range ? `${job.salary_range}$` : "Negotiable"}
-              </Typography>
+              <Stack direction="row" spacing={0.5} mt={1}>
+                <LocationOnIcon fontSize="small" sx={{ color: "text.secondary", mr: 0.5, opacity: 0.7 }} />
+                <Typography variant="caption" color="text.secondary">
+                  {job.location || "—"}
+                </Typography>
+              </Stack>
+              
               {job.categories?.length > 0 && (
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={1}>
                   {job.categories.map((cat) => (
@@ -996,15 +1027,26 @@ export default function MyJobs() {
                 </Stack>
               )}
 
-
-              <Typography
-                variant="caption"
-                color="text.disabled"
-                mt={1.5}
-                display="block"
-              >
-                Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
-              </Typography>
+              <Stack direction="row" spacing={1} mt={1}>
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  mt={1.5}
+                  display="block"
+                >
+                  Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
+                </Typography>
+                
+                <Typography
+                  variant="caption"
+                  color="text.disabled"
+                  mt={1.5}
+                  display="block"
+                >
+                  Closing: {job.closing_date ? new Date(job.closing_date).toISOString().split("T")[0] : "—"}
+                </Typography>
+              </Stack>
+              
             </CardContent>
 
             <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1 }}>
@@ -1062,15 +1104,15 @@ export default function MyJobs() {
       />
 
       <Dialog open={openCloseDialog} onClose={() => setOpenCloseDialog(false)}>
-        <DialogTitle>Close Job Posting</DialogTitle>
-        <DialogContent>
+        <DialogTitle  sx={{ backgroundColor: "#DFE6DF"}}>Close Job Posting</DialogTitle>
+        <DialogContent  sx={{ backgroundColor: "#DFE6DF"}}>
           <DialogContentText>
             Are you sure you want to close{" "}
             <strong>{closingJob?.job_title}</strong>?<br />
             It will no longer accept new applications.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
+        <DialogActions  sx={{ backgroundColor: "#DFE6DF"}}>
           <Button onClick={() => setOpenCloseDialog(false)}>Cancel</Button>
           <Button
             variant="contained"
@@ -1087,14 +1129,14 @@ export default function MyJobs() {
         open={openDuplicateDialog}
         onClose={() => setOpenDuplicateDialog(false)}
       >
-        <DialogTitle>Duplicate Job</DialogTitle>
-        <DialogContent>
+        <DialogTitle  sx={{ backgroundColor: "#DFE6DF"}}>Duplicate Job</DialogTitle>
+        <DialogContent  sx={{ backgroundColor: "#DFE6DF"}}>
           <DialogContentText>
             Do you want to duplicate{" "}
             <strong>{duplicateJob?.job_title}</strong>?
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
+        <DialogActions  sx={{ backgroundColor: "#DFE6DF"}}>
           <Button onClick={() => setOpenDuplicateDialog(false)}>
             Cancel
           </Button>
