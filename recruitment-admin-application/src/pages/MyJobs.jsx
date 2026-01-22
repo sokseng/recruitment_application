@@ -421,21 +421,8 @@ function JobFormDialog({
                     borderColor: "divider",
                     borderRadius: 1,
                     overflow: "hidden",
-                    "& .ql-toolbar": {
-                      borderBottom: 1,
-                      borderColor: "divider",
-                    },
-                    "& .ql-container": {
-                      minHeight: 180,
-                      maxHeight: 400,
-                      overflowY: "auto",
-                      fontFamily: theme.typography.fontFamily,
-                      bgcolor: "white",
-                    },
-                    "& .ql-editor": {
-                      minHeight: 160,
-                      px: 2,
-                      py: 1.5,
+                    "& .ql-editor *": {
+                      backgroundColor: "transparent !important",
                     },
                   }}
                 >
@@ -476,21 +463,8 @@ function JobFormDialog({
                     borderColor: "divider",
                     borderRadius: 1,
                     overflow: "hidden",
-                    "& .ql-toolbar": {
-                      borderBottom: 1,
-                      borderColor: "divider",
-                    },
-                    "& .ql-container": {
-                      minHeight: 180,
-                      maxHeight: 400,
-                      overflowY: "auto",
-                      fontFamily: theme.typography.fontFamily,
-                      backgroundColor: "white",
-                    },
-                    "& .ql-editor": {
-                      minHeight: 160,
-                      px: 2,
-                      py: 1.5,
+                    "& .ql-editor *": {
+                      backgroundColor: "transparent !important",
                     },
                   }}
                 >

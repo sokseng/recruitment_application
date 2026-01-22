@@ -179,179 +179,208 @@ export default function Dashboard() {
         flexDirection: "column",
         border: "3px solid",
         borderColor: "divider",
+        backgroundColor: "#FAFAFA",
       }}
     >
       {/* New: Category - multi select */}
-      <Stack direction="row" spacing={1} p={1} justifyContent="end" alignItems="center" >
-        <Tooltip title="Filter by Categories" arrow placement="top">
-          <IconButton
-            size="small"   
-            onClick={(e) => setCategoryAnchor(e.currentTarget)}
-            sx={{
-              borderRadius: 1.5,
-              bgcolor: "teal",
-              color: "#fff",
-              "&:hover": {
+      <Stack direction="row" spacing={1} p={1} justifyContent="space-between" alignItems="center" >
+        {/* title */}
+        <TextField
+            size="small"
+            placeholder="Search jobs, companies, locations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            fullWidth
+          />
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Filter by Categories" arrow placement="top">
+            <IconButton
+              size="small"   
+              onClick={(e) => setCategoryAnchor(e.currentTarget)}
+              sx={{
+                borderRadius: 1.5,
                 bgcolor: "teal",
-              },
-            }}
-          >
-            <CategoryRoundedIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Popover
-          open={openCategory}
-          anchorEl={categoryAnchor}
-          onClose={() => setCategoryAnchor(null)}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
-          }}
-          PaperProps={{
-            sx: {
-              width: 520, // ⬅ wider like image
-              maxHeight: 420,
-              borderRadius: 2,
-              p: 2.5,
-              overflowY: "auto",
-              backgroundColor: "#DFE6DF",
-            },
-          }}
-        >
-          <Typography fontWeight={700} mb={1.5}>
-            Categories
-          </Typography>
-
-          <Divider sx={{ mb: 2 }} />
-
-          <List dense disablePadding>
-            {/* ALL */}
-            <ListItemButton
-              selected={categoryFilter.includes("All")}
-              onClick={() => setCategoryFilter(["All"])}
-              sx={{ borderRadius: 1 }}
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: "teal",
+                },
+              }}
             >
-              <Checkbox checked={categoryFilter.includes("All")} />
-              <ListItemText primary="All" />
-            </ListItemButton>
-
-            {categories.map((cat) => {
-              const checked = categoryFilter.includes(cat.pk_id);
-
-              return (
-                <ListItemButton
-                  key={cat.pk_id}
-                  selected={checked}
-                  sx={{ borderRadius: 1 }}
-                  onClick={() => {
-                    let updated = [...categoryFilter];
-
-                    if (checked) {
-                      updated = updated.filter((v) => v !== cat.pk_id);
-                    } else {
-                      updated = updated.filter((v) => v !== "All");
-                      updated.push(cat.pk_id);
-                    }
-
-                    setCategoryFilter(
-                      updated.length === 0 ? ["All"] : updated,
-                    );
-                  }}
-                >
-                  <Checkbox checked={checked} />
-                  <ListItemText primary={cat.name} />
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Popover>
-        {/* Job Type – popover */}
-        <Tooltip title="Filter by Job Type" arrow placement="top">
-          <IconButton
-            size="small"   
-            onClick={(e) => setTypeAnchor(e.currentTarget)}
-            sx={{
-              borderRadius: 1.5,
-              color: "#fff",
-              bgcolor: "teal",
-              "&:hover": {
-                bgcolor: "teal", // same as normal, disables hover effect
+              <CategoryRoundedIcon />
+            </IconButton>
+          </Tooltip>
+          <Popover
+            open={openCategory}
+            anchorEl={categoryAnchor}
+            onClose={() => setCategoryAnchor(null)}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
+            PaperProps={{
+              sx: {
+                width: 520, // ⬅ wider like image
+                maxHeight: 420,
+                borderRadius: 2,
+                p: 2.5,
+                overflowY: "auto",
+                backgroundColor: "#DFE6DF",
               },
             }}
           >
-            <WorkOutlineIcon />
-          </IconButton>
-        </Tooltip>
+            <Typography fontWeight={700} mb={1.5}>
+              Categories
+            </Typography>
 
-        <Popover
-          open={openType}
-          anchorEl={typeAnchor}
-          onClose={() => setTypeAnchor(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
-          PaperProps={{
-            sx: {
-              width: 300,
-              maxHeight: 320,
-              borderRadius: 2,
-              p: 2.5,
-              overflowY: "auto",
-              backgroundColor: "#DFE6DF",
-            },
-          }}
-        >
-          <Typography fontWeight={700} mb={1.5}>
-            Job Type
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
-          <List dense disablePadding>
-            {["All", "Full-time", "Part-time", "Internship"].map((type) => {
-              const checked = typeFilter.includes(type);
+            <Divider sx={{ mb: 2 }} />
 
-              return (
-                <ListItemButton
-                  key={type}
-                  selected={checked}
-                  sx={{ borderRadius: 1 }}
-                  onClick={() => {
-                  let updated = [...typeFilter];
+            <List dense disablePadding>
+              {/* ALL */}
+              <ListItemButton
+                selected={categoryFilter.includes("All")}
+                onClick={() => setCategoryFilter(["All"])}
+                sx={{ borderRadius: 1 }}
+              >
+                <Checkbox checked={categoryFilter.includes("All")} />
+                <ListItemText primary="All" />
+              </ListItemButton>
 
-                  if (type === "All") {
-                    // clicking "All" selects only All
-                    updated = ["All"];
-                  } else {
-                    // Remove "All" if it exists
-                    updated = updated.filter((v) => v !== "All");
+              {categories.map((cat) => {
+                const checked = categoryFilter.includes(cat.pk_id);
 
-                    if (updated.includes(type)) {
-                      // uncheck this type
-                      updated = updated.filter((v) => v !== type);
+                return (
+                  <ListItemButton
+                    key={cat.pk_id}
+                    selected={checked}
+                    sx={{ borderRadius: 1 }}
+                    onClick={() => {
+                      let updated = [...categoryFilter];
+
+                      if (checked) {
+                        updated = updated.filter((v) => v !== cat.pk_id);
+                      } else {
+                        updated = updated.filter((v) => v !== "All");
+                        updated.push(cat.pk_id);
+                      }
+
+                      setCategoryFilter(
+                        updated.length === 0 ? ["All"] : updated,
+                      );
+                    }}
+                  >
+                    <Checkbox checked={checked} />
+                    <ListItemText primary={cat.name} />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Popover>
+          {/* Job Type – popover */}
+          <Tooltip title="Filter by Job Type" arrow placement="top">
+            <IconButton
+              size="small"   
+              onClick={(e) => setTypeAnchor(e.currentTarget)}
+              sx={{
+                borderRadius: 1.5,
+                color: "#fff",
+                bgcolor: "teal",
+                "&:hover": {
+                  bgcolor: "teal", // same as normal, disables hover effect
+                },
+              }}
+            >
+              <WorkOutlineIcon />
+            </IconButton>
+          </Tooltip>
+          <Popover
+            open={openType}
+            anchorEl={typeAnchor}
+            onClose={() => setTypeAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            PaperProps={{
+              sx: {
+                width: 300,
+                maxHeight: 320,
+                borderRadius: 2,
+                p: 2.5,
+                overflowY: "auto",
+                backgroundColor: "#DFE6DF",
+              },
+            }}
+          >
+            <Typography fontWeight={700} mb={1.5}>
+              Job Type
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <List dense disablePadding>
+              {["All", "Full-time", "Part-time", "Internship"].map((type) => {
+                const checked = typeFilter.includes(type);
+
+                return (
+                  <ListItemButton
+                    key={type}
+                    selected={checked}
+                    sx={{ borderRadius: 1 }}
+                    onClick={() => {
+                    let updated = [...typeFilter];
+
+                    if (type === "All") {
+                      // clicking "All" selects only All
+                      updated = ["All"];
                     } else {
-                      // check this type
-                      updated.push(type);
+                      // Remove "All" if it exists
+                      updated = updated.filter((v) => v !== "All");
+
+                      if (updated.includes(type)) {
+                        // uncheck this type
+                        updated = updated.filter((v) => v !== type);
+                      } else {
+                        // check this type
+                        updated.push(type);
+                      }
+
+                      // fallback to All if nothing selected
+                      if (updated.length === 0) updated = ["All"];
                     }
 
-                    // fallback to All if nothing selected
-                    if (updated.length === 0) updated = ["All"];
-                  }
+                    setTypeFilter(updated);
+                  }}
 
-                  setTypeFilter(updated);
+
+                  >
+                    <Checkbox checked={checked} />
+                    <ListItemText primary={type} />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Popover>
+          <Tooltip title="Clear all filter" arrow placement="top">
+            <IconButton
+              onClick={() => {
+                  setSearchTerm("");
+                  setTypeFilter("All");
+                  setLevelFilter("All");
+                  setCategoryFilter(["All"]);
                 }}
-
-
-                >
-                  <Checkbox checked={checked} />
-                  <ListItemText primary={type} />
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Popover>
+              >
+                <AutorenewRoundedIcon color="primary" />
+              </IconButton>
+          </Tooltip>
+          
+        </Stack>
       </Stack>
       <Divider/>
           
@@ -439,6 +468,7 @@ export default function Dashboard() {
           border: "3px solid",
           borderColor: "divider",
           borderRadius: 1,
+          backgroundColor: "#FAFAFA",
         }}
       >
         {/* Mobile top bar */}
@@ -451,7 +481,7 @@ export default function Dashboard() {
         {selectedJob ? (
           <Box sx={{ flex: 1, overflowY: "auto", pb: { xs: 10, sm: 4 } }}>
             {/* Hero section – like screenshot */}
-            <Box sx={{ p: 3, pb: 2, bgcolor: "background.paper" }}>
+            <Box sx={{ p: 3, pb: 2, bgcolor: "#FAFAFA" }}>
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar
                   src={
@@ -651,15 +681,8 @@ export default function Dashboard() {
                 </Stack>
                 <Box
                   sx={{
-                    "& .ql-container": {
-                      borderRadius: 2, // ← border radius
-                      borderColor: "divider",
-                    },
-                    "& .ql-editor": {
-                      fontSize: "0.95rem",
-                      lineHeight: 1.8,
-                      color: "text.primary",
-                      padding: 2,
+                    "& .ql-editor *": {
+                      backgroundColor: "transparent !important",
                     },
                   }}
                 >
@@ -680,15 +703,8 @@ export default function Dashboard() {
               </Stack>
               <Box
                 sx={{
-                  "& .ql-container": {
-                    borderRadius: 2, // ← border radius
-                    borderColor: "divider",
-                  },
-                  "& .ql-editor": {
-                    fontSize: "0.95rem",
-                    lineHeight: 1.8,
-                    color: "text.primary",
-                    padding: 2,
+                  "& .ql-editor *": {
+                    backgroundColor: "transparent !important",
                   },
                 }}
               >
@@ -763,69 +779,69 @@ export default function Dashboard() {
         gap: 0.5,
       }}
     >
-      <Card
-        sx={{
-          p: 0.9,
-          border: "3px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={1.25}
-          alignItems="stretch"
+      {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
+        <Card
+          sx={{
+            p: 0.9,
+            border: "3px solid",
+            borderColor: "divider",
+          }}
         >
-          {/* Search */}
-          <TextField
-            size="small"
-            placeholder="Search jobs, companies, locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            fullWidth
-          />
-          {/* Reset */}
-          <Button
-            variant="outlined"
-            startIcon={<AutorenewRoundedIcon />}
-            onClick={() => {
-              setSearchTerm("");
-              setTypeFilter("All");
-              setLevelFilter("All");
-              setCategoryFilter(["All"]);
-            }}
+          <Stack
+            direction={{ xs: "row", sm: "row" }}
+            spacing={1}
+            flexWrap="wrap"
+            alignItems={{ xs: "flex-start", sm: "center" }}
           >
-            Reset
-          </Button>
-        </Stack>
-        <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
-          {categoryFilter.includes("All") ? (
-            <Chip label="All" />
-          ) : (
-            categoryFilter.map((id) => {
-              const cat = categories.find((c) => c.pk_id === id);
-              if (!cat) return null;
+            {/* LEFT: category chips */}
+            <Stack
+              direction="row"
+              spacing={1}
+              flexWrap="wrap"
+              sx={{ flex: 1 }}
+            >
+              {!categoryFilter.includes("All") &&
+                categoryFilter.map((id) => {
+                  const cat = categories.find((c) => c.pk_id === id);
+                  if (!cat) return null;
 
-              return (
-                <Chip
-                  key={id}
-                  label={cat.name}
-                  onDelete={() => {
-                    const updated = categoryFilter.filter((v) => v !== id);
-                    setCategoryFilter(updated.length === 0 ? ["All"] : updated);
+                  return (
+                    <Chip
+                      key={id}
+                      label={cat.name}
+                      onDelete={() => {
+                        const updated = categoryFilter.filter((v) => v !== id);
+                        setCategoryFilter(updated.length === 0 ? ["All"] : updated);
+                      }}
+                    />
+                  );
+                })}
+            </Stack>
+
+            {/* RIGHT: reset button */}
+            <Stack
+              direction="row"
+              justifyContent={{ xs: "flex-end", sm: "flex-end" }}
+            >
+              <Tooltip title="Clear all filter" arrow placement="top">
+                <IconButton
+                  onClick={() => {
+                    setSearchTerm("");
+                    setTypeFilter("All");
+                    setLevelFilter("All");
+                    setCategoryFilter(["All"]);
                   }}
-                />
-              );
-            })
-          )}
-        </Stack>
-      </Card>
+                >
+                  <AutorenewRoundedIcon color="primary" />
+                </IconButton>
+              </Tooltip>
+              
+            </Stack>
+          </Stack>
+
+        </Card>
+      )}
+
       <Box
         sx={{
           flex: 1,
@@ -839,7 +855,7 @@ export default function Dashboard() {
 
         <Box
           sx={{
-            width: { xs: "100%", md: 400 },
+            width: { xs: "100%", md: 450 },
             flexShrink: 0,
             display: isMobile && showDetailMobile ? "none" : "block",
           }}
