@@ -153,7 +153,7 @@ const AdminUsers = () => {
                 <Stack
                     direction="row"
                     spacing={0.5}
-                    sx={{ height: "100%", alignItems: "center", pt: 0.5 }}
+                    sx={{ height: "100%", alignItems: "center"}}
                 >
                     {/* Edit Button */}
                     <Button
@@ -161,8 +161,8 @@ const AdminUsers = () => {
                         variant="outlined"
                         sx={{
                             textTransform: "none",
-                            fontSize: 12,
-                            minWidth: 50,
+                            fontSize: 10,
+                            minWidth: 0,
                             px: 1,
                         }}
                         onClick={() => {
@@ -180,8 +180,8 @@ const AdminUsers = () => {
                         color="error"
                         sx={{
                             textTransform: "none",
-                            fontSize: 12,
-                            minWidth: 60,
+                            fontSize: 10,
+                            minWidth: 0,
                             px: 1,
                         }}
                         onClick={() => confirmDelete(row)}
@@ -208,9 +208,9 @@ const AdminUsers = () => {
                 </Alert>
             </Snackbar>
 
-            <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(135deg, #f5f7fa, #eef2f7)" }}>
+            <Box sx={{ height: "calc(100vh - 100px)", display: "flex", flexDirection: "column"}}>
                 {/* Top Bar */}
-                <Stack direction="row" justifyContent="flex-end" px={2} py={1} sx={{ background: "#fff", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+                <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} mb={1}>
                     <Button
                         variant="contained"
                         size="small"
@@ -225,15 +225,17 @@ const AdminUsers = () => {
                 </Stack>
 
                 {/* DataGrid */}
-                <Box sx={{ flex: 1, p: 2 }}>
+                <Box sx={{ flex: 1, border: "3px solid", borderColor: "divider", borderRadius: 4 }}>
                     <DataGrid
                         rows={users}
                         columns={columns}
                         getRowId={(row) => row.pk_id}
-                        pageSizeOptions={[10, 25, 50]}
+                        pageSizeOptions={[10, 25, 50, 100]}
                         initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
                         disableRowSelectionOnClick
                         rowHeight={52}
+                        density="compact"
+
                         sx={{
                             bgcolor: "#fff",
                             borderRadius: 3,
