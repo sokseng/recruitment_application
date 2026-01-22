@@ -101,7 +101,7 @@ const UserDialog = ({ open, onClose, user, refresh }) => {
                 refresh();
                 onClose();
                 setSeverity('success')
-                setMessage('Update successfully')
+                setMessage('Create or Update successfully')
                 setOpenSnackbar(true)
             }
         } catch (err) {

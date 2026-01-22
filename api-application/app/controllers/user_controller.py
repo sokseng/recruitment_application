@@ -99,7 +99,7 @@ def create_or_update_user(user: UserCreate, db: Session):
 
 #get all users
 def get_all_users(db: Session):
-    return db.query(User).all()
+    return db.query(User).order_by(User.user_name).all()
 
 # # create access token
 def create_access_token(user_id: int, expires_delta: timedelta):
