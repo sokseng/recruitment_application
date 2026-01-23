@@ -35,6 +35,11 @@ class EmployerBasic(BaseModel):
     pk_id: int
     company_name: str
     company_logo: Optional[str] = None
+    company_address: str
+    company_contact: str
+    company_email: str
+    company_website: str
+    company_description: str
 
     model_config = ConfigDict(from_attributes=True)
 

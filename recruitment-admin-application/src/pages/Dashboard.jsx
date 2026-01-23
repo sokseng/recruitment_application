@@ -21,6 +21,7 @@ import {
   alpha,
   IconButton,
   Tooltip,
+  Badge,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import api from "../services/api";
@@ -41,6 +42,9 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import BadgeIcon from '@mui/icons-material/Badge';
+import { EmailOutlined, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -67,6 +71,9 @@ export default function Dashboard() {
   const openType = Boolean(typeAnchor);
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+  const [companyAnchor, setCompanyAnchor] = useState(null);
+  const openCompanyPopover = Boolean(companyAnchor);
 
   useEffect(() => {
     loadJobs();
@@ -530,6 +537,150 @@ export default function Dashboard() {
                     })}
                   />
                 </Box>
+                {/* Mobile */}
+                <IconButton
+                  onClick={(e) => setCompanyAnchor(e.currentTarget)}
+                  sx={{ display: { xs: "inline-flex", sm: "none" } }}
+                >
+                  <InfoOutlinedIcon />
+                </IconButton>
+
+                {/* Desktop */}
+                <Button
+                  variant="outlined"
+                  startIcon={<InfoOutlinedIcon />}
+                  onClick={(e) => setCompanyAnchor(e.currentTarget)}
+                  size="small"
+                  sx={{
+                    whiteSpace: "nowrap",
+                    display: { xs: "none", sm: "inline-flex" },
+                  }}
+                >
+                  Company Info
+                </Button>
+                
+                
+                {/* // Popover component */}
+                <Popover
+                  open={openCompanyPopover}
+                  anchorEl={companyAnchor}
+                  onClose={() => setCompanyAnchor(null)}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "left",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "left",
+                  }}
+                  PaperProps={{
+                    sx: {
+                      width: { xs: "90vw", sm: 520 },
+                      maxHeight: 500,
+                      borderRadius: 2,
+                      p: 2.5,
+                      overflowY: "auto",
+                      backgroundColor: "#FAFAFA",
+                    },
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={3}>
+                    <BusinessRoundedIcon color="primary" fontSize="medium" />
+                    <Typography variant="h6" fontWeight={700}>
+                      Company Information
+                    </Typography>
+                  </Stack>
+
+                  <Stack spacing={2.5}>
+                    <Stack direction="row" alignItems="flex-start" spacing={2}>
+                      <BadgeIcon color="action" sx={{ mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          Company Name:
+                        </Typography>
+                        <Chip
+                          variant="outlined"
+                          size="small"
+                          label={selectedJob.employer?.company_name}
+                        >
+                        </Chip>
+                      </Box>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="flex-start" spacing={2}>
+                      <LocationCity color="action" sx={{ mt: 0.5 }} />
+                      <Stack>
+
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          Address:
+                        </Typography>
+                        <Typography variant="subtitle2">
+                          {selectedJob.employer?.company_address}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <EmailOutlined color="action" />
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          Email:
+                        </Typography>
+                        <Typography variant="body1">
+                          {selectedJob.employer?.company_email || "Not provided"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <PhoneOutlined color="action" />
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          Contact:
+                        </Typography>
+                        <Typography variant="body1">
+                          {selectedJob.employer?.company_contact || "Not provided"}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <LanguageOutlined color="action" />
+                      <Box>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          Website:
+                        </Typography>
+                        {selectedJob.employer?.company_website ? (
+                          <a
+                            href={selectedJob.employer.company_website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: theme.palette.primary.main }}
+                          >
+                            {selectedJob.employer.company_website}
+                          </a>
+                        ) : (
+                          <Typography variant="body1">Not provided</Typography>
+                        )}
+                      </Box>
+                    </Stack>
+
+                    <Box sx={{ borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
+                        About the Company
+                      </Typography>
+                      <ReactQuill
+                        theme="snow"
+                        value={
+                          selectedJob.employer?.company_description ||
+                          "No company description available."
+                        }
+                        readOnly
+                        modules={{ toolbar: false }}
+                      />
+                    </Box>
+                  </Stack>
+                </Popover>
               </Stack>
 
               {/* Quick info chips / rows */}
@@ -601,24 +752,6 @@ export default function Dashboard() {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <LocationOnIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    Location:
-                  </Typography>
-                  <Chip
-                    label={selectedJob.location || "Phnom Penh"}
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
                   <TrendingUpIcon color="action" fontSize="small" />
                   <Typography
                     variant="body2"
@@ -680,54 +813,54 @@ export default function Dashboard() {
                     ))}
                   </Stack>
                 )}
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <LocationOnIcon color="action" fontSize="small" />
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    minWidth={110}
+                    color="text.secondary"
+                  >
+                    Location:
+                  </Typography>
+                  <Typography variant="subtitle2" color="">
+                      {selectedJob.location }
+                  </Typography>
+                </Stack>
               </Stack>
             </Box>
 
             <Divider />
 
             {/* Description */}
-            <Box sx={{ p: 2.5 }}>
-              <Box mb={2}>
+            <Box sx={{ p: 2.5, "& .ql-editor *": { backgroundColor: "transparent !important"}, }}>
+              <Box mb={4}>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <DescriptionOutlinedIcon color="action" fontSize="medium" />
-                  <Typography gutterBottom>Job Description</Typography>
+                  <Typography variant="h6" fontWeight={700}>
+                    Job Description
+                  </Typography>
                 </Stack>
-                <Box
-                  sx={{
-                    "& .ql-editor *": {
-                      backgroundColor: "transparent !important",
-                    },
-                  }}
-                >
-                  <ReactQuill
-                    theme="snow"
-                    value={selectedJob.job_description}
-                    readOnly
-                    modules={{ toolbar: false }}
-                  />
-                </Box>
-              </Box>
-
-              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                <ChecklistOutlinedIcon color="action" fontSize="medium" />
-                <Typography fontWeight={500} gutterBottom>
-                  Requirements
-                </Typography>
-              </Stack>
-              <Box
-                sx={{
-                  "& .ql-editor *": {
-                    backgroundColor: "transparent !important",
-                  },
-                }}
-              >
                 <ReactQuill
                   theme="snow"
-                  value={selectedJob.experience_required}
+                  value={selectedJob.job_description || ""}
                   readOnly
                   modules={{ toolbar: false }}
                 />
               </Box>
+
+              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                <ChecklistOutlinedIcon color="action" fontSize="medium" />
+                <Typography variant="h6" fontWeight={700}>
+                  Requirements
+                </Typography>
+              </Stack>
+              <ReactQuill
+                theme="snow"
+                value={selectedJob.experience_required || ""}
+                readOnly
+                modules={{ toolbar: false }}
+              />
             </Box>
           </Box>
         ) : (
