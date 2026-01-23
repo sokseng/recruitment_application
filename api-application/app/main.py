@@ -11,6 +11,7 @@ from app.routers import (
     candidate_router,
     candidate_resume_router,
     category_router,
+    admin_candidate_router
 )
 
 from app.database.session import Base, engine
@@ -62,4 +63,5 @@ app.include_router(job_router.router)
 app.include_router(candidate_router.router)
 app.include_router(candidate_resume_router.router)
 app.include_router(category_router.router)
+app.include_router(admin_candidate_router.router)
 
