@@ -63,6 +63,7 @@ export default function Topbar() {
   } = useAuthStore()
 
   const [openLogin, setOpenLogin] = useState(false)
+  const handleCloseLoginForm = () => setOpenLogin(false);
   const [showPassword, setShowPassword] = useState(false)
   const [openSnackbar, setOpenSnackbar] = useState(false)
   const [message, setMessage] = useState('')
@@ -217,6 +218,7 @@ export default function Topbar() {
         setMessage('Register Successfully!')
       }
       handleCloseRegisterForm();
+      handleCloseLoginForm();
     } catch (err) {
       setOpenSnackbar(true)
       setSeverity("error")
@@ -716,21 +718,53 @@ export default function Topbar() {
       {/* LOGIN MODAL */}
       <Dialog
         open={openLogin}
-        onClose={() => setOpenLogin(false)}
+        onClose={handleCloseLoginForm}
         maxWidth="xs"
         fullScreen={isMobile}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,        // rounded modal corners
+            p: 3,                   // padding inside modal
+            boxShadow: 3,           // soft shadow
+          },
+        }}
       >
         <DialogContent>
           <Stack
-            spacing={2}
+            spacing={3}
             component="form"
             onSubmit={handleLogin}
             id="login-form"
+            alignItems="center"
           >
-            <Typography variant="h5" align="center" gutterBottom>
-              Login
-            </Typography>
+            {/* Logo */}
+            <Box
+              component="img"
+              src="/logo.jpg"
+              alt="Logo"
+              sx={{
+                width: 80,
+                height: 80,
+                objectFit: "cover",
+                border: "2px solid #1976d2", // MUI primary color border
+                borderRadius: "3rem",
+                p: 1,
+                mb: 1,
+                boxShadow: 2,
+              }}
+            />
 
+            {/* Header */}
+            <Box textAlign="center">
+              <Typography variant="h6" fontWeight={700}>
+                Login Account 🚀
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Join us and get started today
+              </Typography>
+            </Box>
+
+            {/* Email */}
             <TextField
               fullWidth
               size="small"
@@ -741,8 +775,10 @@ export default function Topbar() {
               value={formData.email}
               onChange={handleChange}
               margin="normal"
+              sx={{ borderRadius: 2 }}
             />
 
+            {/* Password */}
             <TextField
               fullWidth
               size="small"
@@ -757,7 +793,7 @@ export default function Topbar() {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
-                      type="button"   // ⭐️ prevents accidental submit
+                      type="button"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -765,126 +801,238 @@ export default function Topbar() {
                   </InputAdornment>
                 ),
               }}
+              sx={{ borderRadius: 2 }}
             />
 
-            <Button
-              fullWidth
-              variant="contained"
-              type="submit"
-              sx={{ mt: 2 }}
-            >
-              Login
-            </Button>
+            {/* Actions */}
+            <Stack direction="row" spacing={1} sx={{ width: "100%", mt: 2, justifyContent: "flex-end" }}>
+              <Button
+                onClick={handleCloseLoginForm}
+                variant="outlined"
+                size="small"
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  textTransform: "none",
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                type="submit"
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  textTransform: "none",
+                }}
+              >
+                Login
+              </Button>
+            </Stack>
           </Stack>
         </DialogContent>
       </Dialog>
+
 
       {/* REGISTER MODAL */}
-      <Dialog open={openRegisterForm} onClose={handleCloseRegisterForm} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
-        <DialogTitle>Sign Up</DialogTitle>
+      <Dialog
+        open={openRegisterForm}
+        onClose={handleCloseRegisterForm}
+        maxWidth="lg"
+        fullScreen={isMobile}
+        scroll="paper"
+      >
+        <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={3}
+            alignItems="center"
+          >
 
-        <DialogContent dividers
-          sx={{
-            maxHeight: "65vh",
-            overflowY: "auto",
-            pr: 2,
+            {/* -------------------- RIGHT: Register Form -------------------- */}
+            <Stack
+              component="form"
+              onSubmit={handleSubmit}
+              id="register-form"
+              spacing={2}
+              sx={{
+                flex: 1,
+                width: "100%",
+                p: { xs: 0, sm: 1 },
+                maxHeight: { sm: "70vh" },
+                overflowY: "auto",
+                
 
-            /* Scrollbar width */
-            "&::-webkit-scrollbar": {
-              width: "7px",
-            },
-
-            /* Scrollbar track */
-            "&::-webkit-scrollbar-track": {
-              background: "transparent",
-            },
-
-            /* Scrollbar thumb */
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "#c1c1c1",
-              borderRadius: "10px",
-            },
-
-            "&::-webkit-scrollbar-thumb:hover": {
-              backgroundColor: "#a8a8a8",
-            },
-          }}
-        >
-          <Stack spacing={2} component="form" onSubmit={handleSubmit} id="register-form">
-            <TextField
-              size="small"
-              name="user_type"
-              label="User Type"
-              select
-              required
-              defaultValue=""
-            >
-              <MenuItem value="" disabled>
-                Select User Type
-              </MenuItem>
-              <MenuItem value={2}>Employer</MenuItem>
-              <MenuItem value={3}>Candidate</MenuItem>
-            </TextField>
-
-            <TextField size="small" name="user_name" label="Username" required />
-            <TextField size="small" name="email" label="Email" type="email" required />
-            <TextField
-              size="small"
-              name="password"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <TextField
-              size="small"
-              name="gender"
-              label="Gender"
-              select
-            >
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
-            </TextField>
-
-            <TextField size="small" name="phone" label="Phone" />
-
-            <DatePicker
-              label="Date of Birth"
-              format="YYYY-MM-DD"
-              name="date_of_birth"
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
+                // Custom scrollbar
+                "&::-webkit-scrollbar": { width: 6 },
+                "&::-webkit-scrollbar-thumb": {
+                  backgroundColor: "#c1c1c1",
+                  borderRadius: 8,
                 },
               }}
-            />
+            >
+              <Stack alignItems="center">
+                <Box
+                  component="img"
+                  src="/logo.jpg"
+                  alt="Logo"
+                  alignItems="center"
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    objectFit: "cover",
+                    border: "2px solid #1976d2", // MUI primary color border
+                    borderRadius: "3rem",
+                    p: 0.3,
+                    boxShadow: 2,
+                  }}
+                />
+              </Stack>
+              
+              {/* Form Header */}
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  Create Account 🚀
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Join us and get started today
+                </Typography>
+              </Box>
 
-            <TextField
-              size="small"
-              name="address"
-              label="Address"
-              multiline
-              rows={2}
-            />
+              {/* -------------------- Row 1: User Type & Username -------------------- */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  size="small"
+                  name="user_type"
+                  label="User Type"
+                  select
+                  required
+                  defaultValue=""
+                  fullWidth
+                >
+                  <MenuItem value="" disabled>
+                    Select User Type
+                  </MenuItem>
+                  <MenuItem value={2}>Employer</MenuItem>
+                  <MenuItem value={3}>Candidate</MenuItem>
+                </TextField>
+
+                <TextField
+                  size="small"
+                  name="user_name"
+                  label="Username"
+                  required
+                  fullWidth
+                />
+              </Stack>
+
+              {/* -------------------- Row 2: Email & Password -------------------- */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  size="small"
+                  name="email"
+                  label="Email"
+                  type="email"
+                  required
+                  fullWidth
+                />
+
+                <TextField
+                  size="small"
+                  name="password"
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  fullWidth
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          edge="end"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Stack>
+
+              {/* -------------------- Row 3: Gender & Phone -------------------- */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  size="small"
+                  name="gender"
+                  label="Gender"
+                  select
+                  fullWidth
+                >
+                  <MenuItem value="Male">Male</MenuItem>
+                  <MenuItem value="Female">Female</MenuItem>
+                </TextField>
+
+                <TextField size="small" name="phone" label="Phone" fullWidth />
+              </Stack>
+              <Stack direction="row" spacing={2}>
+                {/* -------------------- Date of Birth -------------------- */}
+                <DatePicker
+                  label="Date of Birth"
+                  format="YYYY-MM-DD"
+                  name="date_of_birth"
+                  slotProps={{
+                    textField: { size: "small", fullWidth: true },
+                  }}
+                />
+
+                {/* -------------------- Address -------------------- */}
+                <TextField
+                  size="small"
+                  name="address"
+                  label="Address"
+                  multiline
+                  fullWidth
+                />
+              </Stack>
+              
+
+              {/* -------------------- Form Actions -------------------- */}
+              <DialogActions>
+                <Button
+                  onClick={handleCloseRegisterForm}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    textTransform: "none",
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    background: "linear-gradient(135deg, #023F6B, #0A6BA8)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #012C4A, #085B91)",
+                    },
+                  }}
+                >
+                  Register
+                </Button>
+              </DialogActions>
+            </Stack>
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
-          <Button onClick={handleCloseRegisterForm}>Cancel</Button>
-          <Button type="submit" variant="contained" disableElevation form="register-form">
-            Register
-          </Button>
-        </DialogActions>
       </Dialog>
+
 
       <Dialog
         open={openChangePassword}

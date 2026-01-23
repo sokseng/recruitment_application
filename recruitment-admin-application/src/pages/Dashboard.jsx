@@ -386,8 +386,21 @@ export default function Dashboard() {
           
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
         {filteredJobs.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
-            No jobs found matching your search
+          <Box
+            sx={{
+              p: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "text.secondary",
+            }}
+          >
+            <Box
+              component="img"
+              src="/No-Data.gif"
+              alt="No data"
+            />
           </Box>
         ) : (
           filteredJobs.map((job) => {
@@ -856,6 +869,7 @@ export default function Dashboard() {
         <Box
           sx={{
             width: { xs: "100%", md: 450 },
+            height: {xs: "100%"},
             flexShrink: 0,
             display: isMobile && showDetailMobile ? "none" : "block",
           }}
