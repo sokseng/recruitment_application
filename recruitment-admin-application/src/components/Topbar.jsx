@@ -496,6 +496,7 @@ export default function Topbar() {
             sx={{
               height: { xs: 40, sm: 50 },
               width: { xs: 40, sm: 50 },
+              objectFit: "cover",
               borderRadius: "2rem",
               cursor: 'pointer',
             }}
