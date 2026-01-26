@@ -63,7 +63,11 @@ export default function Topbar() {
   } = useAuthStore()
 
   const [openLogin, setOpenLogin] = useState(false)
-  const handleCloseLoginForm = () => setOpenLogin(false);
+  const handleCloseLoginForm = () => {
+    setOpenLogin(false)
+    setFormData({ email: '', password: '' })
+    setError({})
+  }
   const [showPassword, setShowPassword] = useState(false)
   const [openSnackbar, setOpenSnackbar] = useState(false)
   const [message, setMessage] = useState('')
@@ -219,7 +223,6 @@ export default function Topbar() {
         setMessage('Register Successfully!')
       }
       handleCloseRegisterForm();
-      handleCloseLoginForm();
     } catch (err) {
       setOpenSnackbar(true)
       setSeverity("error")
@@ -722,7 +725,6 @@ export default function Topbar() {
         open={openLogin}
         onClose={(event, reason) => {
           if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
-          handleCloseLoginForm();
         }}
         maxWidth="xs"
         fullScreen={isMobile}
