@@ -201,6 +201,20 @@ def delete_users(db: Session, data: DeleteUser):
     db.commit()
     return {"message": "Users deleted successfully"}
 
+#Enable user
+def enable_users(db: Session, data: DeleteUser):
+    if not data.ids or len(data.ids) == 0:
+        raise HTTPException(status_code=400, detail="No IDs provided for deletion")
+    
+    users = db.query(User).filter(User.pk_id.in_(data.ids)).all()
+    if not users:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete all users
+    for user in users:
+        user.is_active = True
+    db.commit()
+    return {"message": "Users enabled successfully"}
 
 #change password
 def change_password(db: Session, user_id: int, data: ChangePassword):

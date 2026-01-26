@@ -70,10 +70,15 @@ def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(
 def create_or_update_user(user: UserCreate, db: Session = Depends(get_db)):
     return user_controller.create_or_update_user(user, db)
 
-#delete mutiple users
+#delete mutiple users = disable
 @router.delete("/delete")
 def delete_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     return user_controller.delete_users(db, data)
+
+#enable users
+@router.delete("/enable")
+def enable_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.enable_users(db, data)
 
 
 # verify token

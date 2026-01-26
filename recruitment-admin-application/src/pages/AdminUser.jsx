@@ -32,9 +32,23 @@ const AdminUsers = () => {
     const [message, setMessage] = useState('')
     const [severity, setSeverity] = useState('error')
 
-    // Confirm Dialog state
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState(null);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [actionType, setActionType] = useState(null); // "enable" | "disable"
+
+    const confirmDisable = (row) => {
+        setSelectedUser(row);
+        setActionType("disable");
+        setConfirmDialogOpen(true);
+    };
+
+    const confirmEnable = (row) => {
+        setSelectedUser(row);
+        setActionType("enable");
+        setConfirmDialogOpen(true);
+    };
+
+
 
     const fetchUsers = async () => {
         const res = await api.get("/user");
@@ -45,32 +59,39 @@ const AdminUsers = () => {
         fetchUsers();
     }, []);
 
-    // Open confirm dialog
-    const confirmDelete = (row) => {
-        setUserToDelete(row);
-        setDeleteDialogOpen(true);
-    };
 
-    // Actually delete user
-    const handleDelete = async () => {
-        if (!userToDelete) return;
+
+    const handleConfirmAction = async () => {
+        if (!selectedUser || !actionType) return;
 
         try {
-            await api.delete("/user/delete", {
-                data: { ids: [userToDelete.pk_id] }
-            });
+
+            if (actionType === "disable") {
+                await api.delete("/user/delete", {
+                    data: { ids: [selectedUser.pk_id] },
+
+                });
+                setMessage("User disabled successfully");
+            } else {
+                await api.delete("/user/enable", {
+                    data: { ids: [selectedUser.pk_id] }
+                });
+                setMessage("User enabled successfully");
+            }
+
+            setSeverity("success");
             fetchUsers();
-            setOpenSnackbar(true)
-            setSeverity('success')
-            setMessage('User disabled successfully')
         } catch (err) {
-            console.error("Failed to delete user", err);
-            setOpenSnackbar(true)
-            setSeverity('error')
-            setMessage(err.response?.data?.detail || 'Failed to disable user')
+            setSeverity("error");
+            setMessage(
+                err.response?.data?.detail ||
+                `Failed to ${actionType} user`
+            );
         } finally {
-            setDeleteDialogOpen(false);
-            setUserToDelete(null);
+            setOpenSnackbar(true);
+            setConfirmDialogOpen(false);
+            setSelectedUser(null);
+            setActionType(null);
         }
     };
 
@@ -146,50 +167,97 @@ const AdminUsers = () => {
         {
             field: "actions",
             headerName: "Actions",
-            flex: 1.3,
+            flex: 1.4,
             minWidth: 180,
             sortable: false,
-            renderCell: ({ row }) => (
-                <Stack
-                    direction="row"
-                    spacing={0.5}
-                    sx={{ height: "100%", alignItems: "center"}}
-                >
-                    {/* Edit Button */}
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                            textTransform: "none",
-                            fontSize: 10,
-                            minWidth: 0,
-                            px: 1,
-                        }}
-                        onClick={() => {
-                            setEditingUser(row);
-                            setOpen(true);
-                        }}
-                    >
-                        Edit
-                    </Button>
+            renderCell: ({ row }) => {
+                const isActive = row.is_active;
 
-                    {/* Disable Button */}
-                    <Button
-                        size="small"
-                        variant="contained"
-                        color="error"
+                return (
+                    <Box
                         sx={{
-                            textTransform: "none",
-                            fontSize: 10,
-                            minWidth: 0,
-                            px: 1,
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,       // slightly smaller spacing
+                            py: 0,
                         }}
-                        onClick={() => confirmDelete(row)}
                     >
-                        Disable
-                    </Button>
-                </Stack>
-            ),
+                        {/* Edit Button */}
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                                fontSize: 10,
+                                px: 1,
+                                py: 0.4,
+                                borderRadius: 2,
+                                textTransform: "none",
+                                color: "#1976d2",
+                                borderColor: "rgba(25,118,210,0.5)",
+                                "&:hover": {
+                                    bgcolor: "rgba(25,118,210,0.08)",
+                                    borderColor: "rgba(25,118,210,0.7)",
+                                },
+                            }}
+                            onClick={() => {
+                                setEditingUser(row);
+                                setOpen(true);
+                            }}
+                        >
+                            Edit
+                        </Button>
+
+                        {/* Disable Button */}
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={!isActive}
+                            onClick={() => confirmDisable(row)}
+                            sx={{
+                                fontSize: 10,
+                                px: 1,
+                                py: 0.4,
+                                borderRadius: 2,
+                                textTransform: "none",
+                                bgcolor: "#e53935",
+                                color: "#fff",
+                                opacity: isActive ? 1 : 0.45,
+                                borderColor: "transparent",
+                                "&:hover": {
+                                    bgcolor: isActive ? "#d32f2f" : "#e53935",
+                                },
+                            }}
+                        >
+                            Disable
+                        </Button>
+
+                        {/* Enable Button */}
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={isActive}
+                            onClick={() => confirmEnable(row)}
+                            sx={{
+                                fontSize: 10,
+                                px: 1,
+                                py: 0.4,
+                                borderRadius: 2,
+                                textTransform: "none",
+                                bgcolor: "#2e7d32",
+                                color: "#fff",
+                                opacity: isActive ? 0.45 : 1,
+                                borderColor: "transparent",
+                                "&:hover": {
+                                    bgcolor: !isActive ? "#1b5e20" : "#2e7d32",
+                                },
+                            }}
+                        >
+                            Enable
+                        </Button>
+                    </Box>
+                );
+            },
         }
 
     ];
@@ -208,7 +276,7 @@ const AdminUsers = () => {
                 </Alert>
             </Snackbar>
 
-            <Box sx={{ height: "calc(100vh - 100px)", display: "flex", flexDirection: "column"}}>
+            <Box sx={{ height: "calc(100vh - 100px)", display: "flex", flexDirection: "column" }}>
                 {/* Top Bar */}
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} mb={1}>
                     <Button
@@ -252,22 +320,47 @@ const AdminUsers = () => {
                 <UserDialog open={open} onClose={() => setOpen(false)} user={editingUser} refresh={fetchUsers} />
 
                 {/* MUI Confirm Dialog */}
-                <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                    <DialogTitle>Confirm Disable</DialogTitle>
+                <Dialog
+                    open={confirmDialogOpen}
+                    onClose={() => setConfirmDialogOpen(false)}
+                >
+                    <DialogTitle>
+                        Confirm {actionType === "disable" ? "Disable" : "Enable"}
+                    </DialogTitle>
+
                     <DialogContent>
                         <Typography>
-                            Are you sure you want to disable <strong>{userToDelete?.user_name}</strong>?
+                            Are you sure you want to{" "}
+                            <strong>
+                                {actionType === "disable" ? "disable" : "enable"}
+                            </strong>{" "}
+                            <strong>{selectedUser?.user_name}</strong>?
                         </Typography>
                     </DialogContent>
+
                     <DialogActions>
-                        <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
+                        <Button
+                            onClick={() => setConfirmDialogOpen(false)}
+                            color="inherit"
+                            size="small"
+                            variant="outlined"
+                            sx={{ textTransform: "none" }}
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleDelete} color="error" variant="contained">
-                            Disable
+
+                        <Button
+                            onClick={handleConfirmAction}
+                            sx={{ textTransform: "none" }}
+                            variant="contained"
+                            size="small"
+                            color={actionType === "disable" ? "error" : "success"}
+                        >
+                            {actionType === "disable" ? "Disable" : "Enable"}
                         </Button>
                     </DialogActions>
                 </Dialog>
+
             </Box>
         </>
 
