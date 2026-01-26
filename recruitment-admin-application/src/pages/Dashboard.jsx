@@ -44,7 +44,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { EmailOutlined, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
+import { EmailOutlined, Info, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -554,6 +554,7 @@ export default function Dashboard() {
                   sx={{
                     whiteSpace: "nowrap",
                     display: { xs: "none", sm: "inline-flex" },
+                    textTransform: "none",
                   }}
                 >
                   Company Info
@@ -575,18 +576,27 @@ export default function Dashboard() {
                   }}
                   PaperProps={{
                     sx: {
-                      width: { xs: "90vw", sm: 520 },
+                      width: { xs: "80vw", sm: 600 },
+                      height: { xs: "90vh", sm: 600 },
                       maxHeight: 500,
                       borderRadius: 2,
                       p: 2.5,
                       overflowY: "auto",
                       backgroundColor: "#FAFAFA",
+                      border: "3px solid",
+                      borderColor: "divider",
                     },
                   }}
                 >
                   <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={3}>
-                    <BusinessRoundedIcon color="primary" fontSize="medium" />
-                    <Typography variant="h6" fontWeight={700}>
+                    <Typography 
+                      variant="h7" 
+                      fontWeight={550} 
+                      sx={{
+                        borderBottom: "2px solid",
+                        borderColor: "primary.main",
+                      }}
+                    >
                       Company Information
                     </Typography>
                   </Stack>
@@ -665,10 +675,14 @@ export default function Dashboard() {
                       </Box>
                     </Stack>
 
-                    <Box sx={{ borderRadius: 1 }}>
-                      <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                        About the Company
-                      </Typography>
+                    <Box sx={{ borderRadius: 3 }}>
+                      <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+                        <Info color="action" />
+                        <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
+                          About the Company
+                        </Typography>
+                      </Stack>
+                      
                       <ReactQuill
                         theme="snow"
                         value={

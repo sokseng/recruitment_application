@@ -720,7 +720,10 @@ export default function Topbar() {
       {/* LOGIN MODAL */}
       <Dialog
         open={openLogin}
-        onClose={handleCloseLoginForm}
+        onClose={(event, reason) => {
+          if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
+          handleCloseLoginForm();
+        }}
         maxWidth="xs"
         fullScreen={isMobile}
         PaperProps={{
@@ -812,6 +815,7 @@ export default function Topbar() {
                 onClick={handleCloseLoginForm}
                 variant="outlined"
                 size="small"
+                fullWidth
                 sx={{
                   borderRadius: 2,
                   fontWeight: 600,
@@ -824,6 +828,7 @@ export default function Topbar() {
                 size="small"
                 variant="contained"
                 type="submit"
+                fullWidth
                 sx={{
                   borderRadius: 2,
                   fontWeight: 600,
@@ -841,12 +846,15 @@ export default function Topbar() {
       {/* REGISTER MODAL */}
       <Dialog
         open={openRegisterForm}
-        onClose={handleCloseRegisterForm}
+        onClose={(event, reason) => {
+          if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
+          handleCloseRegisterForm();
+        }}
         maxWidth="lg"
         fullScreen={isMobile}
         scroll="paper"
       >
-        <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
+        <DialogContent sx={{ p: { xs: 3, sm: 2 } }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={3}
@@ -858,7 +866,7 @@ export default function Topbar() {
               component="form"
               onSubmit={handleSubmit}
               id="register-form"
-              spacing={2}
+              spacing={1}
               sx={{
                 flex: 1,
                 width: "100%",
@@ -894,7 +902,7 @@ export default function Topbar() {
               </Stack>
               
               {/* Form Header */}
-              <Box>
+              <Box textAlign="center">
                 <Typography variant="h6" fontWeight={700}>
                   Create Account 🚀
                 </Typography>
@@ -904,7 +912,7 @@ export default function Topbar() {
               </Box>
 
               {/* -------------------- Row 1: User Type & Username -------------------- */}
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
                   size="small"
                   name="user_type"
@@ -931,7 +939,7 @@ export default function Topbar() {
               </Stack>
 
               {/* -------------------- Row 2: Email & Password -------------------- */}
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
                   size="small"
                   name="email"
@@ -964,7 +972,7 @@ export default function Topbar() {
               </Stack>
 
               {/* -------------------- Row 3: Gender & Phone -------------------- */}
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <TextField
                   size="small"
                   name="gender"
@@ -978,7 +986,7 @@ export default function Topbar() {
 
                 <TextField size="small" name="phone" label="Phone" fullWidth />
               </Stack>
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 {/* -------------------- Date of Birth -------------------- */}
                 <DatePicker
                   label="Date of Birth"
@@ -1005,6 +1013,7 @@ export default function Topbar() {
                 <Button
                   onClick={handleCloseRegisterForm}
                   variant="outlined"
+                  fullWidth
                   sx={{
                     borderRadius: 2,
                     fontWeight: 600,
@@ -1017,14 +1026,12 @@ export default function Topbar() {
                 <Button
                   type="submit"
                   variant="contained"
+                  fullWidth
                   sx={{
                     borderRadius: 2,
                     fontWeight: 600,
                     textTransform: "none",
                     background: "linear-gradient(135deg, #023F6B, #0A6BA8)",
-                    "&:hover": {
-                      background: "linear-gradient(135deg, #012C4A, #085B91)",
-                    },
                   }}
                 >
                   Register
