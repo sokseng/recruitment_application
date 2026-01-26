@@ -111,7 +111,8 @@ export default function Topbar() {
     3: [
       { label: 'Home', path: '/', icon: <HomeIcon /> },
       { label: 'Profile', path: '/update-profile', icon: <PersonIcon /> },
-      { label: 'Candidate', path: '/', icon: <PersonIcon /> },
+      { label: 'Dashboard', path: '/candidate', icon: <DashboardIcon /> },
+      { label: 'All Companies', path: '/company', icon: <BusinessIcon /> },
     ],
   };
 
