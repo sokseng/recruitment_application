@@ -13,34 +13,31 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    Divider
+    Divider,
 } from "@mui/material";
 import { Visibility, Download } from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../services/api";
 
-const ROLE_META = {
-    3: { label: "Candidate", color: "success" },
-};
-
 const AdminCandidate = () => {
     const [candidates, setCandidates] = useState([]);
-    const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [message, setMessage] = useState('');
-    const [severity, setSeverity] = useState('success');
 
-    // View modal
-    const [viewDialogOpen, setViewDialogOpen] = useState(false);
-    const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [message, setMessage] = useState("");
+    const [severity, setSeverity] = useState("success");
+
+    /* ================= View Resume States ================= */
+    const [viewFileOpen, setViewFileOpen] = useState(false);
+    const [fileUrl, setFileUrl] = useState(null);
+    const [fileName, setFileName] = useState("");
+    const [fileType, setFileType] = useState("");
 
     /* ================= Fetch Candidates ================= */
     const fetchCandidates = async () => {
         try {
-            debugger
-            const res = await api.get("/admin/candidates"); // API returns candidates with resume info
+            const res = await api.get("/admin/candidates");
             setCandidates(res.data || []);
         } catch (err) {
-            console.error(err);
             setMessage("Failed to fetch candidates");
             setSeverity("error");
             setOpenSnackbar(true);
@@ -53,53 +50,81 @@ const AdminCandidate = () => {
 
     /* ================= Download Resume ================= */
     const handleDownload = async (resumeId, fileName) => {
-        if (!resumeId) {
-            setMessage("No resume to download");
-            setSeverity("error");
-            setOpenSnackbar(true);
-            return;
-        }
+        if (!resumeId) return;
 
         try {
-            const res = await api.get(`/admin/candidate/resumes/${resumeId}/file`, {
-                responseType: "blob", // Important: tells axios to treat it as a file
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("access_token")}` // or sessionStorage
+            const res = await api.get(
+                `/admin/candidate/resumes/${resumeId}/file`,
+                {
+                    responseType: "blob",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem(
+                            "access_token"
+                        )}`,
+                    },
                 }
-            });
+            );
 
-            // Try to get the filename from response headers if not provided
-            const disposition = res.headers["content-disposition"];
-            let actualFileName = fileName;
-            if (disposition && disposition.includes("filename=")) {
-                const matches = disposition.match(/filename="?(.+)"?/);
-                if (matches && matches[1]) {
-                    actualFileName = matches[1];
-                }
-            }
-
-            // Create a URL for the file blob
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", actualFileName || "resume.pdf"); // default filename
+            link.setAttribute("download", fileName || "resume");
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(url); // free memory
+            window.URL.revokeObjectURL(url);
         } catch (err) {
-            console.error(err);
-            setMessage("Failed to download resume");
+            setMessage("Download failed");
             setSeverity("error");
             setOpenSnackbar(true);
         }
     };
 
+    /* ================= View Resume ================= */
+    const handleViewFile = async (resumeId, fileName) => {
+        if (!resumeId) return;
+
+        try {
+            const res = await api.get(
+                `/admin/candidate/resumes/${resumeId}/file`,
+                {
+                    responseType: "blob",
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem(
+                            "access_token"
+                        )}`,
+                    },
+                }
+            );
+
+            const contentType = res.headers["content-type"];
+            const blob = new Blob([res.data], { type: contentType });
+            const url = URL.createObjectURL(blob);
+
+            // DOC / DOCX → Download instead of preview
+            if (
+                contentType.includes("word") ||
+                contentType.includes("officedocument")
+            ) {
+                handleDownload(resumeId, fileName);
+                return;
+            }
+
+            setFileUrl(url);
+            setFileName(fileName);
+            setFileType(contentType);
+            setViewFileOpen(true);
+        } catch (err) {
+            setMessage("Unable to view file");
+            setSeverity("error");
+            setOpenSnackbar(true);
+        }
+    };
 
     /* ================= Columns ================= */
     const columns = [
-        { field: "created_date", headerName: "Create date", flex: 1.5 },
-        { field: "user_name", headerName: "Candidate name", flex: 1.5 },
+        { field: "created_date", headerName: "Create Date", flex: 1.2 },
+        { field: "user_name", headerName: "Candidate", flex: 1.5 },
         { field: "email", headerName: "Email", flex: 2 },
         {
             field: "primary_resume",
@@ -107,9 +132,13 @@ const AdminCandidate = () => {
             flex: 1.5,
             renderCell: ({ row }) =>
                 row.primary_resume ? (
-                    <Typography fontSize={12}>{row.primary_resume.file_name}</Typography>
+                    <Typography fontSize={12}>
+                        {row.primary_resume.file_name}
+                    </Typography>
                 ) : (
-                    <Typography fontSize={12} color="text.secondary">—</Typography>
+                    <Typography fontSize={12} color="text.secondary">
+                        —
+                    </Typography>
                 ),
         },
         {
@@ -127,42 +156,39 @@ const AdminCandidate = () => {
         {
             field: "actions",
             headerName: "Actions",
-            minWidth: 150,
+            minWidth: 160,
             renderCell: ({ row }) => (
                 <Stack direction="row" spacing={1}>
-                    <Tooltip title="View Candidate">
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => {
-                                setSelectedCandidate(row);
-                                setViewDialogOpen(true);
-                            }}
-                            sx={{
-                                border: "1px solid rgba(25,118,210,0.3)",
-                                "&:hover": { bgcolor: "rgba(25,118,210,0.1)" },
-                            }}
-                        >
-                            <Visibility fontSize="small" />
-                        </IconButton>
+                    <Tooltip title="View Resume">
+                        <span>
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                disabled={!row.primary_resume}
+                                onClick={() =>
+                                    handleViewFile(
+                                        row.primary_resume?.pk_id,
+                                        row.primary_resume?.file_name
+                                    )
+                                }
+                            >
+                                <Visibility fontSize="small" />
+                            </IconButton>
+                        </span>
                     </Tooltip>
 
-                    <Tooltip title="Download Primary Resume">
+                    <Tooltip title="Download Resume">
                         <span>
                             <IconButton
                                 size="small"
                                 color="success"
+                                disabled={!row.primary_resume}
                                 onClick={() =>
                                     handleDownload(
                                         row.primary_resume?.pk_id,
                                         row.primary_resume?.file_name
                                     )
                                 }
-                                disabled={!row.primary_resume}
-                                sx={{
-                                    border: "1px solid rgba(46,125,50,0.3)",
-                                    "&:hover": { bgcolor: "rgba(46,125,50,0.1)" },
-                                }}
                             >
                                 <Download fontSize="small" />
                             </IconButton>
@@ -180,12 +206,14 @@ const AdminCandidate = () => {
                 open={openSnackbar}
                 autoHideDuration={3000}
                 onClose={() => setOpenSnackbar(false)}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
             >
-                <Alert severity={severity} variant="filled">{message}</Alert>
+                <Alert severity={severity} variant="filled">
+                    {message}
+                </Alert>
             </Snackbar>
 
-            {/* DataGrid */}
+            {/* Table */}
             <Box sx={{ height: "calc(100vh - 120px)" }}>
                 <DataGrid
                     rows={candidates}
@@ -194,75 +222,64 @@ const AdminCandidate = () => {
                     pageSizeOptions={[10, 25, 50]}
                     disableRowSelectionOnClick
                     density="compact"
-                    sx={{
-                        bgcolor: "#fff",
-                        borderRadius: 3,
-                        boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-                    }}
                 />
             </Box>
 
-            {/* View Candidate Dialog */}
+            {/* View File Dialog */}
             <Dialog
-                open={viewDialogOpen}
-                onClose={() => setViewDialogOpen(false)}
+                open={viewFileOpen}
+                onClose={() => {
+                    setViewFileOpen(false);
+                    if (fileUrl) URL.revokeObjectURL(fileUrl);
+                }}
                 fullWidth
-                maxWidth="sm"
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        height: "90vh",
+                        overflow: "hidden",   // 🔥 disable outer scrollbar
+                    },
+                }}
             >
-                <DialogTitle>Candidate Details</DialogTitle>
-                <DialogContent dividers>
-                    {selectedCandidate && (
-                        <>
-                            <Typography variant="subtitle1"><strong>Name:</strong> {selectedCandidate.user_name}</Typography>
-                            <Typography variant="subtitle1"><strong>Email:</strong> {selectedCandidate.email}</Typography>
-                            <Typography variant="subtitle1" gutterBottom>
-                                <strong>Status:</strong> {selectedCandidate.is_active ? "Active" : "Inactive"}
-                            </Typography>
-
-                            <Divider sx={{ my: 1 }} />
-
-                            <Typography variant="subtitle2" gutterBottom><strong>Resumes:</strong></Typography>
-                            {selectedCandidate.resumes && selectedCandidate.resumes.length > 0 ? (
-                                selectedCandidate.resumes.map((r) => (
-                                    <Stack
-                                        key={r.pk_id}
-                                        direction="row"
-                                        alignItems="center"
-                                        justifyContent="space-between"
-                                        sx={{ mb: 1 }}
-                                    >
-                                        <Box>
-                                            <Typography fontSize={13}>
-                                                {r.resume_type} - {r.resume_file || "Text Resume"}
-                                            </Typography>
-                                            {r.recommendation_letter && (
-                                                <Typography fontSize={12} color="text.secondary">
-                                                    Recommendation: {r.recommendation_letter}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                        <Button
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={() => handleDownload(r.pk_id, r.resume_file)}
-                                            disabled={!r.resume_file}
-                                        >
-                                            Download
-                                        </Button>
-                                    </Stack>
-                                ))
-                            ) : (
-                                <Typography fontSize={12} color="text.secondary">
-                                    No resumes uploaded
-                                </Typography>
-                            )}
-                        </>
+                <DialogContent
+                    sx={{
+                        p: 0,
+                        height: "100%",
+                        overflow: "hidden",  // 🔥 no scroll here
+                    }}
+                >
+                    {fileType.startsWith("image") ? (
+                        <Box
+                            component="img"
+                            src={fileUrl}
+                            alt="Resume"
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                            }}
+                        />
+                    ) : (
+                        <iframe
+                            src={fileUrl}
+                            title="Resume Viewer"
+                            width="100%"
+                            height="100%"
+                            style={{
+                                border: "none",
+                                overflow: "auto", // ✅ only iframe scrolls
+                            }}
+                        />
                     )}
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+
+                <DialogActions sx={{ py: 0.5 }}>
+                    <Button size="small" onClick={() => setViewFileOpen(false)}>
+                        Close
+                    </Button>
                 </DialogActions>
             </Dialog>
+
         </>
     );
 };
