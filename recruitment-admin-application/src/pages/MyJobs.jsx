@@ -26,6 +26,7 @@ import {
   DialogContentText,
   OutlinedInput,
   Avatar,
+  Autocomplete,
 } from "@mui/material";
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
@@ -107,7 +108,8 @@ function JobFormDialog({
   );
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (open && initialData) {
@@ -119,6 +121,7 @@ function JobFormDialog({
         category_ids: initialData.categories?.map(c => c.pk_id) || [],
       });
     } else if (open) {
+      setErrors({});
       setFormData(defaultData);
     }
   }, [open, initialData]);
@@ -128,16 +131,51 @@ function JobFormDialog({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const isQuillEmpty = (value) => {
+    if (!value) return true;
+    const text = value.replace(/<(.|\n)*?>/g, "").trim();
+    return text.length === 0;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.job_title?.trim()) {
+      newErrors.job_title = "Job title is required";
+    }
+
+    if (isQuillEmpty(formData.job_description)) {
+      newErrors.job_description = "Job description is required";
+    }
+
+    if (!formData.category_ids?.length) {
+      newErrors.category_ids = "Select at least one category";
+    }
+
+    if (!formData.location?.trim()) newErrors.location = "Location is required";
+
+    if (!formData.position_number || formData.position_number <= 0) {
+      newErrors.position_number = "Position number must be greater than 0";
+    }
+
+    if (!formData.closing_date) {
+      newErrors.closing_date = "Closing date is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const handleCloseDialog = () => {
+    setErrors({});
+    setFormData(defaultData);
+    onClose();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-
-    const textOnly = (formData.job_description || "")
-      .replace(/<[^>]+>/g, "")
-      .trim();
-
-    if (!textOnly) return setError("Description is required");
-
+    if (!validateForm()) {
+      return;
+    }
     setLoading(true);
 
     try {
@@ -159,10 +197,7 @@ function JobFormDialog({
       onSuccess?.(res.data);
       onClose();
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          `Failed to ${isEdit ? "update" : "create"} job`
-      );
+      console.error("Job save failed:", err);
     } finally {
       setLoading(false);
     }
@@ -175,8 +210,8 @@ function JobFormDialog({
   return (
     <Dialog
       open={open}
-      onClose={loading ? undefined : onClose}
-      maxWidth="lg"
+      onClose={loading ? undefined : handleCloseDialog}
+      maxWidth="md"
       fullWidth
       fullScreen={isMobile}
       scroll="paper"
@@ -202,7 +237,7 @@ function JobFormDialog({
        
         <IconButton
           aria-label="close"
-          onClick={onClose}
+          onClick={handleCloseDialog}
           sx={{ position: "absolute", right: 16, top: 16, color: "white" }}
           disabled={loading}
         >
@@ -211,11 +246,6 @@ function JobFormDialog({
       </DialogTitle>
 
       <DialogContent dividers sx={{ backgroundColor: "#F4F1F1", }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
 
         <form onSubmit={handleSubmit} id="job-form">
           <Box
@@ -225,130 +255,171 @@ function JobFormDialog({
               gap: 2,
             }}
           >
-            <FormControl fullWidth>
-              <InputLabel>Categories*</InputLabel>
-              <Select
-                required
-                multiple
-                name="category_ids"
-                value={formData.category_ids || []}
-                label="Categories"
-                onChange={(e) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    category_ids: e.target.value,
-                  }));
-                }}
-                renderValue={(selected) =>
-                  selected
-                    .map((id) => categories.find((c) => c.pk_id === id)?.name)
-                    .filter(Boolean)
-                    .join(", ")
+            <Autocomplete
+              multiple
+              size="small"
+              options={categories}
+              getOptionLabel={(option) => option.name}
+              value={categories.filter((cat) =>
+                formData.category_ids?.includes(cat.pk_id)
+              )}
+              onChange={(_, newValue) => {
+                const ids = newValue.map((cat) => cat.pk_id);
+                setFormData((prev) => ({ ...prev, category_ids: ids }));
+
+                if (errors.category_ids) {
+                  setErrors((prev) => ({ ...prev, category_ids: undefined }));
                 }
-                startAdornment={
-                  <InputAdornment position="start">
-                    <WorkIcon fontSize="small" />
-                  </InputAdornment>
-                }
-                size="small"
-              >
-                {categories.map((cat) => (
-                  <MenuItem key={cat.pk_id} value={cat.pk_id}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Categories"
+                  placeholder="Select categories"
+                  error={!!errors.category_ids}
+                  helperText={errors.category_ids}
+                  InputLabelProps={{ required: true }}
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <InputAdornment position="start">
+                          <WorkIcon fontSize="small" />
+                        </InputAdornment>
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    label={option.name}
+                    size="small"
+                    {...getTagProps({ index })}
+                  />
+                ))
+              }
+            />
            
             {/* Job Title */}
             <TextField
               fullWidth
-              required
-              label="Job Title"
+              label="Job Title *"
               name="job_title"
               value={formData.job_title || ""}
               onChange={handleChange}
+              error={!!errors.job_title}
+              helperText={errors.job_title}
               placeholder="Please enter job title"
               size="small"
             />
 
             {/* Job Type */}
-            <FormControl fullWidth>
-              <InputLabel>Job Type</InputLabel>
-              <Select
-                name="job_type"
-                value={formData.job_type || "Full-time"}
-                label="Job Type"
-                onChange={handleChange}
-                startAdornment={
-                  <InputAdornment position="start">
-                    <WorkIcon fontSize="small" />
-                  </InputAdornment>
-                }
-                size="small"
-              >
-                {JOB_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              size="small"
+              options={JOB_TYPES}
+              getOptionLabel={(opt) => opt.label}
+              value={JOB_TYPES.find((t) => t.value === formData.job_type) || null}
+              onChange={(_, newValue) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  job_type: newValue?.value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Job Type *"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <WorkIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
 
             {/* Job Level */}
-            <FormControl fullWidth>
-              <InputLabel>Level</InputLabel>
-              <Select
-                name="level"
-                value={formData.level || "Mid Level"}
-                label="Level"
-                onChange={handleChange}
-                size="small"
-              >
-                {JOB_LEVELS.map((lvl) => (
-                  <MenuItem key={lvl.value} value={lvl.value}>
-                    {lvl.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              size="small"
+              options={JOB_LEVELS}
+              getOptionLabel={(opt) => opt.label}
+              value={JOB_LEVELS.find((t) => t.value === formData.level) || null}
+              onChange={(_, newValue) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  level: newValue?.value,
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Job Level *"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <WorkIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
 
             {/* Status */}
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                name="status"
-                value={formData.status || "Open"}
-                label="Status"
-                onChange={handleChange}
-                size="small"
-              >
-                {statuses.map((s) =>
-                  typeof s === "string" ? (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
-                  ) : (
-                    <MenuItem key={s.value} value={s.value}>
-                      {s.label}
-                    </MenuItem>
+            <Autocomplete
+              size="small"
+              options={statuses.map((s) =>
+                typeof s === "string" ? { value: s, label: s } : s
+              )}
+              getOptionLabel={(option) => option.label}
+              value={
+                statuses
+                  .map((s) =>
+                    typeof s === "string" ? { value: s, label: s } : s
                   )
-                )}
-              </Select>
-            </FormControl>
+                  .find((s) => s.value === (formData.status || "Open")) || null
+              }
+              onChange={(_, newValue) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  status: newValue?.value || "Open",
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Status *"
+                  fullWidth
+                />
+              )}
+            />
+
 
             {/* Number of Positions */}
             <TextField
-              required
               fullWidth
-              label="Number of Positions"
+              label="Number of Positions *"
               name="position_number"
               type="number"
               value={formData.position_number || ""}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  position_number: e.target.value === "" ? "" : Number(e.target.value),
+                }))
+              }
               placeholder="Please enter Number of Positions"
               inputProps={{ min: 1 }}
               size="small"
+              error={!!errors.position_number}
+              helperText={errors.position_number}
             />
 
             {/* Salary Range */}
@@ -370,7 +441,7 @@ function JobFormDialog({
             />
 
             <DatePicker
-              label="Application Closing Date"
+              label="Application Closing Date *"
               format="YYYY-MM-DD"
               value={formData.closing_date ? dayjs(formData.closing_date) : null}
               onChange={(newValue) => {
@@ -381,9 +452,10 @@ function JobFormDialog({
               }}
               slotProps={{
                 textField: {
-                  required: true,
                   size: "small",
                   fullWidth: true,
+                  error: !!errors.closing_date,
+                  helperText: errors.closing_date,
                 },
               }}
             />
@@ -391,13 +463,13 @@ function JobFormDialog({
             {/* Location */}
             <TextField
               sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
-                required
+              
                 fullWidth
-                label="Location"
+                label="Location *"
                 name="location"
                 value={formData.location || ""}
                 onChange={handleChange}
-                placeholder="e.g. Phnom Penh, Cambodia"
+                placeholder="Enter location"
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -405,92 +477,116 @@ function JobFormDialog({
                     </InputAdornment>
                   ),
                 }}
+                error={!!errors.location}
+                helperText={errors.location}
+
                 size="small"
             />
+            
+          </Box>
+          {/* Job Description - Rich Text Editor */}
+          <Box mb={2} mt={2}>
+            <FormControl fullWidth error={!!errors.job_description}>
+              <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
+                Job Description *
+              </InputLabel>
 
-            {/* Job Description - Rich Text Editor */}
-            <Box>
-              <FormControl fullWidth>
-                <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
-                  Job Description *
-                </InputLabel>
+              <Box
+                sx={{
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  overflow: "hidden",
+                  "& .ql-container": {
+                    minHeight: 170,
+                    height: "auto",
+                  },
+                  "& .ql-editor *": {
+                    backgroundColor: "transparent !important",
+                    height: "auto",
+                    overflowY: "hidden",
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={formData.job_description || ""}
+                  placeholder="Enter job description"
+                  onChange={(content) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      job_description: content,
+                    }));
 
-                <Box
-                  sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                    "& .ql-editor *": {
-                      backgroundColor: "transparent !important",
-                    },
-                  }}
-                >
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.job_description || ""}
-                    onChange={(content) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        job_description: content,
-                      }))
+                    if (errors.job_description) {
+                      setErrors((prev) => ({ ...prev, job_description: undefined }));
                     }
-                    modules={{
-                      toolbar: [
-                        [{ header: [1, 2, 3, false] }],
-                        ["bold", "italic", "underline", "strike"],
-                        [{ list: "ordered" }, { list: "bullet" }],
-                        [{ align: [] }],
-                        ["link"],
-                        ["clean"],
-                      ],
-                    }}
-                  />
-                </Box>
-              </FormControl>
-            </Box>
-
-            {/* Requirements - Rich Text Editor */}
-            <Box>
-              <FormControl fullWidth>
-                <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
-                  Requirements
-                </InputLabel>
-
-                <Box
-                  sx={{
-                    border: 1,
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                    "& .ql-editor *": {
-                      backgroundColor: "transparent !important",
-                    },
                   }}
-                >
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.experience_required || ""}
-                    onChange={(content) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        experience_required: content,
-                      }))
-                    }
-                    modules={{
-                      toolbar: [
-                        [{ header: [1, 2, 3, false] }],
-                        ["bold", "italic", "underline", "strike"],
-                        [{ list: "ordered" }, { list: "bullet" }],
-                        [{ align: [] }],
-                        ["link"],
-                        ["clean"],
-                      ],
-                    }}
-                  />
-                </Box>
-              </FormControl>
-            </Box>
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      [{ align: [] }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                />
+              </Box>
+              {errors.job_description && (
+                <Typography variant="caption" color="error">
+                  {errors.job_description}
+                </Typography>
+              )}
+            </FormControl>
+          </Box>
+
+          {/* Requirements - Rich Text Editor */}
+          <Box>
+            <FormControl fullWidth>
+              <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
+                Requirements
+              </InputLabel>
+
+              <Box
+                sx={{
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  overflow: "hidden",
+                  "& .ql-container": {
+                    minHeight: 170,
+                    height: "auto",
+                  },
+                  "& .ql-editor *": {
+                    backgroundColor: "transparent !important",
+                  },
+                }}
+              >
+                <ReactQuill
+                  theme="snow"
+                  value={formData.experience_required || ""}
+                  placeholder="Enter experience required"
+                  onChange={(content) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      experience_required: content,
+                    }))
+                  }
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      [{ align: [] }],
+                      ["link"],
+                      ["clean"],
+                    ],
+                  }}
+                />
+              </Box>
+            </FormControl>
           </Box>
         </form>
       </DialogContent>
@@ -509,6 +605,9 @@ function JobFormDialog({
           color="primary"
           size="small"
           disabled={loading}
+          sx={{
+            textTransform: "none"
+          }}
         >
           {loading ? (
             <>
@@ -530,7 +629,6 @@ function JobFormDialog({
 export default function MyJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [openFormDialog, setOpenFormDialog] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
@@ -576,7 +674,7 @@ export default function MyJobs() {
       const res = await api.get("/jobs/my-jobs?limit=100");
       setJobs(res.data || []);
     } catch {
-      setError("Failed to load your posted jobs");
+      console.error("Failed to load your posted jobs");
     } finally {
       setLoading(false);
     }
@@ -636,7 +734,7 @@ export default function MyJobs() {
       );
       setOpenCloseDialog(false);
     } catch {
-      setError("Failed to close job");
+      console.error("Failed to close job");
     }
   };
 
@@ -862,13 +960,6 @@ export default function MyJobs() {
           value="Draft"
         />
       </Tabs>
-
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
 
       {/* JOBS GRID */}
       <Box
