@@ -78,6 +78,8 @@ const AdminJobs = () => {
                 transform: "translateY(-2px)",
                 boxShadow: "0 8px 20px rgba(0,0,0,0.07)",
               },
+              border: "3px solid",
+              borderColor: "divider"
             }}
           >
             <Typography variant="caption" color="text.secondary">
@@ -121,6 +123,8 @@ const AdminJobs = () => {
                   boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
                 },
                 bgcolor: "#fff",
+                border: "3px solid",
+                borderColor: "divider"
               }}
             >
               <CardContent sx={{ p: 1.5 }}>
