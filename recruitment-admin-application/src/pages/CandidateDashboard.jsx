@@ -63,7 +63,7 @@ export default function CandidateDashboard() {
     >
       <Grid
         container
-        spacing={{ xs: 4, md: 5 }}
+        spacing={{ xs: 2, md: 2 }}
         direction={{ xs: 'column-reverse', lg: 'row' }}
       >
         {/* LEFT - Profile */}
@@ -77,12 +77,7 @@ export default function CandidateDashboard() {
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.14)',
-                transform: 'translateY(-4px)',
-              },
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)'
             }}
           >
             <CardContent
@@ -195,16 +190,11 @@ export default function CandidateDashboard() {
 
         {/* RIGHT - Main content */}
         <Grid item xs={12} lg={8}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 4, md: 5 } }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, md: 2 } }}>
             <Card
               sx={{
                 borderRadius: 3,
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  boxShadow: '0 16px 45px rgba(0, 0, 0, 0.10)',
-                  transform: 'translateY(-3px)',
-                },
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)'
               }}
             >
               <CardContent sx={{ p: { xs: 3, md: 4 } }}>
@@ -220,12 +210,7 @@ export default function CandidateDashboard() {
             <Card
               sx={{
                 borderRadius: 3,
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  boxShadow: '0 16px 45px rgba(0, 0, 0, 0.10)',
-                  transform: 'translateY(-3px)',
-                },
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)'
               }}
             >
               <CardContent sx={{ p: { xs: 3, md: 4 } }}>
