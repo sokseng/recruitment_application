@@ -592,7 +592,7 @@ function JobFormDialog({
 
       <DialogActions
         sx={{
-          background: "#023F6B",
+          background: "#F4F1F1",
           borderTop: "1px solid",
           borderColor: "divider",
         }}
@@ -601,11 +601,11 @@ function JobFormDialog({
           type="submit"
           form="job-form"
           variant="contained"
-          color="primary"
           size="small"
           disabled={loading}
           sx={{
-            textTransform: "none"
+            textTransform: "none",
+            backgroundColor:"#023F6B"
           }}
         >
           {loading ? (
