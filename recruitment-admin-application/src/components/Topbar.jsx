@@ -46,6 +46,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme, useMediaQuery } from "@mui/material";
 import api from "../services/api";
 import useAuthStore from "../store/useAuthStore";
+import { LoginSharp, LoginTwoTone } from "@mui/icons-material";
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -655,7 +656,7 @@ export default function Topbar() {
 
           {/* 🖥 Desktop Menu */}
           {!isMobile && (
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               {menuItems.map((item) => (
                 <Button
                   key={item.label}
@@ -799,17 +800,20 @@ export default function Topbar() {
                 </>
               ) : (
                 <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => setOpenLogin(true)}
-                  >
-                    Login
-                  </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => setOpenLogin(true)}
+                      sx={{textTransform: "none"}}
+                    >
+                      Login
+                    </Button>
+                  
                   <Button
                     variant="outlined"
                     size="small"
                     onClick={() => setopenRegisterForm(true)}
+                    sx={{textTransform: "none"}}
                   >
                     Sign Up
                   </Button>
