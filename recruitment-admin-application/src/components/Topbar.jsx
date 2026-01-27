@@ -109,7 +109,7 @@ export default function Topbar() {
     ],
     3: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Profile", path: "/update-profile", icon: <PersonIcon /> },
+      { label: "Profile", path: "/update_profile", icon: <PersonIcon /> },
       { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
       { label: "All Companies", path: "/company", icon: <BusinessIcon /> },
     ],
@@ -604,7 +604,7 @@ export default function Topbar() {
                 </Box>
                 <MenuItem
                   onClick={() => {
-                    navigate("/update-profile");
+                    navigate("/update_profile");
                     handleProfileClose();
                   }}
                 >
@@ -746,7 +746,7 @@ export default function Topbar() {
                     </Box>
                     <MenuItem
                       onClick={() => {
-                        navigate("/update-profile");
+                        navigate("/update_profile");
                         handleProfileClose();
                       }}
                     >

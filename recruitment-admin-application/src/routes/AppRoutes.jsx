@@ -81,7 +81,7 @@ export default function AppRoutes() {
           }
         />
         <Route
-          path="/update-profile"
+          path="/update_profile"
           element={
             <ProtectedRoute>
               <UpdateProfile />
