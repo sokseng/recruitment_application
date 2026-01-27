@@ -25,6 +25,9 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
     user = user_controller.get_by_email(data.email, db)
     if not user:
         raise HTTPException(status_code=404, detail="Email not found")
+    
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="User is currently disabled!")
 
     #Verify password
     isMatch = user_controller.verify_password(data.password, user.password)

@@ -173,7 +173,17 @@ export default function Topbar() {
       ) {
         setMessage(err.response?.data?.detail);
         setOpenSnackbar(true);
-      } else {
+      } else if (
+        err.response && 
+        err.response?.status === 400 && 
+        err.response?.data?.detail === "User is currently disabled!"
+      ){
+        setMessage(err.response?.data?.detail);
+        setOpenSnackbar(true);
+        setSeverity('info')
+      }
+      
+      else {
         setMessage(err.response?.data?.detail || "Login failed");
         setOpenSnackbar(true);
       }
