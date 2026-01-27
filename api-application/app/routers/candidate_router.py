@@ -41,7 +41,6 @@ def get_candidate_by_id(candidate_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Candidate not found")
     return candidate
 
-
 @router.delete("/{candidate_id}")
 def delete_candidate_profile(
     candidate_id: int,

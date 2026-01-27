@@ -23,3 +23,31 @@ class CandidateOut(BaseModel):
     updated_date: Optional[datetime]
 
     model_config = {"from_attributes": True}
+
+class CandidateProfileBase(BaseModel):
+    candidate_id: int
+    job_category_id: Optional[int]
+    experience_level: Optional[str]
+    expected_salary: Optional[str]
+    overview: Optional[str]
+    about_me: Optional[str]
+    career_objective: Optional[str]
+    experience: Optional[str]
+    education: Optional[str]
+    skills: Optional[str]
+    languages: Optional[str]
+    reference_text: Optional[str]
+
+class CandidateProfileCreate(CandidateProfileBase):
+    pass
+
+class CandidateProfileUpdate(CandidateProfileBase):
+    pass
+
+class CandidateProfileOut(CandidateProfileBase):
+    pk_id: int
+    created_date: datetime
+    updated_date: datetime
+
+    class Config:
+        orm_mode = True

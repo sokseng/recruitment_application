@@ -19,7 +19,10 @@ import {
   Menu,
   Switch,
   SpeedDial,
-  SpeedDialAction
+  SpeedDialAction,
+  Select,
+  FormControl,
+  InputLabel 
 } from '@mui/material'
 import { useState, useEffect } from 'react'
 import {
@@ -37,6 +40,8 @@ import useAuthStore from '../../store/useAuthStore'
 import api from '../../services/api'
 import { useTheme, useMediaQuery } from "@mui/material";
 import { styled } from '@mui/material/styles';
+import ReactQuill from "react-quill-new";
+import "quill/dist/quill.snow.css";
 
 export default function CandidateProfileDashboard() {
   const { user_data } = useAuthStore()
@@ -54,6 +59,31 @@ export default function CandidateProfileDashboard() {
   const [severity, setSeverity] = useState('error')
   const [editOpen, setEditOpen] = useState(false)
   const [anchorEls, setAnchorEls] = useState({});
+  const [activeSection, setActiveSection] = useState('Overview');
+  const [sectionOpen, setSectionOpen] = useState(false);
+  const [overviewText, setOverviewText] = useState('');
+  const [careerText, setCareerText] = useState('');
+  const [workExpText, setWorkExpText] = useState('');
+  const [skillsText, setSkillsText] = useState('');
+  const [educationText, setEducationText] = useState('');
+  const [languagesText, setLanguagesText] = useState('');
+  const [referencesText, setReferencesText] = useState('');
+
+  const handleOpenSection = (section) => {
+    setActiveSection(section);
+    setSectionOpen(true);
+  };
+
+  const handleCloseSection = () => {
+    setSectionOpen(false);
+    setOverviewText('');
+    setCareerText('');
+    setWorkExpText('');
+    setEducationText('');
+    setSkillsText('');
+    setLanguagesText('');
+    setReferencesText('');
+  };
 
   const setAnchorEl = (cvId, el) => {
     setAnchorEls((prev) => ({ ...prev, [cvId]: el }));
@@ -214,6 +244,108 @@ export default function CandidateProfileDashboard() {
     Status: user_data.user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
   }
 
+  const sectionDialogs = {
+    "Overview": () => (
+      <Box>
+        <Typography variant="subtitle1" fontWeight={600}>
+          Describe Yourself <span style={{ color: 'red' }}>*</span>
+        </Typography>
+        <Typography variant="body2" mb={1}>
+          You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={overviewText}
+          onChange={setOverviewText}
+          className="quill-editor"
+        />
+
+        <Typography variant="subtitle1" fontWeight={600}>
+          Career Objectives
+        </Typography>
+        <Typography variant="body2" mb={1}>
+          Write about your career goals or what you are aiming to achieve in the future.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={careerText}
+          onChange={setCareerText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+
+    "Work Experiences": () => (
+      <Box>
+        <Typography variant="body2" mb={1}>
+          Add details about your previous jobs, roles, and achievements.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={workExpText}
+          onChange={setWorkExpText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+
+    "Education & Qualifications": () => (
+      <Box>
+        <Typography variant="body2" mb={1}>
+          Add details about your education, degrees, or certifications.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={educationText}
+          onChange={setEducationText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+
+    "Skills": () => (
+      <Box>
+        <Typography variant="body2" mb={1}>
+          Add skills relevant to your profession.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={skillsText}
+          onChange={setSkillsText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+
+    "Languages": () => (
+      <Box>
+        <Typography variant="body2" mb={1}>
+          List the languages you know and your proficiency level.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={languagesText}
+          onChange={setLanguagesText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+
+    "References": () => (
+      <Box>
+        <Typography variant="body2" mb={1}>
+          Add references from previous employers or colleagues.
+        </Typography>
+        <ReactQuill
+          theme="snow"
+          value={referencesText}
+          onChange={setReferencesText}
+          className="quill-editor"
+        />
+      </Box>
+    ),
+  };
+
   return (
     <Box sx={{ width: '100%' }}>
       {/* Profile Header */}
@@ -358,7 +490,7 @@ export default function CandidateProfileDashboard() {
                 >
                   <Stack direction="row" spacing={1} alignItems="center">
                     <UploadFileIcon color="success" />
-                    <Typography 
+                    <Typography
                       sx={{
                         maxWidth: { xs: '180px', sm: '260px', md: '100%' },
                         overflow: 'hidden',
@@ -417,7 +549,7 @@ export default function CandidateProfileDashboard() {
                                 '&:hover': { bgcolor: 'action.hover' },
                               }}
                             >
-                              <StarIcon fontSize="small" sx={{ mr: 1, color: 'warning.main' }} /> 
+                              <StarIcon fontSize="small" sx={{ mr: 1, color: 'warning.main' }} />
                               Set Default
                             </MenuItem>
                           )}
@@ -427,14 +559,14 @@ export default function CandidateProfileDashboard() {
                               onClick={() => { downloadFile(cv.pk_id, cv.resume_file); setAnchorEl(cv.pk_id, null); }}
                               sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                             >
-                              <UploadFileIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} /> 
+                              <UploadFileIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                               Download
                             </MenuItem>
                           )}
 
                           <MenuItem sx={{ px: 2, py: 1 }}>
                             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
-                              <EditIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} /> 
+                              <EditIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
                               Replace
                               <input
                                 type="file"
@@ -449,137 +581,137 @@ export default function CandidateProfileDashboard() {
                             onClick={() => { setCvToDelete(cv.pk_id); setConfirmOpen(true); setAnchorEl(cv.pk_id, null); }}
                             sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                           >
-                            <DeleteIcon fontSize="small" sx={{ mr: 1, color: 'error.main' }} /> 
+                            <DeleteIcon fontSize="small" sx={{ mr: 1, color: 'error.main' }} />
                             Delete
                           </MenuItem>
                         </Menu>
                       </>
-                      ) : (
-                        <SpeedDial
-                          ariaLabel="CV actions"
-                          icon={<MoreVertIcon />}
-                          direction={'left'}
-                          FabProps={{ size: 'small' }}
-                          sx={{
-                            '& .MuiSpeedDial-fab': {
+                    ) : (
+                      <SpeedDial
+                        ariaLabel="CV actions"
+                        icon={<MoreVertIcon />}
+                        direction={'left'}
+                        FabProps={{ size: 'small' }}
+                        sx={{
+                          '& .MuiSpeedDial-fab': {
+                            boxShadow: 'none',
+                            bgcolor: 'transparent',
+                            color: 'text.primary',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
                               boxShadow: 'none',
-                              bgcolor: 'transparent',
-                              color: 'text.primary',
-                              '&:hover': {
-                                bgcolor: 'action.hover',
-                                boxShadow: 'none',
-                              },
                             },
-                            '& .MuiSpeedDialAction-fab': {
-                              width: 40,
-                              height: 40,
-                              bgcolor: 'background.paper',
-                              color: 'text.primary',
-                              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                              '&:hover': {
-                                bgcolor: 'action.hover',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                              },
+                          },
+                          '& .MuiSpeedDialAction-fab': {
+                            width: 40,
+                            height: 40,
+                            bgcolor: 'background.paper',
+                            color: 'text.primary',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                            '&:hover': {
+                              bgcolor: 'action.hover',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                             },
-                            '& .MuiSpeedDialAction-staticTooltipLabel': {
-                              bgcolor: 'background.paper',
-                              color: 'text.primary',
-                              boxShadow: 2,
-                              fontSize: '0.875rem',
-                            },
-                          }}
-                        >
-                          {!cv.is_primary && (
-                            <SpeedDialAction
-                              icon={<StarIcon />}
-                              tooltipTitle="Set Default"
-                              onClick={() => setDefaultCv(cv.pk_id)}
-                            />
-                          )}
-
-                          {cv.download_url && (
-                            <SpeedDialAction
-                              icon={<UploadFileIcon />}
-                              tooltipTitle="Download"
-                              onClick={() =>
-                                downloadFile(cv.pk_id, cv.resume_file)
-                              }
-                            />
-                          )}
-
+                          },
+                          '& .MuiSpeedDialAction-staticTooltipLabel': {
+                            bgcolor: 'background.paper',
+                            color: 'text.primary',
+                            boxShadow: 2,
+                            fontSize: '0.875rem',
+                          },
+                        }}
+                      >
+                        {!cv.is_primary && (
                           <SpeedDialAction
-                            icon={
-                              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <EditIcon />
-                                <input
-                                  type="file"
-                                  hidden
-                                  accept=".pdf,.doc,.docx"
-                                  onChange={async (e) => {
-                                    const file = e.target.files[0];
-                                    if (!file) return;
+                            icon={<StarIcon />}
+                            tooltipTitle="Set Default"
+                            onClick={() => setDefaultCv(cv.pk_id)}
+                          />
+                        )}
 
-                                    const allowedTypes = [
-                                      'application/pdf',
-                                      'application/msword',
-                                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                    ];
-                                    if (!allowedTypes.includes(file.type)) {
-                                      setMessage(file.name + ' is not allowed.');
-                                      setSeverity('error');
-                                      setOpenSnackbar(true);
-                                      return;
-                                    }
-                                    if (file.size > 5 * 1024 * 1024) {
-                                      setMessage(file.name + ' exceeds 5MB.');
-                                      setSeverity('error');
-                                      setOpenSnackbar(true);
-                                      return;
-                                    }
-
-                                    try {
-                                      setLoading(true);
-                                      const formData = new FormData();
-                                      formData.append('resume_type', 'Upload');
-                                      formData.append('resume_content', cv.resume_content || '');
-                                      formData.append('recommendation_letter', cv.recommendation_letter || '');
-                                      formData.append('is_primary', cv.is_primary);
-                                      formData.append('resume_file', file);
-
-                                      const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
-                                        headers: { 'Content-Type': 'multipart/form-data' },
-                                      });
-
-                                      setUploadedCvs((prev) =>
-                                        prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
-                                      );
-
-                                      setMessage('CV replaced successfully');
-                                      setSeverity('success');
-                                    } catch (err) {
-                                      setMessage(err.response?.data?.detail || 'Replace failed');
-                                      setSeverity('error');
-                                    } finally {
-                                      setOpenSnackbar(true);
-                                      setLoading(false);
-                                    }
-                                  }}
-                                />
-                              </label>
+                        {cv.download_url && (
+                          <SpeedDialAction
+                            icon={<UploadFileIcon />}
+                            tooltipTitle="Download"
+                            onClick={() =>
+                              downloadFile(cv.pk_id, cv.resume_file)
                             }
-                            tooltipTitle="Replace"
                           />
+                        )}
 
-                          <SpeedDialAction
-                            icon={<DeleteIcon color="error" />}
-                            tooltipTitle="Delete"
-                            onClick={() => {
-                              setCvToDelete(cv.pk_id)
-                              setConfirmOpen(true)
-                            }}
-                          />
-                        </SpeedDial>
-                      )
+                        <SpeedDialAction
+                          icon={
+                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                              <EditIcon />
+                              <input
+                                type="file"
+                                hidden
+                                accept=".pdf,.doc,.docx"
+                                onChange={async (e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+
+                                  const allowedTypes = [
+                                    'application/pdf',
+                                    'application/msword',
+                                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                  ];
+                                  if (!allowedTypes.includes(file.type)) {
+                                    setMessage(file.name + ' is not allowed.');
+                                    setSeverity('error');
+                                    setOpenSnackbar(true);
+                                    return;
+                                  }
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setMessage(file.name + ' exceeds 5MB.');
+                                    setSeverity('error');
+                                    setOpenSnackbar(true);
+                                    return;
+                                  }
+
+                                  try {
+                                    setLoading(true);
+                                    const formData = new FormData();
+                                    formData.append('resume_type', 'Upload');
+                                    formData.append('resume_content', cv.resume_content || '');
+                                    formData.append('recommendation_letter', cv.recommendation_letter || '');
+                                    formData.append('is_primary', cv.is_primary);
+                                    formData.append('resume_file', file);
+
+                                    const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
+                                      headers: { 'Content-Type': 'multipart/form-data' },
+                                    });
+
+                                    setUploadedCvs((prev) =>
+                                      prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
+                                    );
+
+                                    setMessage('CV replaced successfully');
+                                    setSeverity('success');
+                                  } catch (err) {
+                                    setMessage(err.response?.data?.detail || 'Replace failed');
+                                    setSeverity('error');
+                                  } finally {
+                                    setOpenSnackbar(true);
+                                    setLoading(false);
+                                  }
+                                }}
+                              />
+                            </label>
+                          }
+                          tooltipTitle="Replace"
+                        />
+
+                        <SpeedDialAction
+                          icon={<DeleteIcon color="error" />}
+                          tooltipTitle="Delete"
+                          onClick={() => {
+                            setCvToDelete(cv.pk_id)
+                            setConfirmOpen(true)
+                          }}
+                        />
+                      </SpeedDial>
+                    )
                     }
                   </Stack>
                 </Stack>
@@ -598,7 +730,7 @@ export default function CandidateProfileDashboard() {
                 spacing={2}
                 alignItems="center"
                 justifyContent="space-between"
-                sx={{ p: 1, border: '1px solid #eee', borderRadius: 2,width: '100%', flexWrap: 'wrap', boxSizing: 'border-box', }}
+                sx={{ p: 1, border: '1px solid #eee', borderRadius: 2, width: '100%', flexWrap: 'wrap', boxSizing: 'border-box', }}
               >
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <UploadFileIcon color="primary" />
@@ -656,34 +788,67 @@ export default function CandidateProfileDashboard() {
         </DialogActions>
       </Dialog>
 
+      <Dialog
+        open={sectionOpen}
+        onClose={handleCloseSection}
+        fullWidth={true}
+        maxWidth={"sm"}
+        fullScreen={isMobile}
+      >
+        <DialogTitle fontWeight={700}>{activeSection}</DialogTitle>
+        <DialogContent dividers sx={{ height: 'auto' }}>
+          {sectionDialogs[activeSection] ? (
+            sectionDialogs[activeSection]()
+          ) : (
+            <Typography>No UI defined for this section</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseSection}>Cancel</Button>
+          <Button variant="contained" onClick={handleCloseSection}>Save</Button>
+        </DialogActions>
+      </Dialog>
+      <style>
+        {`
+          .quill-editor .ql-container {
+            min-height: 180px;
+            max-height: 400px;
+          }
+
+          .quill-editor .ql-editor {
+            min-height: 180px;
+            max-height: 400px;
+            overflow-y: auto;
+          }
+        `}
+      </style>
+
       <EditProfileDialog
         open={editOpen}
         onClose={() => setEditOpen(false)}
         showSnackbar={showSnackbar}
       />
 
-      {/* Other Profile Sections */}
       {[
-        { title: 'Overview', description: `About ${user_data.user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
+        { title: 'Overview', subtitle: 'Describe Yourself *', subtitle1: 'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.', description: `About ${user_data.user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
         { title: 'Work Experiences', description: 'Add Work Experience to be found by more Employers', buttonText: 'Add Work Experience' },
         { title: 'Education & Qualifications', description: 'Add Education to be found by more Employers', buttonText: 'Add Education' },
         { title: 'Skills', description: 'Add Skills to be found by more Employers', buttonText: 'Add Skill' },
         { title: 'Languages', description: 'Add Languages to be found by more Employers', buttonText: 'Add Language', isEdit: true },
         { title: 'References', description: 'Add References to make your profile look more professional', buttonText: 'Add Reference' },
-        { title: 'Preferred Industries to work', description: 'Add Preferred Industries to make your profile look more professional', buttonText: 'Add Preferred Industry', isEdit: true },
       ].map((section) => (
-        <Section key={section.title} {...section} />
+        <Section key={section.title} {...section} onAdd={() => handleOpenSection(section.title)} />
       ))}
     </Box>
   )
 }
-
 function EditProfileDialog({ open, onClose, showSnackbar }) {
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [form, setForm] = useState(user_data || {})
   const [loading, setLoading] = useState(false)
+  const [jobCategories, setJobCategories] = useState([]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -713,15 +878,28 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
     }
   }, [open, user_data])
 
+  useEffect(() => {
+    const fetchJobCategories = async () => {
+      try {
+        const { data } = await api.get("/categories/");
+        setJobCategories(data);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+
+    fetchJobCategories();
+  }, [])
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={isMobile} scroll="paper">
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile} scroll="paper">
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Edit Profile
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </DialogTitle>
       <Divider />
       <DialogContent dividers>
-        <Stack spacing={3} mt={2} component="form" onSubmit={handleSave} id="edit-form">
+        <Stack spacing={2} component="form" onSubmit={handleSave} id="edit-form">
           <Stack direction="row" spacing={2} alignItems="center">
             <Avatar sx={{ width: 64, height: 64, bgcolor: '#3b5998', fontSize: 24 }}>
               {form.user_name?.charAt(0)?.toUpperCase() || '?'}
@@ -729,7 +907,34 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
             <TextField size="small" fullWidth label="Full Name" name="user_name" required value={form.user_name} onChange={handleChange} />
           </Stack>
           <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
-          <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+          <Stack direction="row" spacing={2}>
+            <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+            <FormControl fullWidth size="small">
+              <InputLabel id="job-category-label">
+                Job Category
+              </InputLabel>
+              <Select
+                name="jobCategoryId"
+                value={form.jobCategoryId || ''}
+                label="Job Category"
+                onChange={handleChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxHeight: 300,    
+                      overflowY: 'auto',
+                    },
+                  },
+                }}
+              >
+                {jobCategories.map((cat) => (
+                  <MenuItem key={cat.pk_id} value={cat.pk_id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
           <Stack direction="row" spacing={2}>
             <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField
@@ -746,6 +951,10 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
             </TextField>
           </Stack>
           <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
+          <Stack direction="row" spacing={2}>
+            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level} onChange={handleChange} />
+            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary} onChange={handleChange} />
+          </Stack>
           <Paper
             elevation={0}
             sx={{
@@ -778,7 +987,6 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
   )
 }
 
-// Reusable Section Component
 function Section({ title, description, buttonText, onAdd, isEdit }) {
   return (
     <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
@@ -790,7 +998,7 @@ function Section({ title, description, buttonText, onAdd, isEdit }) {
       >
         {title}
         {isEdit && (
-          <IconButton size="small" color="primary" onClick={onAdd || (() => alert(title))}>
+          <IconButton size="small" color="primary" onClick={onAdd}>
             <EditIcon fontSize="small" />
           </IconButton>
         )}
@@ -802,7 +1010,7 @@ function Section({ title, description, buttonText, onAdd, isEdit }) {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={onAdd || (() => alert(title))}
+          onClick={onAdd}
           sx={{
             textTransform: 'none',
             fontWeight: 600,

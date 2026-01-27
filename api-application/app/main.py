@@ -22,6 +22,7 @@ from app.models.job_model import Job
 from app.models.candidate_model import Candidate
 from app.models.candidate_resume_model import CandidateResume
 from app.models.category_model import Category
+from app.models.candidate_profile import CandidateProfile
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category
@@ -64,4 +65,3 @@ app.include_router(candidate_router.router)
 app.include_router(candidate_resume_router.router)
 app.include_router(category_router.router)
 app.include_router(admin_candidate_router.router)
-
