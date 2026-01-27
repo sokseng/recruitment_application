@@ -660,6 +660,7 @@ export default function Topbar() {
                 <Button
                   key={item.label}
                   onClick={() => goTo(item.path)}
+                  startIcon={item.icon}
                   sx={{
                     fontWeight: 500,
                     color: "white",
@@ -676,7 +677,7 @@ export default function Topbar() {
                     },
                     "&:hover::after": {
                       width: "100%",
-                    },
+                    },           
                   }}
                 >
                   <Box sx={{textTransform: "none"}}>

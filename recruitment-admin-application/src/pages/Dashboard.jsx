@@ -44,7 +44,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { EmailOutlined, Info, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
+import { EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -440,11 +440,14 @@ export default function Dashboard() {
                     }
                     alt={`${companyName} logo`}
                     sx={{
-                      width: { xs: 32, sm: 40 },
-                      height: { xs: 32, sm: 40 },
+                      width: { xs: 40, sm: 50 },
+                      height: { xs: 40, sm: 50 },
                       fontSize: "0.9rem",
                       border: "1px solid",
                       borderColor: "divider",
+                      "& img": {
+                        objectFit: "contain",
+                      },
                     }}
                   >
                     {companyName.charAt(0).toUpperCase()}
@@ -459,7 +462,10 @@ export default function Dashboard() {
                         label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
                         size="small"
                         variant="outlined"
-                        color="default"
+                        color="primary"
+                        sx={{
+                          fontSize: 12
+                        }}
                       />
                     </Stack>
                   </Box>
@@ -511,10 +517,13 @@ export default function Dashboard() {
                   }
                   alt={`${companyName} logo`}
                   sx={{
-                    width: { xs: 40, sm: 50 },
-                    height: { xs: 40, sm: 50 },
+                    width: { xs: 50, sm: 50 },
+                    height: { xs: 50, sm: 50 },
                     border: "1px solid",
                     borderColor: "divider",
+                    "& img": {
+                      objectFit: "contain",
+                    },
                   }}
                 >
                   {companyName.charAt(0).toUpperCase()}
@@ -696,6 +705,8 @@ export default function Dashboard() {
                   </Stack>
                 </Popover>
               </Stack>
+
+              <Divider sx={{mt: 1}}/>
 
               {/* Quick info chips / rows */}
               <Stack spacing={1.5} sx={{ mt: 3 }}>
@@ -902,7 +913,7 @@ export default function Dashboard() {
               left: 0,
               right: 0,
               p: 1,
-              bgcolor: "background.paper",
+              bgcolor: "#FAFAFA",
               borderTop: "1px solid",
               borderColor: "divider",
               zIndex: 10,
@@ -912,10 +923,13 @@ export default function Dashboard() {
           >
             <Stack direction="row" spacing={1}>
               <Button
-                // fullWidth
                 variant="outlined"
                 size="small"
                 onClick={handleBackToList}
+                startIcon={<Home />}
+                sx={{
+                  textTransform: "none"
+                }}
               >
                 Home
               </Button>

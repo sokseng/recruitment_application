@@ -26,6 +26,8 @@ import {
   OutlinedInput,
   Avatar,
   Autocomplete,
+  Tooltip,
+  Divider,
 } from "@mui/material";
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
@@ -50,6 +52,7 @@ import 'quill/dist/quill.snow.css';
 import api from "../services/api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { PostAdd } from "@mui/icons-material";
 
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
@@ -765,24 +768,48 @@ export default function MyJobs() {
   });
 
   return (
-    <Box >
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        mb={2}
+    <Box>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "repeat(1, 1fr)",
+            sm: "repeat(3, 1fr)",
+            md: "repeat(4, 1fr)",
+            lg: "repeat(7, 1fr)",
+          },
+          gap: 1.5,
+          mb: 0.5,
+          alignItems: "center",
+        }}
       >
-        <Typography variant="h6" fontWeight={700}>
-          Posted Jobs
-        </Typography>
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={0.5}
+          sx={{
+            gridColumn: { xs: "1 / -1" },
+            mb: -0.5,
+          }}
+        >
+          <PostAdd />
+
+          <Typography variant="h7" fontWeight={700}>
+            Posted Jobs
+          </Typography>
+        </Stack>
         {/* Search */}
         <TextField
           size="small"
           placeholder="Search by title or location"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          sx={{ flexGrow: 1 }}
+          sx={{
+            gridColumn: { xs: "1 / -1", sm: "span 2" },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 3,
+            },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -792,142 +819,168 @@ export default function MyJobs() {
           }}
         />
 
-        {/* Job Type */}
-        <FormControl size="small" sx={{ minWidth: 200 }} >
-          <InputLabel>Type</InputLabel>
-          <Select
-            value={typeFilter}
-            label="Type"
-            onChange={(e) => setTypeFilter(e.target.value)}
-            input={
-              <OutlinedInput
-                startAdornment={
-                  <InputAdornment position="start">
-                    <WorkOutlineIcon color="action" fontSize="small" />
-                  </InputAdornment>
-                }
-                label="Type"
-              />
+        {/* Category Filter - Multi select with Autocomplete */}
+        <Autocomplete
+          multiple
+          size="small"
+          options={categories}
+          getOptionLabel={(option) => option.name}
+          sx={{
+            gridColumn: { xs: "1 / -1", sm: "span 2" },   // ← added
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 3,
+            },
+          }}
+          value={
+            categoryFilter.includes("All")
+              ? []
+              : categories.filter((cat) => categoryFilter.includes(cat.pk_id))
+          }
+          onChange={(event, newValue) => {
+            if (newValue.length === 0) {
+              setCategoryFilter(["All"]);
+              return;
             }
-          >
-            <MenuItem value="All">All</MenuItem>
-            {JOB_TYPES.map((t) => (
-              <MenuItem key={t.value} value={t.value}>
-                {t.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+
+            const selectedIds = newValue.map((cat) => cat.pk_id);
+            setCategoryFilter(selectedIds);
+          }}
+          isOptionEqualToValue={(option, value) => option.pk_id === value.pk_id}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Category"
+              placeholder="Select categories"
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <InputAdornment position="start">
+                      <AllInboxRoundedIcon color="action" fontSize="small" />
+                    </InputAdornment>
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 3,
+                },
+              }}
+            />
+          )}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip
+                label={option.name}
+                size="small"
+                {...getTagProps({ index })}
+                sx={{ maxWidth: 140 }}
+              />
+            ))
+          }
+          noOptionsText="No categories found"
+          disableCloseOnSelect
+        />
+        {/* Job Type */}
+        <Autocomplete
+          size="small"
+          options={["All", ...JOB_TYPES.map((t) => t.value)]}
+          value={typeFilter}
+          onChange={(e, newValue) => setTypeFilter(newValue || "All")}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Type"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <InputAdornment position="start">
+                      <WorkOutlineIcon color="action" fontSize="small" />
+                    </InputAdornment>
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 3,
+                },
+              }}
+            />
+          )}
+        />
+
 
         {/* Level */}
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Level</InputLabel>
-          <Select
-            value={levelFilter}
-            label="Level"
-            onChange={(e) => setLevelFilter(e.target.value)}
-            input={
-              <OutlinedInput
-                startAdornment={
-                  <InputAdornment position="start">
-                    <TrendingUpIcon color="action" fontSize="small" />
-                  </InputAdornment>
-                }
-                label="Level"
-              />
-            }
-          >
-            <MenuItem value="All">All</MenuItem>
-            {JOB_LEVELS.map((l) => (
-              <MenuItem key={l.value} value={l.value}>
-                {l.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* Category Filter - Multi select */}
-        <FormControl size="small" sx={{ minWidth: 220 }}>
-          <InputLabel>Category</InputLabel>
-          <Select
-            multiple
-            value={categoryFilter}
-            label="Category"
-            onChange={(e) => {
-              let value = e.target.value;
-
-              // Special case: if "All" is newly selected → reset to only "All"
-              if (value[value.length - 1] === "All") {
-                setCategoryFilter(["All"]);
-                return;
-              }
-
-              // Remove "All" if any real category is selected
-              value = value.filter((v) => v !== "All");
-
-              // If nothing left → default to "All"
-              if (value.length === 0) {
-                setCategoryFilter(["All"]);
-              } else {
-                setCategoryFilter(value);
-              }
-            }}
-            input={
-              <OutlinedInput
-                startAdornment={
-                  <InputAdornment position="start">
-                    <AllInboxRoundedIcon color="action" fontSize="small" />
-                  </InputAdornment>
-                }
-                label="Category"
-              />
-            }
-            renderValue={(selected) => {
-              if (selected.includes("All") || selected.length === 0) {
-                return "All";
-              }
-              return selected
-                .map((id) => categories.find((c) => c.pk_id === Number(id))?.name)
-                .filter(Boolean)
-                .join(", ");
-            }}
-          >
-            <MenuItem value="All">
-              All
-            </MenuItem>
-
-            {categories.map((cat) => (
-              <MenuItem key={cat.pk_id} value={cat.pk_id}>
-                {cat.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Autocomplete
+          size="small"
+          options={["All", ...JOB_LEVELS.map((l) => l.value)]}
+          value={levelFilter}
+          onChange={(e, newValue) => setLevelFilter(newValue || "All")}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Level"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <InputAdornment position="start">
+                      <TrendingUpIcon color="action" fontSize="small" />
+                    </InputAdornment>
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 3,
+                },
+              }}
+            />
+          )}
+        />
 
         {/* Reset */}
-        <Button
-          variant="outlined"
-          startIcon={<AutorenewRoundedIcon />}
-          onClick={() => {
-            setSearch("");
-            setStatusTab("Open");
-            setTypeFilter("All");
-            setLevelFilter("All");
-            setCategoryFilter(["All"]);
+        <Stack
+          direction="row"
+          spacing={1}
+          width="100%"
+          justifyContent={{ xs: "flex-end", sm: "flex-end" }}
+          sx={{
+            gridColumn: {
+              xs: "1 / -1",
+              md: "span 1",
+            },
           }}
         >
-          Reset
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<AddCircleIcon />}
-          onClick={openCreate}
-          fullWidth={{ xs: true, sm: false }}
-          sx={{ borderRadius: 2 }}
-        >
-          Post
-        </Button>
-      </Stack>
+          <Button
+            variant="outlined"
+            startIcon={<AutorenewRoundedIcon />}
+            sx={{ borderRadius: 3, textTransform: "none" }}
+            onClick={() => {
+              setSearch("");
+              setStatusTab("Open");
+              setTypeFilter("All");
+              setLevelFilter("All");
+              setCategoryFilter(["All"]);
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PostAdd />}
+            onClick={openCreate}
+            sx={{ borderRadius: 3, textTransform: "none" }}
+          >
+            Post
+          </Button>
+        </Stack>
+      </Box>
       {/* Small Responsive Tabs */}
       <Tabs
         value={statusTab}
@@ -941,21 +994,69 @@ export default function MyJobs() {
             minHeight: 36,
             fontSize: "0.875rem",
             px: 1.5,
+            textTransform: "none"
           },
           "& .MuiBadge-root": { mr: 0.5 },
-          mb: 1,
+          mb: 0.5,
         }}
       >
         <Tab
-          label={<Badge badgeContent={statusCounts.Open} color="success">Open</Badge>}
+          label={
+            <Badge
+              badgeContent={statusCounts.Open}
+              color="success"
+              sx={{
+                "& .MuiBadge-badge": {
+                  minWidth: 16,
+                  height: 16,
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                },
+              }}
+            >
+              Open
+            </Badge>
+          }
           value="Open"
         />
+
+
         <Tab
-          label={<Badge badgeContent={statusCounts.Closed} color="error">Closed</Badge>}
+          label={
+            <Badge 
+              badgeContent={statusCounts.Closed} 
+              color="error"
+              sx={{
+                "& .MuiBadge-badge": {
+                  minWidth: 16,
+                  height: 16,
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                },
+              }}
+            >
+              Closed
+            </Badge>
+          }
           value="Closed"
         />
         <Tab
-          label={<Badge badgeContent={statusCounts.Draft} color="warning">Draft</Badge>}
+          label={
+            <Badge 
+              badgeContent={statusCounts.Draft} 
+              color="warning"
+              sx={{
+                "& .MuiBadge-badge": {
+                  minWidth: 16,
+                  height: 16,
+                  fontSize: "0.65rem",
+                  fontWeight: 600,
+                },
+              }}
+            >
+              Draft
+            </Badge>
+          }
           value="Draft"
         />
       </Tabs>
@@ -982,7 +1083,7 @@ export default function MyJobs() {
               display: "flex",
               flexDirection: "column",
               boxShadow: 1,
-              backgroundColor: "#DFE6DF",
+              backgroundColor: "#FAFAFA",
             }}
           >
             <CardContent sx={{ flexGrow: 1, pb: 1 }}>
@@ -1013,8 +1114,8 @@ export default function MyJobs() {
                     justifyContent: "space-between",
                     alignItems: "flex-start",
                     mb: 1,
-                    flexGrow: 1,         
-                    minWidth: 0, 
+                    flexGrow: 1,
+                    minWidth: 0,
                   }}
                 >
                   <Typography
@@ -1044,15 +1145,14 @@ export default function MyJobs() {
                   />
                 </Box>
               </Stack>
-              
 
               {/* Type & Level */}
               <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
-                <Chip 
+                <Chip
                   icon={<WorkIcon fontSize="small" />}
-                  label={job.job_type} 
-                  size="small" 
-                  variant="outlined" 
+                  label={job.job_type}
+                  size="small"
+                  variant="outlined"
                 />
                 {job.level && (
                   <Chip
@@ -1063,20 +1163,25 @@ export default function MyJobs() {
                     variant="outlined"
                   />
                 )}
-                 <Chip 
+                <Chip
                   icon={<AttachMoneyIcon fontSize="small" />}
-                  label={job.salary_range ? `${job.salary_range}$` : "Negotiable"} 
-                  size="small" 
-                  variant="outlined" 
+                  label={
+                    job.salary_range ? `${job.salary_range}$` : "Negotiable"
+                  }
+                  size="small"
+                  variant="outlined"
                 />
               </Stack>
               <Stack direction="row" spacing={0.5} mt={1}>
-                <LocationOnIcon fontSize="small" sx={{ color: "text.secondary", mr: 0.5, opacity: 0.7 }} />
+                <LocationOnIcon
+                  fontSize="small"
+                  sx={{ color: "text.secondary", mr: 0.5, opacity: 0.7 }}
+                />
                 <Typography variant="caption" color="text.secondary">
                   {job.location || "—"}
                 </Typography>
               </Stack>
-              
+
               {job.categories?.length > 0 && (
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={1}>
                   {job.categories.map((cat) => (
@@ -1098,42 +1203,52 @@ export default function MyJobs() {
                   mt={1.5}
                   display="block"
                 >
-                  Posted: {job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}
+                  Posted:{" "}
+                  {job.posting_date
+                    ? new Date(job.posting_date).toISOString().split("T")[0]
+                    : "—"}
                 </Typography>
-                
+
                 <Typography
                   variant="caption"
                   color="text.disabled"
                   mt={1.5}
                   display="block"
                 >
-                  Closing: {job.closing_date ? new Date(job.closing_date).toISOString().split("T")[0] : "—"}
+                  Closing:{" "}
+                  {job.closing_date
+                    ? new Date(job.closing_date).toISOString().split("T")[0]
+                    : "—"}
                 </Typography>
               </Stack>
-              
             </CardContent>
 
             <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1 }}>
-              <IconButton size="small" onClick={() => openEdit(job)}>
-                <EditIcon fontSize="small" sx={{ color: "teal" }} />
-              </IconButton>
-
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => openDuplicate(job)}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </IconButton>
-
-              {job.status !== "Closed" && (
+              <Tooltip title="Edit Job" arrow placement="bottom">
+                <IconButton size="small" onClick={() => openEdit(job)}>
+                  <EditIcon fontSize="small" sx={{ color: "teal" }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Duplicate Job" arrow placement="bottom">
                 <IconButton
                   size="small"
-                  color="warning"
-                  onClick={() => openClose(job)}
+                  color="primary"
+                  onClick={() => openDuplicate(job)}
                 >
-                  <CloseIcon fontSize="small" />
+                  <ContentCopyIcon fontSize="small" />
                 </IconButton>
+              </Tooltip>
+
+              {job.status !== "Closed" && (
+                <Tooltip title="Close Job" arrow placement="bottom">
+                  <IconButton
+                    size="small"
+                    color="warning"
+                    onClick={() => openClose(job)}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               )}
             </CardActions>
           </Card>
@@ -1155,11 +1270,10 @@ export default function MyJobs() {
       <JobFormDialog
         open={openFormDialog}
         onClose={(event, reason) => {
-          if (reason === 'backdropClick' || reason === 'escapeKeyDown') return;
+          if (reason === "backdropClick" || reason === "escapeKeyDown") return;
           setOpenFormDialog(false);
           setEditingJob(null);
         }}
-        
         onSuccess={handleFormSuccess}
         initialData={editingJob}
         isEdit={!!editingJob && !!editingJob.pk_id}
@@ -1167,22 +1281,94 @@ export default function MyJobs() {
         categories={categories}
       />
 
-      <Dialog open={openCloseDialog} onClose={() => setOpenCloseDialog(false)}>
-        <DialogTitle  sx={{ backgroundColor: "#DFE6DF"}}>Close Job Posting</DialogTitle>
-        <DialogContent  sx={{ backgroundColor: "#DFE6DF"}}>
-          <DialogContentText>
-            Are you sure you want to close{" "}
-            <strong>{closingJob?.job_title}</strong>?<br />
-            It will no longer accept new applications.
+      <Dialog
+        open={openCloseDialog}
+        onClose={() => setOpenCloseDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: 10,
+          },
+        }}
+      >
+        {/* Title */}
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            background: "linear-gradient(135deg, #e8f5e9, #f1f8e9)",
+            fontWeight: 600,
+          }}
+        >
+          <CloseIcon color="warning" />
+          Close Job Posting
+        </DialogTitle>
+
+        <Divider />
+
+        {/* Content */}
+        <DialogContent
+          sx={{
+            py: 3,
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
+            Are you sure you want to close
+            <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
+              {closingJob?.job_title}
+            </Box>
+            ?
           </DialogContentText>
+
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: "#f1f8e9",
+              fontSize: "0.9rem",
+              color: "text.secondary",
+            }}
+          >
+            ⚠️ This job will no longer accept new applications.
+          </Box>
         </DialogContent>
-        <DialogActions  sx={{ backgroundColor: "#DFE6DF"}}>
-          <Button onClick={() => setOpenCloseDialog(false)}>Cancel</Button>
+
+        {/* Actions */}
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Button
+            onClick={() => setOpenCloseDialog(false)}
+            variant="outlined"
+            color="inherit"
+            size="small"
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+            }}
+          >
+            Cancel
+          </Button>
+
           <Button
             variant="contained"
-            color="warning"
             onClick={confirmClose}
             startIcon={<CloseIcon />}
+            size="small"
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              px: 2.5,
+            }}
           >
             Close Job
           </Button>
@@ -1192,22 +1378,91 @@ export default function MyJobs() {
       <Dialog
         open={openDuplicateDialog}
         onClose={() => setOpenDuplicateDialog(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: 8,
+          },
+        }}
       >
-        <DialogTitle  sx={{ backgroundColor: "#DFE6DF"}}>Duplicate Job</DialogTitle>
-        <DialogContent  sx={{ backgroundColor: "#DFE6DF"}}>
-          <DialogContentText>
-            Do you want to duplicate{" "}
-            <strong>{duplicateJob?.job_title}</strong>?
+        {/* Title */}
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            background: "linear-gradient(135deg, #e8f5e9, #f1f8e9)",
+            fontWeight: 600,
+          }}
+        >
+          <ContentCopyIcon color="primary" />
+          Duplicate Job
+        </DialogTitle>
+
+        <Divider />
+
+        {/* Content */}
+        <DialogContent
+          sx={{
+            py: 3,
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
+            Are you sure you want to duplicate
+            <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
+              {duplicateJob?.job_title}
+            </Box>
+            ?
           </DialogContentText>
+
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: "#f1f8e9",
+              fontSize: "0.9rem",
+              color: "text.secondary",
+            }}
+          >
+            This will create a new job with the same information.
+          </Box>
         </DialogContent>
-        <DialogActions  sx={{ backgroundColor: "#DFE6DF"}}>
-          <Button onClick={() => setOpenDuplicateDialog(false)}>
+
+        {/* Actions */}
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Button
+            onClick={() => setOpenDuplicateDialog(false)}
+            variant="outlined"
+            color="inherit"
+            size="small"
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+            }}
+          >
             Cancel
           </Button>
+
           <Button
             variant="contained"
             onClick={confirmDuplicate}
             startIcon={<ContentCopyIcon />}
+            size="small"
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              px: 2.5,
+            }}
           >
             Duplicate
           </Button>
