@@ -1,10 +1,10 @@
+import re
 from fastapi import APIRouter, Depends, HTTPException, status
-from flask_jwt_extended import get_current_user
 from sqlalchemy.orm import Session
 from app.dependencies.auth import verify_access_token, get_db
 from app.models.candidate_model import Candidate
 from app.models.candidate_profile import CandidateProfile
-from app.schemas.candidate_schema import CandidateCreate, CandidateOut, CandidateProfileOut, CandidateProfileUpdate
+from app.schemas.candidate_schema import CandidateCreate, CandidateOut, CandidateProfileUpdate
 from app.controllers.candidate_controller import (
     create_or_update_candidate,
     get_candidate_by_user_id,
@@ -14,6 +14,16 @@ from app.controllers.candidate_controller import (
 )
 
 router = APIRouter(prefix="/candidate", tags=["Candidates"])
+
+def has_meaningful_html(value: str | None) -> bool:
+    if not value:
+        return False
+
+    # Remove <br>, &nbsp;, and all HTML tags
+    text = re.sub(r'(<br\s*/?>|&nbsp;|<[^>]*>)', '', value).strip()
+
+    # If after removal, any text remains, return True
+    return bool(text)
 
 @router.post("/", response_model=CandidateOut, status_code=status.HTTP_201_CREATED)
 @router.put("/", response_model=CandidateOut)
@@ -74,7 +84,7 @@ def create_or_update_candidate_profile(profile_in: CandidateProfileUpdate, db: S
             profile_in.languages,
             profile_in.reference_text
         ]
-        if not any(field not in (None, "") for field in profile_fields):
+        if not any(has_meaningful_html(field) for field in profile_fields):
             raise HTTPException(status_code=400, detail="No profile data provided")
 
         profile = CandidateProfile(candidate_id=candidate.pk_id)
@@ -83,7 +93,12 @@ def create_or_update_candidate_profile(profile_in: CandidateProfileUpdate, db: S
         db.refresh(profile)
 
     for field, value in profile_in.dict(exclude_unset=True).items():
-        setattr(profile, field, value if value != "" else None)
+        if isinstance(value, str):
+            # If string is empty or has only empty HTML, set None
+            setattr(profile, field, value if has_meaningful_html(value) else None)
+        else:
+            # Keep non-string values as is (int, float, bool)
+            setattr(profile, field, value)
 
     db.commit()
     db.refresh(profile)

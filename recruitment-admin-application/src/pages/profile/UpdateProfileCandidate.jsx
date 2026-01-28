@@ -22,7 +22,7 @@ import {
   SpeedDialAction,
   Select,
   FormControl,
-  InputLabel 
+  InputLabel
 } from '@mui/material'
 import { useState, useEffect } from 'react'
 import {
@@ -78,13 +78,6 @@ export default function CandidateProfileDashboard() {
 
   const handleCloseSection = () => {
     setSectionOpen(false);
-    setOverviewText('');
-    setCareerText('');
-    setWorkExpText('');
-    setEducationText('');
-    setSkillsText('');
-    setLanguagesText('');
-    setReferencesText('');
   };
 
   const setAnchorEl = (cvId, el) => {
@@ -269,7 +262,7 @@ export default function CandidateProfileDashboard() {
   }, [])
 
   useEffect(() => {
-    if (candidates?.profile) {
+    if (sectionOpen && candidates?.profile) {
       setOverviewText(candidates.profile.overview || null);
       setCareerText(candidates.profile.career_objective || null);
       setWorkExpText(candidates.profile.experience || null);
@@ -278,7 +271,7 @@ export default function CandidateProfileDashboard() {
       setLanguagesText(candidates.profile.languages || null);
       setReferencesText(candidates.profile.reference_text || null);
     }
-  }, [candidates]);
+  }, [sectionOpen, candidates]);
 
   const handleSaveSection = async () => {
     try {
@@ -317,11 +310,16 @@ export default function CandidateProfileDashboard() {
     }
   };
 
+  const profile = candidates?.profile;
+
   const summaryFields = {
     Gender: user_data.user_data?.gender,
     'Date of Birth': user_data.user_data?.date_of_birth,
     Phone: user_data.user_data?.phone,
     Status: user_data.user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
+    'Experience Level': profile?.experience_level,
+    'Expected Salary': profile?.expected_salary,
+    'Job Category': jobCategories.find(cat => cat.pk_id === profile?.job_category_id)?.name || null,
   }
 
   const sectionDialogs = {
@@ -426,6 +424,100 @@ export default function CandidateProfileDashboard() {
     ),
   };
 
+  const sections = [
+    {
+      title: 'Overview',
+      subtitle: 'Describe Yourself *',
+      subtitle1:
+        'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.',
+      description: `About ${user_data.user_data?.user_name}. Career Objectives.`,
+      buttonText: 'Edit Overview',
+      hasData: Boolean(profile?.about_me || profile?.career_objective),
+      content: (
+        <>
+          {profile?.about_me && (
+            <>
+              <Typography fontWeight={600}>
+                About {user_data.user_data?.user_name}
+              </Typography>
+              <Box
+                sx={{ mt: 1 }}
+                dangerouslySetInnerHTML={{ __html: profile.about_me }}
+              />
+            </>
+          )}
+
+          {profile?.career_objective && (
+            <>
+              <Typography fontWeight={600} sx={{ mt: 2 }}>
+                Career Objectives
+              </Typography>
+              <Box
+                sx={{ mt: 1 }}
+                dangerouslySetInnerHTML={{ __html: profile.career_objective }}
+              />
+            </>
+          )}
+        </>
+      ),
+    },
+
+    {
+      title: 'Work Experiences',
+      description: 'Add Work Experience to be found by more Employers',
+      buttonText: 'Add Work Experience',
+      hasData: Boolean(profile?.experience),
+      content: profile?.experience && (
+        <Box dangerouslySetInnerHTML={{ __html: profile.experience }} />
+      ),
+    },
+
+    {
+      title: 'Education & Qualifications',
+      description: 'Add Education to be found by more Employers',
+      buttonText: 'Add Education',
+      hasData: Boolean(profile?.education),
+      content: profile?.education && (
+        <Box dangerouslySetInnerHTML={{ __html: profile.education }} />
+      ),
+    },
+
+    {
+      title: 'Skills',
+      description: 'Add Skills to be found by more Employers',
+      buttonText: 'Add Skill',
+      hasData: Boolean(profile?.skills),
+      content:
+        profile?.skills && (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {profile.skills.split(',').map((skill, i) => (
+              <Chip key={i} label={skill.trim()} color="primary" />
+            ))}
+          </Stack>
+        ),
+    },
+
+    {
+      title: 'Languages',
+      description: 'Add Languages to be found by more Employers',
+      buttonText: 'Add Language',
+      hasData: Boolean(profile?.languages),
+      content: profile?.languages && (
+        <Box dangerouslySetInnerHTML={{ __html: profile.languages }} />
+      ),
+    },
+
+    {
+      title: 'References',
+      description: 'Add References to make your profile look more professional',
+      buttonText: 'Add Reference',
+      hasData: Boolean(profile?.reference_text),
+      content: profile?.reference_text && (
+        <Box dangerouslySetInnerHTML={{ __html: profile.reference_text }} />
+      ),
+    },
+  ];
+
   return (
     <Box sx={{ width: '100%' }}>
       {/* Profile Header */}
@@ -512,7 +604,7 @@ export default function CandidateProfileDashboard() {
             gap: 3,
           }}
         >
-          {Object.entries(summaryFields).map(([label, value]) => (
+          {Object.entries(summaryFields).filter(([_, value]) => value).map(([label, value]) => (
             <Paper
               key={label}
               elevation={0}
@@ -912,21 +1004,18 @@ export default function CandidateProfileDashboard() {
         jobCategories={jobCategories}
       />
 
-      {[
-        { title: 'Overview', subtitle: 'Describe Yourself *', subtitle1: 'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.', description: `About ${user_data.user_data?.user_name}. Career Objectives.`, buttonText: 'Edit Overview', isEdit: true },
-        { title: 'Work Experiences', description: 'Add Work Experience to be found by more Employers', buttonText: 'Add Work Experience' },
-        { title: 'Education & Qualifications', description: 'Add Education to be found by more Employers', buttonText: 'Add Education' },
-        { title: 'Skills', description: 'Add Skills to be found by more Employers', buttonText: 'Add Skill' },
-        { title: 'Languages', description: 'Add Languages to be found by more Employers', buttonText: 'Add Language', isEdit: true },
-        { title: 'References', description: 'Add References to make your profile look more professional', buttonText: 'Add Reference' },
-      ].map((section) => (
-        <Section key={section.title} {...section} onAdd={() => handleOpenSection(section.title)} />
+      {sections.map((section) => (
+        <Section
+          key={section.title}
+          {...section}
+          onAdd={() => handleOpenSection(section.title)}
+        />
       ))}
     </Box>
   )
 }
 
-function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandidates, jobCategories  }) {
+function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandidates, jobCategories }) {
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -951,6 +1040,15 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
           jobCategoryId: form.jobCategoryId || "",
         },
       });
+      setCandidates((prev) => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          experience_level: form.experience_level || "",
+          expected_salary: form.min_monthly_salary || "",
+          job_category_id: form.jobCategoryId || "",
+        },
+      }));
       onClose()
     } catch (err) {
       const errorMsg = err.response?.data?.detail || 'Failed to update profile'
@@ -996,7 +1094,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
                 MenuProps={{
                   PaperProps: {
                     sx: {
-                      maxHeight: 300,    
+                      maxHeight: 300,
                       overflowY: 'auto',
                     },
                   },
@@ -1027,8 +1125,8 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
           </Stack>
           <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
           <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({...prev, experience_level: e.target.value === "" ? null : e.target.value}))} />
-            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value}))} />
+            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({ ...prev, experience_level: e.target.value === "" ? null : e.target.value }))} />
+            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({ ...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value }))} />
           </Stack>
           <Paper
             elevation={0}
@@ -1062,44 +1160,71 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
   )
 }
 
-function Section({ title, description, buttonText, onAdd, isEdit }) {
+function Section({title, description, buttonText, onAdd, isEdit, content, hasData}) {
   return (
-    <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        mb={1}
-        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+    <Paper
+      sx={{
+        p: 3,
+        mb: 3,
+        borderRadius: 3,
+        bgcolor: '#fff',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
       >
-        {title}
-        {isEdit && (
+        <Typography variant="h6" fontWeight={700}>
+          {title}
+        </Typography>
+
+        {(isEdit || hasData) && (
           <IconButton size="small" color="primary" onClick={onAdd}>
             <EditIcon fontSize="small" />
           </IconButton>
         )}
-      </Typography>
+      </Box>
 
-      <Typography variant="body2" color="text.secondary" mb={2}>{description}</Typography>
+      {/* Divider ONLY when data exists */}
+      {hasData && <Divider sx={{ my: 2 }} />}
 
-      {!isEdit && (
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={onAdd}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            boxShadow: '0 2px 8px rgb(59 89 152 / 0.2)',
-            '&:hover': { boxShadow: '0 4px 12px rgb(59 89 152 / 0.4)' },
-            borderRadius: 2,
-            px: 3,
-          }}
-        >
-          {buttonText}
-        </Button>
+      {/* Content */}
+      {hasData ? (
+        <Box>
+          {content}
+        </Box>
+      ) : (
+        <>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            {description}
+          </Typography>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={onAdd}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgb(59 89 152 / 0.2)',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgb(59 89 152 / 0.4)',
+              },
+              borderRadius: 2,
+              px: 3,
+            }}
+          >
+            {buttonText}
+          </Button>
+        </>
       )}
     </Paper>
-  )
+  );
 }
 
 const IOSSwitch = styled((props) => (
