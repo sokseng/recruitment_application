@@ -80,7 +80,7 @@ const AdminEmployers = () => {
   };
 
   return (
-    <Box sx={{  }}>
+    <Box sx={{}}>
       {/* Search remains the same - compact version */}
       <Box
         sx={{
@@ -257,16 +257,29 @@ const AdminEmployers = () => {
         <Box sx={{ mt: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
           {totalItems === 0 ? (
             <Box textAlign="center" py={6}>
-              <Typography variant="subtitle1" color="text.primary" gutterBottom>
-                No employers found
-              </Typography>
+              <Box
+                sx={{
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "text.secondary",
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/No-Data.gif"
+                  alt="No data"
+                />
+              </Box>
               <Typography variant="body2" color="text.secondary">
                 {searchTerm ? "Try different keywords" : "No companies registered yet"}
               </Typography>
             </Box>
           ) : (
             <>
-              <Typography variant="caption" color="text.secondary" sx={{  }}>
+              <Typography variant="caption" color="text.secondary" sx={{}}>
                 Page {page} of {totalPages}
               </Typography>
               <Pagination
