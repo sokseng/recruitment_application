@@ -44,7 +44,7 @@ import ReactQuill from "react-quill-new";
 import "quill/dist/quill.snow.css";
 
 export default function CandidateProfileDashboard() {
-  const { user_data } = useAuthStore()
+  const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -68,6 +68,8 @@ export default function CandidateProfileDashboard() {
   const [educationText, setEducationText] = useState('');
   const [languagesText, setLanguagesText] = useState('');
   const [referencesText, setReferencesText] = useState('');
+  const [candidates, setCandidates] = useState([]);
+  const [jobCategories, setJobCategories] = useState([]);
 
   const handleOpenSection = (section) => {
     setActiveSection(section);
@@ -233,9 +235,87 @@ export default function CandidateProfileDashboard() {
       } catch (err) {
         console.error('Failed to fetch CVs')
       }
-    }
+    };
+
+    const fetchData = async () => {
+      try {
+        const [categoriesRes, candidatesRes] = await Promise.all([
+          api.get("/categories/"),
+          api.get("/candidate/me")
+        ]);
+
+        setJobCategories(categoriesRes.data);
+        const candidate = Array.isArray(candidatesRes.data) ? candidatesRes.data[0] : candidatesRes.data;
+
+        // merge candidate profile into form
+        setUserData({
+          ...user_data,
+          user_data: {
+            ...user_data.user_data,
+            experience_level: candidate?.profile?.experience_level || "",
+            min_monthly_salary: candidate?.profile?.expected_salary || "",
+            jobCategoryId: candidate?.profile?.job_category_id || "",
+          },
+        });
+
+        setCandidates(candidate);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      }
+    };
+
+    fetchData();
     fetchCvs()
   }, [])
+
+  useEffect(() => {
+    if (candidates?.profile) {
+      setOverviewText(candidates.profile.overview || null);
+      setCareerText(candidates.profile.career_objective || null);
+      setWorkExpText(candidates.profile.experience || null);
+      setEducationText(candidates.profile.education || null);
+      setSkillsText(candidates.profile.skills || null);
+      setLanguagesText(candidates.profile.languages || null);
+      setReferencesText(candidates.profile.reference_text || null);
+    }
+  }, [candidates]);
+
+  const handleSaveSection = async () => {
+    try {
+      const payload = {
+        candidate_id: candidates.pk_id,
+        about_me: overviewText || null,
+        career_objective: careerText || null,
+        experience: workExpText || null,
+        education: educationText || null,
+        skills: skillsText || null,
+        languages: languagesText || null,
+        reference_text: referencesText || null,
+      };
+
+      const { data } = await api.post("/candidate/profile", payload);
+
+      setCandidates((prev) => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          about_me: data.about_me,
+          career_objective: data.career_objective,
+          experience: data.experience,
+          education: data.education,
+          skills: data.skills,
+          languages: data.languages,
+          reference_text: data.reference_text,
+        },
+      }));
+
+      showSnackbar(`${activeSection} saved successfully`, "success");
+      handleCloseSection();
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || `Failed to save ${activeSection}`;
+      showSnackbar(errorMsg, "error");
+    }
+  };
 
   const summaryFields = {
     Gender: user_data.user_data?.gender,
@@ -805,7 +885,7 @@ export default function CandidateProfileDashboard() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseSection}>Cancel</Button>
-          <Button variant="contained" onClick={handleCloseSection}>Save</Button>
+          <Button variant="contained" onClick={handleSaveSection}>Save</Button>
         </DialogActions>
       </Dialog>
       <style>
@@ -827,6 +907,9 @@ export default function CandidateProfileDashboard() {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         showSnackbar={showSnackbar}
+        candidates={candidates}
+        setCandidates={setCandidates}
+        jobCategories={jobCategories}
       />
 
       {[
@@ -842,14 +925,13 @@ export default function CandidateProfileDashboard() {
     </Box>
   )
 }
-function EditProfileDialog({ open, onClose, showSnackbar }) {
+
+function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandidates, jobCategories  }) {
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [form, setForm] = useState(user_data || {})
   const [loading, setLoading] = useState(false)
-  const [jobCategories, setJobCategories] = useState([]);
-  const [candidates, setCandidates] = useState([]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -883,37 +965,6 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
       setForm(user_data.user_data);
     }
   }, [open, user_data])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [categoriesRes, candidatesRes] = await Promise.all([
-          api.get("/categories/"),
-          api.get("/candidate/me")
-        ]);
-
-        setJobCategories(categoriesRes.data);
-        const candidate = Array.isArray(candidatesRes.data) ? candidatesRes.data[0] : candidatesRes.data;
-
-        // merge candidate profile into form
-        setUserData({
-          ...user_data,
-          user_data: {
-            ...user_data.user_data,
-            experience_level: candidate?.profile?.experience_level || "",
-            min_monthly_salary: candidate?.profile?.expected_salary || "",
-            jobCategoryId: candidate?.profile?.job_category_id || "",
-          },
-        });
-
-        setCandidates(candidate);
-      } catch (err) {
-        console.error("Failed to load data", err);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile} scroll="paper">

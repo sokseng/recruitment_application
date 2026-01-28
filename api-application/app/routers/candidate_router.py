@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from flask_jwt_extended import get_current_user
 from sqlalchemy.orm import Session
 from app.dependencies.auth import verify_access_token, get_db
-from app.schemas.candidate_schema import CandidateCreate, CandidateOut
+from app.models.candidate_model import Candidate
+from app.models.candidate_profile import CandidateProfile
+from app.schemas.candidate_schema import CandidateCreate, CandidateOut, CandidateProfileOut, CandidateProfileUpdate
 from app.controllers.candidate_controller import (
     create_or_update_candidate,
     get_candidate_by_user_id,
@@ -53,3 +56,36 @@ def delete_candidate_profile(
     if not success:
         raise HTTPException(status_code=404, detail="Candidate profile not found")
     return {"message": "Candidate profile deleted successfully"}
+
+@router.post("/profile")
+def create_or_update_candidate_profile(profile_in: CandidateProfileUpdate, db: Session = Depends(get_db), current_user = Depends(verify_access_token)):
+    candidate = db.query(Candidate).filter(Candidate.user_id == current_user).first()
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    profile = db.query(CandidateProfile).filter(CandidateProfile.candidate_id == candidate.pk_id).first()
+    if not profile:
+        profile_fields = [
+            profile_in.about_me,
+            profile_in.career_objective,
+            profile_in.experience,
+            profile_in.education,
+            profile_in.skills,
+            profile_in.languages,
+            profile_in.reference_text
+        ]
+        if not any(field not in (None, "") for field in profile_fields):
+            raise HTTPException(status_code=400, detail="No profile data provided")
+
+        profile = CandidateProfile(candidate_id=candidate.pk_id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+
+    for field, value in profile_in.dict(exclude_unset=True).items():
+        setattr(profile, field, value if value != "" else None)
+
+    db.commit()
+    db.refresh(profile)
+
+    return profile

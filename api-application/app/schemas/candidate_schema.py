@@ -26,17 +26,16 @@ class CandidateOut(BaseModel):
 
 class CandidateProfileBase(BaseModel):
     candidate_id: int
-    job_category_id: Optional[int]
-    experience_level: Optional[str]
-    expected_salary: Optional[str]
-    overview: Optional[str]
-    about_me: Optional[str]
-    career_objective: Optional[str]
-    experience: Optional[str]
-    education: Optional[str]
-    skills: Optional[str]
-    languages: Optional[str]
-    reference_text: Optional[str]
+    job_category_id: Optional[int] = None
+    experience_level: Optional[str] = None
+    expected_salary: Optional[str] = None
+    about_me: Optional[str] = None
+    career_objective: Optional[str] = None
+    experience: Optional[str] = None
+    education: Optional[str] = None
+    skills: Optional[str] = None
+    languages: Optional[str] = None
+    reference_text: Optional[str] = None
 
 class CandidateProfileCreate(CandidateProfileBase):
     pass
