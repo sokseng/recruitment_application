@@ -1,14 +1,10 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.candidate_model import Candidate
-from app.schemas.candidate_schema import CandidateCreate, CandidateUpdate, CandidateOut
+from app.models.candidate_profile import CandidateProfile
+from app.schemas.candidate_schema import CandidateCreate, CandidateOut
 
-
-def create_or_update_candidate(
-    db: Session,
-    candidate_data: CandidateCreate,
-    user_id: int
-) -> CandidateOut:
+def create_or_update_candidate(db: Session, candidate_data: CandidateCreate, user_id: int) -> CandidateOut:
     """
     Create candidate profile if doesn't exist, otherwise update it
     """
@@ -31,14 +27,14 @@ def create_or_update_candidate(
         db.refresh(new_candidate)
         return new_candidate
 
-
 def get_candidate_by_user_id(db: Session, user_id: int) -> Candidate | None:
     return db.query(Candidate).filter(Candidate.user_id == user_id).first()
 
+def get_candidate_profile_by_candidate_id(db: Session, candidate_id: int) -> CandidateProfile | None:
+    return db.query(CandidateProfile).filter(CandidateProfile.candidate_id == candidate_id).first()
 
 def get_candidate(db: Session, candidate_id: int) -> Candidate | None:
     return db.get(Candidate, candidate_id)
-
 
 def delete_candidate(db: Session, candidate_id: int, user_id: int) -> bool:
     db_candidate = db.get(Candidate, candidate_id)

@@ -1,12 +1,12 @@
 
 from sqlalchemy.orm import Session
+from app.models.candidate_profile import CandidateProfile
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
 from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile, UserResponse
 from passlib.context import CryptContext
 from app.models.job_model import Job
 from jose import jwt
-from sqlalchemy import select
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
 from fastapi import HTTPException
@@ -14,12 +14,10 @@ from app.enums.global_enum import UserType
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
 
-
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
-
 
 #create or update user
 def create_or_update_user(user: UserCreate, db: Session):
@@ -35,6 +33,33 @@ def create_or_update_user(user: UserCreate, db: Session):
         db_user.address = user.address
         db_user.is_active = user.is_active
         db_user.updated_date = datetime.now().replace(microsecond=0)
+        if user.user_type == int(UserType.CANDIDATE.value):
+            db_candidate = db.query(Candidate).filter(Candidate.user_id == db_user.pk_id).first()
+            
+            job_category_id = int(user.jobCategoryId) if user.jobCategoryId not in (None, "") else None
+            experience_level = user.experience_level if user.experience_level not in (None, "") else None
+            expected_salary = user.min_monthly_salary if user.min_monthly_salary not in (None, "") else None
+
+            profile_fields = [job_category_id, experience_level, expected_salary]
+            has_profile_data = any(field is not None for field in profile_fields)
+
+            if has_profile_data:
+                db_profile = db.query(CandidateProfile).filter(CandidateProfile.candidate_id == db_candidate.pk_id).first()
+                if not db_profile:
+                    db_profile = CandidateProfile(candidate_id=db_candidate.pk_id)
+                    db.add(db_profile)
+
+                db_profile.job_category_id = job_category_id
+                db_profile.experience_level = experience_level
+                db_profile.expected_salary = expected_salary
+
+            else:
+                db_profile = db.query(CandidateProfile).filter(CandidateProfile.candidate_id == db_candidate.pk_id).first()
+                if db_profile:
+                    db_profile.job_category_id = None
+                    db_profile.experience_level = None
+                    db_profile.expected_salary = None
+            
         db.commit()
         db.refresh(db_user)
         
@@ -96,7 +121,6 @@ def create_or_update_user(user: UserCreate, db: Session):
     
     return db_user
 
-
 #get all users
 def get_all_users(db: Session):
     return db.query(User).order_by(User.user_name).all()
@@ -112,7 +136,6 @@ def create_access_token(user_id: int, expires_delta: timedelta):
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
 # # insert data into table token
 def create_token(ip_address: str, user_id: int, access_token: str, expiration_date: datetime, db: Session):
     token = UserSession(
@@ -126,7 +149,6 @@ def create_token(ip_address: str, user_id: int, access_token: str, expiration_da
     db.refresh(token)
     return token
 
-
 # get user by email
 def get_by_email(email: str, db: Session):
     return db.query(User).filter(User.email == email).first()
@@ -135,7 +157,6 @@ def get_by_email(email: str, db: Session):
 def verify_password(password: str, hashed_password: str):
     isMatch = bcrypt_context.verify(password, hashed_password)
     return isMatch
-
 
 # # check token when logout
 def check_token_when_logout(access_token: str, db: Session) -> bool:
@@ -152,7 +173,6 @@ def check_token_when_logout(access_token: str, db: Session) -> bool:
     except Exception:
         db.rollback()
         return False
-
 
 # # verify refresh token
 def verify_refresh_token(token: str, db: Session) -> bool:
@@ -183,8 +203,6 @@ def verify_access_token(access_token: str, db: Session):
         return None
 
     return access_token_data
-
-
 
 #delete user
 def delete_users(db: Session, data: DeleteUser):
@@ -229,11 +247,9 @@ def change_password(db: Session, user_id: int, data: ChangePassword):
     db.commit()
     return True
 
-
 #get user by id
 def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.pk_id == user_id).first()
-
 
 #update user profile
 def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile):
@@ -249,7 +265,6 @@ def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile)
     db.commit()
     db.refresh(user)
     return user
-
 
 def get_jobs_by_employer(db: Session, user_id: int):
     db_user = db.query(User).filter(User.pk_id == user_id).first()
@@ -303,7 +318,6 @@ def get_jobs_by_employer(db: Session, user_id: int):
         return result
 
     return []
-
 
 from datetime import datetime
 from fastapi import HTTPException

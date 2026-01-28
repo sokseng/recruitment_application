@@ -849,6 +849,7 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
   const [form, setForm] = useState(user_data || {})
   const [loading, setLoading] = useState(false)
   const [jobCategories, setJobCategories] = useState([]);
+  const [candidates, setCandidates] = useState([]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -861,7 +862,12 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
       showSnackbar('Profile updated successfully', 'success')
       setUserData({
         ...user_data,
-        user_data: data,
+        user_data: {
+          ...data,
+          experience_level: form.experience_level || "",
+          min_monthly_salary: form.min_monthly_salary || "",
+          jobCategoryId: form.jobCategoryId || "",
+        },
       });
       onClose()
     } catch (err) {
@@ -873,23 +879,41 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
   }
 
   useEffect(() => {
-    if (open) {
-      setForm(user_data.user_data || {})
+    if (open && user_data?.user_data) {
+      setForm(user_data.user_data);
     }
   }, [open, user_data])
 
   useEffect(() => {
-    const fetchJobCategories = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await api.get("/categories/");
-        setJobCategories(data);
+        const [categoriesRes, candidatesRes] = await Promise.all([
+          api.get("/categories/"),
+          api.get("/candidate/me")
+        ]);
+
+        setJobCategories(categoriesRes.data);
+        const candidate = Array.isArray(candidatesRes.data) ? candidatesRes.data[0] : candidatesRes.data;
+
+        // merge candidate profile into form
+        setUserData({
+          ...user_data,
+          user_data: {
+            ...user_data.user_data,
+            experience_level: candidate?.profile?.experience_level || "",
+            min_monthly_salary: candidate?.profile?.expected_salary || "",
+            jobCategoryId: candidate?.profile?.job_category_id || "",
+          },
+        });
+
+        setCandidates(candidate);
       } catch (err) {
-        console.error("Failed to load categories", err);
+        console.error("Failed to load data", err);
       }
     };
 
-    fetchJobCategories();
-  }, [])
+    fetchData();
+  }, []);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile} scroll="paper">
@@ -952,8 +976,8 @@ function EditProfileDialog({ open, onClose, showSnackbar }) {
           </Stack>
           <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
           <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level} onChange={handleChange} />
-            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary} onChange={handleChange} />
+            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({...prev, experience_level: e.target.value === "" ? null : e.target.value}))} />
+            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value}))} />
           </Stack>
           <Paper
             elevation={0}

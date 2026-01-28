@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime, date
 from typing import Optional
 
@@ -36,6 +36,9 @@ class UserCreate(BaseModel):
     date_of_birth: Optional[date] = None
     address: Optional[str] = None
     is_active: bool = True
+    experience_level: Optional[str] = None
+    min_monthly_salary: Optional[str] = None
+    jobCategoryId: Optional[Union[int, str]] = None
 
     model_config = ConfigDict(exclude_none=False)
 
