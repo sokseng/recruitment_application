@@ -1129,20 +1129,30 @@ export default function MyJobs() {
                   <Chip
                     label={job.status}
                     size="small"
-                    color={
-                      job.status === "Open"
-                        ? "success"
-                        : job.status === "Closed"
-                          ? "error"
-                          : job.status === "Draft"
-                            ? "warning"
-                            : "default"
-                    }
+                    variant="outlined"
                     sx={{
                       fontWeight: 500,
                       justifyContent: "center",
+                      borderWidth: 1.5,
+                      color:
+                        job.status === "Open"
+                          ? "success.main"
+                          : job.status === "Closed"
+                          ? "error.main"
+                          : job.status === "Draft"
+                          ? "warning.main"
+                          : "text.secondary",
+                      borderColor:
+                        job.status === "Open"
+                          ? "success.main"
+                          : job.status === "Closed"
+                          ? "error.main"
+                          : job.status === "Draft"
+                          ? "warning.main"
+                          : "divider",
                     }}
                   />
+
                 </Box>
               </Stack>
 
