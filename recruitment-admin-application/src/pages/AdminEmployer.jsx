@@ -230,13 +230,13 @@ const AdminEmployers = () => {
                   <Divider sx={{ my: 1 }} />
 
                   <Stack direction="row" justifyContent="center" spacing={2.5} sx={{ mb: 1 }}>
-                    <Box sx={{ textAlign: "center" }}>
+                    <Box title="Category Type" sx={{ textAlign: "center" }}>
                       <BusinessIcon sx={{ fontSize: 14, color: "action.main", mb: 0.2 }} />
                       <Typography variant="caption" sx={{ fontSize: 10, display: "block" }}>
                         {emp.industry || "Banking"}
                       </Typography>
                     </Box>
-                    <Box sx={{ textAlign: "center" }}>
+                    <Box title="Job Count" sx={{ textAlign: "center" }}>
                       <WorkIcon sx={{ fontSize: 14, color: "action.main", mb: 0.2 }} />
                       <Typography variant="caption" sx={{ fontSize: 10, display: "block" }}>
                         {emp.job_count || 0}
@@ -254,34 +254,81 @@ const AdminEmployers = () => {
       </Box>
 
       {!loading && (
-        <Box sx={{ mt: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+        <Box
+          sx={{
+            mt: { xs: 3, sm: 4 },
+            mb: { xs: 3, sm: 4 },           // give some breathing room at bottom
+            minHeight: '40vh',               // helps center vertically when no data
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: totalItems === 0 ? 'center' : 'flex-start',
+            gap: { xs: 2, sm: 3 },
+            width: '100%',
+            px: { xs: 1, sm: 2 },           // small padding on mobile
+          }}
+        >
           {totalItems === 0 ? (
-            <Box textAlign="center" py={6}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                py: { xs: 4, sm: 6 },
+                maxWidth: '360px',
+                width: '100%',
+              }}
+            >
               <Box
+                component="img"
+                src="/No-Data.gif"
+                alt="No data illustration"
                 sx={{
-                  p: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "text.secondary",
+                  width: { xs: '1400px', sm: '200px' },
+                  height: 'auto',
+                  mb: 1,
+                  objectFit: 'contain',
                 }}
+              />
+              <Typography
+                variant="h6"
+                color="text.secondary"
+                gutterBottom
+                sx={{ fontWeight: 400 }}
               >
-                <Box
-                  component="img"
-                  src="/No-Data.gif"
-                  alt="No data"
-                />
-              </Box>
+                
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                {searchTerm ? "Try different keywords" : "No companies registered yet"}
+                {searchTerm
+                  ? "Try different keywords or clear the search"
+                  : "Companies will appear here once registered"}
               </Typography>
             </Box>
           ) : (
-            <>
-              <Typography variant="caption" color="text.secondary" sx={{}}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: { xs: 2, sm: 3 },
+                width: '100%',
+                mt: 'auto',              // pushes pagination to bottom when content is short
+              }}
+            >
+              {/* Optional: show current page info above pagination on larger screens */}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  fontSize: '0.875rem',
+                }}
+              >
                 Page {page} of {totalPages}
               </Typography>
+
               <Pagination
                 count={totalPages}
                 page={page}
@@ -293,14 +340,38 @@ const AdminEmployers = () => {
                 boundaryCount={1}
                 siblingCount={1}
                 sx={{
-                  "& .MuiPaginationItem-root": { borderRadius: "50%", mx: 0.4, fontSize: "0.85rem" },
-                  "& .Mui-selected": {
-                    backgroundColor: "primary.main !important",
-                    color: "white !important",
+                  '& .MuiPagination-ul': {
+                    flexWrap: 'nowrap',           // better mobile behavior
                   },
+                  '& .MuiPaginationItem-root': {
+                    borderRadius: '50%',
+                    mx: { xs: 0.5, sm: 0.6 },
+                    fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                    minWidth: { xs: 28, sm: 32 },
+                    height: { xs: 28, sm: 32 },
+                  },
+                  '& .Mui-selected': {
+                    backgroundColor: 'primary.main !important',
+                    color: 'white !important',
+                    fontWeight: 600,
+                  },
+                  // Make sure pagination stays visible and doesn't get cut off
+                  mb: { xs: 2, sm: 4 },
                 }}
               />
-            </>
+
+              {/* Mobile-friendly page indicator below pagination */}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: { xs: 'block', sm: 'none' },
+                  mt: 1,
+                }}
+              >
+                Page {page} / {totalPages}
+              </Typography>
+            </Box>
           )}
         </Box>
       )}
