@@ -1,4 +1,5 @@
 import os
+from weasyprint import HTML
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from fastapi.responses import FileResponse
 from jinja2 import Environment, FileSystemLoader
@@ -172,7 +173,6 @@ def generate_cv(template_id: str, candidate_id: int = Depends(get_current_candid
 
     # Generate PDF
     pdf_filename = f"temp_files/Candidate{candidate_id}_{template_id}.pdf"
-    from weasyprint import HTML
     HTML(string=html_content).write_pdf(pdf_filename)
 
     # Return PDF
