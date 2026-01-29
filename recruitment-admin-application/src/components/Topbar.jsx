@@ -21,9 +21,9 @@ import {
   Menu,
   ListItemIcon,
   Divider,
+  Collapse
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
 import { useState } from "react";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
@@ -39,14 +39,16 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
 import BusinessIcon from "@mui/icons-material/Business";
 import PeopleIcon from "@mui/icons-material/People";
-import DescriptionIcon from "@mui/icons-material/Description";
 import DownloadIcon from "@mui/icons-material/Download";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
 import { useTheme, useMediaQuery } from "@mui/material";
 import api from "../services/api";
 import useAuthStore from "../store/useAuthStore";
-import { LoginSharp, LoginTwoTone } from "@mui/icons-material";
+import {
+  ExpandLess,
+  ExpandMore,
+} from "@mui/icons-material";
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -115,6 +117,9 @@ export default function Topbar() {
       { label: "All Companies", path: "/company", icon: <BusinessIcon /> },
     ],
   };
+  const [openCv, setOpenCv] = useState(false);
+
+  const toggleCv = () => setOpenCv((prev) => !prev);
 
   const menuItems = access_token
     ? MENU_BY_ROLE[user_type] || []
@@ -175,15 +180,15 @@ export default function Topbar() {
         setMessage(err.response?.data?.detail);
         setOpenSnackbar(true);
       } else if (
-        err.response && 
-        err.response?.status === 400 && 
+        err.response &&
+        err.response?.status === 400 &&
         err.response?.data?.detail === "User is currently disabled!"
-      ){
+      ) {
         setMessage(err.response?.data?.detail);
         setOpenSnackbar(true);
         setSeverity('info')
       }
-      
+
       else {
         setMessage(err.response?.data?.detail || "Login failed");
         setOpenSnackbar(true);
@@ -567,86 +572,198 @@ export default function Topbar() {
                 anchorEl={profileAnchor}
                 open={Boolean(profileAnchor)}
                 onClose={handleProfileClose}
-                PaperProps={{ sx: { width: 280 } }}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                MenuListProps={{ disablePadding: true }}
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    width: isMobile ? "92vw" : 340,
+                    maxWidth: 360,
+                    borderRadius: 3,
+                    height: "fit-content",          
+                    background: "rgba(255, 255, 255, 0.98)",
+                    backdropFilter: "blur(12px)",
+                    boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
+                  },
+                }}
               >
+
+                {/* Header */}
                 <Box
                   sx={{
-                    px: 2,
-                    py: 1.5,
-                    borderBottom: "1px solid",
-                    borderColor: "divider",
+                    position: "relative",
+                    px: isMobile ? 3 : 4,
+                    py: isMobile ? 3 : 3.5,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    overflow: "hidden",
                   }}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar sx={{ bgcolor: "primary.main" }}>
-                      {user_data?.user_data?.user_name
-                        ? user_data.user_data?.user_name.charAt(0).toUpperCase()
-                        : "?"}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      inset: 0,
+                      background:
+                        "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22) 0%, transparent 70%)",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <Stack direction="row" spacing={3} alignItems="center">
+                    <Avatar
+                      sx={{
+                        width: isMobile ? 56 : 64,
+                        height: isMobile ? 56 : 64,
+                        bgcolor: "rgba(255,255,255,0.28)",
+                        fontSize: isMobile ? 26 : 32,
+                        fontWeight: 700,
+                        border: "3px solid rgba(255,255,255,0.55)",
+                        boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
+                      }}
+                    >
+                      {user_data?.user_data?.user_name?.[0]?.toUpperCase() || "?"}
                     </Avatar>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
-                        variant="subtitle1"
-                        fontWeight="bold"
+                        variant="h5"
+                        fontWeight={700}
+                        sx={{ lineHeight: 1.2 }}
                         noWrap
-                        sx={{
-                          maxWidth: { xs: 150, sm: 250, md: 350 },
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
                       >
-                        {user_data.user_data?.user_name}
+                        {user_data?.user_data?.user_name || "User"}
                       </Typography>
                       <Typography
                         variant="body2"
-                        color="primary.main"
+                        sx={{ opacity: 0.92, mt: 0.6 }}
                         noWrap
-                        sx={{
-                          maxWidth: { xs: 150, sm: 250, md: 350 },
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
                       >
-                        {user_data.user_data?.email}
+                        {user_data?.user_data?.email || "user@example.com"}
                       </Typography>
                     </Box>
                   </Stack>
                 </Box>
-                <MenuItem
-                  onClick={() => {
-                    navigate("/update_profile");
-                    handleProfileClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <Settings fontSize="small" />
-                  </ListItemIcon>
-                  Update Profile
-                </MenuItem>
-                {user_data.user_data?.user_type === 3 && (
-                  <MenuItem>
-                    <ListItemIcon>
-                      <Download fontSize="small" />
+
+                {/* Menu items */}
+                <Box sx={{ py: 1 }}>
+                  <MenuItem
+                    onClick={() => {
+                      navigate("/update_profile");
+                      handleProfileClose();
+                    }}
+                    sx={{
+                      py: isMobile ? 2 : 1.6,
+                      px: isMobile ? 3 : 4,
+                      fontSize: "1rem",
+                      fontWeight: 500,
+                      "&:hover": {
+                        bgcolor: "rgba(102,126,234,0.12)",
+                        color: "#667eea",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: "inherit" }}>
+                      <Settings fontSize="medium" />
                     </ListItemIcon>
-                    Download CV Templates
+                    Update Profile
                   </MenuItem>
-                )}
+
+                  {user_data.user_data?.user_type === 3 && (
+                    <>
+                      <MenuItem
+                        onClick={toggleCv}
+                        sx={{
+                          py: isMobile ? 2 : 1.6,
+                          px: isMobile ? 3 : 4,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                          "&:hover": {
+                            bgcolor: "rgba(102,126,234,0.12)",
+                            color: "#667eea",
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: "inherit" }}>
+                          <Download fontSize="medium" />
+                        </ListItemIcon>
+                        Download CV Templates
+                        <Box sx={{ ml: "auto", opacity: 0.7 }}>
+                          {openCv ? <ExpandLess /> : <ExpandMore />}
+                        </Box>
+                      </MenuItem>
+
+                      <Collapse in={openCv} timeout={280} unmountOnExit>
+                        <Box sx={{ bgcolor: "rgba(0,0,0,0.03)", py: 0.5 }}>
+                          {[
+                            ["Modern Minimal CV", "modern-minimal.pdf"],
+                            ["Creative Designer Resume", "creative-designer.pdf"],
+                            ["Professional Corporate Template", "professional-corporate.pdf"],
+                            ["Tech Startup One-Pager", "tech-startup.pdf"],
+                          ].map(([label, file]) => (
+                            <MenuItem
+                              key={label}
+                              component="a"
+                              href={`https://example.com/cv/${file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={handleProfileClose}
+                              sx={{
+                                pl: isMobile ? 7 : 9,
+                                py: 1.3,
+                                fontSize: "0.93rem",
+                                color: "text.secondary",
+                                "&:hover": {
+                                  color: "#667eea",
+                                  bgcolor: "rgba(102,126,234,0.08)",
+                                },
+                              }}
+                            >
+                              {label}
+                            </MenuItem>
+                          ))}
+                        </Box>
+                      </Collapse>
+                    </>
+                  )}
+
+                  <MenuItem
+                    onClick={() => {
+                      setOpenChangePassword(true);
+                      handleProfileClose();
+                    }}
+                    sx={{
+                      py: isMobile ? 2 : 1.6,
+                      px: isMobile ? 3 : 4,
+                      fontSize: "1rem",
+                      fontWeight: 500,
+                      "&:hover": {
+                        bgcolor: "rgba(102,126,234,0.12)",
+                        color: "#667eea",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: "inherit" }}>
+                      <VpnKey fontSize="medium" />
+                    </ListItemIcon>
+                    Change Password
+                  </MenuItem>
+                </Box>
+
+                <Divider sx={{ borderColor: "rgba(0,0,0,0.12)" }} />
+
+                {/* Logout */}
                 <MenuItem
-                  onClick={() => {
-                    setOpenChangePassword(true);
-                    handleProfileClose();
+                  onClick={handleLogout}
+                  sx={{
+                    py: isMobile ? 2.2 : 1.8,
+                    px: isMobile ? 3 : 4,
+                    fontWeight: 600,
+                    color: "#d32f2f",
+                    "&:hover": {
+                      bgcolor: "rgba(211,47,47,0.09)",
+                      color: "#b71c1c",
+                    },
                   }}
                 >
-                  <ListItemIcon>
-                    <VpnKey fontSize="small" />
-                  </ListItemIcon>
-                  Change Password
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
-                  <ListItemIcon>
-                    <Logout fontSize="small" color="error" />
+                  <ListItemIcon sx={{ color: "inherit" }}>
+                    <Logout fontSize="medium" />
                   </ListItemIcon>
                   Log out
                 </MenuItem>
@@ -678,10 +795,10 @@ export default function Topbar() {
                     },
                     "&:hover::after": {
                       width: "100%",
-                    },           
+                    },
                   }}
                 >
-                  <Box sx={{textTransform: "none"}}>
+                  <Box sx={{ textTransform: "none" }}>
                     {item.label}
                   </Box>
                 </Button>
@@ -694,8 +811,8 @@ export default function Topbar() {
                     <Avatar>
                       {user_data?.user_data?.user_name
                         ? user_data?.user_data?.user_name
-                            .charAt(0)
-                            .toUpperCase()
+                          .charAt(0)
+                          .toUpperCase()
                         : "?"}
                     </Avatar>
                   </IconButton>
@@ -703,96 +820,251 @@ export default function Topbar() {
                     anchorEl={profileAnchor}
                     open={Boolean(profileAnchor)}
                     onClose={handleProfileClose}
-                    PaperProps={{ sx: { width: 280 } }}
                     anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                     transformOrigin={{ vertical: "top", horizontal: "right" }}
+                    MenuListProps={{
+                      disablePadding: true,
+                    }}
+                    PaperProps={{
+                      elevation: 0,
+                      sx: {
+                        width: 340,
+                        mt: 1.5,
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        border: "1px solid #e0e0e0",
+                        boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
+                        background: "rgba(255, 255, 255, 0.98)",
+                        backdropFilter: "blur(12px)",
+                      },
+                    }}
                   >
+
+                    {/* Header – vibrant gradient + subtle shine */}
                     <Box
                       sx={{
-                        px: 2,
-                        py: 1.5,
-                        borderBottom: "1px solid",
-                        borderColor: "divider",
+                        position: "relative",
+                        px: 4,
+                        py: 3.5,
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        color: "white",
+                        overflow: "hidden",
                       }}
                     >
-                      <Stack direction="row" spacing={2} alignItems="center">
+                      {/* Light radial glow */}
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22) 0%, transparent 70%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+
+                      <Stack direction="row" spacing={3} alignItems="center">
                         <Avatar
                           sx={{
-                            width: 40,
-                            height: 40,
-                            bgcolor: "primary.main",
-                            fontSize: 18,
+                            width: 64,
+                            height: 64,
+                            bgcolor: "rgba(255,255,255,0.28)",
+                            fontSize: 32,
+                            fontWeight: 700,
+                            border: "3px solid rgba(255,255,255,0.55)",
+                            boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
                           }}
                         >
-                          {user_data?.user_data?.user_name
-                            ? user_data.user_data.user_name
-                                .charAt(0)
-                                .toUpperCase()
-                            : "?"}
+                          {user_data?.user_data?.user_name?.[0]?.toUpperCase() || "?"}
                         </Avatar>
+
                         <Box sx={{ minWidth: 0 }}>
                           <Typography
-                            variant="subtitle1"
-                            fontWeight="bold"
+                            variant="h5"
+                            fontWeight={700}
+                            sx={{ lineHeight: 1.2, letterSpacing: "-0.01em" }}
                             noWrap
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
                           >
-                            {user_data?.user_data?.user_name}
+                            {user_data?.user_data?.user_name || "User"}
                           </Typography>
                           <Typography
                             variant="body2"
-                            color="primary.main"
+                            sx={{ opacity: 0.92, mt: 0.6, fontWeight: 400 }}
                             noWrap
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
                           >
-                            {user_data?.user_data?.email}
+                            {user_data?.user_data?.email || "user@example.com"}
                           </Typography>
                         </Box>
                       </Stack>
                     </Box>
-                    <MenuItem
-                      onClick={() => {
-                        navigate("/update_profile");
-                        handleProfileClose();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <Settings fontSize="small" />
-                      </ListItemIcon>
-                      Update Profile
-                    </MenuItem>
-                    {user_data.user_data?.user_type === 3 && (
-                      <MenuItem>
-                        <ListItemIcon>
-                          <Download fontSize="small" />
+
+                    {/* Menu Items */}
+                    <Box sx={{ py: 1 }}>
+                      <MenuItem
+                        onClick={() => { navigate("/update_profile"); handleProfileClose(); }}
+                        sx={{
+                          py: 1.6,
+                          px: 4,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                          "&:hover": {
+                            bgcolor: "rgba(102, 126, 234, 0.12)",
+                            color: "#667eea",
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: "inherit" }}>
+                          <Settings fontSize="medium" />
                         </ListItemIcon>
-                        Download CV Templates
+                        Update Profile
                       </MenuItem>
-                    )}
-                    <MenuItem
-                      onClick={() => {
-                        setOpenChangePassword(true);
-                        handleProfileClose();
-                      }}
-                    >
-                      <ListItemIcon>
-                        <VpnKey fontSize="small" />
-                      </ListItemIcon>
-                      Change Password
-                    </MenuItem>
-                    <Divider />
+
+                      {user_data.user_data?.user_type === 3 && (
+                        <>
+                          <MenuItem
+                            onClick={toggleCv}
+                            sx={{
+                              py: 1.6,
+                              px: 4,
+                              fontSize: "1rem",
+                              fontWeight: 500,
+                              "&:hover": {
+                                bgcolor: "rgba(102, 126, 234, 0.12)",
+                                color: "#667eea",
+                              },
+                            }}
+                          >
+                            <ListItemIcon sx={{ color: "inherit" }}>
+                              <Download fontSize="medium" />
+                            </ListItemIcon>
+                            Download CV Templates
+                            <Box component="span" sx={{ ml: "auto", opacity: 0.7 }}>
+                              {openCv ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                            </Box>
+                          </MenuItem>
+
+                          <Collapse in={openCv} timeout={280} unmountOnExit>
+                            <Box sx={{ bgcolor: "rgba(0,0,0,0.03)", py: 0.5 }}>
+                              <MenuItem
+                                sx={{
+                                  pl: 9,
+                                  py: 1.3,
+                                  fontSize: "0.93rem",
+                                  color: "text.secondary",
+                                  "&:hover": {
+                                    color: "#667eea",
+                                    bgcolor: "rgba(102, 126, 234, 0.08)",
+                                  },
+                                }}
+                                component="a"
+                                href="https://example.com/cv/modern-minimal.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={handleProfileClose}
+                              >
+                                Modern Minimal CV
+                              </MenuItem>
+
+                              <MenuItem
+                                sx={{
+                                  pl: 9,
+                                  py: 1.3,
+                                  fontSize: "0.93rem",
+                                  color: "text.secondary",
+                                  "&:hover": {
+                                    color: "#667eea",
+                                    bgcolor: "rgba(102, 126, 234, 0.08)",
+                                  },
+                                }}
+                                component="a"
+                                href="https://example.com/cv/creative-designer.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={handleProfileClose}
+                              >
+                                Creative Designer Resume
+                              </MenuItem>
+
+                              <MenuItem
+                                sx={{
+                                  pl: 9,
+                                  py: 1.3,
+                                  fontSize: "0.93rem",
+                                  color: "text.secondary",
+                                  "&:hover": {
+                                    color: "#667eea",
+                                    bgcolor: "rgba(102, 126, 234, 0.08)",
+                                  },
+                                }}
+                                component="a"
+                                href="https://example.com/cv/professional-corporate.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={handleProfileClose}
+                              >
+                                Professional Corporate Template
+                              </MenuItem>
+
+                              <MenuItem
+                                sx={{
+                                  pl: 9,
+                                  py: 1.3,
+                                  fontSize: "0.93rem",
+                                  color: "text.secondary",
+                                  "&:hover": {
+                                    color: "#667eea",
+                                    bgcolor: "rgba(102, 126, 234, 0.08)",
+                                  },
+                                }}
+                                component="a"
+                                href="https://example.com/cv/tech-startup.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={handleProfileClose}
+                              >
+                                Tech Startup One-Pager
+                              </MenuItem>
+                            </Box>
+                          </Collapse>
+                        </>
+                      )}
+
+                      <MenuItem
+                        onClick={() => { setOpenChangePassword(true); handleProfileClose(); }}
+                        sx={{
+                          py: 1.6,
+                          px: 4,
+                          fontSize: "1rem",
+                          fontWeight: 500,
+                          "&:hover": {
+                            bgcolor: "rgba(102, 126, 234, 0.12)",
+                            color: "#667eea",
+                          },
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: "inherit" }}>
+                          <VpnKey fontSize="medium" />
+                        </ListItemIcon>
+                        Change Password
+                      </MenuItem>
+                    </Box>
+
+                    <Divider sx={{ borderColor: "rgba(0,0,0,0.12)" }} />
+
+                    {/* Logout */}
                     <MenuItem
                       onClick={handleLogout}
-                      sx={{ color: "error.main" }}
+                      sx={{
+                        py: 1.8,
+                        px: 4,
+                        color: "#d32f2f",
+                        fontWeight: 600,
+                        "&:hover": {
+                          bgcolor: "rgba(211, 47, 47, 0.09)",
+                          color: "#b71c1c",
+                        },
+                      }}
                     >
                       <ListItemIcon>
-                        <Logout fontSize="small" color="error" />
+                        <Logout fontSize="medium" sx={{ color: "red" }} />
                       </ListItemIcon>
                       Log out
                     </MenuItem>
@@ -800,20 +1072,20 @@ export default function Topbar() {
                 </>
               ) : (
                 <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => setOpenLogin(true)}
-                      sx={{textTransform: "none"}}
-                    >
-                      Login
-                    </Button>
-                  
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setOpenLogin(true)}
+                    sx={{ textTransform: "none" }}
+                  >
+                    Login
+                  </Button>
+
                   <Button
                     variant="outlined"
                     size="small"
                     onClick={() => setopenRegisterForm(true)}
-                    sx={{textTransform: "none"}}
+                    sx={{ textTransform: "none" }}
                   >
                     Sign Up
                   </Button>
