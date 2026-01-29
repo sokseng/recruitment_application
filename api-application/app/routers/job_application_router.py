@@ -4,6 +4,7 @@ from typing import List
 from app.dependencies.auth import verify_access_token, get_db
 from app.dependencies.candidate import get_current_candidate_id
 from app.models.employer_model import Employer
+from app.models.job_application_model import JobApplication
 from app.schemas.job_application_schema import (
     JobApplicationCreate,
     JobApplicationOut,
@@ -25,7 +26,13 @@ def apply_to_job_endpoint(
     db: Session = Depends(get_db),
     candidate_id: int = Depends(get_current_candidate_id)
 ):
-    return apply_to_job(db, data.job_id, candidate_id, data.candidate_resume_id)
+    return apply_to_job(
+        db, 
+        data.job_id, 
+        candidate_id, 
+        data.candidate_resume_id,
+        reset_status_on_reapply=True,
+    )
 
 # ─── Employer side ───────────────────────────────────────────────────────────
 
@@ -56,3 +63,25 @@ def update_status(
 
     updated = update_application_status(db, application_id, new_status, employer.pk_id)
     return {"message": f"Application status updated to {updated.application_status}"}
+
+@router.get("/job/{job_id}/my-status")
+def get_my_application_status(
+    job_id: int,
+    db: Session = Depends(get_db),
+    candidate_id: int = Depends(get_current_candidate_id)
+):
+    app = db.query(JobApplication).filter(
+        JobApplication.job_id == job_id,
+        JobApplication.candidate_id == candidate_id
+    ).first()
+    
+    if not app:
+        return {"applied": False}
+    
+    return {
+        "applied": True,
+        "application_id": app.pk_id,
+        "status": app.application_status,
+        "resume_id": app.candidate_resume_id,
+        "applied_date": app.applied_date
+    }

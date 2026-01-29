@@ -16,12 +16,10 @@ import {
   useTheme,
   AppBar,
   Toolbar,
-  MenuItem,
   Chip,
   alpha,
   IconButton,
   Tooltip,
-  Badge,
   Snackbar,
   Dialog,
   DialogTitle,
@@ -52,7 +50,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { DescriptionOutlined, EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, SendAndArchive, UploadFileSharp } from "@mui/icons-material";
+import { DescriptionOutlined, EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, UploadFileSharp } from "@mui/icons-material";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -95,6 +93,7 @@ export default function Dashboard() {
   });
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
 
   useEffect(() => {
     loadJobs();
@@ -187,6 +186,24 @@ export default function Dashboard() {
     setShowDetailMobile(false);
   };
 
+  useEffect(() => {
+    if (!selectedJob) {
+      setHasAppliedToThisJob(false);
+      return;
+    }
+
+    const checkApplication = async () => {
+      try {
+        const res = await api.get(`/applications/job/${selectedJob.pk_id}/my-status`);
+        setHasAppliedToThisJob(!!res.data?.applied);
+      } catch (err) {
+        setHasAppliedToThisJob(false);
+      }
+    };
+
+    checkApplication();
+  }, [selectedJob]);
+
   const handleNewResumeUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -195,54 +212,72 @@ export default function Dashboard() {
     setUploadError(null);
 
     const formData = new FormData();
+
+    formData.append("resume_type", "Upload");           
+    formData.append("is_primary", "false");             
     formData.append("resume_file", file);
-    formData.append("is_primary", false);
 
     try {
       const res = await api.post("/candidate/resumes/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Add new resume to list
-      setResumes((prev) => [...prev, res.data]);
-
-      // Auto-select the newly uploaded resume
-      setSelectedResumeId(res.data.pk_id.toString());
+      // Success
+      const newResume = res.data;
+      setResumes((prev) => [...prev, newResume]);
+      setSelectedResumeId(newResume.pk_id.toString());   // auto-select it
 
       setSnackbar({
         open: true,
-        message: "Resume uploaded successfully!",
+        message: "Resume uploaded and selected!",
         severity: "success",
       });
     } catch (err) {
-      setUploadError(
-        err.response?.data?.detail ||
-        "Failed to upload resume. Please try again."
-      );
+      const errorDetail = err.response?.data?.detail;
+      
+      if (Array.isArray(errorDetail)) {
+        const firstError = errorDetail[0];
+        setUploadError(`${firstError.loc?.join(".")}: ${firstError.msg}`);
+      } else {
+        setUploadError(errorDetail || "Failed to upload resume");
+      }
+
+      console.error("Upload failed:", err);
     } finally {
       setUploadLoading(false);
-      // Reset file input
       e.target.value = "";
     }
   };
 
-  const handleApplyWithResume = async (jobId, resumeId) => {
+  const handleApplyWithResume = async () => {
+    if (!jobToApply || !selectedResumeId) return;
+
     try {
-      setApplying(prev => ({ ...prev, [jobId]: true }));
+      setApplying(prev => ({ ...prev, [jobToApply.pk_id]: true }));
+
       await api.post("/applications/", {
-        job_id: jobId,
-        candidate_resume_id: parseInt(resumeId)
+        job_id: jobToApply.pk_id,
+        candidate_resume_id: parseInt(selectedResumeId),
       });
-      setSnackbar({ open: true, message: "Applied successfully!", severity: "success" });
+
+      setHasAppliedToThisJob(true); // optimistic update
+      setSnackbar({
+        open: true,
+        message: hasAppliedToThisJob
+          ? "Resume updated & application refreshed!"
+          : "Application submitted successfully!",
+        severity: "success",
+      });
+
       setApplyDialogOpen(false);
     } catch (err) {
       setSnackbar({
         open: true,
         message: err.response?.data?.detail || "Failed to apply",
-        severity: "error"
+        severity: "error",
       });
     } finally {
-      setApplying(prev => ({ ...prev, [jobId]: false }));
+      setApplying(prev => ({ ...prev, [jobToApply.pk_id]: false }));
     }
   };
 
@@ -661,7 +696,7 @@ export default function Dashboard() {
                         textTransform: "none" 
                       }}
                     >
-                      Apply
+                      {hasAppliedToThisJob ? "Re-apply" : "Apply"}
                     </Button>
                   )}
                   {/* Mobile */}
@@ -694,8 +729,9 @@ export default function Dashboard() {
                         display: { xs: "none", sm: "inline-flex" },
                         textTransform: "none",
                       }}
+                      disabled={applying[selectedJob.pk_id]}
                     >
-                      Apply Now
+                      {hasAppliedToThisJob ? "Re-apply" : "Apply"}
                     </Button>
                 )}
                 {/* Desktop */}
@@ -788,7 +824,7 @@ export default function Dashboard() {
                           Email:
                         </Typography>
                         <Typography variant="body1">
-                          {selectedJob.employer?.company_email || "Not provided"}
+                          {selectedJob.employer?.company_email || ""}
                         </Typography>
                       </Box>
                     </Stack>
@@ -800,7 +836,7 @@ export default function Dashboard() {
                           Contact:
                         </Typography>
                         <Typography variant="body1">
-                          {selectedJob.employer?.company_contact || "Not provided"}
+                          {selectedJob.employer?.company_contact || ""}
                         </Typography>
                       </Box>
                     </Stack>
@@ -821,7 +857,7 @@ export default function Dashboard() {
                             {selectedJob.employer.company_website}
                           </a>
                         ) : (
-                          <Typography variant="body1">Not provided</Typography>
+                          <Typography variant="body1"></Typography>
                         )}
                       </Box>
                     </Stack>
@@ -837,8 +873,7 @@ export default function Dashboard() {
                       <ReactQuill
                         theme="snow"
                         value={
-                          selectedJob.employer?.company_description ||
-                          "No company description available."
+                          selectedJob.employer?.company_description || ""
                         }
                         readOnly
                         modules={{ toolbar: false }}
@@ -848,12 +883,24 @@ export default function Dashboard() {
                 </Popover>
                 {/* Apply Dialog with Resume Selection */}
                 <Dialog open={applyDialogOpen} onClose={() => setApplyDialogOpen(false)} fullWidth maxWidth="xs">
-                  <DialogTitle variant="body2">Select Resume to Apply</DialogTitle>
+                  <DialogTitle variant="body2">
+                    {hasAppliedToThisJob ? "Update Your Application" : "Apply to this Position"}
+                  </DialogTitle>
                   <Divider />
                   <DialogContent>
+                    {hasAppliedToThisJob ? (
+                      <Alert severity="info" sx={{ mb: 3 }}>
+                        You already applied to this job. Selecting a new resume will update your existing application.
+                      </Alert>
+                    ) : (
+                      <Alert severity="info" sx={{ mb: 3 }}>
+                        Choose or upload a resume to apply for this position.
+                      </Alert>
+                    )}
+
                     {resumes.length === 0 ? (
                       <Alert severity="warning">
-                        You don't have any resume yet. Please upload one first.
+                        You don't have any resumes yet. Please upload one below.
                       </Alert>
                     ) : (
                       <RadioGroup value={selectedResumeId} onChange={(e) => setSelectedResumeId(e.target.value)}>
@@ -870,7 +917,8 @@ export default function Dashboard() {
                                     {resume.resume_file || "Text Resume"}
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
-                                    {resume.is_primary ? "Primary Resume" : "Uploaded on " + new Date(resume.created_date).toLocaleDateString()}
+                                    {resume.is_primary ? "Primary • " : ""}
+                                    {new Date(resume.created_date).toLocaleDateString()}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -879,19 +927,19 @@ export default function Dashboard() {
                         ))}
                       </RadioGroup>
                     )}
-                    {/* ── New resume upload section ── */}
-                    <Box sx={{ mt: 3, borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Or upload a new resume right now
+                    {/* Upload new resume */}
+                    <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Upload a new resume
                       </Typography>
-
                       <Button
                         component="label"
                         variant="outlined"
                         startIcon={<UploadFileSharp />}
-                        sx={{ mt: 1 }}
+                        fullWidth
+                        sx={{ justifyContent: "flex-start", py: 1.5 }}
                       >
-                        Choose PDF / DOCX file
+                        Choose PDF, DOC, DOCX file
                         <input
                           type="file"
                           hidden
@@ -900,9 +948,13 @@ export default function Dashboard() {
                         />
                       </Button>
 
-                      {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+                      {uploadLoading && (
+                        <Box sx={{ mt: 2, textAlign: "center" }}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      )}
                       {uploadError && (
-                        <Alert severity="error" sx={{ mt: 1.5 }}>
+                        <Alert severity="error" sx={{ mt: 2 }}>
                           {uploadError}
                         </Alert>
                       )}
@@ -923,14 +975,14 @@ export default function Dashboard() {
                     </Button>
                     <Button
                       variant="contained"
-                      size="small"
-                      sx={{
-                        textTransform: "none"
-                      }}
+                      onClick={handleApplyWithResume}
                       disabled={!selectedResumeId || applying[jobToApply?.pk_id]}
-                      onClick={() => handleApplyWithResume(jobToApply.pk_id, selectedResumeId)}
                     >
-                      {applying[jobToApply?.pk_id] ? "Applying..." : "Submit"}
+                      {applying[jobToApply?.pk_id]
+                        ? "Processing..."
+                        : hasAppliedToThisJob
+                        ? "Update Application"
+                        : "Submit Application"}
                     </Button>
                   </DialogActions>
                 </Dialog>

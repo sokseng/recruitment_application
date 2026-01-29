@@ -1,31 +1,27 @@
 from sqlalchemy.orm import Session, joinedload
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from app.models.job_application_model import JobApplication, ApplicationStatus
 from app.models.job_model import Job, JobStatus
 from app.models.candidate_resume_model import CandidateResume
 from typing import List, Optional
+from datetime import datetime
 
 def apply_to_job(
     db: Session,
     job_id: int,
     candidate_id: int,
-    resume_id: Optional[int] = None
+    resume_id: Optional[int] = None,
+    reset_status_on_reapply: bool = True,
 ) -> JobApplication:
+    
     job = db.get(Job, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
     if job.status != JobStatus.OPEN:
         raise HTTPException(400, "This job is no longer accepting applications")
 
-    # Prevent duplicate applications
-    existing = db.query(JobApplication).filter(
-        JobApplication.job_id == job_id,
-        JobApplication.candidate_id == candidate_id
-    ).first()
-    if existing:
-        raise HTTPException(400, "You have already applied to this job")
-
-    # Validate or fallback to primary resume
+    # ─── Resume validation ───────────────────────────────────────
     if resume_id:
         resume = db.get(CandidateResume, resume_id)
         if not resume or resume.candidate_id != candidate_id:
@@ -39,16 +35,35 @@ def apply_to_job(
             raise HTTPException(400, "No primary resume found. Please set one or select a resume.")
         resume_id = primary.pk_id
 
-    application = JobApplication(
-        job_id=job_id,
-        candidate_id=candidate_id,
-        candidate_resume_id=resume_id,
-        application_status=ApplicationStatus.PENDING
-    )
-    db.add(application)
-    db.commit()
-    db.refresh(application)
-    return application
+    # ─── Look for existing application ───────────────────────────
+    existing = db.query(JobApplication).filter(
+        JobApplication.job_id == job_id,
+        JobApplication.candidate_id == candidate_id
+    ).first()
+
+    if existing:
+        # ─── UPDATE existing application ─────────────────────────
+        existing.candidate_resume_id = resume_id
+        
+        if reset_status_on_reapply:
+            existing.application_status = ApplicationStatus.PENDING
+        
+        db.commit()
+        db.refresh(existing)
+        return existing
+    else:
+        # ─── CREATE new application ──────────────────────────────
+        new_application = JobApplication(
+            job_id=job_id,
+            candidate_id=candidate_id,
+            candidate_resume_id=resume_id,
+            application_status=ApplicationStatus.PENDING,
+            applied_date=datetime.utcnow(),
+        )
+        db.add(new_application)
+        db.commit()
+        db.refresh(new_application)
+        return new_application
 
 def get_applications_for_job(
     db: Session,
