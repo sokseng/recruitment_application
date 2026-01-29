@@ -120,6 +120,13 @@ export default function Topbar() {
   const [openCv, setOpenCv] = useState(false);
 
   const toggleCv = () => setOpenCv((prev) => !prev);
+  const cvTemplates = [
+    { name: "Modern Minimal", href: "#" },
+    { name: "Creative Designer", href: "#" },
+    { name: "Corporate Professional", href: "#" },
+    { name: "Tech / Startup", href: "#" },
+    { name: "Academic / Research", href: "#" },
+  ];
 
   const menuItems = access_token
     ? MENU_BY_ROLE[user_type] || []
@@ -301,116 +308,217 @@ export default function Topbar() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "#F6F7F8",
-        p: 1,
+        bgcolor: "background.default",
       }}
     >
-      {/* Profile Header */}
+      {/* ── Profile Header ── */}
       {access_token && (
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-            p: 2,
-            mb: 2,
-            backgroundColor: "white",
-            borderRadius: 2,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            p: 3,
+            position: 'relative',
+            overflow: 'hidden',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            // subtle gradient background (very light)
+            background: 'linear-gradient(135deg, rgba(245,247,255,0.8) 0%, rgba(255,255,255,0.95) 100%)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
           }}
         >
-          <Avatar
+          {/* Optional: very subtle decorative accent */}
+          <Box
             sx={{
-              width: 48,
-              height: 48,
-              bgcolor: "primary.main",
-              fontSize: 20,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+              position: 'absolute',
+              top: -40,
+              right: -40,
+              width: 120,
+              height: 120,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(33,150,243,0.08) 0%, transparent 70%)',
+              pointerEvents: 'none',
             }}
-          >
-            {user_data?.user_data?.user_name
-              ? user_data.user_data.user_name.charAt(0).toUpperCase()
-              : "?"}
-          </Avatar>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="subtitle1"
-              fontWeight="bold"
-              noWrap
-              sx={{ textOverflow: "ellipsis", overflow: "hidden" }}
+          />
+
+          <Stack direction="row" spacing={2.5} alignItems="center">
+            {/* Avatar with nice ring effect */}
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
+                bgcolor: 'primary.main',
+                fontSize: 28,
+                fontWeight: 700,
+                boxShadow: '0 6px 20px rgba(0,0,0,0.14)',
+                border: '3px solid',
+                borderColor: 'background.paper',
+                outline: '2px solid',
+                outlineColor: 'primary.light',
+                outlineOffset: '-2px',
+                transition: 'transform 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.06)',
+                },
+              }}
             >
-              {user_data?.user_data?.user_name}
-            </Typography>
-            <Typography
-              variant="body2"
-              color="primary.main"
-              noWrap
-              sx={{ textOverflow: "ellipsis", overflow: "hidden" }}
-            >
-              {user_data?.user_data?.email}
-            </Typography>
-          </Box>
+              {user_data?.user_data?.user_name?.[0]?.toUpperCase() || '?'}
+            </Avatar>
+
+            <Box sx={{ minWidth: 0 }}>
+              {/* Name – slightly larger + better weight */}
+              <Typography
+                variant="h6"
+                fontWeight={700}
+                noWrap
+                sx={{
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.01em',
+                  color: 'text.primary',
+                }}
+              >
+                {user_data?.user_data?.user_name || 'User'}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                noWrap
+                sx={{
+                  mt: 0.4,
+                  fontWeight: 400,
+                  opacity: 0.85,
+                  transition: 'opacity 0.2s',
+                  '&:hover': {
+                    opacity: 1,
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                {user_data?.user_data?.email || '—'}
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
       )}
 
-      {/* Scrollable Menu Items */}
-      <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
-        <List>
+      {/* ── Navigation / Menu ── */}
+      <Box sx={{ flexGrow: 1, overflowY: "auto", px: 2, py: 2 }}>
+        <List disablePadding>
           {menuItems.map((item) => (
             <ListItemButton
               key={item.label}
               onClick={() => goTo(item.path)}
+              selected={location.pathname === item.path}
               sx={{
                 borderRadius: 2,
-                my: 0.5,
-                mx: 2,
-                transition: "0.3s",
-                backgroundColor:
-                  location.pathname === item.path ? "primary.main" : "white",
-                color:
-                  location.pathname === item.path ? "white" : "text.primary",
-                boxShadow:
-                  location.pathname === item.path
-                    ? "0 4px 12px rgba(0,0,0,0.08)"
-                    : "0 2px 6px rgba(0,0,0,0.04)",
-                "&:hover": {
-                  backgroundColor: "primary.light",
+                mb: 0.75,
+                py: 1.4,
+                px: 2.5,
+                transition: "all 0.2s ease",
+                "&.Mui-selected": {
+                  bgcolor: "primary.main",
                   color: "white",
-                  boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
+                  boxShadow: "0 4px 14px rgba(25, 118, 210, 0.25)",
+                  "&:hover": {
+                    bgcolor: "primary.dark",
+                  },
+                  "& .MuiListItemIcon-root": {
+                    color: "white",
+                  },
+                },
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  transform: "translateX(4px)",
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  minWidth: 40,
-                  color:
-                    location.pathname === item.path ? "white" : "primary.main",
+                  minWidth: 44,
+                  color: location.pathname === item.path ? "white" : "primary.main",
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.label} />
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
             </ListItemButton>
           ))}
 
-          {!access_token && (
+          {/* ── CV Templates (collapsible) ── */}
+          {access_token && user_data.user_data?.user_type === 3 && (
             <>
+              <ListItemButton
+                onClick={toggleCv}
+                sx={{
+                  borderRadius: 2,
+                  mb: 0.5,
+                  py: 1.4,
+                  px: 2.5,
+                  mt: 2,
+                  backgroundColor: openCv ? "action.selected" : "transparent",
+                  "&:hover": { bgcolor: "action.hover" },
+                }}
+              >
+                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
+                  <DownloadIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary="CV Templates"
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+                {openCv ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+
+              <Collapse in={openCv} timeout={300}>
+                <Box sx={{ pl: 3, pr: 2, pb: 1 }}>
+                  {cvTemplates.map((template) => (
+                    <ListItemButton
+                      key={template.name}
+                      component="a"
+                      href={template.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        borderRadius: 1.5,
+                        py: 1.1,
+                        px: 2,
+                        my: 0.5,
+                        color: "text.secondary",
+                        fontSize: "0.9rem",
+                        "&:hover": {
+                          bgcolor: "primary.lighter",
+                          color: "primary.main",
+                          pl: 3,
+                        },
+                      }}
+                    >
+                      {template.name}
+                    </ListItemButton>
+                  ))}
+                </Box>
+              </Collapse>
+            </>
+          )}
+
+          {/* ── Auth actions (when not logged in) ── */}
+          {!access_token && (
+            <Box sx={{ mt: 1.5 }}>
               <ListItemButton
                 onClick={() => setopenRegisterForm(true)}
                 sx={{
                   borderRadius: 2,
-                  my: 0.5,
-                  mx: 2,
-                  backgroundColor: "white",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                  transition: "0.3s",
-                  "&:hover": {
-                    backgroundColor: "primary.light",
-                    color: "white",
-                  },
+                  py: 1.5,
+                  border: "2px solid",
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  mb: 1.5,
+                  "&:hover": { bgcolor: "primary.lighter" },
                 }}
               >
-                <ListItemIcon sx={{ color: "primary.main", minWidth: 40 }}>
+                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary="Sign Up" />
@@ -420,87 +528,44 @@ export default function Topbar() {
                 onClick={() => setOpenLogin(true)}
                 sx={{
                   borderRadius: 2,
-                  my: 0.5,
-                  mx: 2,
-                  backgroundColor: "white",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
-                  transition: "0.3s",
+                  py: 1.5,
+                  border: "2px solid",
+                  borderColor: "primary.main",
+                  color: "primary.main",
                   "&:hover": {
-                    backgroundColor: "primary.light",
-                    color: "white",
+                    bgcolor: "primary.lighter",
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: "primary.main", minWidth: 40 }}>
+                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary="Login" />
               </ListItemButton>
-            </>
-          )}
-
-          {access_token && user_data.user_data?.user_type === 3 && (
-            <ListItemButton
-              onClick={() => console.log("Download CV")}
-              sx={{
-                borderRadius: 2,
-                my: 0.5,
-                mx: 2,
-                transition: "0.3s",
-                backgroundColor:
-                  location.pathname === "/download-cv"
-                    ? "primary.main"
-                    : "white",
-                color:
-                  location.pathname === "/download-cv"
-                    ? "white"
-                    : "text.primary",
-                boxShadow:
-                  location.pathname === "/download-cv"
-                    ? "0 4px 12px rgba(0,0,0,0.08)"
-                    : "0 2px 6px rgba(0,0,0,0.04)",
-                "&:hover": {
-                  backgroundColor: "primary.light",
-                  color: "white",
-                  boxShadow: "0 6px 14px rgba(0,0,0,0.12)",
-                },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                  color:
-                    location.pathname === "/download-cv"
-                      ? "white"
-                      : "primary.main",
-                }}
-              >
-                <DownloadIcon />
-              </ListItemIcon>
-              <ListItemText primary="Download CV Templates" />
-            </ListItemButton>
+            </Box>
           )}
         </List>
       </Box>
 
-      {/* Logout at bottom */}
+      {/* ── Logout at bottom ── */}
       {access_token && (
-        <Box sx={{ p: 2, mt: "auto" }}>
+        <Box sx={{ px: 2, py: 1, borderTop: "1px solid", borderColor: "divider" }}>
           <ListItemButton
             onClick={handleLogout}
             sx={{
               borderRadius: 2,
-              backgroundColor: "white",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
-              transition: "0.3s",
-              "&:hover": { backgroundColor: "error.light", color: "white" },
+              py: 1.5,
               color: "error.main",
+              "&:hover": {
+                bgcolor: "error.lighter",
+                color: "error.dark",
+              },
             }}
           >
-            <ListItemIcon sx={{ color: "error.main", minWidth: 40 }}>
+            <ListItemIcon sx={{ color: "error.main", minWidth: 44 }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Log out" />
+            <ListItemText primary="Log out" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </Box>
       )}
@@ -579,7 +644,7 @@ export default function Topbar() {
                     width: isMobile ? "92vw" : 340,
                     maxWidth: 360,
                     borderRadius: 3,
-                    height: "fit-content",          
+                    height: "fit-content",
                     background: "rgba(255, 255, 255, 0.98)",
                     backdropFilter: "blur(12px)",
                     boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
@@ -691,18 +756,10 @@ export default function Topbar() {
 
                       <Collapse in={openCv} timeout={280} unmountOnExit>
                         <Box sx={{ bgcolor: "rgba(0,0,0,0.03)", py: 0.5 }}>
-                          {[
-                            ["Modern Minimal CV", "modern-minimal.pdf"],
-                            ["Creative Designer Resume", "creative-designer.pdf"],
-                            ["Professional Corporate Template", "professional-corporate.pdf"],
-                            ["Tech Startup One-Pager", "tech-startup.pdf"],
-                          ].map(([label, file]) => (
+                          {cvTemplates.map((template) => (
                             <MenuItem
-                              key={label}
+                              key={template.name}
                               component="a"
-                              href={`https://example.com/cv/${file}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               onClick={handleProfileClose}
                               sx={{
                                 pl: isMobile ? 7 : 9,
@@ -715,7 +772,7 @@ export default function Topbar() {
                                 },
                               }}
                             >
-                              {label}
+                              {template.name}
                             </MenuItem>
                           ))}
                         </Box>
@@ -943,85 +1000,26 @@ export default function Topbar() {
 
                           <Collapse in={openCv} timeout={280} unmountOnExit>
                             <Box sx={{ bgcolor: "rgba(0,0,0,0.03)", py: 0.5 }}>
-                              <MenuItem
-                                sx={{
-                                  pl: 9,
-                                  py: 1.3,
-                                  fontSize: "0.93rem",
-                                  color: "text.secondary",
-                                  "&:hover": {
-                                    color: "#667eea",
-                                    bgcolor: "rgba(102, 126, 234, 0.08)",
-                                  },
-                                }}
-                                component="a"
-                                href="https://example.com/cv/modern-minimal.pdf"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={handleProfileClose}
-                              >
-                                Modern Minimal CV
-                              </MenuItem>
-
-                              <MenuItem
-                                sx={{
-                                  pl: 9,
-                                  py: 1.3,
-                                  fontSize: "0.93rem",
-                                  color: "text.secondary",
-                                  "&:hover": {
-                                    color: "#667eea",
-                                    bgcolor: "rgba(102, 126, 234, 0.08)",
-                                  },
-                                }}
-                                component="a"
-                                href="https://example.com/cv/creative-designer.pdf"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={handleProfileClose}
-                              >
-                                Creative Designer Resume
-                              </MenuItem>
-
-                              <MenuItem
-                                sx={{
-                                  pl: 9,
-                                  py: 1.3,
-                                  fontSize: "0.93rem",
-                                  color: "text.secondary",
-                                  "&:hover": {
-                                    color: "#667eea",
-                                    bgcolor: "rgba(102, 126, 234, 0.08)",
-                                  },
-                                }}
-                                component="a"
-                                href="https://example.com/cv/professional-corporate.pdf"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={handleProfileClose}
-                              >
-                                Professional Corporate Template
-                              </MenuItem>
-
-                              <MenuItem
-                                sx={{
-                                  pl: 9,
-                                  py: 1.3,
-                                  fontSize: "0.93rem",
-                                  color: "text.secondary",
-                                  "&:hover": {
-                                    color: "#667eea",
-                                    bgcolor: "rgba(102, 126, 234, 0.08)",
-                                  },
-                                }}
-                                component="a"
-                                href="https://example.com/cv/tech-startup.pdf"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={handleProfileClose}
-                              >
-                                Tech Startup One-Pager
-                              </MenuItem>
+                              {cvTemplates.map((template) => (
+                                <MenuItem
+                                  key={template.name}
+                                  component="a"
+                                  href={template.href}
+                                  onClick={handleProfileClose}
+                                  sx={{
+                                    pl: 9,
+                                    py: 1.3,
+                                    fontSize: "0.93rem",
+                                    color: "text.secondary",
+                                    "&:hover": {
+                                      color: "#667eea",
+                                      bgcolor: "rgba(102,126,234,0.08)",
+                                    },
+                                  }}
+                                >
+                                  {template.name}
+                                </MenuItem>
+                              ))}
                             </Box>
                           </Collapse>
                         </>
