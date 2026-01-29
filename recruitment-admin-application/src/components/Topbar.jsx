@@ -105,7 +105,7 @@ export default function Topbar() {
     ],
     2: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Candidate", path: "/", icon: <PersonIcon /> },
+      { label: "Candidate Apply", path: "/candidate_apply", icon: <PersonIcon /> },
       { label: "Employer", path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [

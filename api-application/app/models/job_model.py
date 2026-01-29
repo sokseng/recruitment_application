@@ -77,8 +77,7 @@ class Job(Base):
 
     # Relationships
     employer = relationship("Employer", back_populates="jobs")
-    # You can add later:
-    # applications = relationship("JobApplication", back_populates="job", cascade="all, delete-orphan")
+    applications = relationship("JobApplication", back_populates="job", cascade="all, delete-orphan")
 
     # Optional: help with enum serialization in responses
     def __repr__(self):

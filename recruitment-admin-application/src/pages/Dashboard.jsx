@@ -22,6 +22,14 @@ import {
   IconButton,
   Tooltip,
   Badge,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  RadioGroup,
+  FormControlLabel,
+  DialogActions,
+  Radio,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import api from "../services/api";
@@ -44,7 +52,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined } from "@mui/icons-material";
+import { DescriptionOutlined, EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, SendAndArchive, UploadFileSharp } from "@mui/icons-material";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -75,8 +83,35 @@ export default function Dashboard() {
   const [companyAnchor, setCompanyAnchor] = useState(null);
   const openCompanyPopover = Boolean(companyAnchor);
 
+  const [resumes, setResumes] = useState([]);
+  const [selectedResumeId, setSelectedResumeId] = useState(""); // for apply modal
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  const [jobToApply, setJobToApply] = useState(null);
+  const [applying, setApplying] = useState({});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+
   useEffect(() => {
     loadJobs();
+  }, []);
+
+  useEffect(() => {
+    const loadResumes = async () => {
+      try {
+        const res = await api.get("/candidate/resumes/");
+        setResumes(res.data || []);
+        const primary = res.data?.find(r => r.is_primary);
+        if (primary) setSelectedResumeId(primary.pk_id);
+      } catch (err) {
+        console.log("No resumes or not candidate yet");
+      }
+    };
+    loadResumes();
   }, []);
 
   useEffect(() => {
@@ -150,6 +185,69 @@ export default function Dashboard() {
 
   const handleBackToList = () => {
     setShowDetailMobile(false);
+  };
+
+  const handleNewResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append("resume_file", file);
+    formData.append("is_primary", false);
+
+    try {
+      const res = await api.post("/candidate/resumes/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Add new resume to list
+      setResumes((prev) => [...prev, res.data]);
+
+      // Auto-select the newly uploaded resume
+      setSelectedResumeId(res.data.pk_id.toString());
+
+      setSnackbar({
+        open: true,
+        message: "Resume uploaded successfully!",
+        severity: "success",
+      });
+    } catch (err) {
+      setUploadError(
+        err.response?.data?.detail ||
+        "Failed to upload resume. Please try again."
+      );
+    } finally {
+      setUploadLoading(false);
+      // Reset file input
+      e.target.value = "";
+    }
+  };
+
+  const handleApplyWithResume = async (jobId, resumeId) => {
+    try {
+      setApplying(prev => ({ ...prev, [jobId]: true }));
+      await api.post("/applications/", {
+        job_id: jobId,
+        candidate_resume_id: parseInt(resumeId)
+      });
+      setSnackbar({ open: true, message: "Applied successfully!", severity: "success" });
+      setApplyDialogOpen(false);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.detail || "Failed to apply",
+        severity: "error"
+      });
+    } finally {
+      setApplying(prev => ({ ...prev, [jobId]: false }));
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   if (loading) {
@@ -547,13 +645,59 @@ export default function Dashboard() {
                   />
                 </Box>
                 {/* Mobile */}
-                <IconButton
-                  onClick={(e) => setCompanyAnchor(e.currentTarget)}
-                  sx={{ display: { xs: "inline-flex", sm: "none" } }}
-                >
-                  <InfoOutlinedIcon />
-                </IconButton>
-
+                <Stack spacing={1}>
+                  {selectedJob && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      startIcon={<Send />}
+                      onClick={() => {
+                        setJobToApply(selectedJob);
+                        setApplyDialogOpen(true);
+                      }}
+                      sx={{ 
+                        display: { xs: "inline-flex", sm: "none" },
+                        textTransform: "none" 
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  )}
+                  {/* Mobile */}
+                  <Button
+                    variant="outlined"
+                    startIcon={<InfoOutlinedIcon />}
+                    onClick={(e) => setCompanyAnchor(e.currentTarget)}
+                    size="small"
+                    sx={{
+                      display: { xs: "inline-flex", sm: "none" },
+                      textTransform: "none",
+                    }}
+                  >
+                    Info
+                  </Button>
+                </Stack>
+                {/* Apply Now Button */}
+                {selectedJob && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      startIcon={<Send />}
+                      onClick={() => {
+                        setJobToApply(selectedJob);
+                        setApplyDialogOpen(true);
+                      }}
+                      sx={{
+                        whiteSpace: "nowrap",
+                        display: { xs: "none", sm: "inline-flex" },
+                        textTransform: "none",
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                )}
                 {/* Desktop */}
                 <Button
                   variant="outlined"
@@ -568,8 +712,6 @@ export default function Dashboard() {
                 >
                   Company Info
                 </Button>
-                
-                
                 {/* // Popover component */}
                 <Popover
                   open={openCompanyPopover}
@@ -704,6 +846,94 @@ export default function Dashboard() {
                     </Box>
                   </Stack>
                 </Popover>
+                {/* Apply Dialog with Resume Selection */}
+                <Dialog open={applyDialogOpen} onClose={() => setApplyDialogOpen(false)} fullWidth maxWidth="xs">
+                  <DialogTitle variant="body2">Select Resume to Apply</DialogTitle>
+                  <Divider />
+                  <DialogContent>
+                    {resumes.length === 0 ? (
+                      <Alert severity="warning">
+                        You don't have any resume yet. Please upload one first.
+                      </Alert>
+                    ) : (
+                      <RadioGroup value={selectedResumeId} onChange={(e) => setSelectedResumeId(e.target.value)}>
+                        {resumes.map((resume) => (
+                          <FormControlLabel
+                            key={resume.pk_id}
+                            value={resume.pk_id.toString()}
+                            control={<Radio />}
+                            label={
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1}}>
+                                <DescriptionOutlined color="primary" />
+                                <Box>
+                                  <Typography fontWeight={600} variant="body2">
+                                    {resume.resume_file || "Text Resume"}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {resume.is_primary ? "Primary Resume" : "Uploaded on " + new Date(resume.created_date).toLocaleDateString()}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            }
+                          />
+                        ))}
+                      </RadioGroup>
+                    )}
+                    {/* ── New resume upload section ── */}
+                    <Box sx={{ mt: 3, borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Or upload a new resume right now
+                      </Typography>
+
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        startIcon={<UploadFileSharp />}
+                        sx={{ mt: 1 }}
+                      >
+                        Choose PDF / DOCX file
+                        <input
+                          type="file"
+                          hidden
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleNewResumeUpload}
+                        />
+                      </Button>
+
+                      {uploadLoading && <CircularProgress size={24} sx={{ ml: 2 }} />}
+                      {uploadError && (
+                        <Alert severity="error" sx={{ mt: 1.5 }}>
+                          {uploadError}
+                        </Alert>
+                      )}
+                    </Box>
+                  </DialogContent>
+                  <Divider />
+                  <DialogActions>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      sx={{
+                        textTransform: "none"
+                      }}
+                      onClick={() => setApplyDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{
+                        textTransform: "none"
+                      }}
+                      disabled={!selectedResumeId || applying[jobToApply?.pk_id]}
+                      onClick={() => handleApplyWithResume(jobToApply.pk_id, selectedResumeId)}
+                    >
+                      {applying[jobToApply?.pk_id] ? "Applying..." : "Submit"}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </Stack>
 
               <Divider sx={{mt: 1}}/>
@@ -887,6 +1117,7 @@ export default function Dashboard() {
                 modules={{ toolbar: false }}
               />
             </Box>
+            
           </Box>
         ) : (
           <Box
@@ -904,7 +1135,7 @@ export default function Dashboard() {
           </Box>
         )}
 
-        {/* Floating / Sticky Apply button on mobile */}
+        {/* Floating / Home on mobile */}
         {isMobile && selectedJob && (
           <Box
             sx={{
@@ -937,6 +1168,7 @@ export default function Dashboard() {
           </Box>
         )}
       </Box>
+      
     );
   };
 
@@ -1066,6 +1298,17 @@ export default function Dashboard() {
           {DetailContent()}
         </Box>
       </Box>
+      {/* Snackbar for apply feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
