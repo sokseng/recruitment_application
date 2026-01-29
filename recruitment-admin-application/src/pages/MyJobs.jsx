@@ -52,7 +52,7 @@ import 'quill/dist/quill.snow.css';
 import api from "../services/api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { PostAdd } from "@mui/icons-material";
+import { Cancel, PostAdd, ResetTv, RestartAlt, RestoreFromTrash, Save } from "@mui/icons-material";
 
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
@@ -232,7 +232,7 @@ function JobFormDialog({
         }}
       >
         <div>
-          <Typography variant={isMobile ? "h7" : "h6"} fontWeight="bold">
+          <Typography variant={isMobile ? "h6" : "h7"} fontWeight="bold">
             {title}
           </Typography>
         </div>
@@ -610,6 +610,7 @@ function JobFormDialog({
             textTransform: "none",
             backgroundColor:"#023F6B"
           }}
+          startIcon={<Save />}
         >
           {loading ? (
             <>
@@ -959,7 +960,7 @@ export default function MyJobs() {
         >
           <Button
             variant="outlined"
-            startIcon={<AutorenewRoundedIcon />}
+            startIcon={<Cancel />}
             sx={{ borderRadius: 3, textTransform: "none" }}
             onClick={() => {
               setSearch("");
@@ -1359,8 +1360,9 @@ export default function MyJobs() {
           <Button
             onClick={() => setOpenCloseDialog(false)}
             variant="outlined"
-            color="inherit"
+            color="error"
             size="small"
+            startIcon={<Cancel />}
             sx={{
               textTransform: "none",
               borderRadius: 2,
@@ -1453,12 +1455,13 @@ export default function MyJobs() {
           <Button
             onClick={() => setOpenDuplicateDialog(false)}
             variant="outlined"
-            color="inherit"
+            color="error"
             size="small"
             sx={{
               textTransform: "none",
               borderRadius: 2,
             }}
+            startIcon={<Cancel />}
           >
             Cancel
           </Button>
