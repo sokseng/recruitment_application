@@ -1,6 +1,7 @@
 import os
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from fastapi.responses import FileResponse
+from jinja2 import Environment, FileSystemLoader
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.dependencies.auth import verify_access_token
@@ -130,4 +131,53 @@ def download_resume(
         path=file_path,
         filename=resume.resume_file,
         media_type="application/octet-stream"
+    )
+
+@router.get("/generate-cv/{template_id}/{candidate_id}")
+def generate_cv(template_id: str, candidate_id: int = Depends(get_current_candidate_id), db: Session = Depends(get_db)):
+    env = Environment(loader=FileSystemLoader("cv_template"))
+    TEMPLATE_MAP = {
+        "modern-minimal": "modern_minimal.html",
+        "creative-designer": "creative_designer.html",
+        "corporate-professional": "corporate_professional.html",
+        "tech-startup": "tech_startup.html",
+        "academic-research": "academic_research.html",
+    }
+
+    if not os.path.exists("temp_files"):
+        os.makedirs("temp_files")
+
+    if template_id not in TEMPLATE_MAP:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    user_data = {
+        "name": f"Candidate{candidate_id}",
+        "email": f"candidate{candidate_id}@example.com",
+        "phone": "123-456-7890",
+        "skills": ["Python", "React", "FastAPI", "SQL"],
+        "experience": [
+            {"title": "Software Engineer", "company": "ABC Corp", "years": "2021-2023"},
+            {"title": "Frontend Developer", "company": "XYZ Inc", "years": "2019-2021"},
+        ],
+        "education": [
+            {"degree": "BSc Computer Science", "school": "University A", "years": "2015-2019"}
+        ]
+    }
+
+    # Load HTML template
+    env = Environment(loader=FileSystemLoader("cv_template"))
+    template_file = TEMPLATE_MAP[template_id]
+    template = env.get_template(template_file)
+    html_content = template.render(user=user_data)
+
+    # Generate PDF
+    pdf_filename = f"temp_files/Candidate{candidate_id}_{template_id}.pdf"
+    from weasyprint import HTML
+    HTML(string=html_content).write_pdf(pdf_filename)
+
+    # Return PDF
+    return FileResponse(
+        pdf_filename,
+        filename=f"Candidate{candidate_id}_{template_id}.pdf",
+        media_type="application/pdf"
     )

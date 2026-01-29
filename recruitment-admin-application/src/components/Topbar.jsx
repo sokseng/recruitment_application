@@ -121,11 +121,11 @@ export default function Topbar() {
 
   const toggleCv = () => setOpenCv((prev) => !prev);
   const cvTemplates = [
-    { name: "Modern Minimal", href: "#" },
-    { name: "Creative Designer", href: "#" },
-    { name: "Corporate Professional", href: "#" },
-    { name: "Tech / Startup", href: "#" },
-    { name: "Academic / Research", href: "#" },
+    { name: "Modern Minimal", id: "modern-minimal" },
+    { name: "Creative Designer", id: "creative-designer" },
+    { name: "Corporate Professional", id: "corporate-professional" },
+    { name: "Tech / Startup", id: "tech-startup" },
+    { name: "Academic / Research", id: "academic-research" },
   ];
 
   const menuItems = access_token
@@ -295,6 +295,35 @@ export default function Topbar() {
       setSeverity("error");
       setMessage(err.response?.data?.detail || "Failed to change password");
       setOpenSnackbar(true);
+    }
+  };
+
+  const DownloadCvTemplate = async (template) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/generate-cv/${template.id}/${candidateId}`,
+        {
+          responseType: "blob", // important for PDF
+        }
+      );
+
+      // Create a blob URL
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create temporary link to download
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${template.name.replace(/\s+/g, "_")}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download CV:", error);
+      alert("Failed to download CV. Please try again.");
     }
   };
 
@@ -477,10 +506,7 @@ export default function Topbar() {
                   {cvTemplates.map((template) => (
                     <ListItemButton
                       key={template.name}
-                      component="a"
-                      href={template.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => DownloadCvTemplate(template)}
                       sx={{
                         borderRadius: 1.5,
                         py: 1.1,
@@ -759,8 +785,7 @@ export default function Topbar() {
                           {cvTemplates.map((template) => (
                             <MenuItem
                               key={template.name}
-                              component="a"
-                              onClick={handleProfileClose}
+                              onClick={() => DownloadCvTemplate(template)}
                               sx={{
                                 pl: isMobile ? 7 : 9,
                                 py: 1.3,
@@ -1003,9 +1028,7 @@ export default function Topbar() {
                               {cvTemplates.map((template) => (
                                 <MenuItem
                                   key={template.name}
-                                  component="a"
-                                  href={template.href}
-                                  onClick={handleProfileClose}
+                                  onClick={() => DownloadCvTemplate(template)}
                                   sx={{
                                     pl: 9,
                                     py: 1.3,
