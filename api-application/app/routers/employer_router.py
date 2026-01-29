@@ -111,7 +111,7 @@ async def update_profile(
         user_name=user_name,
         gender=gender,
         phone=phone,
-        date_of_birth=date_of_birth,
+        date_of_birth=date_of_birth or None,
         address=address, 
     )
 

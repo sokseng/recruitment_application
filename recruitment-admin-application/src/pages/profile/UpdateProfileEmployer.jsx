@@ -320,7 +320,6 @@ const UpdateProfileEmployer = () => {
                                         <TextField
                                             select
                                             label="Gender"
-                                            required
                                             name="gender"
                                             value={formData.gender}
                                             onChange={handleChange}
@@ -332,7 +331,6 @@ const UpdateProfileEmployer = () => {
                                         </TextField>
                                         <TextField
                                             label="Date of Birth"
-                                            required
                                             name="date_of_birth"
                                             type="date"
                                             InputLabelProps={{ shrink: true }}
