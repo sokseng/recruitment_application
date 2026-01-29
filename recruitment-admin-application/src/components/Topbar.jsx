@@ -102,13 +102,13 @@ export default function Topbar() {
       { label: "Home", path: "/", icon: <HomeIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
-      { label: "Employers", path: "/admin/employer", icon: <BusinessIcon /> },
+      { label: "All companies", path: "/admin/employer", icon: <BusinessIcon /> },
       { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon /> },
     ],
     2: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Candidate Apply", path: "/candidate_apply", icon: <PersonIcon /> },
-      { label: "Employer", path: "/employer", icon: <BusinessIcon /> },
+      { label: "Applied candidates", path: "/candidate_apply", icon: <PersonIcon /> },
+      { label: "Job posts", path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
@@ -121,11 +121,11 @@ export default function Topbar() {
 
   const toggleCv = () => setOpenCv((prev) => !prev);
   const cvTemplates = [
-    { name: "Modern Minimal", id: "modern-minimal" },
-    { name: "Creative Designer", id: "creative-designer" },
-    { name: "Corporate Professional", id: "corporate-professional" },
-    { name: "Tech / Startup", id: "tech-startup" },
-    { name: "Academic / Research", id: "academic-research" },
+    { name: "Modern Minimal", href: "#" },
+    { name: "Creative Designer", href: "#" },
+    { name: "Corporate Professional", href: "#" },
+    { name: "Tech / Startup", href: "#" },
+    { name: "Academic / Research", href: "#" },
   ];
 
   const menuItems = access_token
@@ -295,35 +295,6 @@ export default function Topbar() {
       setSeverity("error");
       setMessage(err.response?.data?.detail || "Failed to change password");
       setOpenSnackbar(true);
-    }
-  };
-
-  const DownloadCvTemplate = async (template) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:8000/generate-cv/${template.id}/${candidateId}`,
-        {
-          responseType: "blob", // important for PDF
-        }
-      );
-
-      // Create a blob URL
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-
-      // Create temporary link to download
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${template.name.replace(/\s+/g, "_")}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-
-      // Clean up
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download CV:", error);
-      alert("Failed to download CV. Please try again.");
     }
   };
 
@@ -506,7 +477,10 @@ export default function Topbar() {
                   {cvTemplates.map((template) => (
                     <ListItemButton
                       key={template.name}
-                      onClick={() => DownloadCvTemplate(template)}
+                      component="a"
+                      href={template.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       sx={{
                         borderRadius: 1.5,
                         py: 1.1,
@@ -616,7 +590,7 @@ export default function Topbar() {
         position="sticky"
         elevation={1}
         sx={{
-          background: "#023F6B",
+          background: "#FAFAFA",
         }}
       >
         <Toolbar sx={{ gap: 1 }}>
@@ -634,14 +608,15 @@ export default function Topbar() {
           {/* Logo – shown on both mobile & desktop */}
           <Box
             component="img"
-            src="/logo.jpg" // Place your logo in the public folder
+            src="/logo.png" // Place your logo in the public folder
             alt="Company Logo"
             sx={{
-              height: { xs: 40, sm: 50 },
-              width: { xs: 40, sm: 50 },
+              height: { xs: 40, sm: 50, md: 50 },
+              width: { xs: 60, sm: 50, md: 110 },
               objectFit: "cover",
-              borderRadius: "2rem",
+              borderRadius: "8px",
               cursor: "pointer",
+              border: "2px solid #1976d2", // MUI primary color border
             }}
             onClick={() => navigate("/")}
           />
@@ -785,7 +760,8 @@ export default function Topbar() {
                           {cvTemplates.map((template) => (
                             <MenuItem
                               key={template.name}
-                              onClick={() => DownloadCvTemplate(template)}
+                              component="a"
+                              onClick={handleProfileClose}
                               sx={{
                                 pl: isMobile ? 7 : 9,
                                 py: 1.3,
@@ -863,7 +839,6 @@ export default function Topbar() {
                   startIcon={item.icon}
                   sx={{
                     fontWeight: 500,
-                    color: "white",
                     position: "relative",
                     "&::after": {
                       content: '""',
@@ -1028,7 +1003,9 @@ export default function Topbar() {
                               {cvTemplates.map((template) => (
                                 <MenuItem
                                   key={template.name}
-                                  onClick={() => DownloadCvTemplate(template)}
+                                  component="a"
+                                  href={template.href}
+                                  onClick={handleProfileClose}
                                   sx={{
                                     pl: 9,
                                     py: 1.3,
@@ -1153,28 +1130,28 @@ export default function Topbar() {
             component="form"
             onSubmit={handleLogin}
             id="login-form"
-            alignItems="center"
           >
             {/* Logo */}
-            <Box
-              component="img"
-              src="/logo.jpg"
-              alt="Logo"
-              sx={{
-                width: 80,
-                height: 80,
-                objectFit: "cover",
-                border: "2px solid #1976d2", // MUI primary color border
-                borderRadius: "3rem",
-                p: 1,
-                mb: 1,
-                boxShadow: 2,
-              }}
-            />
+            <Stack alignItems="center">
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Logo"
+                sx={{
+                  width: 110,
+                  height: 60,
+                  objectFit: "cover",
+                  border: "2px solid #1976d2", // MUI primary color border
+                  borderRadius: "1rem",
+                  boxShadow: 2,
+                }}
+              />
+            </Stack>
+            
 
             {/* Header */}
-            <Box textAlign="center">
-              <Typography variant="h6" fontWeight={700}>
+            <Box textAlign="start">
+              <Typography variant="h7" fontWeight={700}>
                 Login Account 🚀
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -1300,24 +1277,23 @@ export default function Topbar() {
               <Stack alignItems="center">
                 <Box
                   component="img"
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="Logo"
                   alignItems="center"
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: 120,
+                    height: 60,
                     objectFit: "cover",
                     border: "2px solid #1976d2", // MUI primary color border
-                    borderRadius: "3rem",
-                    p: 0.3,
+                    borderRadius: "1rem",
                     boxShadow: 2,
                   }}
                 />
               </Stack>
 
               {/* Form Header */}
-              <Box textAlign="center">
-                <Typography variant="h6" fontWeight={700}>
+              <Box textAlign="start">
+                <Typography variant="h7" fontWeight={700}>
                   Create Account 🚀
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
