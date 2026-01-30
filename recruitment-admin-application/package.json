@@ -18,6 +18,7 @@
     "@mui/x-date-pickers": "^8.25.0",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
+    "emoji-picker-react": "^4.17.3",
     "html-react-parser": "^5.2.11",
     "quill": "^2.0.2",
     "react": "^19.2.0",
