@@ -34,7 +34,9 @@ import {
   Delete as DeleteIcon,
   Close as CloseIcon,
   MoreVert as MoreVertIcon,
-  Star as StarIcon
+  Star as StarIcon,
+  FileDownload as FileDownloadIcon,
+  Description as DescriptionIcon 
 } from '@mui/icons-material'
 import useAuthStore from '../../store/useAuthStore'
 import api from '../../services/api'
@@ -661,7 +663,7 @@ export default function CandidateProfileDashboard() {
                   sx={{ border: '1px solid #eee', borderRadius: 2, width: '100%', flexWrap: 'nowrap', boxSizing: 'border-box', flexShrink: 0, p: 1 }}
                 >
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <UploadFileIcon color="success" />
+                    <DescriptionIcon color="success" />
                     <Typography
                       sx={{
                         maxWidth: { xs: '180px', sm: '260px', md: '100%' },
@@ -731,7 +733,7 @@ export default function CandidateProfileDashboard() {
                               onClick={() => { downloadFile(cv.pk_id, cv.resume_file); setAnchorEl(cv.pk_id, null); }}
                               sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                             >
-                              <UploadFileIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
+                              <FileDownloadIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                               Download
                             </MenuItem>
                           )}
@@ -803,7 +805,7 @@ export default function CandidateProfileDashboard() {
 
                         {cv.download_url && (
                           <SpeedDialAction
-                            icon={<UploadFileIcon />}
+                            icon={<FileDownloadIcon />}
                             tooltipTitle="Download"
                             onClick={() =>
                               downloadFile(cv.pk_id, cv.resume_file)
@@ -917,14 +919,16 @@ export default function CandidateProfileDashboard() {
                   >
                     {loading ? 'Uploading...' : 'Upload'}
                   </Button>
-                  <IconButton
-                    color="error"
+                  <Button
+                    variant="contained"
+                    color='error'
+                    size="small"
                     onClick={() =>
                       setCvFile((prev) => prev.filter((_, i) => i !== idx))
                     }
                   >
-                    <DeleteIcon />
-                  </IconButton>
+                    Remove
+                  </Button>
                 </Stack>
               </Stack>
             ))}
