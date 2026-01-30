@@ -746,7 +746,55 @@ export default function CandidateProfileDashboard() {
                                 type="file"
                                 hidden
                                 accept=".pdf,.doc,.docx"
-                                onChange={(e) => handleReplaceCv(e, cv.pk_id)}
+                                onChange={async (e) => {
+                                  const file = e.target.files[0];
+                                  if (!file) return;
+
+                                  const allowedTypes = [
+                                    'application/pdf',
+                                    'application/msword',
+                                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                  ];
+                                  if (!allowedTypes.includes(file.type)) {
+                                    setMessage(file.name + ' is not allowed.');
+                                    setSeverity('error');
+                                    setOpenSnackbar(true);
+                                    return;
+                                  }
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    setMessage(file.name + ' exceeds 5MB.');
+                                    setSeverity('error');
+                                    setOpenSnackbar(true);
+                                    return;
+                                  }
+
+                                  try {
+                                    setLoading(true);
+                                    const formData = new FormData();
+                                    formData.append('resume_type', 'Upload');
+                                    formData.append('resume_content', cv.resume_content || '');
+                                    formData.append('recommendation_letter', cv.recommendation_letter || '');
+                                    formData.append('is_primary', cv.is_primary);
+                                    formData.append('resume_file', file);
+
+                                    const { data } = await api.put(`/candidate/resumes/${cv.pk_id}`, formData, {
+                                      headers: { 'Content-Type': 'multipart/form-data' },
+                                    });
+
+                                    setUploadedCvs((prev) =>
+                                      prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
+                                    );
+
+                                    setMessage('CV replaced successfully');
+                                    setSeverity('success');
+                                  } catch (err) {
+                                    setMessage(err.response?.data?.detail || 'Replace failed');
+                                    setSeverity('error');
+                                  } finally {
+                                    setOpenSnackbar(true);
+                                    setLoading(false);
+                                  }
+                                }}
                               />
                             </label>
                           </MenuItem>
