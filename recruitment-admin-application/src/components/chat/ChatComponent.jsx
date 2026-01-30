@@ -355,14 +355,6 @@ function ChatComponent({ chat, onBack, messages }) {
                                             ? `Recording... ${recordTime}s`
                                             : 'Audio ready'}
                                     </Typography>
-
-                                    {audioBlob && (
-                                        <audio
-                                            controls
-                                            src={URL.createObjectURL(audioBlob)}
-                                            style={{ height: 32 }}
-                                        />
-                                    )}
                                 </>
                             )}
 

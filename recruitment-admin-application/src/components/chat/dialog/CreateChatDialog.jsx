@@ -20,11 +20,9 @@ const CreateChatDialog = ({ open, onClose }) => {
 
   const handleSubmit = () => {
     if (!formData.name || !formData.emailOrPhone) {
-      alert('Please fill in all fields!');
       return;
     }
     console.log('Chat Created:', formData);
-    alert(`Chat created for ${formData.name}`);
     setFormData({ name: '', emailOrPhone: '' });
     onClose();
   };
