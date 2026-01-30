@@ -49,6 +49,7 @@ import {
   ExpandLess,
   ExpandMore,
 } from "@mui/icons-material";
+import ModeCommentIcon from '@mui/icons-material/ModeComment';
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -97,9 +98,12 @@ export default function Topbar() {
     setProfileAnchor(null);
   };
   const MENU_BY_ROLE = {
-    guest: [{ label: "Home", path: "/", icon: <HomeIcon /> }],
+    guest: [
+      { label: "Home", path: "/", icon: <HomeIcon /> },
+    ],
     1: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
+      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
       { label: "Employers", path: "/admin/employer", icon: <BusinessIcon /> },
@@ -107,16 +111,19 @@ export default function Topbar() {
     ],
     2: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
+      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Candidate Apply", path: "/candidate_apply", icon: <PersonIcon /> },
       { label: "Employer", path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
+      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Profile", path: "/update_profile", icon: <PersonIcon /> },
       { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
       { label: "All Companies", path: "/company", icon: <BusinessIcon /> },
     ],
   };
+
   const [openCv, setOpenCv] = useState(false);
 
   const toggleCv = () => setOpenCv((prev) => !prev);
