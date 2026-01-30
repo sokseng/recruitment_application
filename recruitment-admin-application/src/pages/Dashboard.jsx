@@ -50,7 +50,8 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { DescriptionOutlined, EmailOutlined, Home, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, UploadFileSharp } from "@mui/icons-material";
+import { Cancel, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
+import useAuthStore from "../store/useAuthStore";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -81,6 +82,8 @@ export default function Dashboard() {
   const [companyAnchor, setCompanyAnchor] = useState(null);
   const openCompanyPopover = Boolean(companyAnchor);
 
+  const isCandidate = useAuthStore(state => state.isCandidate());
+
   const [resumes, setResumes] = useState([]);
   const [selectedResumeId, setSelectedResumeId] = useState(""); // for apply modal
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
@@ -100,6 +103,11 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (!isCandidate) {
+      setResumes([]);
+      setSelectedResumeId("");
+      return;
+    }
     const loadResumes = async () => {
       try {
         const res = await api.get("/candidate/resumes/");
@@ -107,11 +115,11 @@ export default function Dashboard() {
         const primary = res.data?.find(r => r.is_primary);
         if (primary) setSelectedResumeId(primary.pk_id);
       } catch (err) {
-        console.log("No resumes or not candidate yet");
+        setResumes([]);
       }
     };
     loadResumes();
-  }, []);
+  }, [isCandidate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -187,7 +195,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!selectedJob) {
+    if (!selectedJob || !isCandidate) {
       setHasAppliedToThisJob(false);
       return;
     }
@@ -202,7 +210,7 @@ export default function Dashboard() {
     };
 
     checkApplication();
-  }, [selectedJob]);
+  }, [selectedJob, isCandidate]);
 
   const handleNewResumeUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -516,7 +524,7 @@ export default function Dashboard() {
                   setCategoryFilter(["All"]);
                 }}
               >
-                <AutorenewRoundedIcon color="primary" />
+                <Cancel color="error" />
               </IconButton>
           </Tooltip>
           
@@ -589,7 +597,7 @@ export default function Dashboard() {
                     <Typography variant="body2" fontWeight={600}>
                       {job.job_title}
                     </Typography>
-                    <Stack direction="column" spacing={0.3} mt={0.5}>
+                    <Stack direction="row" spacing={0.3} mt={0.5}>
                       <Chip
                         icon={<EventIcon />}
                         label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
@@ -642,97 +650,101 @@ export default function Dashboard() {
             {/* Hero section – like screenshot */}
             <Box sx={{ p: 3, pb: 2, bgcolor: "#FAFAFA" }}>
               <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar
-                  src={
-                    logoFilename
-                      ? `${baseURL}/uploads/employers/${logoFilename}`
-                      : undefined
-                  }
-                  alt={`${companyName} logo`}
-                  sx={{
-                    width: { xs: 50, sm: 50 },
-                    height: { xs: 50, sm: 50 },
-                    border: "1px solid",
-                    borderColor: "divider",
-                    "& img": {
-                      objectFit: "contain",
-                    },
-                  }}
-                >
-                  {companyName.charAt(0).toUpperCase()}
-                </Avatar>
-
-                <Box flex={1}>
-                  <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
-                    {selectedJob.job_title}
-                  </Typography>
-                  <Chip
-                    icon={<BusinessRoundedIcon />}
-                    label={`Company: ${companyName}`}
-                    size="small"
-                    sx={(theme) => ({
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                      color: alpha(theme.palette.primary.main, 0.9),
-                      "& .MuiChip-icon": {
-                        color: alpha(theme.palette.primary.main, 0.7),
-                      },
-                    })}
-                  />
-                </Box>
-                {/* Mobile */}
-                <Stack spacing={1}>
-                  {selectedJob && (
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      startIcon={<Send />}
-                      onClick={() => {
-                        setJobToApply(selectedJob);
-                        setApplyDialogOpen(true);
-                      }}
-                      sx={{ 
-                        display: { xs: "inline-flex", sm: "none" },
-                        textTransform: "none" 
-                      }}
-                    >
-                      {hasAppliedToThisJob ? "Re-apply" : "Apply"}
-                    </Button>
-                  )}
-                  {/* Mobile */}
-                  <Button
-                    variant="outlined"
-                    startIcon={<InfoOutlinedIcon />}
-                    onClick={(e) => setCompanyAnchor(e.currentTarget)}
-                    size="small"
+                <Stack direction="row" spacing={2} alignItems="center" flex={1}>
+                  <Avatar
+                    src={
+                      logoFilename
+                        ? `${baseURL}/uploads/employers/${logoFilename}`
+                        : undefined
+                    }
+                    alt={`${companyName} logo`}
                     sx={{
-                      display: { xs: "inline-flex", sm: "none" },
+                      width: { xs: 50, sm: 50 },
+                      height: { xs: 50, sm: 50 },
+                      border: "1px solid",
+                      borderColor: "divider",
+                      "& img": {
+                        objectFit: "contain",
+                      },
+                    }}
+                  >
+                    {companyName.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Box flex={1}>
+                    <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                      {selectedJob.job_title}
+                    </Typography>
+                    <Chip
+                      icon={<BusinessRoundedIcon />}
+                      label={`Company: ${companyName}`}
+                      size="small"
+                      sx={(theme) => ({
+                        backgroundColor: alpha(
+                          theme.palette.primary.main,
+                          0.08,
+                        ),
+                        color: alpha(theme.palette.primary.main, 0.9),
+                        "& .MuiChip-icon": {
+                          color: alpha(theme.palette.primary.main, 0.7),
+                        },
+                      })}
+                    />
+                  </Box>
+                </Stack>
+
+                {/* Apply button – only for candidates */}
+                {isCandidate && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<Send />}
+                    onClick={() => {
+                      setJobToApply(selectedJob);
+                      setApplyDialogOpen(true);
+                    }}
+                    disabled={applying[selectedJob.pk_id]}
+                    sx={{
+                      display: { xs: "none", sm: "inline-flex" },
+                      whiteSpace: "nowrap",
                       textTransform: "none",
                     }}
                   >
-                    Info
+                    {hasAppliedToThisJob ? "Re-apply" : "Apply Now"}
                   </Button>
-                </Stack>
-                {/* Apply Now Button */}
-                {selectedJob && (
+                )}
+                {/* Mobile buttons */}
+                {isMobile && (
+                  <Stack direction="column" spacing={1} sx={{ mt: 2 }} justifyContent="flex-end">
+                    {isCandidate && (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        startIcon={<Send />}
+                        onClick={() => {
+                          setJobToApply(selectedJob);
+                          setApplyDialogOpen(true);
+                        }}
+                        sx={{ textTransform: "none" }}
+                      >
+                        {hasAppliedToThisJob ? "Re-apply" : "Apply"}
+                      </Button>
+                    )}
                     <Button
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
+                      startIcon={<InfoOutlinedIcon />}
+                      onClick={(e) => setCompanyAnchor(e.currentTarget)}
                       size="small"
-                      startIcon={<Send />}
-                      onClick={() => {
-                        setJobToApply(selectedJob);
-                        setApplyDialogOpen(true);
-                      }}
                       sx={{
-                        whiteSpace: "nowrap",
-                        display: { xs: "none", sm: "inline-flex" },
+                        display: { xs: "inline-flex", sm: "none" },
                         textTransform: "none",
                       }}
-                      disabled={applying[selectedJob.pk_id]}
                     >
-                      {hasAppliedToThisJob ? "Re-apply" : "Apply"}
+                      company Info
                     </Button>
+                  </Stack>
+                  
                 )}
                 {/* Desktop */}
                 <Button
@@ -748,6 +760,7 @@ export default function Dashboard() {
                 >
                   Company Info
                 </Button>
+
                 {/* // Popover component */}
                 <Popover
                   open={openCompanyPopover}
@@ -775,10 +788,16 @@ export default function Dashboard() {
                     },
                   }}
                 >
-                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mb={3}>
-                    <Typography 
-                      variant="h7" 
-                      fontWeight={550} 
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={1}
+                    mb={3}
+                  >
+                    <Typography
+                      variant="h7"
+                      fontWeight={550}
                       sx={{
                         borderBottom: "2px solid",
                         borderColor: "primary.main",
@@ -792,23 +811,29 @@ export default function Dashboard() {
                     <Stack direction="row" alignItems="flex-start" spacing={2}>
                       <BadgeIcon color="action" sx={{ mt: 0.5 }} />
                       <Box>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
                           Company Name:
                         </Typography>
                         <Chip
                           variant="outlined"
                           size="small"
                           label={selectedJob.employer?.company_name}
-                        >
-                        </Chip>
+                        ></Chip>
                       </Box>
                     </Stack>
 
                     <Stack direction="row" alignItems="flex-start" spacing={2}>
                       <LocationCity color="action" sx={{ mt: 0.5 }} />
                       <Stack>
-
-                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
                           Address:
                         </Typography>
                         <Typography variant="subtitle2">
@@ -820,7 +845,11 @@ export default function Dashboard() {
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <EmailOutlined color="action" />
                       <Box>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
                           Email:
                         </Typography>
                         <Typography variant="body1">
@@ -832,7 +861,11 @@ export default function Dashboard() {
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <PhoneOutlined color="action" />
                       <Box>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
                           Contact:
                         </Typography>
                         <Typography variant="body1">
@@ -844,7 +877,11 @@ export default function Dashboard() {
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <LanguageOutlined color="action" />
                       <Box>
-                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
                           Website:
                         </Typography>
                         {selectedJob.employer?.company_website ? (
@@ -863,18 +900,26 @@ export default function Dashboard() {
                     </Stack>
 
                     <Box sx={{ borderRadius: 3 }}>
-                      <Stack direction="row" alignItems="center" spacing={2} mb={1}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={2}
+                        mb={1}
+                      >
                         <Info color="action" />
-                        <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                          mb={1}
+                        >
                           About the Company
                         </Typography>
                       </Stack>
-                      
+
                       <ReactQuill
                         theme="snow"
-                        value={
-                          selectedJob.employer?.company_description || ""
-                        }
+                        value={selectedJob.employer?.company_description || ""}
                         readOnly
                         modules={{ toolbar: false }}
                       />
@@ -882,19 +927,26 @@ export default function Dashboard() {
                   </Stack>
                 </Popover>
                 {/* Apply Dialog with Resume Selection */}
-                <Dialog open={applyDialogOpen} onClose={() => setApplyDialogOpen(false)} fullWidth maxWidth="xs">
+                <Dialog
+                  open={applyDialogOpen && isCandidate}
+                  onClose={() => setApplyDialogOpen(false)}
+                  fullWidth
+                  maxWidth="xs"
+                >
                   <DialogTitle variant="body2">
-                    {hasAppliedToThisJob ? "Update Your Application" : "Apply to this Position"}
+                    {hasAppliedToThisJob
+                      ? "Update Your Application"
+                      : "Apply to this Position"}
                   </DialogTitle>
                   <Divider />
                   <DialogContent>
                     {hasAppliedToThisJob ? (
                       <Alert severity="info" sx={{ mb: 3 }}>
-                        You already applied to this job. Selecting a new resume will update your existing application.
+                        You already applied. Selecting a new resume will update your application.
                       </Alert>
                     ) : (
                       <Alert severity="info" sx={{ mb: 3 }}>
-                        Choose or upload a resume to apply for this position.
+                        Choose or upload a resume to apply.
                       </Alert>
                     )}
 
@@ -903,22 +955,36 @@ export default function Dashboard() {
                         You don't have any resumes yet. Please upload one below.
                       </Alert>
                     ) : (
-                      <RadioGroup value={selectedResumeId} onChange={(e) => setSelectedResumeId(e.target.value)}>
+                      <RadioGroup
+                        value={selectedResumeId}
+                        onChange={(e) => setSelectedResumeId(e.target.value)}
+                      >
                         {resumes.map((resume) => (
                           <FormControlLabel
                             key={resume.pk_id}
                             value={resume.pk_id.toString()}
                             control={<Radio />}
                             label={
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1}}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
                                 <DescriptionOutlined color="primary" />
                                 <Box>
                                   <Typography fontWeight={600} variant="body2">
                                     {resume.resume_file || "Text Resume"}
                                   </Typography>
-                                  <Typography variant="caption" color="text.secondary">
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
                                     {resume.is_primary ? "Primary • " : ""}
-                                    {new Date(resume.created_date).toLocaleDateString()}
+                                    {new Date(
+                                      resume.created_date,
+                                    ).toLocaleDateString()}
                                   </Typography>
                                 </Box>
                               </Box>
@@ -928,7 +994,14 @@ export default function Dashboard() {
                       </RadioGroup>
                     )}
                     {/* Upload new resume */}
-                    <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid", borderColor: "divider" }}>
+                    <Box
+                      sx={{
+                        mt: 4,
+                        pt: 3,
+                        borderTop: "1px solid",
+                        borderColor: "divider",
+                      }}
+                    >
                       <Typography variant="subtitle1" gutterBottom>
                         Upload a new resume
                       </Typography>
@@ -937,7 +1010,7 @@ export default function Dashboard() {
                         variant="outlined"
                         startIcon={<UploadFileSharp />}
                         fullWidth
-                        sx={{ justifyContent: "flex-start", py: 1.5 }}
+                        sx={{textTransform: "none" ,justifyContent: "flex-start", py: 1 }}
                       >
                         Choose PDF, DOC, DOCX file
                         <input
@@ -948,16 +1021,8 @@ export default function Dashboard() {
                         />
                       </Button>
 
-                      {uploadLoading && (
-                        <Box sx={{ mt: 2, textAlign: "center" }}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      )}
-                      {uploadError && (
-                        <Alert severity="error" sx={{ mt: 2 }}>
-                          {uploadError}
-                        </Alert>
-                      )}
+                      {uploadLoading && <CircularProgress size={24} sx={{ mt: 2, display: "block", mx: "auto" }} />}
+                      {uploadError && <Alert severity="error" sx={{ mt: 2 }}>{uploadError}</Alert>} 
                     </Box>
                   </DialogContent>
                   <Divider />
@@ -967,8 +1032,9 @@ export default function Dashboard() {
                       color="error"
                       size="small"
                       sx={{
-                        textTransform: "none"
+                        textTransform: "none",
                       }}
+                      startIcon={<Cancel />}
                       onClick={() => setApplyDialogOpen(false)}
                     >
                       Cancel
@@ -976,19 +1042,30 @@ export default function Dashboard() {
                     <Button
                       variant="contained"
                       onClick={handleApplyWithResume}
+                      size="small"
                       disabled={!selectedResumeId || applying[jobToApply?.pk_id]}
+                      startIcon={
+                        applying[jobToApply?.pk_id] ? (
+                          <HourglassTop />
+                        ) : hasAppliedToThisJob ? (
+                          <Update />
+                        ) : (
+                          <Send />
+                        )
+                      }
+                      sx={{ textTransform: "none" }}
                     >
                       {applying[jobToApply?.pk_id]
                         ? "Processing..."
                         : hasAppliedToThisJob
-                        ? "Update Application"
-                        : "Submit Application"}
+                        ? "Update"
+                        : "Submit"}
                     </Button>
                   </DialogActions>
                 </Dialog>
               </Stack>
 
-              <Divider sx={{mt: 1}}/>
+              <Divider sx={{ mt: 1 }} />
 
               {/* Quick info chips / rows */}
               <Stack spacing={1.5} sx={{ mt: 3 }}>
@@ -1131,7 +1208,7 @@ export default function Dashboard() {
                     Location:
                   </Typography>
                   <Typography variant="subtitle2" color="">
-                      {selectedJob.location }
+                    {selectedJob.location}
                   </Typography>
                 </Stack>
               </Stack>
@@ -1140,7 +1217,12 @@ export default function Dashboard() {
             <Divider />
 
             {/* Description */}
-            <Box sx={{ p: 2.5, "& .ql-editor *": { backgroundColor: "transparent !important"}, }}>
+            <Box
+              sx={{
+                p: 2.5,
+                "& .ql-editor *": { backgroundColor: "transparent !important" },
+              }}
+            >
               <Box mb={4}>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <DescriptionOutlinedIcon color="action" fontSize="medium" />
@@ -1169,7 +1251,6 @@ export default function Dashboard() {
                 modules={{ toolbar: false }}
               />
             </Box>
-            
           </Box>
         ) : (
           <Box
@@ -1211,7 +1292,7 @@ export default function Dashboard() {
                 onClick={handleBackToList}
                 startIcon={<Home />}
                 sx={{
-                  textTransform: "none"
+                  textTransform: "none",
                 }}
               >
                 Home
@@ -1220,7 +1301,6 @@ export default function Dashboard() {
           </Box>
         )}
       </Box>
-      
     );
   };
 
@@ -1290,7 +1370,7 @@ export default function Dashboard() {
                     setCategoryFilter(["All"]);
                   }}
                 >
-                  <AutorenewRoundedIcon color="primary" />
+                  <Cancel color="error" />
                 </IconButton>
               </Tooltip>
               

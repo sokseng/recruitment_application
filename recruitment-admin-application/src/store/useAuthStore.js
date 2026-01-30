@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   access_token: null,
   hydrated: false,
   user_type: null,
@@ -43,6 +43,10 @@ const useAuthStore = create((set) => ({
       hydrated: true,
     })
   },
+
+  isCandidate: () => get().user_type === 3,
+  isEmployer:  () => get().user_type === 2,
+  isAdmin:     () => get().user_type === 1,
 }))
 
 export default useAuthStore
