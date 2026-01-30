@@ -10,6 +10,7 @@ import CandidateDashboard from '../pages/CandidateDashboard'
 import UpdateProfile from '../pages/profile/UpdateProfile'
 import MainLayout from '../layouts/MainLayout'
 import MyJobs from '../pages/MyJobs'
+import ChatPage from '../pages/ChatPage'
 
 export default function AppRoutes() {
   return (
@@ -88,6 +89,15 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Optional */}
         <Route path="*" element={<Navigate to="/" replace />} />
