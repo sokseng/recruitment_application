@@ -25,6 +25,7 @@ from app.models.candidate_resume_model import CandidateResume
 from app.models.category_model import Category
 from app.models.candidate_profile import CandidateProfile
 from app.models.job_application_model import JobApplication
+from app.models.employer_category_model import employer_category
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category

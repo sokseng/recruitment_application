@@ -230,12 +230,17 @@ const AdminEmployers = () => {
                   <Divider sx={{ my: 1 }} />
 
                   <Stack direction="row" justifyContent="center" spacing={2.5} sx={{ mb: 1 }}>
+                    {/* Categories */}
                     <Box title="Category Type" sx={{ textAlign: "center" }}>
                       <BusinessIcon sx={{ fontSize: 14, color: "action.main", mb: 0.2 }} />
                       <Typography variant="caption" sx={{ fontSize: 10, display: "block" }}>
-                        {emp.industry || "Banking"}
+                        {emp.categories && emp.categories.length > 0
+                          ? emp.categories.map(cat => cat.name).join(", ")
+                          : "N/A"}
                       </Typography>
                     </Box>
+
+                    {/* Job Count */}
                     <Box title="Job Count" sx={{ textAlign: "center" }}>
                       <WorkIcon sx={{ fontSize: 14, color: "action.main", mb: 0.2 }} />
                       <Typography variant="caption" sx={{ fontSize: 10, display: "block" }}>
@@ -298,7 +303,7 @@ const AdminEmployers = () => {
                 gutterBottom
                 sx={{ fontWeight: 400 }}
               >
-                
+
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {searchTerm

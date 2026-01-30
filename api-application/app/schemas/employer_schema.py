@@ -20,6 +20,11 @@ class EmployerUpdate(BaseModel):
     company_website: Optional[str] = None
     is_active: Optional[bool] = None
 
+
+class CategoryOut(BaseModel):
+    id: int
+    name: str
+    
 class EmployerOut(BaseModel):
     pk_id: int
     company_name: str
@@ -29,8 +34,10 @@ class EmployerOut(BaseModel):
     is_active: bool
     created_date: datetime
     job_count: int
+    categories: list[CategoryOut] = []
 
     model_config = ConfigDict(from_attributes=True)
+
 
 
 class UserProfileEmployer(BaseModel):
@@ -47,9 +54,9 @@ class UserProfileEmployer(BaseModel):
     company_description: Optional[str] = None
     company_website: Optional[str] = None
     company_logo: Optional[str] = None
+    categories: list[CategoryOut] = []
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class UserUpdateProfile(BaseModel):
     user_name: Optional[str] = None

@@ -10,6 +10,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from app.database.session import Base
+from app.models.employer_category_model import employer_category
 
 
 class Employer(Base):
@@ -45,4 +46,10 @@ class Employer(Base):
         back_populates="employer",
         cascade="all, delete-orphan",
         passive_deletes=True
+    )
+
+    categories = relationship(
+        "Category",
+        secondary=employer_category,
+        back_populates="employers"
     )

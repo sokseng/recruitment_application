@@ -7,6 +7,7 @@ from shutil import copyfileobj
 from app.models.user_model import User
 from sqlalchemy import func
 from app.models.job_model import Job
+from app.models.category_model import Category
 
 UPLOAD_DIR = "uploads/employers"  # folder to store logos
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -32,8 +33,16 @@ def get_employers(db: Session):
         .all()
     )
 
-    return [
-        {
+    result = []
+    for r in rows:
+        # Fetch categories for this employer
+        employer_obj = db.query(Employer).filter(Employer.pk_id == r.pk_id).first()
+        categories = [
+            {"id": c.pk_id, "name": c.name}
+            for c in employer_obj.categories
+        ]
+
+        result.append({
             "pk_id": r.pk_id,
             "company_name": r.company_name,
             "company_logo": r.company_logo,
@@ -42,9 +51,11 @@ def get_employers(db: Session):
             "is_active": r.is_active,
             "created_date": r.created_date,
             "job_count": r.job_count,
-        }
-        for r in rows
-    ]
+            "categories": categories,  # <-- added categories
+        })
+
+    return result
+
 
 def create_employer(db: Session, employer: EmployerCreate, logo_file: UploadFile = None):
     logo_filename = None
@@ -117,6 +128,8 @@ def get_employer_profiles(db: Session, user_id: int):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Employer profile not found"
         )
+    
+    category_ids = [c.pk_id for c in db_employer.categories]
 
     return {
         "company_contact": db_employer.company_contact,
@@ -131,7 +144,12 @@ def get_employer_profiles(db: Session, user_id: int):
         "gender": db_user.gender,
         "phone": db_user.phone,
         "date_of_birth": db_user.date_of_birth,
-        "address": db_user.address
+        "address": db_user.address,
+
+        "categories": [
+            {"id": c.pk_id, "name": c.name}
+            for c in db_employer.categories
+        ],
     }
 
 
@@ -141,6 +159,7 @@ def update_profile_employer(
     employer_data: UserProfileEmployer,
     logo_file: UploadFile = None,
     remove_logo: bool = False,
+    category_ids: list[int] = [],
     user_id: int = None
 ):
     db_user = db.query(User).filter(User.pk_id == user_id).first()
@@ -170,6 +189,15 @@ def update_profile_employer(
     db_employer.company_website = employer_data.company_website
 
     # --- LOGO HANDLING ---
+
+    # --- CATEGORY HANDLING ---
+    if category_ids is not None:
+        categories = (
+            db.query(Category)
+            .filter(Category.pk_id.in_(category_ids))
+            .all()
+        )
+        db_employer.categories = categories
 
     #Remove logo explicitly
     if remove_logo and db_employer.company_logo:

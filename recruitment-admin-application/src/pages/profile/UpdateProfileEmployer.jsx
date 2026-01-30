@@ -68,6 +68,10 @@ const UpdateProfileEmployer = () => {
     const [categories, setCategories] = useState([]);
     const [removeLogo, setRemoveLogo] = useState(false);
 
+    const selectedCategories = categories.filter(cat =>
+        formData.category_ids.includes(cat.pk_id)
+    );
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -95,6 +99,7 @@ const UpdateProfileEmployer = () => {
     useEffect(() => {
         const fetchUserProfileEmployer = async () => {
             try {
+                debugger
                 const response = await api.get("/employer/profile/update");
                 const data = response.data;
 
@@ -111,7 +116,7 @@ const UpdateProfileEmployer = () => {
                     company_address: data.company_address || "",
                     company_description: data.company_description || "",
                     company_website: data.company_website || "",
-                    category_ids: data.categories?.map(c => c.pk_id) || [],
+                    category_ids: data.categories?.map(c => c.id) || [],
                 });
 
                 // Set initial logo preview
@@ -130,11 +135,16 @@ const UpdateProfileEmployer = () => {
         const fetchCategories = async () => {
             try {
                 const res = await api.get("/categories/");
-                setCategories(res.data || []);
+                const normalized = (res.data || []).map(cat => ({
+                    ...cat,
+                    id: Number(cat.id), // 🔥 force number
+                }));
+                setCategories(normalized);
             } catch (err) {
                 console.error("Failed to load categories");
             }
         };
+
         fetchCategories();
     }, []);
 
@@ -168,8 +178,6 @@ const UpdateProfileEmployer = () => {
         formData.category_ids.forEach((id) => {
             submitData.append("category_ids", id);
         });
-        
-
 
         try {
             const response = await api.post("/employer/profile/updates", submitData, {
@@ -339,20 +347,15 @@ const UpdateProfileEmployer = () => {
                                                 fullWidth
                                                 size="small"
                                                 options={categories}
+                                                value={categories.filter(cat => formData.category_ids.includes(cat.pk_id))}
                                                 getOptionLabel={(option) => option.name}
-                                                value={categories.filter(cat =>
-                                                    formData.category_ids.includes(cat.pk_id)
-                                                )}
+                                                isOptionEqualToValue={(option, value) => option.pk_id === value.pk_id}
                                                 onChange={(_, newValue) => {
-                                                    const ids = newValue.map(cat => cat.pk_id);
                                                     setFormData(prev => ({
                                                         ...prev,
-                                                        category_ids: ids,
+                                                        category_ids: newValue.map(cat => cat.pk_id),
                                                     }));
                                                 }}
-                                                isOptionEqualToValue={(option, value) =>
-                                                    option.pk_id === value.pk_id
-                                                }
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}
@@ -360,21 +363,12 @@ const UpdateProfileEmployer = () => {
                                                         placeholder="Select categories"
                                                         size="small"
                                                         fullWidth
-                                                        InputProps={{
-                                                            ...params.InputProps,
-                                                            startAdornment: (
-                                                                <>
-                                                                    <InputAdornment position="start">
-                                                                    </InputAdornment>
-                                                                    {params.InputProps.startAdornment}
-                                                                </>
-                                                            ),
-                                                        }}
                                                     />
                                                 )}
                                                 renderTags={(value, getTagProps) =>
                                                     value.map((option, index) => (
                                                         <Chip
+                                                            key={option.pk_id}
                                                             label={option.name}
                                                             size="small"
                                                             {...getTagProps({ index })}
@@ -382,6 +376,8 @@ const UpdateProfileEmployer = () => {
                                                     ))
                                                 }
                                             />
+
+
                                         </Box>
 
 
