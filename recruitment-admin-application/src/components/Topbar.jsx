@@ -307,30 +307,21 @@ export default function Topbar() {
 
   const DownloadCvTemplate = async (template) => {
     try {
-      const response = await axios.get(
-        `http://localhost:8000/generate-cv/${template.id}/${candidateId}`,
-        {
-          responseType: "blob", // important for PDF
-        }
-      );
+      const response = await axios.get(`/generate-cv/${template.id}/${user_data?.user_data?.candidate_id}`, {
+        responseType: "blob"
+      });
 
-      // Create a blob URL
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-
-      // Create temporary link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${template.name.replace(/\s+/g, "_")}.pdf`);
+      link.setAttribute("download", `cv_${user_data?.user_data?.candidate_id}.pdf`);
       document.body.appendChild(link);
       link.click();
-
-      // Clean up
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download CV:", error);
-      alert("Failed to download CV. Please try again.");
+    } catch (err) {
+      setSeverity("error");
+      setMessage("Failed to download CV template");
+      setOpenSnackbar(true);
     }
   };
 
