@@ -104,6 +104,7 @@ async def update_profile(
     company_description: str = Form(None),
     company_website: str = Form(None),
     company_logo: UploadFile = File(None),
+    remove_logo: bool = Form(False),
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token),
 ):
@@ -124,5 +125,5 @@ async def update_profile(
         company_website=company_website,
     )
 
-    return update_profile_employer(db, user_data, employer_data, company_logo, current_user_id)
+    return update_profile_employer(db, user_data, employer_data, company_logo, remove_logo, current_user_id)
 

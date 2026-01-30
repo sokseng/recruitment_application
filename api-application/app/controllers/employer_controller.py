@@ -140,6 +140,7 @@ def update_profile_employer(
     user_data: UserUpdateProfile,
     employer_data: UserProfileEmployer,
     logo_file: UploadFile = None,
+    remove_logo: bool = False,
     user_id: int = None
 ):
     db_user = db.query(User).filter(User.pk_id == user_id).first()
@@ -168,9 +169,27 @@ def update_profile_employer(
     db_employer.company_description = employer_data.company_description
     db_employer.company_website = employer_data.company_website
 
-    # ✅ update logo ONLY if user selected a new file
-    if logo_file:
-        logo_filename = logo_file.filename
+    # --- LOGO HANDLING ---
+
+    #Remove logo explicitly
+    if remove_logo and db_employer.company_logo:
+        old_path = os.path.join(UPLOAD_DIR, db_employer.company_logo)
+
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+        db_employer.company_logo = None
+
+
+    #Upload new logo (replace old)
+    elif logo_file:
+        # delete old logo if exists
+        if db_employer.company_logo:
+            old_path = os.path.join(UPLOAD_DIR, db_employer.company_logo)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
+        logo_filename = f"{user_id}_{logo_file.filename}"
         file_path = os.path.join(UPLOAD_DIR, logo_filename)
 
         with open(file_path, "wb") as f:

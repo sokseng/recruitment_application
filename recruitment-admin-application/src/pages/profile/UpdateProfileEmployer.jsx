@@ -16,6 +16,13 @@ import {
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 
+import { Autocomplete, Chip, InputAdornment } from "@mui/material";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+
+
 const SectionBox = ({ title, children }) => (
     <Paper
         elevation={0}
@@ -49,6 +56,7 @@ const UpdateProfileEmployer = () => {
         company_address: "",
         company_description: "",
         company_website: "",
+        category_ids: [],
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -57,6 +65,8 @@ const UpdateProfileEmployer = () => {
     const [severity, setSeverity] = useState('error')
     const [openSnackbar, setOpenSnackbar] = useState(false)
     const [message, setMessage] = useState('')
+    const [categories, setCategories] = useState([]);
+    const [removeLogo, setRemoveLogo] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -67,16 +77,19 @@ const UpdateProfileEmployer = () => {
         if (!file) return;
         setLogoPreview(URL.createObjectURL(file));
         setLogoFile(file);
+        setRemoveLogo(false);
     };
 
     const handleResetLogo = () => {
         setLogoPreview(null);
         setLogoFile(null);
+        setRemoveLogo(true);
     };
 
     const handleResetForm = () => {
         setFormData(initialFormData);
         setLogoPreview(null);
+        setRemoveLogo(true);
     };
 
     useEffect(() => {
@@ -98,18 +111,13 @@ const UpdateProfileEmployer = () => {
                     company_address: data.company_address || "",
                     company_description: data.company_description || "",
                     company_website: data.company_website || "",
+                    category_ids: data.categories?.map(c => c.pk_id) || [],
                 });
-                
+
                 // Set initial logo preview
                 if (data.company_logo) {
                     const logoUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${data.company_logo}`;
                     setLogoPreview(logoUrl);
-
-                    // Fetch the image as Blob and convert to File
-                    const res = await fetch(logoUrl);
-                    const blob = await res.blob();
-                    const file = new File([blob], data.company_logo, { type: blob.type });
-                    setLogoFile(file); // now logoFile is a real File object
                 }
 
             } catch (error) {
@@ -118,6 +126,16 @@ const UpdateProfileEmployer = () => {
         };
 
         fetchUserProfileEmployer();
+
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get("/categories/");
+                setCategories(res.data || []);
+            } catch (err) {
+                console.error("Failed to load categories");
+            }
+        };
+        fetchCategories();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -139,11 +157,19 @@ const UpdateProfileEmployer = () => {
         submitData.append("company_address", formData.company_address);
         submitData.append("company_description", formData.company_description);
         submitData.append("company_website", formData.company_website);
-        
+
         // Logo file
         if (logoFile) {
             submitData.append("company_logo", logoFile);
         }
+
+        submitData.append("remove_logo", removeLogo);
+
+        formData.category_ids.forEach((id) => {
+            submitData.append("category_ids", id);
+        });
+        
+
 
         try {
             const response = await api.post("/employer/profile/updates", submitData, {
@@ -203,27 +229,74 @@ const UpdateProfileEmployer = () => {
                                 {/* Company Info */}
                                 <SectionBox title="Company Information">
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                                        <Avatar
-                                            src={logoPreview}
-                                            sx={{ width: 60, height: 60, border: "2px solid", borderColor: "primary.main" }}
+                                        {/* Hidden file input */}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            hidden
+                                            id="company-logo-input"
+                                            onChange={handleLogoChange}
                                         />
-                                        <Stack direction="column" spacing={1}>
-                                            <Button variant="outlined" component="label" size="small" sx={{ minWidth: 100 }}>
-                                                Upload Logo
-                                                <input hidden type="file" accept="image/*" onChange={handleLogoChange} />
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                color="secondary"
-                                                sx={{ minWidth: 100 }}
-                                                onClick={handleResetLogo}
-                                                disabled={!logoPreview}
-                                            >
-                                                Remove Logo
-                                            </Button>
-                                        </Stack>
+
+                                        {/* Avatar clickable */}
+                                        <Box sx={{ position: "relative" }}>
+                                            <Tooltip title="Click to change logo">
+                                                <Avatar
+                                                    src={logoPreview}
+                                                    onClick={() => document.getElementById("company-logo-input").click()}
+                                                    sx={{
+                                                        width: 72,
+                                                        height: 72,
+                                                        cursor: "pointer",
+                                                        border: "2px dashed",
+                                                        borderColor: "primary.main",
+                                                        bgcolor: "#f5f5f5",
+                                                    }}
+                                                />
+                                            </Tooltip>
+
+                                            {/* Upload icon */}
+                                            <Tooltip title="Upload logo">
+                                                <IconButton
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={() => document.getElementById("company-logo-input").click()}
+                                                    sx={{
+                                                        position: "absolute",
+                                                        bottom: -6,
+                                                        right: -6,
+                                                        bgcolor: "white",
+                                                        boxShadow: 2,
+                                                    }}
+                                                >
+                                                    <PhotoCameraIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+
+                                            {/* Remove icon */}
+                                            {logoPreview && (
+                                                <Tooltip title="Remove logo">
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={handleResetLogo}
+                                                        sx={{
+                                                            position: "absolute",
+                                                            top: -6,
+                                                            right: -6,
+                                                            bgcolor: "white",
+                                                            boxShadow: 2,
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                        </Box>
+
+
                                     </Box>
+
                                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                                         <TextField
                                             label="Company Name"
@@ -259,6 +332,59 @@ const UpdateProfileEmployer = () => {
                                             size="small"
                                             fullWidth
                                         />
+
+                                        <Box sx={{ gridColumn: "1 / -1" }}>
+                                            <Autocomplete
+                                                multiple
+                                                fullWidth
+                                                size="small"
+                                                options={categories}
+                                                getOptionLabel={(option) => option.name}
+                                                value={categories.filter(cat =>
+                                                    formData.category_ids.includes(cat.pk_id)
+                                                )}
+                                                onChange={(_, newValue) => {
+                                                    const ids = newValue.map(cat => cat.pk_id);
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        category_ids: ids,
+                                                    }));
+                                                }}
+                                                isOptionEqualToValue={(option, value) =>
+                                                    option.pk_id === value.pk_id
+                                                }
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Company Categories"
+                                                        placeholder="Select categories"
+                                                        size="small"
+                                                        fullWidth
+                                                        InputProps={{
+                                                            ...params.InputProps,
+                                                            startAdornment: (
+                                                                <>
+                                                                    <InputAdornment position="start">
+                                                                    </InputAdornment>
+                                                                    {params.InputProps.startAdornment}
+                                                                </>
+                                                            ),
+                                                        }}
+                                                    />
+                                                )}
+                                                renderTags={(value, getTagProps) =>
+                                                    value.map((option, index) => (
+                                                        <Chip
+                                                            label={option.name}
+                                                            size="small"
+                                                            {...getTagProps({ index })}
+                                                        />
+                                                    ))
+                                                }
+                                            />
+                                        </Box>
+
+
                                         <Box sx={{ gridColumn: "1 / -1" }}>
                                             <TextField
                                                 label="Company Address"
