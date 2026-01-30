@@ -1310,7 +1310,7 @@ export default function Dashboard() {
   return (
     <Box
       sx={{
-        height: "calc(103vh - 120px)",
+        height: "calc(100vh - 120px)",
         display: "flex",
         flexDirection: "column",
         boxSizing: "border-box",

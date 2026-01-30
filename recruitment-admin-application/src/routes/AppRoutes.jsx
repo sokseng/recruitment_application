@@ -11,6 +11,7 @@ import UpdateProfile from '../pages/profile/UpdateProfile'
 import MainLayout from '../layouts/MainLayout'
 import MyJobs from '../pages/MyJobs'
 import ChatPage from '../pages/ChatPage'
+import AppliedCandidates from '../pages/AppliedCandidates'
 
 export default function AppRoutes() {
   return (
@@ -60,6 +61,15 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdminCandidate />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/applied_candidates"
+          element={
+            <ProtectedRoute>
+              <AppliedCandidates />
             </ProtectedRoute>
           }
         />

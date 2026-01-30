@@ -19,10 +19,16 @@ class JobApplicationOut(BaseModel):
 # ────────────────────────────────────────────────
 # For EMPLOYER view (includes candidate & resume details)
 # ────────────────────────────────────────────────
+class UserBasicOut(BaseModel):
+    user_name: str
+    email: str
+    model_config = {"from_attributes": True}
+
 class CandidateBasicOut(BaseModel):
     pk_id: int
     user_id: int
     description: Optional[str] = None
+    user: Optional[UserBasicOut] = None
     model_config = {"from_attributes": True}
 
 class ResumeBasicOut(BaseModel):
@@ -44,3 +50,6 @@ class ApplicationOutForEmployer(BaseModel):
     applied_date: datetime
     application_status: ApplicationStatus
     model_config = {"from_attributes": True}
+
+class ApplicationStatusUpdate(BaseModel):
+    new_status: str

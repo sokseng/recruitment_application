@@ -6,11 +6,14 @@ import {
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
 import { useState } from 'react';
+import CreateChatDialog from '../components/chat/dialog/CreateChatDialog';
 
 function ChatPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [selectedChat, setSelectedChat] = useState(null);
+    const [open, setOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const chats = [
         {
@@ -36,44 +39,120 @@ function ChatPage() {
     const messages = [
         {
             id: 1,
-            content: 'Hi bro',
-            message_type: 'text',
+            content: 'admin ended a call',
+            message_type: 'system',
             created_at: '2m',
-            edited_at: null,
-            sender: {
-                id: 1,
-                username: 'admin',
-                avatar_url: null,
-            },
-            is_read: false,
-            readed_at: '2m',
-            receiver: {
-                id: 1,
-                username: 'admin',
-                avatar_url: null,
-            },
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: true,
+        },
+        {
             id: 2,
-            content: 'Hi bro',
+            content: 'Hello! How are you?',
             message_type: 'text',
-            created_at: '2m',
-            edited_at: null,
-            sender: {
-                id: 1,
-                username: 'admin',
-                avatar_url: null,
-            },
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
+            is_read: true,
+        },
+        {
+            id: 3,
+            content: 'jonh ended a call',
+            message_type: 'system',
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
+            is_read: true,
+        },
+        {
+            id: 4,
+            content: 'Hello! How are you?',
+            message_type: 'text',
+            created_at: '1m',
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: true,
+        },
+        {
+            id: 5,
+            content: 'Hello! How are you?',
+            message_type: 'text',
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
+            is_read: true,
+        },
+        {
+            id: 6,
+            content: 'Hello! How are you?',
+            message_type: 'text',
+            created_at: '1m',
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: true,
+        },
+        {
+            id: 7,
+            content: 'https://voice.google.com/u/0/calls?a=nc,%2B18005550111',
+            message_type: 'voice',
+            created_at: '1m',
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: true,
+        },
+        {
+            id: 8,
+            content: 'https://voice.google.com/u/0/calls?a=nc,%2B18005550111',
+            message_type: 'voice',
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
             is_read: false,
-            readed_at: '2m',
-            receiver: {
-                id: 1,
-                username: 'admin',
-                avatar_url: null,
-            },
-        }
+        },
+        {
+            id: 9,
+            content: 'Hello! How are you?',
+            message_type: 'text',
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
+            is_read: false,
+        },
+        {
+            id: 10,
+            content: 'Hello! How are you?',
+            message_type: 'text',
+            created_at: '1m',
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: true,
+        },
+        {
+            id: 11,
+            content: 'https://imgs.search.brave.com/td_mSZ2hVBHK1joTctjOC0qYyKhlwhhymVXfxzUO7Yg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMjYv/MzgwLzg2MS9zbWFs/bC95ZWxsb3ctYmFu/YW5hLXBhdHRlcm4t/aGVhbHRoLWdlbmVy/YXRlLWFpLXBob3Rv/LmpwZw',
+            message_type: 'media',
+            created_at: '1m',
+            sender: { id: 2, username: 'john', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 1, username: 'admin' },
+            is_read: false,
+        },
+        {
+            id: 12,
+            content: 'https://imgs.search.brave.com/td_mSZ2hVBHK1joTctjOC0qYyKhlwhhymVXfxzUO7Yg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMjYv/MzgwLzg2MS9zbWFs/bC95ZWxsb3ctYmFu/YW5hLXBhdHRlcm4t/aGVhbHRoLWdlbmVy/YXRlLWFpLXBob3Rv/LmpwZw',
+            message_type: 'media',
+            created_at: '1m',
+            sender: { id: 1, username: 'admin', avatar_url: 'https://imgs.search.brave.com/cxRhojvDUtrTJINdGsVrfMDopLSAqVei-OsGZdEj-zY/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS41ODc4/NTY5MzY2LjY0ODQv/ZnBvc3RlcixzbWFs/bCx3YWxsX3RleHR1/cmUsc3F1YXJlX3By/b2R1Y3QsNjAweDYw/MC5qcGc', },
+            receiver: { id: 2, username: 'john' },
+            is_read: false,
+        },
     ]
 
+    const filteredChats = chats.filter(chat =>
+        chat.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
-        <Box sx={{ display: 'flex', width: '100%', height: '86vh', position: 'relative' }}>
+        <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
             {(!isMobile || !selectedChat) && (
                 <Box
@@ -96,6 +175,7 @@ function ChatPage() {
                             startIcon={<AddBoxIcon />}
                             sx={{ borderRadius: 1, minWidth: { xs: 10, sm: 'auto', textTransform: "none" } }}
                             size="small"
+                            onClick={() => setOpen(true)}
                         >
                             Create New
                         </Button>
@@ -107,6 +187,8 @@ function ChatPage() {
                             size="small"
                             label="Search chat"
                             variant="outlined"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -128,7 +210,7 @@ function ChatPage() {
                         }}
                     >
                         <List>
-                            {chats.map(chat => (
+                            {filteredChats.map(chat => (
                                 <Box
                                     key={chat.id}
                                     onClick={() => setSelectedChat(chat)}
@@ -162,21 +244,39 @@ function ChatPage() {
                                         </Typography>
                                     </Box>
 
-                                    <Box sx={{ textAlign: 'right', ml: 1 }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        flexDirection: 'column',
+                                        alignItems: 'end'
+                                    }}>
                                         <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
                                             {chat.last_sended_at}
                                         </Typography>
-                                        <Chip
-                                            label={chat.unread}
-                                            sx={{
-                                                width: 15,
-                                                height: 15,
-                                                fontSize: 9,
-                                                mt: 0.25,
-                                                backgroundColor: chat.unread > 0 ? 'orange' : 'grey',
-                                                color: chat.unread > 0 ? 'white' : 'black',
-                                            }}
-                                        />
+                                        {chat.unread && (
+                                            <Box
+                                                sx={{
+                                                    width: 15,
+                                                    height: 15,
+                                                    fontSize: 9,
+                                                    mt: 0.25,
+                                                    backgroundColor: chat.unread > 0 ? 'orange' : 'grey',
+                                                    color: chat.unread > 0 ? 'white' : 'black',
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    borderRadius: '50%'
+                                                }}
+                                            >
+                                                <Typography
+                                                    sx={{
+                                                        fontSize: 9,
+                                                    }}
+                                                >
+                                                    {chat.unread}
+                                                </Typography>
+                                            </Box>
+                                        )}
                                     </Box>
 
                                     <Chip
@@ -209,9 +309,15 @@ function ChatPage() {
                     <ChatComponent
                         chat={selectedChat}
                         onBack={() => setSelectedChat(null)}
+                        messages={messages}
                     />
                 </Box>
             )}
+
+            <CreateChatDialog
+                open={open}
+                onClose={() => setOpen(false)}
+            />
 
         </Box>
     );
