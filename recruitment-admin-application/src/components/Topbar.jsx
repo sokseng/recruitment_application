@@ -106,14 +106,14 @@ export default function Topbar() {
       { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
-      { label: "Employers", path: "/admin/employer", icon: <BusinessIcon /> },
+      { label: "All Companies", path: "/admin/employer", icon: <BusinessIcon /> },
       { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon /> },
     ],
     2: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
       { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
-      { label: "Candidate Apply", path: "/candidate_apply", icon: <PersonIcon /> },
-      { label: "Employer", path: "/employer", icon: <BusinessIcon /> },
+      { label: "Applied candidates", path: "/applied_candidates", icon: <PersonIcon /> },
+      { label: "Job posts", path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
@@ -623,31 +623,29 @@ export default function Topbar() {
         position="sticky"
         elevation={1}
         sx={{
-          background: "#023F6B",
+          background: "white",
         }}
       >
         <Toolbar sx={{ gap: 1 }}>
           {/* ☰ Mobile Drawer */}
           {isMobile && (
             <IconButton onClick={() => setDrawerOpen(true)}>
-              <MenuIcon
-                sx={{
-                  color: "white",
-                }}
-              />
+              <MenuIcon />
             </IconButton>
           )}
 
           {/* Logo – shown on both mobile & desktop */}
           <Box
             component="img"
-            src="/logo.jpg" // Place your logo in the public folder
+            src="/logo.png" // Place your logo in the public folder
             alt="Company Logo"
             sx={{
-              height: { xs: 40, sm: 50 },
-              width: { xs: 40, sm: 50 },
+              height: { xs: 50, sm: 50, md: 50 },
+              width: { xs: 80, sm: 110, md: 110 },
               objectFit: "cover",
-              borderRadius: "2rem",
+              border: "2px solid #1976d2", // MUI primary color border
+              borderRadius: "0.6rem",
+              boxShadow: 2,
               cursor: "pointer",
             }}
             onClick={() => navigate("/")}
@@ -870,7 +868,7 @@ export default function Topbar() {
                   startIcon={item.icon}
                   sx={{
                     fontWeight: 500,
-                    color: "white",
+                    color: "teal",
                     position: "relative",
                     "&::after": {
                       content: '""',
@@ -1160,28 +1158,27 @@ export default function Topbar() {
             component="form"
             onSubmit={handleLogin}
             id="login-form"
-            alignItems="center"
           >
             {/* Logo */}
-            <Box
-              component="img"
-              src="/logo.jpg"
-              alt="Logo"
-              sx={{
-                width: 80,
-                height: 80,
-                objectFit: "cover",
-                border: "2px solid #1976d2", // MUI primary color border
-                borderRadius: "3rem",
-                p: 1,
-                mb: 1,
-                boxShadow: 2,
-              }}
-            />
+            <Stack alignItems="center">
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Logo"
+                sx={{
+                  height: { xs: 50, sm: 50, md: 50 },
+                  width: { xs: 100, sm: 110, md: 110 },
+                  objectFit: "cover",
+                  border: "2px solid #1976d2", // MUI primary color border
+                  borderRadius: "0.6rem",
+                  boxShadow: 2,
+                }}
+              />
+            </Stack>
 
             {/* Header */}
-            <Box textAlign="center">
-              <Typography variant="h6" fontWeight={700}>
+            <Box textAlign="start">
+              <Typography variant="h7" fontWeight={700}>
                 Login Account 🚀
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -1307,24 +1304,23 @@ export default function Topbar() {
               <Stack alignItems="center">
                 <Box
                   component="img"
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="Logo"
                   alignItems="center"
                   sx={{
-                    width: 80,
-                    height: 80,
+                    height: { xs: 50, sm: 50, md: 50 },
+                    width: { xs: 100, sm: 110, md: 110 },
                     objectFit: "cover",
-                    border: "2px solid #1976d2", // MUI primary color border
-                    borderRadius: "3rem",
-                    p: 0.3,
+                    border: "2px solid #1976d2", 
+                    borderRadius: "0.6rem",
                     boxShadow: 2,
                   }}
                 />
               </Stack>
 
               {/* Form Header */}
-              <Box textAlign="center">
-                <Typography variant="h6" fontWeight={700}>
+              <Box textAlign="start">
+                <Typography variant="h7" fontWeight={700}>
                   Create Account 🚀
                 </Typography>
                 <Typography variant="body2" color="text.secondary">

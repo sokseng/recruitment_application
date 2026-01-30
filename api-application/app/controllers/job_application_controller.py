@@ -5,6 +5,8 @@ from app.models.job_model import Job, JobStatus
 from app.models.candidate_resume_model import CandidateResume
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy import select
+from app.models.candidate_model import Candidate
 
 def apply_to_job(
     db: Session,
@@ -65,29 +67,31 @@ def apply_to_job(
         db.refresh(new_application)
         return new_application
 
+
 def get_applications_for_job(
     db: Session,
     job_id: int,
     employer_id: int,
     skip: int = 0,
     limit: int = 20
-) -> List[JobApplication]:
+):
     job = db.query(Job).filter(Job.pk_id == job_id, Job.employer_id == employer_id).first()
     if not job:
         raise HTTPException(404, "Job not found or you do not own this job")
 
-    return (
-        db.query(JobApplication)
+    stmt = (
+        select(JobApplication)
         .options(
-            joinedload(JobApplication.candidate),
+            joinedload(JobApplication.candidate).joinedload(Candidate.user),
             joinedload(JobApplication.resume)
         )
-        .filter(JobApplication.job_id == job_id)
+        .where(JobApplication.job_id == job_id)
+        .order_by(JobApplication.applied_date.desc())
         .offset(skip)
         .limit(limit)
-        .order_by(JobApplication.applied_date.desc())
-        .all()
     )
+
+    return db.scalars(stmt).all()
 
 def update_application_status(
     db: Session,

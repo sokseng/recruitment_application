@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,21 +15,18 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
   useTheme,
   useMediaQuery,
   InputAdornment,
   DialogContentText,
-  OutlinedInput,
   Avatar,
   Autocomplete,
   Tooltip,
   Divider,
+  Paper,
 } from "@mui/material";
-import AddCircleIcon from '@mui/icons-material/AddCircle';
 import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import WorkIcon from "@mui/icons-material/Work";
@@ -41,18 +38,15 @@ import Tab from "@mui/material/Tab";
 import Badge from "@mui/material/Badge";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
 import SearchIcon from "@mui/icons-material/Search";
 import AllInboxRoundedIcon from '@mui/icons-material/AllInboxRounded';
-
-// Rich text editor
 import ReactQuill from 'react-quill-new';
 import 'quill/dist/quill.snow.css';
-
 import api from "../services/api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { Cancel, PostAdd, ResetTv, RestartAlt, RestoreFromTrash, Save } from "@mui/icons-material";
+import { Cancel, PostAdd, Save } from "@mui/icons-material";
+import Draggable from "react-draggable";
 
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
@@ -223,12 +217,15 @@ function JobFormDialog({
           overflow: "hidden",
         },
       }}
+      PaperComponent= {DraggablePaper}
     >
       <DialogTitle
+        id="draggable-dialog-title"
         sx={{
           background: "#023F6B",
           color: "white",
           position: "relative",
+          cursor: "move"
         }}
       >
         <div>
@@ -626,6 +623,23 @@ function JobFormDialog({
   );
 }
 
+// ────────────────────────────────────────────────
+//      Draggable Paper
+// ────────────────────────────────────────────────
+function DraggablePaper(props) {
+  const nodeRef = useRef(null);
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle="#draggable-dialog-title"
+      cancel={'[class*="MuiDialogContent-root"]'}
+    >
+      <div ref={nodeRef} style={{height: "100vh", width: '100%', justifyContent: 'center', display: 'flex'  }}>
+        <Paper {...props} />
+      </div>
+    </Draggable>
+  );
+}
 // ────────────────────────────────────────────────
 //                   My Jobs Page
 // ────────────────────────────────────────────────
