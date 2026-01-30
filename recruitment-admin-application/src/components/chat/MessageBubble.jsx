@@ -1,8 +1,35 @@
 import { Box, Typography, Paper, Avatar, Button } from '@mui/material';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+
+import ReplyIcon from '@mui/icons-material/Reply';
+import ForwardIcon from '@mui/icons-material/Forward';
+import DownloadIcon from '@mui/icons-material/Download';
+import PreviewIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import React from 'react';
+import ReplyAllIcon from '@mui/icons-material/ReplyAll';
 
 function MessageBubble({ message, isOwn }) {
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const open = Boolean(anchorEl);
+
+    const handleMenuOpen = (event) => {
+        if (message.message_type === 'system') return;
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
     return (
         <Box
             sx={{
@@ -42,7 +69,12 @@ function MessageBubble({ message, isOwn }) {
                     boxShadow: message.message_type === 'media' ? 0 : 2,
                     color: isOwn ? 'white' : 'text.primary',
                     borderRadius: 2,
+                    '&:hover': {
+                        bgcolor: message.message_type === 'media' ? 'transparent' : isOwn ? '#1f62a5ff' : 'grey.200',
+                        transform: 'translate 0.2s ease'
+                    }
                 }}
+                onClick={handleMenuOpen}
             >
                 {message.message_type === 'text' && (
                     <Typography variant="body2">
@@ -97,6 +129,10 @@ function MessageBubble({ message, isOwn }) {
                             maxWidth: 200,
                             height: '100%',
                             overflow: 'hidden',
+                            transition: 'transform 0.2s ease',
+                            '&:hover': {
+                                transform: 'scale(1.025)',
+                            },
                         }}
                     >
                         <Box
@@ -142,6 +178,60 @@ function MessageBubble({ message, isOwn }) {
                     </Box>
                 )}
             </Paper>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                {message.message_type !== 'system' && (
+                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                        <ListItemIcon><ReplyIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Reply</ListItemText>
+                    </MenuItem>
+                )}
+
+                {message.message_type !== 'system' && (
+                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                        <ListItemIcon><ReplyAllIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Forward</ListItemText>
+                    </MenuItem>
+                )}
+
+                {message.message_type === 'media' && (
+                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                        <ListItemIcon><PreviewIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Preview</ListItemText>
+                    </MenuItem>
+                )}
+
+                {message.message_type === 'media' && (
+                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                        <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Download</ListItemText>
+                    </MenuItem>
+                )}
+
+                {isOwn && message.message_type === 'text' && (
+                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                        <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Edit</ListItemText>
+                    </MenuItem>
+                )}
+
+                {isOwn && (
+                    <MenuItem
+                        onClick={() => { handleMenuClose(); }}
+                        sx={{ color: 'error.main' }}
+                    >
+                        <ListItemIcon sx={{ color: 'error.main' }}>
+                            <DeleteIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Delete</ListItemText>
+                    </MenuItem>
+                )}
+            </Menu>
         </Box>
     );
 }
