@@ -1,3 +1,4 @@
+// AppliedCandidates.jsx
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -23,12 +24,14 @@ import {
   CardContent,
   Tabs,
   Tab,
+  Tooltip,
 } from "@mui/material";
 import {
   Work as WorkIcon,
   CalendarToday as CalendarIcon,
   HourglassEmpty,
   Home,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import api from "../services/api";
 
@@ -45,7 +48,6 @@ const STATUS_FILTER = ["", "PENDING", "SHORTLISTED", "REJECTED", "ACCEPTED"];
 export default function AppliedCandidates() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobFromUrl = searchParams.get("job");
 
@@ -57,6 +59,7 @@ export default function AppliedCandidates() {
   const [loadingApps, setLoadingApps] = useState(false);
   const [error, setError] = useState(null);
   const [showDetailMobile, setShowDetailMobile] = useState(false);
+  const [downloadingResumeId, setDownloadingResumeId] = useState(null);
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -83,19 +86,15 @@ export default function AppliedCandidates() {
       const res = await api.get("/jobs/my-jobs?limit=100");
       const jobs = res.data || [];
       setMyJobs(jobs);
-
       if (jobs.length > 0) {
         let initialJobId;
-
         if (selectedJobFromUrl) {
           const found = jobs.find((j) => j.pk_id === Number(selectedJobFromUrl));
           initialJobId = found ? found.pk_id : jobs[0].pk_id;
         } else {
           initialJobId = jobs[0].pk_id;
         }
-
         setSelectedJobId(initialJobId);
-
         if (!selectedJobFromUrl) {
           setSearchParams({ job: initialJobId.toString() }, { replace: true });
         }
@@ -125,24 +124,19 @@ export default function AppliedCandidates() {
 
   const handleStatusChange = async (appId, newStatusLabel) => {
     const newKey = Object.keys(STATUS_MAP).find(
-      (k) => STATUS_MAP[k].label === newStatusLabel,
+      (k) => STATUS_MAP[k].label === newStatusLabel
     );
-
     if (!newKey) return;
 
     try {
       await api.patch(`/applications/${appId}/status`, {
         new_status: newStatusLabel,
       });
-
       setApplications((prev) =>
         prev.map((app) =>
-          app.pk_id === appId
-            ? { ...app, application_status: newKey }
-            : app,
-        ),
+          app.pk_id === appId ? { ...app, application_status: newKey } : app
+        )
       );
-
       setSnackbar({
         open: true,
         message: `Status updated to ${newStatusLabel}`,
@@ -155,6 +149,49 @@ export default function AppliedCandidates() {
         message: err?.response?.data?.detail || "Failed to update status",
         severity: "error",
       });
+    }
+  };
+
+  //Download
+  const downloadFile = async (resumeId, fileName) => {
+    if (downloadingResumeId === resumeId) return;
+
+    setDownloadingResumeId(resumeId);
+
+    try {
+      const response = await api.get(`/applications/resumes/${resumeId}/download`, {
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setSnackbar({
+        open: true,
+        message: "Download started",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Download error:", error);
+      let message = "Failed to download file";
+      if (error?.response?.status === 404) {
+        message = "Resume file not found";
+      } else if (error?.response?.status === 403) {
+        message = "Access denied - you may not have permission to download this resume";
+      }
+      setSnackbar({
+        open: true,
+        message,
+        severity: "error",
+      });
+    } finally {
+      setDownloadingResumeId(null);
     }
   };
 
@@ -174,7 +211,7 @@ export default function AppliedCandidates() {
     tabValue === 0
       ? applications
       : applications.filter(
-          (app) => app.application_status === STATUS_FILTER[tabValue],
+          (app) => app.application_status === STATUS_FILTER[tabValue]
         );
 
   if (loadingJobs)
@@ -190,6 +227,7 @@ export default function AppliedCandidates() {
         <CircularProgress />
       </Box>
     );
+
   if (error)
     return (
       <Box sx={{ p: 3, height: "100%" }}>
@@ -281,8 +319,8 @@ export default function AppliedCandidates() {
                       job.status === "Open"
                         ? "success"
                         : job.status === "Closed"
-                          ? "error"
-                          : "warning"
+                        ? "error"
+                        : "warning"
                     }
                     variant="outlined"
                   />
@@ -375,7 +413,13 @@ export default function AppliedCandidates() {
                 <Tab
                   sx={{ textTransform: "none" }}
                   key={label}
-                  label={`${label} (${i === 0 ? applications.length : applications.filter((a) => a.application_status === STATUS_FILTER[i]).length})`}
+                  label={`${label} (${
+                    i === 0
+                      ? applications.length
+                      : applications.filter(
+                          (a) => a.application_status === STATUS_FILTER[i]
+                        ).length
+                  })`}
                 />
               ))}
             </Tabs>
@@ -410,75 +454,224 @@ export default function AppliedCandidates() {
             ) : (
               <Stack spacing={2}>
                 {filteredApplications.map((app) => {
-                  const statusObj = STATUS_MAP[app.application_status] || {
-                    label: app.application_status,
-                    color: "default",
-                  };
+                  const statusObj =
+                    STATUS_MAP[app.application_status] || {
+                      label: app.application_status,
+                      color: "default",
+                    };
+
                   const candidateName =
                     app.candidate?.user?.user_name ||
                     `Candidate #${app.candidate_id}`;
                   const candidateEmail =
                     app.candidate?.user?.email || "No email available";
 
+                  // Resume availability check
+                  const hasResumeFile =
+                    app.resume &&
+                    app.resume.resume_type === "Upload" &&
+                    app.resume.resume_file;
+
+                  const resumeId = app.candidate_resume_id || app.resume?.pk_id;
+                  const suggestedFileName = app.resume?.resume_file
+                    ? app.resume.resume_file
+                    : `resume-${candidateName
+                        .replace(/\s+/g, "-")
+                        .toLowerCase()}.pdf`;
+
+                  const canDownload = !!resumeId && hasResumeFile;
+                  const isDownloading = downloadingResumeId === resumeId;
+
                   return (
                     <Card
                       key={app.pk_id}
                       variant="outlined"
-                      sx={{ borderRadius: 2, "&:hover": { boxShadow: 3 } }}
+                      sx={{
+                        borderRadius: 2,
+                        boxShadow: 1, // lighter shadow by default
+                        transition: "box-shadow 0.2s",
+                        "&:hover": { boxShadow: 3 },
+                        overflow: "hidden", // clean edges
+                      }}
                     >
-                      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                      <CardContent
+                        sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}
+                      >
+                        {/* Top row: Avatar + Name + Email + Actions */}
                         <Stack
-                          direction="row"
-                          spacing={2}
-                          alignItems="center"
-                          mb={2}
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={{ xs: 1.5, sm: 1 }}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          justifyContent="space-between"
+                          mb={{ xs: 1.5, sm: 1.5 }}
                         >
-                          <Avatar sx={{ bgcolor: "primary.main" }}>
-                            {candidateName?.[0]?.toUpperCase() || "?"}
-                          </Avatar>
-                          <Box flex={1}>
-                            <Typography variant="subtitle1" fontWeight={600}>
-                              {candidateName}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {candidateEmail}
-                            </Typography>
-                          </Box>
-                          <Chip
-                            label={statusObj.label}
-                            color={statusObj.color}
-                            size="small"
-                            variant="outlined"
-                          />
+                          {/* Candidate Info */}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                          >
+                            <Avatar
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                fontSize: "1rem",
+                                bgcolor: "primary.main",
+                              }}
+                            >
+                              {candidateName?.[0]?.toUpperCase() || "?"}
+                            </Avatar>
+                            <Box>
+                              <Typography
+                                variant="body1"
+                                fontWeight={600}
+                                lineHeight={1.2}
+                              >
+                                {candidateName}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block", mt: 0.25 }}
+                              >
+                                {candidateEmail}
+                              </Typography>
+                            </Box>
+                          </Stack>
+
+                          {/* Actions: Status Select + Download / Chip */}
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={1}
+                            alignItems={{ xs: "stretch", sm: "center" }}
+                            flexWrap="wrap"
+                            sx={{
+                              width: { xs: "100%", sm: "auto" },
+                              mt: { xs: 1, sm: 0 },
+                            }}
+                          >
+                            {/* Status Select */}
+                            <FormControl
+                              size="small"
+                              sx={{ minWidth: { xs: "100%", sm: 130 } }}
+                            >
+                              <InputLabel sx={{ fontSize: "0.75rem" }}>
+                                Status
+                              </InputLabel>
+                              <Select
+                                value={app.application_status || "PENDING"}
+                                label="Status"
+                                onChange={(e) =>
+                                  handleStatusChange(
+                                    app.pk_id,
+                                    STATUS_MAP[e.target.value]?.label ||
+                                      e.target.value,
+                                  )
+                                }
+                                fullWidth
+                                sx={{
+                                  fontSize: "0.75rem",
+                                  height: 32,
+                                  "& .MuiSelect-select": {
+                                    py: 0.75,
+                                    px: 1.5,
+                                  },
+                                }}
+                              >
+                                {Object.entries(STATUS_MAP).map(
+                                  ([key, { label }]) => (
+                                    <MenuItem
+                                      key={key}
+                                      value={key}
+                                      sx={{ fontSize: "0.75rem" }}
+                                    >
+                                      {label}
+                                    </MenuItem>
+                                  ),
+                                )}
+                              </Select>
+                            </FormControl>
+
+                            {/* Download button or Chip */}
+                            {canDownload ? (
+                              <Tooltip title="Download submitted resume">
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="primary"
+                                  startIcon={
+                                    isDownloading ? (
+                                      <CircularProgress size={16} />
+                                    ) : (
+                                      <FileDownloadIcon fontSize="small" />
+                                    )
+                                  }
+                                  onClick={() =>
+                                    downloadFile(resumeId, suggestedFileName)
+                                  }
+                                  disabled={isDownloading}
+                                  fullWidth={{ xs: true, sm: false }}
+                                  sx={{
+                                    height: 32,
+                                    minWidth: { xs: "auto", sm: 120 },
+                                    fontSize: "0.75rem",
+                                    px: 1.5,
+                                    textTransform: "none",
+                                    whiteSpace: "nowrap",
+                                    "& .MuiButton-startIcon": {
+                                      mr: 0.75,
+                                    },
+                                  }}
+                                >
+                                  {isDownloading ? "Downloading..." : "CV"}
+                                </Button>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip
+                                title={
+                                  app.candidate_resume_id
+                                    ? "Resume file not available or was deleted"
+                                    : "Candidate applied without attaching a resume"
+                                }
+                              >
+                                <Chip
+                                  label={
+                                    app.candidate_resume_id
+                                      ? "No file"
+                                      : "No resume"
+                                  }
+                                  size="small"
+                                  color={
+                                    app.candidate_resume_id
+                                      ? "warning"
+                                      : "default"
+                                  }
+                                  variant="outlined"
+                                  sx={{
+                                    height: 32,
+                                    fontSize: "0.75rem",
+                                    minWidth: { xs: "auto", sm: 120 },
+                                    width: { xs: "100%", sm: "auto" },
+                                    fontWeight: 500,
+                                    borderRadius: "16px",
+                                    "& .MuiChip-label": {
+                                      px: 1.5,
+                                    },
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </Stack>
 
-                        <Stack direction="row" spacing={1} mb={2}>
+                        {/* Applied Date - smaller caption */}
+                        <Stack direction="row" spacing={1} alignItems="center">
                           <CalendarIcon fontSize="small" color="action" />
                           <Typography variant="caption" color="text.secondary">
                             Applied:{" "}
                             {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
                         </Stack>
-
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Update Status</InputLabel>
-                          <Select
-                            value={app.application_status || "PENDING"}
-                            label="Update Status"
-                            onChange={(e) =>
-                              handleStatusChange(
-                                app.pk_id,
-                                STATUS_MAP[e.target.value]?.label || e.target.value
-                              )
-                            }
-                          >
-                            {Object.entries(STATUS_MAP).map(([key, { label }]) => (
-                              <MenuItem key={key} value={key}>
-                                {label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
                       </CardContent>
                     </Card>
                   );
