@@ -20,6 +20,7 @@
     "dayjs": "^1.11.19",
     "emoji-picker-react": "^4.17.3",
     "html-react-parser": "^5.2.11",
+    "html2pdf.js": "^0.14.0",
     "quill": "^2.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

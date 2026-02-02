@@ -36,7 +36,7 @@ import {
   MoreVert as MoreVertIcon,
   Star as StarIcon,
   FileDownload as FileDownloadIcon,
-  Description as DescriptionIcon 
+  Description as DescriptionIcon
 } from '@mui/icons-material'
 import useAuthStore from '../../store/useAuthStore'
 import api from '../../services/api'
@@ -430,8 +430,7 @@ export default function CandidateProfileDashboard() {
     {
       title: 'Overview',
       subtitle: 'Describe Yourself *',
-      subtitle1:
-        'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.',
+      subtitle1: 'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.',
       description: `About ${user_data.user_data?.user_name}. Career Objectives.`,
       buttonText: 'Edit Overview',
       hasData: Boolean(profile?.about_me || profile?.career_objective),
@@ -493,7 +492,7 @@ export default function CandidateProfileDashboard() {
         profile?.skills && (
           <Stack direction="row" spacing={1} flexWrap="wrap">
             {profile.skills.split(',').map((skill, i) => (
-              <Chip key={i} label={skill.trim()} color="primary" />
+              <Chip key={i} label={<p dangerouslySetInnerHTML={{ __html: skill.trim() }} />} color="primary" />
             ))}
           </Stack>
         ),
@@ -1212,7 +1211,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
   )
 }
 
-function Section({title, description, buttonText, onAdd, isEdit, content, hasData}) {
+function Section({ title, description, buttonText, onAdd, isEdit, content, hasData }) {
   return (
     <Paper
       sx={{

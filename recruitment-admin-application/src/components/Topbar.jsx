@@ -24,7 +24,7 @@ import {
   Collapse
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import Visibility from "@mui/icons-material/Visibility";
@@ -51,6 +51,11 @@ import {
 } from "@mui/icons-material";
 import ModeCommentIcon from '@mui/icons-material/ModeComment';
 import { useLocation } from "react-router-dom";
+import html2pdf from "html2pdf.js";
+import { createRoot } from "react-dom/client";
+import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
+import TealAccentModern from '../pages/cv_template/TealAccentModern';
+
 
 
 export default function Topbar() {
@@ -147,16 +152,15 @@ export default function Topbar() {
 
   const toggleCv = () => setOpenCv((prev) => !prev);
   const cvTemplates = [
-    { name: "Modern Minimal", id: "modern-minimal" },
-    { name: "Creative Designer", id: "creative-designer" },
-    { name: "Corporate Professional", id: "corporate-professional" },
-    { name: "Tech / Startup", id: "tech-startup" },
-    { name: "Academic / Research", id: "academic-research" },
+    { name: "Blue Sidebar Modern", id: "blue-sidebar-modern" },
+    { name: "Teal Accent Modern", id: "teal-accent-modern" },
   ];
+  const cvTemplateMap = {
+    "blue-sidebar-modern": BlueSidebarModern,
+    "teal-accent-modern": TealAccentModern,
+  };
 
-  const menuItems = access_token
-    ? MENU_BY_ROLE[user_type] || []
-    : MENU_BY_ROLE.guest;
+  const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest;
 
   const goTo = (path) => {
     navigate(path);
@@ -326,22 +330,58 @@ export default function Topbar() {
 
   const DownloadCvTemplate = async (template) => {
     try {
-      const response = await axios.get(`/generate-cv/${template.id}/${user_data?.user_data?.candidate_id}`, {
-        responseType: "blob"
-      });
+      const [candidateRes, profileRes] = await Promise.all([
+        api.get("/candidate/me"),
+        api.get("/user/profile")
+      ]);
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `cv_${user_data?.user_data?.candidate_id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
+      const candidate = candidateRes.data || {};
+      const profile = profileRes.data || {};
+
+      const mergedData = { ...candidate, ...profile };
+
+      const TemplateComponent = cvTemplateMap[template.id];
+      if (!TemplateComponent) throw new Error("Template not found");
+
+      exportPdfFromComponent(
+        TemplateComponent,
+        mergedData,
+        `cv-${template.id}.pdf`
+      );
+    } catch (error) {
+      console.error("Error downloading CV template:", error);
       setSeverity("error");
-      setMessage("Failed to download CV template");
+      setMessage("Failed to download cv");
       setOpenSnackbar(true);
     }
+  };
+
+  const exportPdfFromComponent = (Component, data, filename = "cv.pdf") => {
+    // Create a temporary container (not added to DOM)
+    const tempDiv = document.createElement("div");
+
+    // Render React component into it
+    const root = createRoot(tempDiv);
+    root.render(<Component candidate={data} />);
+
+    // Wait a tick to ensure React finishes rendering
+    setTimeout(() => {
+      html2pdf()
+        .set({
+          margin: 0,
+          filename,
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(tempDiv)
+        .save()
+        .then(() => {
+          root.unmount(); // clean up
+          tempDiv.remove();
+          console.log("PDF exported successfully");
+        })
+        .catch(err => console.error("PDF export failed:", err));
+    }, 50);
   };
 
   /* =====================
