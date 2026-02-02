@@ -61,3 +61,14 @@ class User(Base):
         cascade="all, delete-orphan",
         passive_deletes=True
     )
+    chat_rooms_as_candidate = relationship(
+        "ChatRoom",
+        foreign_keys="[ChatRoom.candidate_user_id]",
+        back_populates="candidate_user"
+    )
+
+    chat_rooms_as_employer = relationship(
+        "ChatRoom",
+        foreign_keys="[ChatRoom.employer_user_id]",
+        back_populates="employer_user"
+    )
