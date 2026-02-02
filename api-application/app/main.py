@@ -12,7 +12,9 @@ from app.routers import (
     candidate_resume_router,
     category_router,
     admin_candidate_router,
-    job_application_router
+    job_application_router,
+    chat_router,
+    websocket_router
 )
 
 from app.database.session import Base, engine
@@ -29,6 +31,7 @@ from app.models.employer_category_model import employer_category
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category
+from fastapi.staticfiles import StaticFiles
 
 
 def create_tables():
@@ -57,8 +60,11 @@ app.add_middleware(
 
 # Configure static file serving
 UPLOAD_DIR = "uploads/employers"
+os.makedirs("uploads/chat/images", exist_ok=True)
+os.makedirs("uploads/chat/voice", exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads/employers", StaticFiles(directory=UPLOAD_DIR), name="employer-uploads")
+app.mount("/uploads/chat", StaticFiles(directory="uploads/chat"), name="chat-files")
 
 # Register routers
 app.include_router(user_router.router)
@@ -69,3 +75,5 @@ app.include_router(candidate_resume_router.router)
 app.include_router(category_router.router)
 app.include_router(admin_candidate_router.router)
 app.include_router(job_application_router.router)
+app.include_router(chat_router.router)
+app.include_router(websocket_router.router)

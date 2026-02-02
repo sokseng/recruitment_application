@@ -1,0 +1,69 @@
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+from enum import Enum
+
+
+class MessageType(str, Enum):
+    TEXT = "text"
+    IMAGE = "image"
+    VOICE = "voice"
+
+
+class SendTextMessage(BaseModel):
+    to_user_id: int
+    content: str
+
+
+class SendFileMessage(BaseModel):
+    to_user_id: int
+    type: str           # "image" | "voice"
+    content: Optional[str] = None  # caption
+
+
+class ChatMessageOut(BaseModel):
+    id: int
+    room_id: int
+    sender_id: int
+    type: MessageType
+    content: Optional[str]
+    file_url: Optional[str]
+    file_size: Optional[int]
+    mime_type: Optional[str]
+    is_read: bool
+    created_at: datetime
+    read_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationSummary(BaseModel):
+    id: int
+    username: str
+    last_message: Optional[ChatMessageOut]
+    unread_count: int
+    last_message_at: Optional[datetime]
+    
+class CreateChatIn(BaseModel):
+    user_id: int
+    
+class UserResponse(BaseModel):
+    pk_id: int
+    username: str
+    
+class ChatRoomOut(BaseModel):
+    id: int
+    candidate: UserResponse
+    employer: UserResponse
+
+    class Config:
+        from_attributes = True
+        
+class UserSearchOut(BaseModel):
+    pk_id: int
+    user_name: str
+    avatar_url: str | None = None
+
+    class Config:
+        from_attributes = True

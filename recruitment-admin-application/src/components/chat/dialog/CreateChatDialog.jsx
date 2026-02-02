@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,57 +6,85 @@ import {
   DialogActions,
   TextField,
   Button,
-} from '@mui/material';
+  List,
+  ListItemButton,
+  ListItemAvatar,
+  Avatar,
+  ListItemText,
+  IconButton,
+} from "@mui/material";
+import api from "../../../services/api";
+import CloseIcon from '@mui/icons-material/Close';
 
-const CreateChatDialog = ({ open, onClose }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    emailOrPhone: '',
-  });
+const FindUsers = ({ open, onClose, onSelectUser }) => {
+  const [query, setQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.emailOrPhone) {
+  useEffect(() => {
+    if (!query.trim()) {
+      setUsers([]);
       return;
     }
-    console.log('Chat Created:', formData);
-    setFormData({ name: '', emailOrPhone: '' });
+
+    const timeout = setTimeout(() => {
+      setLoading(true);
+      api
+        .get("/chat/find-users", { params: { q: query } })
+        .then((res) => setUsers(res.data))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }, 300); // debounce
+
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  const handleSelect = (user) => {
+    onSelectUser(user);
+    setQuery("");
+    setUsers([]);
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Create Chat</DialogTitle>
+    <Dialog open={open} onClose={onClose} fullWidth>
+      <DialogTitle>Find Users</DialogTitle>
+
       <DialogContent>
         <TextField
           autoFocus
           margin="dense"
-          label="Name"
-          name="name"
+          label="Search by username, email, or phone"
           fullWidth
-          value={formData.name}
-          onChange={handleChange}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
-        <TextField
-          margin="dense"
-          label="Email or Phone"
-          name="emailOrPhone"
-          fullWidth
-          value={formData.emailOrPhone}
-          onChange={handleChange}
-        />
+
+        <List>
+          {users.map((user) => (
+            <ListItemButton key={user.pk_id} onClick={() => handleSelect(user)}>
+              <ListItemAvatar>
+                <Avatar src={user.avatar_url}>
+                  {user.user_name[0]?.toUpperCase()}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText primary={user.user_name} />
+            </ListItemButton>
+          ))}
+        </List>
+
+        {!loading && query && users.length === 0 && (
+          <p style={{ opacity: 0.6 }}>No users found</p>
+        )}
       </DialogContent>
+
       <DialogActions>
-        <Button onClick={onClose} sx={{textTransform: "none"}}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary" sx={{textTransform: "none"}}>
-          Create
-        </Button>
+        <IconButton onClick={onClose} sx={{ textTransform: "none", position: 'absolute', top: 5, right: 5 }}>
+          <CloseIcon/>
+        </IconButton>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default CreateChatDialog;
+export default FindUsers;
