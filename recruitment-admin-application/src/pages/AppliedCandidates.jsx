@@ -25,6 +25,10 @@ import {
   Tabs,
   Tab,
   Tooltip,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from "@mui/material";
 import {
   Work as WorkIcon,
@@ -32,6 +36,7 @@ import {
   HourglassEmpty,
   Home,
   FileDownload as FileDownloadIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import api from "../services/api";
 
@@ -59,7 +64,10 @@ export default function AppliedCandidates() {
   const [loadingApps, setLoadingApps] = useState(false);
   const [error, setError] = useState(null);
   const [showDetailMobile, setShowDetailMobile] = useState(false);
-  const [downloadingResumeId, setDownloadingResumeId] = useState(null);
+  const [viewFileOpen, setViewFileOpen] = useState(false);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState("");
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -152,18 +160,15 @@ export default function AppliedCandidates() {
     }
   };
 
-  //Download
-  const downloadFile = async (resumeId, fileName) => {
-    if (downloadingResumeId === resumeId) return;
-
-    setDownloadingResumeId(resumeId);
+  const handleDownload = async (resumeId, fileName = "resume.pdf") => {
+    if (!resumeId) return;
 
     try {
-      const response = await api.get(`/applications/resumes/${resumeId}/download`, {
+      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
         responseType: "blob",
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", fileName);
@@ -171,27 +176,48 @@ export default function AppliedCandidates() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-
+    } catch (err) {
       setSnackbar({
         open: true,
-        message: "Download started",
-        severity: "success",
-      });
-    } catch (error) {
-      console.error("Download error:", error);
-      let message = "Failed to download file";
-      if (error?.response?.status === 404) {
-        message = "Resume file not found";
-      } else if (error?.response?.status === 403) {
-        message = "Access denied - you may not have permission to download this resume";
-      }
-      setSnackbar({
-        open: true,
-        message,
+        message: "Failed to download resume",
         severity: "error",
       });
-    } finally {
-      setDownloadingResumeId(null);
+    }
+  };
+
+  const handleViewFile = async (resumeId, fileName = "resume") => {
+    if (!resumeId) return;
+
+    try {
+      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
+        responseType: "blob",
+      });
+
+      const contentType = res.headers["content-type"] || "application/octet-stream";
+      const blob = new Blob([res.data], { type: contentType });
+      const url = URL.createObjectURL(blob);
+
+      // Office documents → better to download than try to preview
+      if (
+        contentType.includes("word") ||
+        contentType.includes("officedocument") ||
+        contentType.includes("spreadsheet") ||
+        contentType.includes("excel")
+      ) {
+        handleDownload(resumeId, fileName);
+        return;
+      }
+
+      setFileUrl(url);
+      setFileName(fileName);
+      setFileType(contentType);
+      setViewFileOpen(true);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: "Unable to load resume preview",
+        severity: "error",
+      });
     }
   };
 
@@ -466,21 +492,12 @@ export default function AppliedCandidates() {
                   const candidateEmail =
                     app.candidate?.user?.email || "No email available";
 
-                  // Resume availability check
-                  const hasResumeFile =
-                    app.resume &&
-                    app.resume.resume_type === "Upload" &&
-                    app.resume.resume_file;
+                  const resumeId = app.candidate_resume_id;
+                  const resumeFileName =
+                    app.resume?.resume_file ||
+                    `resume-${candidateName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
-                  const resumeId = app.candidate_resume_id || app.resume?.pk_id;
-                  const suggestedFileName = app.resume?.resume_file
-                    ? app.resume.resume_file
-                    : `resume-${candidateName
-                        .replace(/\s+/g, "-")
-                        .toLowerCase()}.pdf`;
-
-                  const canDownload = !!resumeId && hasResumeFile;
-                  const isDownloading = downloadingResumeId === resumeId;
+                  const hasResume = !!resumeId;
 
                   return (
                     <Card
@@ -488,29 +505,23 @@ export default function AppliedCandidates() {
                       variant="outlined"
                       sx={{
                         borderRadius: 2,
-                        boxShadow: 1, // lighter shadow by default
+                        boxShadow: 1,
                         transition: "box-shadow 0.2s",
                         "&:hover": { boxShadow: 3 },
-                        overflow: "hidden", // clean edges
+                        overflow: "hidden",
                       }}
                     >
                       <CardContent
                         sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}
                       >
-                        {/* Top row: Avatar + Name + Email + Actions */}
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
-                          spacing={{ xs: 1.5, sm: 1 }}
+                          spacing={{ xs: 1.5, sm: 2 }}
                           alignItems={{ xs: "flex-start", sm: "center" }}
                           justifyContent="space-between"
                           mb={{ xs: 1.5, sm: 1.5 }}
                         >
-                          {/* Candidate Info */}
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="center"
-                          >
+                          <Stack direction="row" spacing={1.5} alignItems="center">
                             <Avatar
                               sx={{
                                 width: 40,
@@ -539,137 +550,77 @@ export default function AppliedCandidates() {
                             </Box>
                           </Stack>
 
-                          {/* Actions: Status Select + Download / Chip */}
                           <Stack
                             direction={{ xs: "column", sm: "row" }}
-                            spacing={1}
+                            spacing={1.5}
                             alignItems={{ xs: "stretch", sm: "center" }}
-                            flexWrap="wrap"
                             sx={{
                               width: { xs: "100%", sm: "auto" },
                               mt: { xs: 1, sm: 0 },
                             }}
                           >
-                            {/* Status Select */}
                             <FormControl
                               size="small"
-                              sx={{ minWidth: { xs: "100%", sm: 130 } }}
+                              sx={{ minWidth: { xs: "100%", sm: 140 } }}
                             >
-                              <InputLabel sx={{ fontSize: "0.75rem" }}>
-                                Status
-                              </InputLabel>
+                              <InputLabel>Status</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
                                 label="Status"
-                                onChange={(e) =>
-                                  handleStatusChange(
-                                    app.pk_id,
-                                    STATUS_MAP[e.target.value]?.label ||
-                                      e.target.value,
-                                  )
-                                }
-                                fullWidth
-                                sx={{
-                                  fontSize: "0.75rem",
-                                  height: 32,
-                                  "& .MuiSelect-select": {
-                                    py: 0.75,
-                                    px: 1.5,
-                                  },
+                                onChange={(e) => {
+                                  const key = e.target.value;
+                                  const label = STATUS_MAP[key]?.label;
+                                  if (label) handleStatusChange(app.pk_id, label);
                                 }}
+                                sx={{ fontSize: "0.875rem", height: 36 }}
                               >
-                                {Object.entries(STATUS_MAP).map(
-                                  ([key, { label }]) => (
-                                    <MenuItem
-                                      key={key}
-                                      value={key}
-                                      sx={{ fontSize: "0.75rem" }}
-                                    >
-                                      {label}
-                                    </MenuItem>
-                                  ),
-                                )}
+                                {Object.entries(STATUS_MAP).map(([key, { label }]) => (
+                                  <MenuItem key={key} value={key}>
+                                    {label}
+                                  </MenuItem>
+                                ))}
                               </Select>
                             </FormControl>
 
-                            {/* Download button or Chip */}
-                            {canDownload ? (
-                              <Tooltip title="Download submitted resume">
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  color="primary"
-                                  startIcon={
-                                    isDownloading ? (
-                                      <CircularProgress size={16} />
-                                    ) : (
-                                      <FileDownloadIcon fontSize="small" />
-                                    )
-                                  }
-                                  onClick={() =>
-                                    downloadFile(resumeId, suggestedFileName)
-                                  }
-                                  disabled={isDownloading}
-                                  fullWidth={{ xs: true, sm: false }}
-                                  sx={{
-                                    height: 32,
-                                    minWidth: { xs: "auto", sm: 120 },
-                                    fontSize: "0.75rem",
-                                    px: 1.5,
-                                    textTransform: "none",
-                                    whiteSpace: "nowrap",
-                                    "& .MuiButton-startIcon": {
-                                      mr: 0.75,
-                                    },
-                                  }}
-                                >
-                                  {isDownloading ? "Downloading..." : "CV"}
-                                </Button>
-                              </Tooltip>
+                            {hasResume ? (
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title="View Resume">
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => handleViewFile(resumeId, resumeFileName)}
+                                  >
+                                    <VisibilityIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Download Resume">
+                                  <IconButton
+                                    size="small"
+                                    color="warning"
+                                    onClick={() => handleDownload(resumeId, resumeFileName)}
+                                  >
+                                    <FileDownloadIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
                             ) : (
-                              <Tooltip
-                                title={
-                                  app.candidate_resume_id
-                                    ? "Resume file not available or was deleted"
-                                    : "Candidate applied without attaching a resume"
-                                }
-                              >
+                              <Tooltip title="Candidate applied without attaching a resume">
                                 <Chip
-                                  label={
-                                    app.candidate_resume_id
-                                      ? "No file"
-                                      : "No resume"
-                                  }
+                                  label="No resume"
                                   size="small"
-                                  color={
-                                    app.candidate_resume_id
-                                      ? "warning"
-                                      : "default"
-                                  }
+                                  color="default"
                                   variant="outlined"
-                                  sx={{
-                                    height: 32,
-                                    fontSize: "0.75rem",
-                                    minWidth: { xs: "auto", sm: 120 },
-                                    width: { xs: "100%", sm: "auto" },
-                                    fontWeight: 500,
-                                    borderRadius: "16px",
-                                    "& .MuiChip-label": {
-                                      px: 1.5,
-                                    },
-                                  }}
+                                  sx={{ height: 36, fontSize: "0.875rem" }}
                                 />
                               </Tooltip>
                             )}
                           </Stack>
                         </Stack>
 
-                        {/* Applied Date - smaller caption */}
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center" mt={1}>
                           <CalendarIcon fontSize="small" color="action" />
                           <Typography variant="caption" color="text.secondary">
-                            Applied:{" "}
-                            {new Date(app.applied_date).toLocaleDateString()}
+                            Applied: {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
                         </Stack>
                       </CardContent>
@@ -749,6 +700,61 @@ export default function AppliedCandidates() {
           {ApplicationsDetailContent()}
         </Box>
       </Box>
+
+      {/* View File Dialog */}
+      <Dialog
+        open={viewFileOpen}
+        onClose={() => {
+          setViewFileOpen(false);
+          if (fileUrl) URL.revokeObjectURL(fileUrl);
+        }}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            height: "90vh",
+            overflow: "hidden",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: 0,
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          {fileType.startsWith("image") ? (
+            <Box
+              component="img"
+              src={fileUrl}
+              alt="Resume"
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            />
+          ) : (
+            <iframe
+              src={fileUrl}
+              title="Resume Viewer"
+              width="100%"
+              height="100%"
+              style={{
+                border: "none",
+                overflow: "auto",
+              }}
+            />
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ py: 0.5, px: 2 }}>
+          <Button size="small" onClick={() => setViewFileOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

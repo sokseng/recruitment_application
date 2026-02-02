@@ -18,8 +18,6 @@ def create_new_job(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    # In real project → check if user has employer profile
-    # For now we assume current_user_id is employer_id
     return create_job(db, job_data, current_user_id)
 
 
@@ -32,7 +30,7 @@ def get_my_jobs(
 ):
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer:
-        return []  # or raise 403 / 404 depending on your logic
+        return [] 
     return get_jobs_by_employer(db, employer.pk_id, skip, limit)
 
 
