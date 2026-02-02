@@ -20,9 +20,11 @@ from app.controllers.job_application_controller import (
     get_applications_for_job,
     update_application_status
 )
+import mimetypes
+
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
-
+UPLOAD_FOLDER = "uploads/resumes"
 
 
 # ─── Candidate side ──────────────────────────────────────────────────────────
@@ -93,49 +95,25 @@ def get_my_application_status(
         "applied_date": app.applied_date
     }
 
-@router.get("/resumes/{resume_id}/download", tags=["Employer - Resume Download"])
-def employer_download_resume(
-    resume_id: int,
-    application_id: Optional[int] = Query(
-        None,
-        description="Optional: Application ID for extra validation"
-    ),
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(verify_access_token)
-):
-    employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
-    if not employer:
-        raise HTTPException(403, detail="Only employers can download applicant resumes")
-
+@router.get("/resumes/{resume_id}/file")
+def download_resume(resume_id: int, db: Session = Depends(get_db)):
     resume = db.query(CandidateResume).filter(CandidateResume.pk_id == resume_id).first()
-    if not resume:
-        raise HTTPException(404, detail="Resume not found")
+    if not resume or not resume.resume_file:
+        raise HTTPException(status_code=404, detail="Resume not found")
 
-    if resume.resume_type != "Upload" or not resume.resume_file:
-        raise HTTPException(404, detail="No downloadable file available (text resume or missing file)")
+    # Full path
+    file_path = os.path.join(UPLOAD_FOLDER, resume.resume_file)
 
-    query = db.query(JobApplication).join(Job).filter(
-        JobApplication.candidate_resume_id == resume_id,
-        Job.employer_id == employer.pk_id
-    )
-
-    if application_id is not None:
-        query = query.filter(JobApplication.pk_id == application_id)
-
-    has_application = query.first() is not None
-
-    if not has_application:
-        raise HTTPException(
-            status_code=403,
-            detail="Not authorized - this resume is not from an applicant to your jobs"
-        )
-
-    file_path = os.path.join("uploads/resumes", resume.resume_file)
     if not os.path.exists(file_path):
-        raise HTTPException(404, detail="Resume file not found on server")
+        raise HTTPException(status_code=404, detail=f"File {resume.resume_file} not found on server")
+
+    # Detect MIME type
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
 
     return FileResponse(
         path=file_path,
-        filename=resume.resume_file or f"resume_{resume_id}.pdf",
-        media_type="application/octet-stream"
+        filename=resume.resume_file,  # browser download filename
+        media_type=mime_type
     )
