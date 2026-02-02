@@ -66,6 +66,19 @@ export default function Topbar() {
     user_data,
   } = useAuthStore();
 
+  // 🔹 Settings menu (AppBar)
+  const [settingsAnchor, setSettingsAnchor] = useState(null);
+  const openSettings = Boolean(settingsAnchor);
+
+  const handleOpenSettings = (event) => {
+    setSettingsAnchor(event.currentTarget);
+  };
+
+  const handleCloseSettings = () => {
+    setSettingsAnchor(null);
+  };
+
+
   const [openLogin, setOpenLogin] = useState(false);
   const handleCloseLoginForm = () => {
     setOpenLogin(false);
@@ -882,6 +895,37 @@ export default function Topbar() {
                 </Button>
               ))}
 
+              {/* ⚙️ SETTINGS  */}
+              {access_token && (
+                <Button
+                  onClick={handleOpenSettings}
+                  startIcon={<Settings />}
+                  sx={{
+                    fontWeight: 500,
+                    color: "teal",              // ✅ SAME as other menu buttons
+                    textTransform: "none",
+                    position: "relative",
+
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      width: openSettings ? "100%" : "0%",
+                      height: "2px",
+                      bottom: 0,
+                      left: 0,
+                      backgroundColor: "#00B0FF", // same underline color
+                      transition: "width 0.3s",
+                    },
+                    "&:hover::after": {
+                      width: "100%",
+                    },
+                  }}
+                >
+                  Settings
+                </Button>
+              )}
+
+
               {access_token ? (
                 <>
                   {/* Profile Avatar & Menu */}
@@ -1111,6 +1155,41 @@ export default function Topbar() {
             </Box>
           )}
         </Toolbar>
+
+        <Menu
+          anchorEl={settingsAnchor}
+          open={openSettings}
+          onClose={handleCloseSettings}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{
+            sx: {
+              width: 260,
+              borderRadius: 2,
+              mt: 1,
+            },
+          }}
+        >
+          <MenuItem disabled sx={{ fontWeight: 600 }}>
+            Settings
+          </MenuItem>
+
+          <Divider />
+
+          <MenuItem
+            onClick={() => {
+              navigate("/system_parameter");
+              handleCloseSettings();
+            }}
+          >
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            System Parameter
+          </MenuItem>
+        </Menu>
+
+
       </AppBar>
 
       {/* DRAWER */}
@@ -1302,7 +1381,7 @@ export default function Topbar() {
                     height: { xs: 50, sm: 50, md: 50 },
                     width: { xs: 100, sm: 110, md: 110 },
                     objectFit: "cover",
-                    border: "2px solid #1976d2", 
+                    border: "2px solid #1976d2",
                     borderRadius: "0.6rem",
                     boxShadow: 2,
                   }}

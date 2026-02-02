@@ -12,6 +12,7 @@ import MainLayout from '../layouts/MainLayout'
 import MyJobs from '../pages/MyJobs'
 import ChatPage from '../pages/ChatPage'
 import AppliedCandidates from '../pages/AppliedCandidates'
+import SystemParameter from '../pages/SystemParameter'
 
 export default function AppRoutes() {
   return (
@@ -19,6 +20,15 @@ export default function AppRoutes() {
       <Routes>
         {/* Public route */}
         <Route path="/" element={<Dashboard />} />
+
+        <Route
+          path="/system_parameter"
+          element={
+            <ProtectedRoute>
+              <SystemParameter />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/admin"
