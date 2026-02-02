@@ -50,6 +50,8 @@ import {
   ExpandMore,
 } from "@mui/icons-material";
 import ModeCommentIcon from '@mui/icons-material/ModeComment';
+import { useLocation } from "react-router-dom";
+
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -69,6 +71,10 @@ export default function Topbar() {
   // 🔹 Settings menu (AppBar)
   const [settingsAnchor, setSettingsAnchor] = useState(null);
   const openSettings = Boolean(settingsAnchor);
+  const location = useLocation();
+
+  // 🔹 is settings active?
+  const isSettingsActive = location.pathname.startsWith("/system_parameter");
 
   const handleOpenSettings = (event) => {
     setSettingsAnchor(event.currentTarget);
@@ -902,18 +908,18 @@ export default function Topbar() {
                   startIcon={<Settings />}
                   sx={{
                     fontWeight: 500,
-                    color: "teal",              // ✅ SAME as other menu buttons
+                    color: "teal",
                     textTransform: "none",
                     position: "relative",
 
                     "&::after": {
                       content: '""',
                       position: "absolute",
-                      width: openSettings ? "100%" : "0%",
+                      width: isSettingsActive ? "100%" : "0%",
                       height: "2px",
                       bottom: 0,
                       left: 0,
-                      backgroundColor: "#00B0FF", // same underline color
+                      backgroundColor: "#00B0FF",
                       transition: "width 0.3s",
                     },
                     "&:hover::after": {
@@ -924,6 +930,7 @@ export default function Topbar() {
                   Settings
                 </Button>
               )}
+
 
 
               {access_token ? (
