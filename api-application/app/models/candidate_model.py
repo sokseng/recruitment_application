@@ -64,5 +64,6 @@ class Candidate(Base):
 
     applications = relationship("JobApplication", back_populates="candidate", cascade="all, delete-orphan")
 
+
     def __repr__(self):
         return f"<Candidate #{self.pk_id} | User #{self.user_id} - {self.status}>"
