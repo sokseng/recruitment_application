@@ -136,9 +136,18 @@ export default function Dashboard() {
   useEffect(() => {
     if (!jobs.length) return;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const activeOnly = jobs.filter((job) => {
+      if (!job.closing_date) return true;
+      const closing = new Date(job.closing_date);
+      return closing >= today;
+    });
+
     const term = searchTerm.toLowerCase().trim();
 
-    const filtered = jobs.filter((job) => {
+    const filtered = activeOnly.filter((job) => {
       const title = job.job_title?.toLowerCase() || "";
       const company = job.employer?.company_name?.toLowerCase() || "";
       const location = job.location?.toLowerCase() || "";
@@ -173,9 +182,23 @@ export default function Dashboard() {
     try {
       const res = await api.get("/jobs/");
       const data = res.data || [];
-      setJobs(data);
-      setFilteredJobs(data);
-      if (data.length) setSelectedJob(data[0]);
+
+      // ─── Filter out expired jobs ───
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const activeJobs = data.filter((job) => {
+        if (!job.closing_date) return true;
+
+        const closing = new Date(job.closing_date);
+        return closing >= today;
+      });
+
+      setJobs(activeJobs);
+      setFilteredJobs(activeJobs);
+      if (activeJobs.length){
+        setSelectedJob(activeJobs[0]);
+      } 
     } catch {
       setError("Failed to load jobs");
     } finally {
@@ -383,7 +406,6 @@ export default function Dashboard() {
                 borderRadius: 2,
                 p: 2.5,
                 overflowY: "auto",
-                backgroundColor: "#DFE6DF",
               },
             }}
           >
@@ -464,7 +486,6 @@ export default function Dashboard() {
                 borderRadius: 2,
                 p: 2.5,
                 overflowY: "auto",
-                backgroundColor: "#DFE6DF",
               },
             }}
           >
@@ -597,6 +618,65 @@ export default function Dashboard() {
                     <Typography variant="body2" fontWeight={600}>
                       {job.job_title}
                     </Typography>
+                    {job.categories?.length > 0 && (
+                      <Stack
+                        direction="row"
+                        spacing={0.3}
+                        mt={0.75}
+                        flexWrap="wrap"
+                        alignItems="center"
+                      >
+                        <CategoryRoundedIcon
+                          fontSize=""
+                          sx={{ color: "text.secondary" }}
+                        />
+
+                        <Typography
+                          variant="caption"
+                          fontWeight={600}
+                          color="text.secondary"
+                        >
+                          Categories:
+                        </Typography>
+
+                        {job.categories.slice(0, 2).map((cat) => (
+                          <Chip
+                            key={cat.pk_id}
+                            label={cat.name}
+                            size="small"
+                            variant="outlined"
+                            sx={(theme) => ({
+                              fontSize: "0.65rem",
+                              height: 18,
+                              borderRadius: "8px",
+                              borderColor: theme.palette.warning.light,
+                              color: theme.palette.warning.dark,
+                              bgcolor: theme.palette.warning.light + "22",
+                              "& .MuiChip-label": {
+                                px: 0.7,
+                                fontWeight: 600,
+                              },
+                            })}
+                          />
+                        ))}
+
+                        {job.categories.length > 2 && (
+                          <Chip
+                            label={`+${job.categories.length - 2}`}
+                            size="small"
+                            sx={{
+                              fontSize: "0.65rem",
+                              height: 18,
+                              borderRadius: "8px",
+                              fontWeight: 600,
+                              bgcolor: "action.hover",
+                              color: "text.secondary",
+                            }}
+                          />
+                        )}
+                      </Stack>
+                    )}
+
                     <Stack direction="row" spacing={0.3} mt={0.5}>
                       <Chip
                         icon={<EventIcon />}
@@ -1106,9 +1186,7 @@ export default function Dashboard() {
                   <Chip
                     label={
                       selectedJob.closing_date
-                        ? new Date(selectedJob.closing_date)
-                            .toISOString()
-                            .split("T")[0]
+                        ? new Date(selectedJob.closing_date).toLocaleDateString('en-CA')   // yyyy-mm-dd
                         : "—"
                     }
                     size="small"
@@ -1192,7 +1270,18 @@ export default function Dashboard() {
                         label={cat.name}
                         size="small"
                         variant="outlined"
-                        color="default"
+                        color="warning"
+                        sx={(theme) => ({
+                              fontSize: "0.70rem",
+                              height: 18,
+                              borderRadius: "8px",
+                              borderColor: theme.palette.warning.light,
+                              color: theme.palette.warning.dark,
+                              bgcolor: theme.palette.warning.light + "22",
+                              "& .MuiChip-label": {
+                                fontWeight: 600,
+                              },
+                            })}
                       />
                     ))}
                   </Stack>

@@ -45,7 +45,7 @@ import 'quill/dist/quill.snow.css';
 import api from "../services/api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { Cancel, PostAdd, Save } from "@mui/icons-material";
+import { Cancel, CategoryRounded, PostAdd, Save } from "@mui/icons-material";
 import Draggable from "react-draggable";
 
 const JOB_TYPES = [
@@ -1084,7 +1084,7 @@ export default function MyJobs() {
             xs: "repeat(1, 1fr)",
             sm: "repeat(3, 1fr)",
             md: "repeat(4, 1fr)",
-            lg: "repeat(4, 1fr)",
+            lg: "repeat(3, 1fr)",
           },
           gap: 1,
         }}
@@ -1209,15 +1209,51 @@ export default function MyJobs() {
 
               {job.categories?.length > 0 && (
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={1}>
-                  {job.categories.map((cat) => (
+                  <CategoryRounded
+                    fontSize=""
+                    sx={{ color: "text.secondary" }}
+                  />
+                  <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color="text.secondary"
+                  >
+                    Categories:
+                  </Typography>
+                  {job.categories.slice(0, 2).map((cat) => (
                     <Chip
                       key={cat.pk_id}
                       label={cat.name}
                       size="small"
                       variant="outlined"
-                      color="default"
+                      sx={(theme) => ({
+                        fontSize: "0.70rem",
+                        height: 18,
+                        borderRadius: "8px",
+                        borderColor: theme.palette.warning.light,
+                        color: theme.palette.warning.dark,
+                        bgcolor: theme.palette.warning.light + "22",
+                        "& .MuiChip-label": {
+                          px: 0.7,
+                          fontWeight: 600,
+                        },
+                      })}
                     />
                   ))}
+                  {job.categories.length > 2 && (
+                    <Chip
+                      label={`+${job.categories.length - 2}`}
+                      size="small"
+                      sx={{
+                        fontSize: "0.70rem",
+                        height: 18,
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        bgcolor: "action.hover",
+                        color: "text.secondary",
+                      }}
+                    />
+                  )}
                 </Stack>
               )}
 
