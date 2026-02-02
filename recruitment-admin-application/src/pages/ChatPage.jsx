@@ -158,7 +158,7 @@ function ChatPage() {
                 <Box
                     sx={{
                         position: 'relative',
-                        width: { xs: '100%', sm: 400 },
+                        width: { xs: '100%', md: 400 },
                         display: 'flex',
                         flexDirection: 'column',
                         borderRight: { sm: '1px solid #ddd' },
