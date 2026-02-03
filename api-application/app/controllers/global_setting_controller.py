@@ -13,7 +13,7 @@ ALGORITHM = settings.JWT_ALGORITHM
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
 
 def get_all_global_setting(db: Session):
-    return db.query(GlobalSetting).all()
+    return db.query(GlobalSetting).order_by(GlobalSetting.name).all()
 
 
 #update system parameter
