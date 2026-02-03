@@ -31,6 +31,38 @@ def get_or_create_chat_room(db: Session, user_a_id: int, user_b_id: int) -> Chat
         db.refresh(room)
     return room
 
+
+async def send_text_message(db: Session, current_user: User, to_user_id: int, content: str):
+    room = get_or_create_chat_room(db, current_user.pk_id, to_user_id)
+
+    msg = ChatMessage(
+        room_id=room.id,
+        sender_id=current_user.pk_id,
+        type=MessageType.TEXT,
+        content=content
+    )
+    db.add(msg)
+    db.flush()
+    
+    room.last_message_id = msg.id
+    room.last_message_at = msg.created_at
+    
+    db.commit()
+    db.refresh(msg)
+    
+    payload = ChatMessageOut.from_orm(msg).dict()
+
+    await manager.broadcast_to_room(
+        room.id,
+        {
+            "type": "message",
+            "message": payload,
+        },
+        exclude_user_id=current_user.pk_id,
+    )
+    return payload
+
+
 async def send_file_message(db: Session, current_user: User, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):
     room = get_or_create_chat_room(db, current_user.pk_id, to_user_id)
 

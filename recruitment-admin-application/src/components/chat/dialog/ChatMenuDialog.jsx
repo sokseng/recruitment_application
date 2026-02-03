@@ -51,7 +51,7 @@ function ChatMenuDialog({ open, onClose, user }) {
                                 width: 75,
                                 height: 75,
                             }}
-                        />
+                        >{user?.username?.charAt(0).toUpperCase() || 'P'}</Avatar>
                         <Typography variant="subtitle">{user.username}</Typography>
                         <Typography variant="caption" sx={{ color: user.is_online ? 'primary.main' : 'grey' }}>
                             {user.is_online ? 'Online' : 'Offline'}

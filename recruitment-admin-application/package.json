@@ -17,6 +17,7 @@
     "@mui/x-data-grid": "^8.25.0",
     "@mui/x-date-pickers": "^8.25.0",
     "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "emoji-picker-react": "^4.17.3",
     "html-react-parser": "^5.2.11",

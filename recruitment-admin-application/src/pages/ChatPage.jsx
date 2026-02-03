@@ -11,9 +11,11 @@ import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
 import useAuthStore from '../store/useAuthStore';
 import useTypewriter from '../hooks/useTypewriter';
+import {FormatTime} from '../components/chat/FormatTime';
 
 function ChatPage() {
     const token = useAuthStore.getState().access_token;
+    const currentUserId = useAuthStore.getState().user_type;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -22,6 +24,8 @@ function ChatPage() {
 
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
+
+    console.log("messages", messages)
 
     const fetchChats = async () => {
         const res = await api.get('/chat/');
@@ -158,7 +162,7 @@ function ChatPage() {
                                             {chat.username}
                                         </Typography>
                                         <Typography sx={{ fontSize: 10, color: selectedChat?.id == chat.id ? 'white' : 'grey.600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mt: 0.25 }}>
-                                            {chat.last_message ?? 'Tap to start new message'}
+                                            {chat.last_message.content ?? 'Tap to start new message'}
                                         </Typography>
                                     </Box>
 
@@ -169,7 +173,7 @@ function ChatPage() {
                                         alignItems: 'end'
                                     }}>
                                         <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
-                                            {chat.last_message_at}
+                                            <FormatTime time={chat.last_message_at}/>
                                         </Typography>
                                         {chat.unread_count > 0 && (
                                             <Box
@@ -230,6 +234,8 @@ function ChatPage() {
                         chat={selectedChat}
                         onBack={() => setSelectedChat(null)}
                         messages={messages}
+                        send={send}
+                        currentUserId={currentUserId}
                     />
                 </Box>
             )}

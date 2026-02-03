@@ -6,7 +6,7 @@ from sqlalchemy import or_, func
 from app.database.deps import get_db
 from app.models.user_model import User
 from app.models.chat_room import ChatRoom
-from app.models.chat_message import ChatMessage
+from app.models.chat_message import ChatMessage, MessageType
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
     ChatMessageOut, ConversationSummary
@@ -20,6 +20,7 @@ from app.controllers.chat_controller import (
 )
 from app.dependencies.auth import verify_access_token
 from starlette.websockets import WebSocketClose
+from app.controllers.websocket_controller import send_text_message_ws, serialize_message
 
 router = APIRouter(prefix="/ws/chat", tags=["chat"])
 
@@ -55,15 +56,49 @@ async def websocket_chat(
     try:
         while True:
             data = await websocket.receive_json()
-            type = data.get("type")
-            
-            
+            print("WS RECEIVED:", data)
+
+            msg_type = data.get("type")
+
+            # handle text messages
+            if msg_type == MessageType.TEXT.value:
+                message = await send_text_message_ws(
+                    db=db,
+                    room_id=room.id,
+                    sender_id=current_user_id,
+                    content=data.get("content", ""),
+                )
+
+                if message:
+                    message_serialized = serialize_message(ChatMessageOut(**message))
+                    await manager.broadcast_to_room(
+                        room.id,
+                        {
+                            "type": "message",
+                            "message": message,
+                        },
+                        exclude_user_id=current_user_id
+                    )
+                continue
+
+            # handle invalid types
+            if msg_type not in MessageType._value2member_map_:
+                await websocket.send_json({
+                    "type": "error",
+                    "message": "Invalid message type"
+                })
+                continue
+
     except WebSocketDisconnect:
         manager.disconnect(websocket, current_user_id, room.id)
 
-        await manager.broadcast_to_room(room.id, {
-            "type": "presence",
-            "userId": current_user_id,
-            "online": False
-        }, exclude_user_id=current_user_id)
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "presence",
+                "userId": current_user_id,
+                "online": False
+            },
+            exclude_user_id=current_user_id
+        )
 

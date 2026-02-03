@@ -16,7 +16,9 @@ class ConnectionManager:
                 self.active_connections[room_id].remove(websocket)
 
     async def broadcast_to_room(self, room_id: int, message: dict, exclude_user_id: int | None = None):
+        print("BROADCAST TO ROOM:", room_id, message)
         if room_id not in self.active_connections:
+            print("NO ACTIVE CONNECTIONS FOR ROOM")
             return
 
         for ws in self.active_connections[room_id][:]:
