@@ -17,8 +17,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import StopIcon from '@mui/icons-material/Stop';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
 import api from '../../services/api';
+import TypingIndicator from './TypingIndicator';
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, messagesEndRef }) {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -27,14 +28,30 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [audioBlob, setAudioBlob] = useState(null);
     const [recordTime, setRecordTime] = useState(0);
 
-    const messagesEndRef = useRef(null);
-
     const [showContent, setSowContent] = useState(false);
     const emojiButtonRef = useRef(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [newMessage, setNewMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [popup, setPopup] = useState(false);
+
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
+    const prevMessageCountRef = useRef(0);
+    const justOpenedChatRef = useRef(false);
+
+    const handleTyping = () => {
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            send({ type: "typing", is_typing: true });
+        }
+
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            send({ type: "typing", is_typing: false });
+        }, 1200);
+    };
 
     const startRecording = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -79,9 +96,40 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         });
     };
 
+    const isNearBottom = (threshold = 50) => {
+        const el = messagesRef.current;
+        if (!el) return false;
+
+        return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    };
+
     useEffect(() => {
-        scrollToBottom();
-    }, [chat, messages]);
+        if (!chat?.id) return;
+
+        justOpenedChatRef.current = true;
+
+        const timer = setTimeout(() => {
+            scrollToBottom();
+            justOpenedChatRef.current = false;
+        }, 50);
+
+        return () => clearTimeout(timer);
+    }, [chat?.id]);
+
+    useEffect(() => {
+        const prevCount = prevMessageCountRef.current;
+        const currentCount = messages.length;
+
+        if (
+            currentCount > prevCount &&
+            !loadingOlderRef.current &&
+            isNearBottom()
+        ) {
+            scrollToBottom();
+        }
+
+        prevMessageCountRef.current = currentCount;
+    }, [messages]);
 
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files);
@@ -115,23 +163,27 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 type: audioBlob.type,
             })
 
-            await uploadFileMessage({ file: audioFile, type: 'voice' })
+            const res = await uploadFileMessage({ file: audioFile, type: 'voice' })
+            setMessages(prev => [...prev, res.data]);
             setAudioBlob(null)
             setRecordTime(0)
+            setTimeout(scrollToBottom, 50);
             return
         }
 
         if (selectedFiles.length > 0) {
             for (const file of selectedFiles) {
                 const isImage = file.type.startsWith('image/')
-                await uploadFileMessage({
+                const res = await uploadFileMessage({
                     file,
                     type: isImage ? 'image' : 'voice',
                     caption: newMessage || null,
                 })
+                setMessages(prev => [...prev, res.data]);
             }
             setSelectedFiles([])
             setNewMessage('')
+            setTimeout(scrollToBottom, 50);
         }
 
         if (newMessage.trim()) {
@@ -139,7 +191,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 type: "text",
                 content: newMessage.trim(),
             });
+            handleTyping(false);
             setNewMessage('');
+            setTimeout(scrollToBottom, 50);
         }
     };
 
@@ -204,13 +258,13 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     {chat?.username?.charAt(0).toUpperCase() || 'P'}
                                 </Avatar>
 
-                                <Box sx={{ flexGrow: 1, overflow: 'hidden', display: { xs: 'none', sm: 'block' } }}>
+                                <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
                                     <Typography variant="h6" fontWeight={600} noWrap>
                                         {chat?.username || 'Unkown User'}
                                     </Typography>
 
-                                    <Typography variant="caption" color="text.secondary" noWrap>
-                                        offline
+                                    <Typography variant="caption" sx={{ color: typingUsers[chat?.id] ? 'primary.main' : isOnline ? 'green' : 'grey', fontWeight: 'bold' }} noWrap>
+                                        {typingUsers[chat?.id] ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -259,14 +313,28 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     >
 
                         <Box
+                            ref={messagesRef}
+                            onScroll={onScroll}
                             sx={{
                                 height: '75vh',
                                 overflowY: 'auto',
                                 px: 2,
                                 py: 1,
                                 bgcolor: 'grey.100',
+                                position: 'relative',
                             }}
                         >
+
+                            {loadingOlderRef.current && (
+                                <Typography
+                                    variant="caption"
+                                    align="center"
+                                    sx={{ py: 1, color: 'grey.600', display: 'flex', justifyContent: 'center' }}
+                                >
+                                    Loading older messages…
+                                </Typography>
+                            )}
+
                             {messages.map((message) => (
                                 <MessageBubble
                                     key={message.id}
@@ -274,6 +342,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     isOwn={message.sender_id === currentUserId}
                                 />
                             ))}
+
+                            {Object.entries(typingUsers)
+                                .filter(([userId, isTyping]) => isTyping && parseInt(userId) !== currentUserId)
+                                .map(([userId]) => (
+                                    <TypingIndicator
+                                        key={userId}
+                                        username={chat.username}
+                                    />
+                                ))}
+
                             <div ref={messagesEndRef} />
 
                         </Box>
@@ -427,16 +505,23 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         size="small"
                                         placeholder="Aa..."
                                         value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onChange={(e) => {
+                                            setNewMessage(e.target.value);
+                                            handleTyping(e.target.value.length > 0);
+                                        }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
+                                                handleTyping(false);
                                                 handleSend();
                                             }
                                         }}
                                         sx={{ '& fieldset': { borderRadius: 3 } }}
                                         onFocus={() => setSowContent(true)}
-                                        onBlur={() => setSowContent(false)}
+                                        onBlur={() => {
+                                            handleTyping(false);
+                                            setSowContent(false);
+                                        }}
                                     />
                                 </>
                             )}
