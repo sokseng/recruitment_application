@@ -50,6 +50,7 @@ class User(Base):
 
     employer = relationship(
         "Employer",
+        uselist=False,
         back_populates="user",
         cascade="all, delete-orphan",
     )

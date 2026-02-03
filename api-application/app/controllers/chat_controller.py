@@ -43,17 +43,24 @@ async def send_text_message(db: Session, current_user: User, to_user_id: int, co
     )
     db.add(msg)
     db.flush()
+    
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
+    
     db.commit()
     db.refresh(msg)
+    
+    payload = ChatMessageOut.from_orm(msg).dict()
 
     await manager.broadcast_to_room(
         room.id,
-        {"type": "message", "message": ChatMessageOut.from_orm(msg).dict()},
-        exclude_user_id=current_user.pk_id
+        {
+            "type": "message",
+            "message": payload,
+        },
+        exclude_user_id=current_user.pk_id,
     )
-    return ChatMessageOut.from_orm(msg)
+    return payload
 
 
 async def send_file_message(db: Session, current_user: User, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):

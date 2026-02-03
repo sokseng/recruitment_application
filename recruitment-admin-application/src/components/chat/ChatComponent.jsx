@@ -17,9 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import StopIcon from '@mui/icons-material/Stop';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
 
-const currentUserId = 1;
-
-function ChatComponent({ chat, onBack, messages }) {
+function ChatComponent({ chat, onBack, messages, send, currentUserId }) {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -118,7 +116,10 @@ function ChatComponent({ chat, onBack, messages }) {
         }
 
         if (newMessage.trim()) {
-            console.log('Sending text:', newMessage);
+            send({
+                type: "text",
+                content: newMessage.trim(),
+            });
             setNewMessage('');
         }
     };
@@ -181,7 +182,7 @@ function ChatComponent({ chat, onBack, messages }) {
                                     src={chat?.avatar_url}
                                     onClick={() => setOpen(true)}
                                 >
-                                    {chat?.username?.charAt(0) || 'P'}
+                                    {chat?.username?.charAt(0).toUpperCase() || 'P'}
                                 </Avatar>
 
                                 <Box sx={{ flexGrow: 1, overflow: 'hidden', display: { xs: 'none', sm: 'block' } }}>
@@ -251,7 +252,7 @@ function ChatComponent({ chat, onBack, messages }) {
                                 <MessageBubble
                                     key={message.id}
                                     message={message}
-                                    isOwn={message.sender.id === currentUserId}
+                                    isOwn={message.sender_id === currentUserId}
                                 />
                             ))}
                             <div ref={messagesEndRef} />
@@ -408,6 +409,12 @@ function ChatComponent({ chat, onBack, messages }) {
                                         placeholder="Aa..."
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleSend();
+                                            }
+                                        }}
                                         sx={{ '& fieldset': { borderRadius: 3 } }}
                                         onFocus={() => setSowContent(true)}
                                         onBlur={() => setSowContent(false)}

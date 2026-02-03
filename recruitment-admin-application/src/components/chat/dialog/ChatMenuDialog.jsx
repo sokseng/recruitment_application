@@ -14,6 +14,7 @@ import {
     Button
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import MediaComponent from '../MediaComponent';
 
 function ChatMenuDialog({ open, onClose, user }) {
     const [anchorEl, setAnchorEl] = useState(null);
@@ -50,19 +51,19 @@ function ChatMenuDialog({ open, onClose, user }) {
                                 width: 75,
                                 height: 75,
                             }}
-                        />
+                        >{user?.username?.charAt(0).toUpperCase() || 'P'}</Avatar>
                         <Typography variant="subtitle">{user.username}</Typography>
                         <Typography variant="caption" sx={{ color: user.is_online ? 'primary.main' : 'grey' }}>
                             {user.is_online ? 'Online' : 'Offline'}
                         </Typography>
                     </Box>
-                    <IconButton 
-                    sx={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 10
-                    }}
-                    onClick={handleMenuOpen}
+                    <IconButton
+                        sx={{
+                            position: 'absolute',
+                            top: 10,
+                            right: 10
+                        }}
+                        onClick={handleMenuOpen}
                     >
                         <MoreVertIcon />
                     </IconButton>
@@ -74,7 +75,7 @@ function ChatMenuDialog({ open, onClose, user }) {
                     >
                         <MenuItem onClick={handleMenuClose}>Mute</MenuItem>
                         <MenuItem onClick={handleMenuClose}>Report</MenuItem>
-                        <MenuItem onClick={handleMenuClose} sx={{color: 'red'}}>Block User</MenuItem>
+                        <MenuItem onClick={handleMenuClose} sx={{ color: 'red' }}>Block User</MenuItem>
                     </Menu>
                 </Box>
             </DialogTitle>
@@ -92,8 +93,17 @@ function ChatMenuDialog({ open, onClose, user }) {
                 </Tabs>
 
                 {tabValue === 0 && (
-                    <Box>
-                        <Typography>Media content goes here (images, videos)...</Typography>
+                    <Box
+                    sx={{
+                        display:'flex',
+                        flexWrap: 'now-wrap',
+                        gap: 1
+                    }}
+                    >
+                        <MediaComponent />
+                        <MediaComponent />
+                        <MediaComponent />
+                        <MediaComponent />
                     </Box>
                 )}
                 {tabValue === 1 && (

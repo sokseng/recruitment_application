@@ -39,9 +39,31 @@ class ChatMessageOut(BaseModel):
 
 
 class ConversationSummary(BaseModel):
-    other_user_id: int
-    other_user_name: str
-    other_user_type: int
+    id: int
+    username: str
     last_message: Optional[ChatMessageOut]
     unread_count: int
     last_message_at: Optional[datetime]
+    
+class CreateChatIn(BaseModel):
+    user_id: int
+    
+class UserResponse(BaseModel):
+    pk_id: int
+    username: str
+    
+class ChatRoomOut(BaseModel):
+    id: int
+    candidate: UserResponse
+    employer: UserResponse
+
+    class Config:
+        from_attributes = True
+        
+class UserSearchOut(BaseModel):
+    pk_id: int
+    user_name: str
+    avatar_url: str | None = None
+
+    class Config:
+        from_attributes = True

@@ -13,7 +13,8 @@ from app.routers import (
     category_router,
     admin_candidate_router,
     job_application_router,
-    chat_router
+    chat_router,
+    websocket_router
 )
 
 from app.database.session import Base, engine
@@ -75,3 +76,4 @@ app.include_router(category_router.router)
 app.include_router(admin_candidate_router.router)
 app.include_router(job_application_router.router)
 app.include_router(chat_router.router)
+app.include_router(websocket_router.router)
