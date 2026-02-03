@@ -13,11 +13,51 @@ from fastapi import HTTPException
 from app.enums.global_enum import UserType
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
+from app.models.global_setting_model import GlobalSetting
 
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated = 'auto')
+
+#get in global setting
+def get_password_settings(db: Session):
+    codes = [
+        "MINIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD",
+        "MAXIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD",
+        "PASSWORD_SET_LIST_SPECIAL_CHARACTERS",
+        "AT_LEAST_ONE_NUMBER_REQUIRED_IN_PASSWORD",
+        "AT_LEAST_ONE_UPPERCASE_CHARACTER_REQUIRED_IN_PASSWORD",
+        "AT_LEAST_ONE_LOWERCASE_CHARACTER_REQUIRED_IN_PASSWORD",
+    ]
+
+    settings = (
+        db.query(GlobalSetting)
+        .filter(GlobalSetting.code.in_(codes))
+        .all()
+    )
+
+    result = {}
+    for s in settings:
+        if s.type == "Number":
+            # Convert to int if value exists, else None
+            if s.value and s.value.strip().isdigit():
+                result[s.code] = int(s.value.strip())
+            else:
+                result[s.code] = None
+
+        elif s.type == "Boolean":
+            if s.value is None:
+                result[s.code] = False
+            else:
+                val = s.value.strip().lower()
+                result[s.code] = val in ("true", "1", "yes")
+
+        else:
+            # Store stripped string if exists, else empty string
+            result[s.code] = s.value.strip() if s.value else ""
+
+    return result
 
 #create or update user
 def create_or_update_user(user: UserCreate, db: Session):
@@ -77,9 +117,83 @@ def create_or_update_user(user: UserCreate, db: Session):
             updated_date=db_user.updated_date
         )
     
+    #----------------Create new user----------------#
+
+    # Get password condition in global settings
+    settings = get_password_settings(db)
+    min_len = settings["MINIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD"]  # int
+    max_len = settings["MAXIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD"]  # int
+    special_chars = settings["PASSWORD_SET_LIST_SPECIAL_CHARACTERS"] # str
+    require_number = settings["AT_LEAST_ONE_NUMBER_REQUIRED_IN_PASSWORD"]       # bool
+    require_upper = settings["AT_LEAST_ONE_UPPERCASE_CHARACTER_REQUIRED_IN_PASSWORD"]  # bool
+    require_lower = settings["AT_LEAST_ONE_LOWERCASE_CHARACTER_REQUIRED_IN_PASSWORD"]  # bool
+
+    passwords = user.password
+
+    # Only validate if setting is not empty
+    if min_len is not None and len(passwords) < min_len:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_BE_AT_LEAST_X_CHARACTERS",
+                "message": f"Password must be at least {min_len} characters"
+            }
+        )
+    
+    if max_len is not None and len(passwords) > max_len:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_BE_AT_MOST_X_CHARACTERS",
+                "message": f"Password must be at most {max_len} characters"
+            }
+        )
+    
+    if special_chars and not any(char in special_chars for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_OF_THE_FOLLOWING_SPECIAL_CHARACTERS",
+                "message": f"Password must contain at least one of the following special characters: {special_chars}"
+            }
+        )
+    
+    if require_number and not any(char.isdigit() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_NUMBER",
+                "message": f"Password must contain at least one number"
+            }
+        )
+
+    if require_upper and not any(char.isupper() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_UPPERCASE_LETTER",
+                "message": f"Password must contain at least one uppercase letter"
+            }
+        )
+
+    if require_lower and not any(char.islower() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_LOWERCASE_LETTER",
+                "message": f"Password must contain at least one lowercase letter"
+            }
+        )
+    
     exist_email = db.query(User).filter(User.email == user.email).first()
     if exist_email:
-        raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "EMAIL_EXISTS",
+                "message": "Email already exists"
+            }
+        )
     
     db_user = User(
         user_name = user.user_name,
@@ -403,9 +517,85 @@ def create_or_update_user_admin(user: UserCreate, db: Session):
     # ==========================
     # CREATE USER
     # ==========================
+
+    #----------------Create new user----------------#
+
+    # Get password condition in global settings
+    settings = get_password_settings(db)
+    min_len = settings["MINIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD"]  # int
+    max_len = settings["MAXIMUM_NUMBER_OF_CHARACTERS_IN_PASSWORD"]  # int
+    special_chars = settings["PASSWORD_SET_LIST_SPECIAL_CHARACTERS"] # str
+    require_number = settings["AT_LEAST_ONE_NUMBER_REQUIRED_IN_PASSWORD"]       # bool
+    require_upper = settings["AT_LEAST_ONE_UPPERCASE_CHARACTER_REQUIRED_IN_PASSWORD"]  # bool
+    require_lower = settings["AT_LEAST_ONE_LOWERCASE_CHARACTER_REQUIRED_IN_PASSWORD"]  # bool
+
+    passwords = user.password
+
+    # Only validate if setting is not empty
+    if min_len is not None and len(passwords) < min_len:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_BE_AT_LEAST_X_CHARACTERS",
+                "message": f"Password must be at least {min_len} characters"
+            }
+        )
+    
+    if max_len is not None and len(passwords) > max_len:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_BE_AT_MOST_X_CHARACTERS",
+                "message": f"Password must be at most {max_len} characters"
+            }
+        )
+    
+    if special_chars and not any(char in special_chars for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_OF_THE_FOLLOWING_SPECIAL_CHARACTERS",
+                "message": f"Password must contain at least one of the following special characters: {special_chars}"
+            }
+        )
+    
+    if require_number and not any(char.isdigit() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_NUMBER",
+                "message": f"Password must contain at least one number"
+            }
+        )
+
+    if require_upper and not any(char.isupper() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_UPPERCASE_LETTER",
+                "message": f"Password must contain at least one uppercase letter"
+            }
+        )
+
+    if require_lower and not any(char.islower() for char in passwords):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "PASSWORD_MUST_CONTAIN_AT_LEAST_ONE_LOWERCASE_LETTER",
+                "message": f"Password must contain at least one lowercase letter"
+            }
+        )
+    
+
     exist_email = db.query(User).filter(User.email == user.email).first()
     if exist_email:
-        raise HTTPException(status_code=400, detail="Email already exists")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "EMAIL_EXISTS",
+                "message": "Email already exists"
+            }
+        )
 
     db_user = User(
         user_name=user.user_name,

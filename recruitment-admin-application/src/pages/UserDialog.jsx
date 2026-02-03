@@ -108,18 +108,21 @@ const UserDialog = ({ open, onClose, user, refresh }) => {
                 setOpenSnackbar(true)
             }
         } catch (err) {
-            if (err.response && err.response.status === 400 && err.response.data?.detail === 'Email already exists') {
-                setSeverity('error')
-                setMessage(err.response?.data?.detail || 'Email already exists')
+            const status = err.response?.status
+            const detail = err.response?.data?.detail
+
+            if (status === 400 && detail?.message) {
+                setSeverity('info')
+                setMessage(detail.message)
                 setOpenSnackbar(true)
             } else {
                 setSeverity('error')
-                setMessage(err.response?.data?.detail || 'Failed to update user')
+                setMessage('Failed to update user')
                 setOpenSnackbar(true)
-                console.log(err)
+                console.error(err)
             }
+        }
 
-        };
     };
 
     return (
@@ -127,7 +130,7 @@ const UserDialog = ({ open, onClose, user, refresh }) => {
             {/* Snackbar */}
             <Snackbar
                 open={openSnackbar}
-                autoHideDuration={2000}
+                autoHideDuration={2500}
                 onClose={() => setOpenSnackbar(false)}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >

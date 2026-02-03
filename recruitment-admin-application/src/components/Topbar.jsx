@@ -57,6 +57,7 @@ import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
 import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
 import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
 
+
 export default function Topbar() {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -76,6 +77,10 @@ export default function Topbar() {
   const [settingsAnchor, setSettingsAnchor] = useState(null);
   const openSettings = Boolean(settingsAnchor);
   const location = useLocation();
+  const [openDrawerSettings, setOpenDrawerSettings] = useState(false);
+
+  const toggleDrawerSettings = () =>
+    setOpenDrawerSettings((prev) => !prev);
 
   // 🔹 is settings active?
   const isSettingsActive = location.pathname.startsWith("/system_parameter");
@@ -167,6 +172,12 @@ export default function Topbar() {
     navigate(path);
     setDrawerOpen(false);
   };
+
+  useEffect(() => {
+    if (isSettingsActive) {
+      setOpenDrawerSettings(true);
+    }
+  }, [isSettingsActive]);
 
   /* =====================
      Login
@@ -282,9 +293,19 @@ export default function Topbar() {
       }
       handleCloseRegisterForm();
     } catch (err) {
-      setOpenSnackbar(true);
-      setSeverity("error");
-      setMessage(err.response?.data?.detail || "Register failed");
+      const status = err.response?.status
+      const detail = err.response?.data?.detail
+
+      if (status === 400 && detail?.message) {
+        setSeverity('info')
+        setMessage(detail.message)
+        setOpenSnackbar(true)
+      } else {
+        setSeverity('error')
+        setMessage('Failed to create or update user')
+        setOpenSnackbar(true)
+        console.error(err)
+      }
     }
   };
 
@@ -372,7 +393,7 @@ export default function Topbar() {
           margin: 0,
           filename,
           html2canvas: { scale: 2, useCORS: true },
-          pagebreak: {mode: 'avoid-all'},
+          pagebreak: { mode: 'avoid-all' },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         })
         .from(tempDiv)
@@ -654,6 +675,68 @@ export default function Topbar() {
           </ListItemButton>
         </Box>
       )}
+
+      {/* ── SETTINGS (Admin only) ── */}
+      {access_token && user_type === 1 && (
+        <>
+          <ListItemButton
+            onClick={toggleDrawerSettings}
+            selected={isSettingsActive}
+            sx={{
+              borderRadius: 2,
+              mb: 0.75,
+              py: 1.4,
+              px: 2.5,
+              mt: 1,
+              "&.Mui-selected": {
+                bgcolor: "primary.main",
+                color: "white",
+                boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                "& .MuiListItemIcon-root": {
+                  color: "white",
+                },
+              },
+              "&:hover": {
+                bgcolor: "action.hover",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 44 }}>
+              <Settings />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+            {openDrawerSettings ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+
+          <Collapse in={openDrawerSettings} timeout="auto" unmountOnExit>
+            <Box sx={{ pl: 3 }}>
+              <ListItemButton
+                onClick={() => {
+                  goTo("/system_parameter");
+                  setOpenDrawerSettings(false);
+                }}
+                selected={location.pathname === "/system_parameter"}
+                sx={{
+                  borderRadius: 2,
+                  py: 1.2,
+                  px: 2,
+                  mb: 0.5,
+                  "&.Mui-selected": {
+                    bgcolor: "primary.lighter",
+                    color: "primary.main",
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Settings fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="System Parameter" />
+              </ListItemButton>
+            </Box>
+          </Collapse>
+        </>
+      )}
+
     </Box>
   );
 
@@ -662,7 +745,7 @@ export default function Topbar() {
       {/* Snackbar */}
       <Snackbar
         open={openSnackbar}
-        autoHideDuration={2000}
+        autoHideDuration={2500}
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
