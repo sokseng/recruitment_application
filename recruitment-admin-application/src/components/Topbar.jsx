@@ -54,9 +54,8 @@ import { useLocation } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { createRoot } from "react-dom/client";
 import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
-import TealAccentModern from '../pages/cv_template/TealAccentModern';
-
-
+import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
+import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -153,11 +152,13 @@ export default function Topbar() {
   const toggleCv = () => setOpenCv((prev) => !prev);
   const cvTemplates = [
     { name: "Blue Sidebar Modern", id: "blue-sidebar-modern" },
-    { name: "Teal Accent Modern", id: "teal-accent-modern" },
+    { name: "Sidebar Tech Template", id: "sidebar-tech-template" },
+    { name: "Classic Software CV", id: "classic-software" },
   ];
   const cvTemplateMap = {
     "blue-sidebar-modern": BlueSidebarModern,
-    "teal-accent-modern": TealAccentModern,
+    "sidebar-tech-template": SidebarTechTemplate,
+    "classic-software": ClassicSoftwareCV,
   };
 
   const menuItems = access_token ? MENU_BY_ROLE[user_type] || [] : MENU_BY_ROLE.guest;
@@ -371,6 +372,7 @@ export default function Topbar() {
           margin: 0,
           filename,
           html2canvas: { scale: 2, useCORS: true },
+          pagebreak: {mode: 'avoid-all'},
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
         })
         .from(tempDiv)

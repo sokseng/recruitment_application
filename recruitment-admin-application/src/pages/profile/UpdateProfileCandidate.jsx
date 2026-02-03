@@ -265,7 +265,7 @@ export default function CandidateProfileDashboard() {
 
   useEffect(() => {
     if (sectionOpen && candidates?.profile) {
-      setOverviewText(candidates.profile.overview || null);
+      setOverviewText(candidates.profile.about_me || null);
       setCareerText(candidates.profile.career_objective || null);
       setWorkExpText(candidates.profile.experience || null);
       setEducationText(candidates.profile.education || null);
@@ -490,9 +490,9 @@ export default function CandidateProfileDashboard() {
       hasData: Boolean(profile?.skills),
       content:
         profile?.skills && (
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack direction="row" flexWrap="wrap">
             {profile.skills.split(',').map((skill, i) => (
-              <Chip key={i} label={<p dangerouslySetInnerHTML={{ __html: skill.trim() }} />} color="primary" />
+              <Chip key={i} label={<p dangerouslySetInnerHTML={{ __html: skill.trim() }} />} color="primary" sx={{ m: 0.5 }} />
             ))}
           </Stack>
         ),
