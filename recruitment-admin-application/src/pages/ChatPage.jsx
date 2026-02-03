@@ -162,7 +162,7 @@ function ChatPage() {
                                             {chat.username}
                                         </Typography>
                                         <Typography sx={{ fontSize: 10, color: selectedChat?.id == chat.id ? 'white' : 'grey.600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mt: 0.25 }}>
-                                            {chat.last_message.content ?? 'Tap to start new message'}
+                                            {chat.last_message?.content ?? 'Tap to start new message'}
                                         </Typography>
                                     </Box>
 
@@ -173,7 +173,7 @@ function ChatPage() {
                                         alignItems: 'end'
                                     }}>
                                         <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
-                                            <FormatTime time={chat.last_message_at}/>
+                                            {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
                                         </Typography>
                                         {chat.unread_count > 0 && (
                                             <Box

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Annotated, List
@@ -80,7 +80,11 @@ def get_my_conversations(db: Session = Depends(get_db), current_user_id: int = D
             "last_message_at": room.last_message_at
         })
 
-    return sorted(result, key=lambda x: x["last_message_at"] or datetime.min, reverse=True)
+    return sorted(
+        result,
+        key=lambda x: x["last_message_at"] or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True
+    )
 
 @router.post("/messages/file", response_model=ChatMessageOut)
 async def send_file(
