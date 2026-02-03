@@ -15,7 +15,7 @@ import {FormatTime} from '../components/chat/FormatTime';
 
 function ChatPage() {
     const token = useAuthStore.getState().access_token;
-    const currentUserId = useAuthStore.getState().user_type;
+    const currentUserId = useAuthStore.getState().user_data.pk_id;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -24,8 +24,6 @@ function ChatPage() {
 
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
-
-    console.log("messages", messages)
 
     const fetchChats = async () => {
         const res = await api.get('/chat/');
@@ -234,6 +232,7 @@ function ChatPage() {
                         chat={selectedChat}
                         onBack={() => setSelectedChat(null)}
                         messages={messages}
+                        setMessages={setMessages}
                         send={send}
                         currentUserId={currentUserId}
                     />

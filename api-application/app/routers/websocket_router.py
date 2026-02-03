@@ -80,6 +80,23 @@ async def websocket_chat(
                         exclude_user_id=current_user_id
                     )
                 continue
+            
+            # if msg_type == MessageType in [MessageType.VOICE.value, MessageType.IMAGE.value]:
+            #     message_id = data.get("message_id")
+
+            #     msg = db.query(ChatMessage).filter(ChatMessage.pk_id == message_id).first()
+            #     if not msg:
+            #         continue
+                
+            #     await manager.broadcast_to_room(
+            #             room.id,
+            #             {
+            #                 "type": "message",
+            #                 "message": message,
+            #             },
+            #             exclude_user_id=current_user_id
+            #         )
+            #     continue
 
             # handle invalid types
             if msg_type not in MessageType._value2member_map_:

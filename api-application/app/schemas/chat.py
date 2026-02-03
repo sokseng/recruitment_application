@@ -34,8 +34,10 @@ class ChatMessageOut(BaseModel):
     created_at: datetime
     read_at: Optional[datetime]
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 
 class ConversationSummary(BaseModel):

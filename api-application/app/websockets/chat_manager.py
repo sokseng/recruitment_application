@@ -3,9 +3,10 @@ from typing import Dict, Set
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, list[WebSocket]] = {}
+        self.active_connections: dict[int, list[tuple[WebSocket, int]]] = {}
 
     async def connect(self, websocket: WebSocket, user_id: int, room_id: int):
+        websocket.state.user_id = user_id
         if room_id not in self.active_connections:
             self.active_connections[room_id] = []
         self.active_connections[room_id].append(websocket)

@@ -16,8 +16,9 @@ import EmojiPicker from './EmojiPicker';
 import CloseIcon from '@mui/icons-material/Close';
 import StopIcon from '@mui/icons-material/Stop';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
+import api from '../../services/api';
 
-function ChatComponent({ chat, onBack, messages, send, currentUserId }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId }) {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -82,16 +83,6 @@ function ChatComponent({ chat, onBack, messages, send, currentUserId }) {
         scrollToBottom();
     }, [chat, messages]);
 
-    const sendAudio = () => {
-        if (!audioBlob) return;
-
-        console.log('Sending audio:', audioBlob);
-        // upload audioBlob to backend
-
-        setAudioBlob(null);
-        setRecordTime(0);
-    };
-
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files);
         setSelectedFiles(files);
@@ -101,18 +92,46 @@ function ChatComponent({ chat, onBack, messages, send, currentUserId }) {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleSend = () => {
+    const uploadFileMessage = async ({ file, type, caption }) => {
+        const formData = new FormData();
+        formData.append("to_user_id", chat.id);
+        formData.append("type", type);  // "image" | "voice"
+        if (caption) formData.append("content", caption);
+        formData.append("file", file);
+
+        const res = await api.post("/chat/messages/file", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+
+        return res;
+
+    }
+
+    const handleSend = async () => {
         if (audioBlob) {
-            console.log('Sending audio:', audioBlob);
-            setAudioBlob(null);
-            setRecordTime(0);
-            return;
+            const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+                type: audioBlob.type,
+            })
+
+            await uploadFileMessage({ file: audioFile, type: 'voice' })
+            setAudioBlob(null)
+            setRecordTime(0)
+            return
         }
 
         if (selectedFiles.length > 0) {
-            console.log('Sending files:', selectedFiles);
-            setSelectedFiles([]);
-            return;
+            for (const file of selectedFiles) {
+                const isImage = file.type.startsWith('image/')
+                await uploadFileMessage({
+                    file,
+                    type: isImage ? 'image' : 'voice',
+                    caption: newMessage || null,
+                })
+            }
+            setSelectedFiles([])
+            setNewMessage('')
         }
 
         if (newMessage.trim()) {
@@ -425,7 +444,10 @@ function ChatComponent({ chat, onBack, messages, send, currentUserId }) {
                             <IconButton
                                 color="primary"
                                 onClick={handleSend}
-                                disabled={isRecording || (!newMessage.trim() && !audioBlob)}
+                                disabled={
+                                    isRecording ||
+                                    (!newMessage.trim() && !audioBlob && selectedFiles.length === 0)
+                                }
                             >
                                 <SendIcon />
                             </IconButton>
