@@ -10,7 +10,16 @@ from app.models.chat_message import ChatMessage, MessageType
 from app.models.user_model import User
 from app.schemas.chat import ChatMessageOut
 from app.websockets.chat_manager import manager
+from datetime import datetime
+from fastapi.encoders import jsonable_encoder
 
+def serialize_message(message: ChatMessageOut):
+    msg_dict = message.dict()
+    if isinstance(msg_dict.get("created_at"), datetime):
+        msg_dict["created_at"] = msg_dict["created_at"].isoformat()
+    if isinstance(msg_dict.get("read_at"), datetime) and msg_dict["read_at"] is not None:
+        msg_dict["read_at"] = msg_dict["read_at"].isoformat()
+    return msg_dict
 
 def get_or_create_chat_room(db: Session, user_a_id: int, user_b_id: int) -> ChatRoom:
     u1, u2 = (min(user_a_id, user_b_id), max(user_a_id, user_b_id))
@@ -63,8 +72,8 @@ async def send_text_message(db: Session, current_user: User, to_user_id: int, co
     return payload
 
 
-async def send_file_message(db: Session, current_user: User, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):
-    room = get_or_create_chat_room(db, current_user.pk_id, to_user_id)
+async def send_file_message(db: Session, current_user_id: int, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):
+    room = get_or_create_chat_room(db, current_user_id, to_user_id)
 
     ext = file.filename.rsplit(".", 1)[-1].lower()
     folder = "images" if file_type == "image" else "voice"
@@ -80,7 +89,7 @@ async def send_file_message(db: Session, current_user: User, to_user_id: int, fi
 
     msg = ChatMessage(
         room_id=room.id,
-        sender_id=current_user.pk_id,
+        sender_id=current_user_id,
         type=MessageType.IMAGE if file_type == "image" else MessageType.VOICE,
         content=caption,
         file_url=f"/{path}",
@@ -94,13 +103,13 @@ async def send_file_message(db: Session, current_user: User, to_user_id: int, fi
     db.commit()
     db.refresh(msg)
 
+    msg_out = ChatMessageOut.from_orm(msg)
     await manager.broadcast_to_room(
         room.id,
-        {"type": "message", "message": ChatMessageOut.from_orm(msg).dict()},
-        exclude_user_id=current_user.pk_id
+        {"type": "message", "message": serialize_message(msg_out)},
+        exclude_user_id=current_user_id
     )
-    return ChatMessageOut.from_orm(msg)
-
+    return jsonable_encoder(msg_out)
 
 async def mark_conversation_read(
     db: Session,

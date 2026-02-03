@@ -1,21 +1,19 @@
 import SearchIcon from '@mui/icons-material/Search';
-import AddBoxIcon from '@mui/icons-material/AddBox';
 import {
-    Box, List, IconButton, Button, ListItem, ListItemAvatar, Avatar, ListItemText, Typography, TextField,
-    InputAdornment, useMediaQuery, useTheme, Chip, Fade
+    Box, List, IconButton, ListItemAvatar, Avatar, Typography, TextField,
+    InputAdornment, useMediaQuery, useTheme, Chip
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
 import useAuthStore from '../store/useAuthStore';
-import useTypewriter from '../hooks/useTypewriter';
-import {FormatTime} from '../components/chat/FormatTime';
+import { FormatTime } from '../components/chat/FormatTime';
 
 function ChatPage() {
     const token = useAuthStore.getState().access_token;
-    const currentUserId = useAuthStore.getState().user_type;
+    const currentUserId = useAuthStore.getState().user_data.pk_id;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -24,27 +22,115 @@ function ChatPage() {
 
     const [chats, setChats] = useState([]);
     const [messages, setMessages] = useState([]);
+    const [onlineUsers, setOnlineUsers] = useState({});
+    const [typingUsers, setTypingUsers] = useState({});
 
-    console.log("messages", messages)
+    const LIMIT = 50;
+
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const messagesRef = useRef(null);
+    const loadingOlderRef = useRef(false);
+    const activeChatIdRef = useRef(null);
+    const initialLoadRef = useRef(true);
+    const messagesEndRef = useRef(null);
 
     const fetchChats = async () => {
         const res = await api.get('/chat/');
         setChats(res.data);
 
-        console.log("chats", res.data)
     }
 
     useEffect(() => {
         fetchChats();
     }, []);
 
+    const fetchMessages = async (chatId, reset = false) => {
+        if (!chatId) return [];
+
+        const currentOffset = reset ? 0 : offset;
+        const res = await api.get(`/chat/${chatId}/messages`, {
+            params: { limit: LIMIT, offset: currentOffset }
+        });
+
+        const newMessages = res.data;
+        if (newMessages.length < LIMIT) setHasMore(false);
+        if (reset) setOffset(LIMIT);
+        else setOffset(prev => prev + LIMIT);
+
+        return newMessages;
+    };
+
     useEffect(() => {
         if (!selectedChat) return;
 
-        api.get(`/chat/${selectedChat.id}/messages`)
-            .then(res => setMessages(res.data))
-            .catch(console.error);
-    }, [selectedChat]);
+        const chatId = selectedChat.id;
+        activeChatIdRef.current = chatId;
+
+        setMessages([]);
+        setOffset(0);
+        setHasMore(true);
+        loadingOlderRef.current = false;
+        initialLoadRef.current = true;
+
+        fetchMessages(chatId, true).then(newMessages => {
+            if (activeChatIdRef.current !== chatId) return;
+
+            setMessages(newMessages);
+
+            setTimeout(() => {
+                const el = messagesRef.current;
+                if (el) el.scrollTop = el.scrollHeight;
+
+                initialLoadRef.current = false;
+            }, 50);
+        });
+
+        return () => {
+            activeChatIdRef.current = null;
+            setMessages([]);
+        };
+    }, [selectedChat?.id]);
+
+    const handleScroll = async () => {
+        const el = messagesRef.current;
+        if (!el || loadingOlderRef.current || !hasMore) return;
+
+        // Skip if first load is not done
+        if (initialLoadRef.current) return;
+
+        if (el.scrollTop <= 10 && selectedChat) {
+            loadingOlderRef.current = true;
+
+            const prevScrollHeight = el.scrollHeight;
+
+            const newMessages = await fetchMessages(selectedChat.id);
+
+            setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const filteredNewMessages = newMessages.filter(m => !existingIds.has(m.id));
+                return [...filteredNewMessages, ...prev]; // prepend older messages
+            });
+
+            setTimeout(() => {
+                const el = messagesRef.current;
+                if (el) {
+                    el.scrollTop = el.scrollHeight - prevScrollHeight;
+                }
+                loadingOlderRef.current = false;
+            }, 0);
+        }
+    };
+
+    const isNearBottom = () => {
+        const el = messagesRef.current;
+        if (!el) return false;
+        return el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    };
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
     const handleSelectUser = (user) => {
         setSelectedChat({
@@ -60,19 +146,31 @@ function ChatPage() {
         onMessage: (data) => {
             switch (data.type) {
                 case "message":
-                    setMessages(prev => [...prev, data.message]);
+                    console.log("message res", data.message)
+                    setMessages(prev => {
+                        const exists = prev.some(msg => msg.id === data.message.id);
+                        if (exists) return prev; // skip duplicate
+                        return [...prev, data.message];
+                    });
+
+                    if (isNearBottom() || prev.length === 0) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+
                     break;
 
                 case "presence":
-                    console.log("Presence update", data);
+                    setOnlineUsers(prev => ({
+                        ...prev,
+                        [data.userId]: data.online
+                    }));
                     break;
 
                 case "typing":
-                    console.log("User typing...");
-                    break;
-
-                case "call_offer":
-                    console.log("Incoming call", data);
+                    setTypingUsers(prev => ({
+                        ...prev,
+                        [data.user_id]: data.is_typing
+                    }));
                     break;
 
                 default:
@@ -80,8 +178,6 @@ function ChatPage() {
             }
         },
     });
-
-    const animatedText = useTypewriter('Connecting...', 100, 1000);
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
@@ -132,90 +228,93 @@ function ChatPage() {
                         }}
                     >
                         <List>
-                            {chats.map(chat => (
-                                <Box
-                                    key={chat.id}
-                                    onClick={() => setSelectedChat(chat)}
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        p: 1,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        backgroundColor: selectedChat?.id === chat.id ? 'primary.main' : 'white',
-                                        '&:hover': {
-                                            transform: { xs: 'none', sm: 'translateY(-2px)' },
-                                            boxShadow: { xs: 'none', sm: '0 4px 12px rgba(0,0,0,0.1)' },
-                                        },
-                                        position: 'relative',
-                                    }}
-                                >
-                                    <ListItemAvatar sx={{minWidth: 48}}>
-                                        <Avatar src={chat?.avatar_url} sx={{ borderRadius: 12 }}>
-                                            {chat.username.charAt(0).toUpperCase()}
-                                        </Avatar>
-                                    </ListItemAvatar>
+                            {chats.map(chat => {
+                                const isOnline = onlineUsers[chat.id] || false;
+                                return (
+                                    <Box
+                                        key={chat.id}
+                                        onClick={() => setSelectedChat(chat)}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            p: 1,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            backgroundColor: selectedChat?.id === chat.id ? 'primary.main' : 'white',
+                                            '&:hover': {
+                                                transform: { xs: 'none', sm: 'translateY(-2px)' },
+                                                boxShadow: { xs: 'none', sm: '0 4px 12px rgba(0,0,0,0.1)' },
+                                            },
+                                            position: 'relative',
+                                        }}
+                                    >
+                                        <ListItemAvatar sx={{ minWidth: 48 }}>
+                                            <Avatar src={chat?.avatar_url} sx={{ borderRadius: 12 }}>
+                                                {chat.username.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                        </ListItemAvatar>
 
-                                    <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                                        <Typography sx={{ fontWeight: 'bold', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedChat?.id === chat.id ? 'white' : 'black' }}>
-                                            {chat.username}
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 10, color: selectedChat?.id == chat.id ? 'white' : 'grey.600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mt: 0.25 }}>
-                                            {chat.last_message?.content ?? 'Tap to start new message'}
-                                        </Typography>
-                                    </Box>
+                                        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                                            <Typography sx={{ fontWeight: 'bold', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedChat?.id === chat.id ? 'white' : 'black' }}>
+                                                {chat.username}
+                                            </Typography>
+                                            <Typography sx={{ fontSize: 10, color: selectedChat?.id == chat.id ? 'white' : 'grey.600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mt: 0.25 }}>
+                                                {chat.last_message?.content ?? 'Tap to start new message'}
+                                            </Typography>
+                                        </Box>
 
-                                    <Box sx={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        flexDirection: 'column',
-                                        alignItems: 'end'
-                                    }}>
-                                        <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
-                                            {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
-                                        </Typography>
-                                        {chat.unread_count > 0 && (
-                                            <Box
-                                                sx={{
-                                                    width: 15,
-                                                    height: 15,
-                                                    fontSize: 9,
-                                                    mt: 0.25,
-                                                    backgroundColor: chat.unread_count > 0 ? 'orange' : 'grey',
-                                                    color: chat.unread_count > 0 ? 'white' : 'black',
-                                                    display: 'flex',
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    borderRadius: '50%'
-                                                }}
-                                            >
-                                                <Typography
+                                        <Box sx={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            flexDirection: 'column',
+                                            alignItems: 'end'
+                                        }}>
+                                            <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
+                                                {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
+                                            </Typography>
+                                            {chat.unread_count > 0 && (
+                                                <Box
                                                     sx={{
+                                                        width: 15,
+                                                        height: 15,
                                                         fontSize: 9,
+                                                        mt: 0.25,
+                                                        backgroundColor: chat.unread_count > 0 ? 'orange' : 'grey',
+                                                        color: chat.unread_count > 0 ? 'white' : 'black',
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+                                                        borderRadius: '50%'
                                                     }}
                                                 >
-                                                    {chat.unread_count}
-                                                </Typography>
-                                            </Box>
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: 9,
+                                                        }}
+                                                    >
+                                                        {chat.unread_count}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
+
+                                        {isOnline && (
+                                            <Chip
+                                                sx={{
+                                                    width: 12,
+                                                    height: 12,
+                                                    backgroundColor: 'rgba(42, 223, 48, 1)',
+                                                    position: 'absolute',
+                                                    top: 6,
+                                                    left: 35,
+                                                }}
+                                            />
                                         )}
                                     </Box>
+                                );
 
-                                    {chat.isOnline && (
-                                        <Chip
-                                            sx={{
-                                                width: 12,
-                                                height: 12,
-                                                backgroundColor: chat.isOnline ? 'rgba(42, 223, 48, 1)' : 'grey',
-                                                position: 'absolute',
-                                                top: 6,
-                                                left: 35,
-                                            }}
-                                        />
-                                    )}
-                                </Box>
-
-                            ))}
+                            })}
                         </List>
                     </Box>
                 </Box>
@@ -234,8 +333,15 @@ function ChatPage() {
                         chat={selectedChat}
                         onBack={() => setSelectedChat(null)}
                         messages={messages}
+                        setMessages={setMessages}
                         send={send}
                         currentUserId={currentUserId}
+                        isOnline={onlineUsers[selectedChat?.id] || false}
+                        typingUsers={typingUsers}
+                        messagesRef={messagesRef}
+                        onScroll={handleScroll}
+                        loadingOlderRef={loadingOlderRef}
+                        messagesEndRef={messagesEndRef}
                     />
                 </Box>
             )}

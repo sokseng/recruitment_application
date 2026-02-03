@@ -59,9 +59,13 @@ async def websocket_chat(
             print("WS RECEIVED:", data)
 
             msg_type = data.get("type")
+            
+            if msg_type == "typing":
+                is_typing = data.get("is_typing", False)
+                await manager.broadcast_typing(room.id, current_user_id, is_typing)
 
             # handle text messages
-            if msg_type == MessageType.TEXT.value:
+            elif msg_type == MessageType.TEXT.value:
                 message = await send_text_message_ws(
                     db=db,
                     room_id=room.id,
@@ -77,12 +81,12 @@ async def websocket_chat(
                             "type": "message",
                             "message": message,
                         },
-                        exclude_user_id=current_user_id
+                        # set None if want both receive message
+                        exclude_user_id=None
                     )
                 continue
-
-            # handle invalid types
-            if msg_type not in MessageType._value2member_map_:
+            
+            elif msg_type not in MessageType._value2member_map_:
                 await websocket.send_json({
                     "type": "error",
                     "message": "Invalid message type"

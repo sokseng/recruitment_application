@@ -92,10 +92,10 @@ async def send_file(
     type: Annotated[str, Form()],  # "image" or "voice"
     content: Annotated[str | None, Form()] = None,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_active_user),
+    current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db)
 ):
-    return await send_file_message(db, current_user, to_user_id, type, content, file)
+    return await send_file_message(db, current_user_id, to_user_id, type, content, file)
 
 @router.get("/{other_user_id}/messages", response_model=List[ChatMessageOut])
 def get_messages(
