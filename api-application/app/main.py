@@ -14,7 +14,8 @@ from app.routers import (
     admin_candidate_router,
     job_application_router,
     chat_router,
-    websocket_router
+    websocket_router,
+    global_setting_router
 )
 
 from app.database.session import Base, engine
@@ -28,9 +29,12 @@ from app.models.category_model import Category
 from app.models.candidate_profile import CandidateProfile
 from app.models.job_application_model import JobApplication
 from app.models.employer_category_model import employer_category
+from app.models.global_setting_model import GlobalSetting
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category
+from app.script.init_global_settings import run as init_global_settings
+
 from fastapi.staticfiles import StaticFiles
 
 
@@ -45,6 +49,7 @@ def create_tables():
 create_tables()
 init_user()
 init_category()
+init_global_settings()
 
 app = FastAPI(title=settings.APP_NAME)
 
@@ -77,3 +82,4 @@ app.include_router(admin_candidate_router.router)
 app.include_router(job_application_router.router)
 app.include_router(chat_router.router)
 app.include_router(websocket_router.router)
+app.include_router(global_setting_router.router)

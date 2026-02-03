@@ -942,7 +942,7 @@ export default function Topbar() {
               ))}
 
               {/* ⚙️ SETTINGS  */}
-              {access_token && (
+              {access_token && user_type === 1 && (
                 <Button
                   onClick={handleOpenSettings}
                   startIcon={<Settings />}
