@@ -1,3 +1,4 @@
+#job_model.py
 from sqlalchemy import (
     Column,
     Integer,
@@ -15,7 +16,7 @@ from app.database.session import Base
 import enum
 
 job_category = Table(
-    "job_category",                    # ← table name (you can customize if you want)
+    "job_category",                  
     Base.metadata,
     Column("job_id", Integer, ForeignKey("t_job.pk_id"), primary_key=True),
     Column("category_id", Integer, ForeignKey("t_category.pk_id"), primary_key=True),
@@ -39,7 +40,6 @@ class JobType(str, enum.Enum):
 class JobStatus(str, enum.Enum):
     OPEN = "Open"
     CLOSED = "Closed"
-    DRAFT = "Draft"
 
 
 class Job(Base):
@@ -67,7 +67,7 @@ class Job(Base):
     experience_required = Column(Text, nullable=False)
     posting_date = Column(Date, server_default=func.current_date(), nullable=False)
     closing_date = Column(Date, nullable=True)
-    status = Column(SQLEnum(JobStatus), default=JobStatus.DRAFT, nullable=False)
+    status = Column(SQLEnum(JobStatus), default=JobStatus.OPEN, nullable=False)
 
     created_at = Column(
         DateTime(timezone=True),

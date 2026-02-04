@@ -1,3 +1,4 @@
+//MyJobs.jsx
 import { useEffect, useRef, useState } from "react";
 import {
   Box,
@@ -63,12 +64,11 @@ const JOB_LEVELS = [
 ];
 
 const JOB_STATUSES_CREATE = [
-  { value: "Open", label: "Open (Publish now)" },
+  { value: "Open", label: "Open" },
   { value: "Closed", label: "Closed" },
-  { value: "Draft", label: "Draft" },
 ];
 
-const JOB_STATUSES_EDIT = ["Draft", "Open", "Closed"];
+const JOB_STATUSES_EDIT = ["Open", "Closed"];
 
 // ────────────────────────────────────────────────
 //       Shared Job Form Dialog (Create + Edit)
@@ -109,16 +109,23 @@ function JobFormDialog({
 
   useEffect(() => {
     if (open && initialData) {
+      const today = new Date().toISOString().split('T')[0];
+      let adjustedStatus = initialData.status;
+
+      if (initialData.closing_date && initialData.closing_date < today) {
+        adjustedStatus = "Closed";  
+      }
       setFormData({
         ...initialData,
-        closing_date: initialData.closing_date
-          ? initialData.closing_date.slice(0, 10)
-          : "",
+        closing_date: initialData.closing_date ? initialData.closing_date.slice(0, 10) : "",
+        status: adjustedStatus,
         category_ids: initialData.categories?.map(c => c.pk_id) || [],
       });
     } else if (open) {
-      setErrors({});
-      setFormData(defaultData);
+      setFormData({
+        ...defaultData,
+        status: "Open",
+      });
     }
   }, [open, initialData]);
 
@@ -292,14 +299,18 @@ function JobFormDialog({
                 />
               )}
               renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
+              value.map((option, index) => {
+                const { key, ...tagProps } = getTagProps({ index }); // ← extract key
+                return (
                   <Chip
+                    key={key}                    // ← pass explicitly
                     label={option.name}
                     size="small"
-                    {...getTagProps({ index })}
+                    {...tagProps}                // ← spread the rest (no key inside)
                   />
-                ))
-              }
+                );
+              })
+            }
             />
            
             {/* Job Title */}
@@ -374,16 +385,12 @@ function JobFormDialog({
             {/* Status */}
             <Autocomplete
               size="small"
-              options={statuses.map((s) =>
-                typeof s === "string" ? { value: s, label: s } : s
-              )}
+              options={JOB_STATUSES_EDIT.map(s => ({ value: s, label: s }))}
               getOptionLabel={(option) => option.label}
               value={
-                statuses
-                  .map((s) =>
-                    typeof s === "string" ? { value: s, label: s } : s
-                  )
-                  .find((s) => s.value === (formData.status || "Open")) || null
+                JOB_STATUSES_EDIT
+                  .map(s => ({ value: s, label: s }))
+                  .find(s => s.value === (formData.status || "Open")) || null
               }
               onChange={(_, newValue) => {
                 setFormData((prev) => ({
@@ -660,7 +667,6 @@ export default function MyJobs() {
   const [categoryFilter, setCategoryFilter] = useState(["All"]);
 
   const statusCounts = {
-    Draft: jobs.filter(j => j.status === "Draft").length,
     Open: jobs.filter(j => j.status === "Open").length,
     Closed: jobs.filter(j => j.status === "Closed").length,
   };
@@ -690,8 +696,16 @@ export default function MyJobs() {
       setLoading(true);
       const res = await api.get("/jobs/my-jobs?limit=100");
       setJobs(res.data || []);
+      const autoClosedCount = res.data.filter(j => 
+        j.status === "Closed" && 
+        j.closing_date && 
+        new Date(j.closing_date) < new Date()
+      ).length;
+      if (autoClosedCount > 0) {
+      toast.info(`${autoClosedCount} job(s) were automatically closed due to expiry`);
+    }
     } catch {
-      console.error("Failed to load your posted jobs");
+
     } finally {
       setLoading(false);
     }
@@ -1055,25 +1069,6 @@ export default function MyJobs() {
           }
           value="Closed"
         />
-        <Tab
-          label={
-            <Badge 
-              badgeContent={statusCounts.Draft} 
-              color="warning"
-              sx={{
-                "& .MuiBadge-badge": {
-                  minWidth: 16,
-                  height: 16,
-                  fontSize: "0.65rem",
-                  fontWeight: 600,
-                },
-              }}
-            >
-              Draft
-            </Badge>
-          }
-          value="Draft"
-        />
       </Tabs>
 
       {/* JOBS GRID */}
@@ -1149,22 +1144,8 @@ export default function MyJobs() {
                       fontWeight: 500,
                       justifyContent: "center",
                       borderWidth: 1.5,
-                      color:
-                        job.status === "Open"
-                          ? "success.main"
-                          : job.status === "Closed"
-                          ? "error.main"
-                          : job.status === "Draft"
-                          ? "warning.main"
-                          : "text.secondary",
-                      borderColor:
-                        job.status === "Open"
-                          ? "success.main"
-                          : job.status === "Closed"
-                          ? "error.main"
-                          : job.status === "Draft"
-                          ? "warning.main"
-                          : "divider",
+                      color: job.status === "Open" ? "success.main" : "error.main",
+                      borderColor: job.status === "Open" ? "success.main" : "error.main",
                     }}
                   />
 

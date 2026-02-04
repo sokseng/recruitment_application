@@ -1,6 +1,7 @@
+#job_schema.py
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import date, datetime
 from app.models.job_model import JobLevel, JobType, JobStatus
 
 
@@ -15,7 +16,7 @@ class JobCreate(BaseModel):
     job_description: str
     experience_required: str
     closing_date: Optional[datetime] = None
-    status: Optional[JobStatus] = JobStatus.DRAFT
+    status: Optional[JobStatus] = JobStatus.OPEN
 
 
 class JobUpdate(BaseModel):
@@ -64,7 +65,7 @@ class JobOut(BaseModel):
     job_description: str
     experience_required: str
     posting_date: datetime
-    closing_date: Optional[datetime]
+    closing_date: Optional[date]
     status: JobStatus
     created_at: datetime
 
