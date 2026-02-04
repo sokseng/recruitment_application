@@ -18,6 +18,14 @@ class ConnectionManager:
         if user_id not in self.user_rooms:
             self.user_rooms[user_id] = set()
         self.user_rooms[user_id].add(room_id)
+        
+        for _, uid in self.active_connections[room_id]:
+            if uid != user_id:
+                await websocket.send_json({
+                    "type": "presence",
+                    "userId": uid,
+                    "online": True
+                })
 
     def disconnect(self, websocket: WebSocket, user_id: int, room_id: int):
         if room_id in self.active_connections:
@@ -66,5 +74,10 @@ class ConnectionManager:
                     self.active_connections[room_id].remove((ws, uid))
                 except Exception as e:
                     print(f"Error sending typing event: {e}")
+                    
+    def get_online_users(self, room_id: int) -> set[int]:
+        if room_id not in self.active_connections:
+            return set()
+        return {uid for _, uid in self.active_connections[room_id]}
 
 manager = ConnectionManager()

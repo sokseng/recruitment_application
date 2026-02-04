@@ -23,6 +23,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState(null);
@@ -40,18 +41,38 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const prevMessageCountRef = useRef(0);
     const justOpenedChatRef = useRef(false);
 
-    const handleTyping = () => {
+    const startTyping = () => {
         if (!isTypingRef.current) {
             isTypingRef.current = true;
             send({ type: "typing", is_typing: true });
         }
 
         clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = setTimeout(() => {
+        typingTimeoutRef.current = setTimeout(stopTyping, 1200);
+    };
+
+    const stopTyping = () => {
+        if (isTypingRef.current) {
             isTypingRef.current = false;
             send({ type: "typing", is_typing: false });
-        }, 1200);
+        }
+        clearTimeout(typingTimeoutRef.current);
     };
+
+    const onInputChange = (e) => {
+        const value = e.target.value;
+        setNewMessage(value);
+
+        if (value.trim()) {
+            startTyping();
+        } else {
+            stopTyping();
+        }
+    };
+
+    useEffect(() => {
+        return () => stopTyping();
+    }, []);
 
     const startRecording = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -138,6 +159,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
     const removeFile = (index) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const clearFiles = () => {
+        setSelectedFiles([]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const uploadFileMessage = async ({ file, type, caption }) => {
@@ -183,6 +214,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             }
             setSelectedFiles([])
             setNewMessage('')
+            clearFiles();
             setTimeout(scrollToBottom, 50);
         }
 
@@ -191,7 +223,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 type: "text",
                 content: newMessage.trim(),
             });
-            handleTyping(false);
+            stopTyping();
             setNewMessage('');
             setTimeout(scrollToBottom, 50);
         }
@@ -462,7 +494,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         <>
                                             <IconButton component="label">
                                                 <AttachFileIcon />
-                                                <input hidden type="file" multiple onChange={handleFileSelect} />
+                                                <input ref={fileInputRef} hidden type="file" multiple onChange={handleFileSelect} />
                                             </IconButton>
 
                                             <IconButton
@@ -505,21 +537,18 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         size="small"
                                         placeholder="Aa..."
                                         value={newMessage}
-                                        onChange={(e) => {
-                                            setNewMessage(e.target.value);
-                                            handleTyping(e.target.value.length > 0);
-                                        }}
+                                        onChange={onInputChange}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
                                                 e.preventDefault();
-                                                handleTyping(false);
+                                                stopTyping();
                                                 handleSend();
                                             }
                                         }}
                                         sx={{ '& fieldset': { borderRadius: 3 } }}
                                         onFocus={() => setSowContent(true)}
                                         onBlur={() => {
-                                            handleTyping(false);
+                                            stopTyping();
                                             setSowContent(false);
                                         }}
                                     />
