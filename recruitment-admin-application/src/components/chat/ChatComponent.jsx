@@ -4,7 +4,7 @@ import {
     InsertEmoticon as InsertEmoticonIcon,
     Translate,
 } from '@mui/icons-material';
-import { Box, IconButton, Button, Avatar, Typography, AppBar, Toolbar, Paper, TextField } from "@mui/material";
+import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert } from "@mui/material";
 import CallIcon from '@mui/icons-material/Call';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import MessageBubble from './MessageBubble';
@@ -18,6 +18,15 @@ import StopIcon from '@mui/icons-material/Stop';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
 import api from '../../services/api';
 import TypingIndicator from './TypingIndicator';
+
+const FILE_RULES = {
+    image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
+    voice: { extensions: new Set(['webm', 'ogg', 'm4a', 'mp3', 'wav']) },
+    video: { extensions: new Set(['mp4', 'webm', 'mov', 'mkv', 'avi']) },
+    file: { extensions: new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip']) },
+};
+
+const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, messagesEndRef }) {
     const mediaRecorderRef = useRef(null);
@@ -40,6 +49,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const isTypingRef = useRef(false);
     const prevMessageCountRef = useRef(0);
     const justOpenedChatRef = useRef(false);
+    const [error, setError] = useState('');
 
     const startTyping = () => {
         if (!isTypingRef.current) {
@@ -153,8 +163,31 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     }, [messages]);
 
     const handleFileSelect = (e) => {
+        if (isRecording || audioBlob) return;
+
         const files = Array.from(e.target.files);
-        setSelectedFiles(files);
+
+        const invalidFiles = files.filter((file) => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const allowed = Object.values(FILE_RULES).some((rule) => rule.extensions.has(ext));
+            return !allowed || file.size > MAX_SIZE;
+        });
+
+        if (invalidFiles.length > 0) {
+            const messages = invalidFiles.map((f) => {
+                const ext = f.name.split('.').pop().toLowerCase();
+                if (!Object.values(FILE_RULES).some(rule => rule.extensions.has(ext))) return `${f.name} (invalid type)`;
+                if (f.size > MAX_SIZE) return `${f.name} (exceeds 500MB)`;
+                return f.name;
+            });
+            setError(`Invalid file(s): ${messages.join(', ')}`);
+            e.target.value = ''; // reset input
+            return;
+        }
+
+        setSelectedFiles((prev) => [...prev, ...files]);
+
+        e.target.value = '';
     };
 
     const removeFile = (index) => {
@@ -169,6 +202,13 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+    };
+
+    const getFileType = (file) => {
+        if (file.type.startsWith('image/')) return 'image';
+        if (file.type.startsWith('audio/')) return 'voice';
+        if (file.type.startsWith('video/')) return 'video';
+        return 'file';
     };
 
     const uploadFileMessage = async ({ file, type, caption }) => {
@@ -204,10 +244,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
         if (selectedFiles.length > 0) {
             for (const file of selectedFiles) {
-                const isImage = file.type.startsWith('image/')
                 const res = await uploadFileMessage({
                     file,
-                    type: isImage ? 'image' : 'voice',
+                    type: getFileType(file),
                     caption: newMessage || null,
                 })
                 setMessages(prev => [...prev, res.data]);
@@ -216,6 +255,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             setNewMessage('')
             clearFiles();
             setTimeout(scrollToBottom, 50);
+            return;
         }
 
         if (newMessage.trim()) {
@@ -228,7 +268,6 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             setTimeout(scrollToBottom, 50);
         }
     };
-
 
     return (
         <Box
@@ -248,9 +287,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                         color="default"
                         elevation={2}
                         sx={{
-                            backgroundColor: 'white',
+                            backgroundColor: error ? 'rgba(255, 232, 236, 0.8)' : 'white',
                             borderBottom: 1,
-                            borderColor: 'divider',
+                            borderColor: error ? 'red' : 'divider',
                             '&:hover': { bgcolor: 'grey.200' },
                         }}
                         onClick={() => setPopup(true)}
@@ -352,7 +391,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 overflowY: 'auto',
                                 px: 2,
                                 py: 1,
-                                bgcolor: 'grey.100',
+                                bgcolor: error ? 'rgba(255, 241, 243, 0.8)' : 'grey.100',
                                 position: 'relative',
                             }}
                         >
@@ -367,13 +406,32 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 </Typography>
                             )}
 
-                            {messages.map((message) => (
-                                <MessageBubble
-                                    key={message.id}
-                                    message={message}
-                                    isOwn={message.sender_id === currentUserId}
-                                />
-                            ))}
+                            {messages.length === 0 ? (
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        flexDirection: 'column'
+                                    }}
+                                >
+                                    <Typography variant='h6' fontWeight={600}>
+                                        Say something to
+                                    </Typography>
+                                    <Typography variant='h6' fontWeight={600}>
+                                         {chat?.username}
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                messages.map((message) => (
+                                    <MessageBubble
+                                        key={message.id}
+                                        message={message}
+                                        isOwn={message.sender_id === currentUserId}
+                                    />
+                                )))}
 
                             {Object.entries(typingUsers)
                                 .filter(([userId, isTyping]) => isTyping && parseInt(userId) !== currentUserId)
@@ -457,6 +515,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         );
                                     })}
                                 </Box>
+                                <Snackbar
+                                    open={!!error}
+                                    autoHideDuration={5000}
+                                    onClose={() => setError('')}
+                                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                                >
+                                    <Alert severity="error" onClose={() => setError('')}>
+                                        {error}
+                                    </Alert>
+                                </Snackbar>
                             </Paper>
                         )}
 
@@ -471,7 +539,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 alignItems: 'center',
                                 borderTop: 1,
                                 borderColor: 'divider',
-                                bgcolor: 'background.paper',
+                                bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
                             }}
                         >
                             {(isRecording || audioBlob) && (
@@ -494,7 +562,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         <>
                                             <IconButton component="label">
                                                 <AttachFileIcon />
-                                                <input ref={fileInputRef} hidden type="file" multiple onChange={handleFileSelect} />
+                                                <input
+                                                    ref={fileInputRef}
+                                                    hidden
+                                                    type="file"
+                                                    multiple
+                                                    onChange={handleFileSelect}
+                                                    accept={Object.values(FILE_RULES).flatMap(r => [...r.extensions]).map(ext => `.${ext}`).join(',')}
+                                                />
                                             </IconButton>
 
                                             <IconButton

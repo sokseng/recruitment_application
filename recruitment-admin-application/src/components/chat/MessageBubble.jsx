@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Avatar, Button } from '@mui/material';
+import { Box, Typography, Paper, Avatar, Button, IconButton } from '@mui/material';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
 import Menu from '@mui/material/Menu';
@@ -11,10 +11,14 @@ import DownloadIcon from '@mui/icons-material/Download';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import React from 'react';
+import React, { useRef } from 'react';
 import ReplyAllIcon from '@mui/icons-material/ReplyAll';
 import { FormatTime } from './FormatTime';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
+import VideoMessage from './VideoMessagePlayer';
+import { getFileIcon } from './FileIcon';
+import ChatImage from './ImageComponent';
+import ChatFile from './ChatFile';
 
 function MessageBubble({ message, isOwn }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -43,19 +47,30 @@ function MessageBubble({ message, isOwn }) {
                 elevation={1}
                 sx={{
                     maxWidth: '70%',
-                    px: message.type === 'image' ? 0 : 2,
-                    py: message.type === 'image' ? 0 : 1,
-                    bgcolor: message.type === 'image' ? 'transparent' : isOwn ? 'primary.main' : 'grey.100',
-                    boxShadow: message.type === 'image' ? 0 : 2,
+                    px: message.type === 'image' || message.type === 'video' ? 0 : 2,
+                    py: message.type === 'image' || message.type === 'video' ? 0 : 1,
+                    bgcolor:
+                        message.type === 'image' || message.type === 'video'
+                            ? 'transparent'
+                            : isOwn
+                                ? 'primary.main'
+                                : 'grey.100',
+                    boxShadow: message.type === 'image' || message.type === 'video' ? 0 : 2,
                     color: isOwn ? 'white' : 'text.primary',
                     borderRadius: 2,
                     '&:hover': {
-                        bgcolor: message.type === 'image' ? 'transparent' : isOwn ? '#1f62a5ff' : 'grey.200',
-                        transform: 'translate 0.2s ease'
-                    }
+                        bgcolor:
+                            message.type === 'image' || message.type === 'video'
+                                ? 'transparent'
+                                : isOwn
+                                    ? '#1f62a5ff'
+                                    : 'grey.200',
+                        transition: 'transform 0.2s ease',
+                    },
                 }}
                 onClick={handleMenuOpen}
             >
+
                 {message.type === 'text' && (
                     <Typography variant="body2">
                         {message.content}
@@ -67,6 +82,22 @@ function MessageBubble({ message, isOwn }) {
                         isOwn={isOwn}
                     />
                 )}
+
+                {message.type === 'video' && (
+                    <VideoMessage
+                        message={message}
+                        isOwn={isOwn}
+                        BASE_URL={BASE_URL}
+                    />
+                )}
+
+                {message.type === 'file' && (
+                    <ChatFile
+                        fileUrl={`${BASE_URL}${message.file_url}`}
+                        isOwn={isOwn}
+                    />
+                )}
+
                 {message.type === 'system' && (
                     <Box
                         sx={{
@@ -101,71 +132,15 @@ function MessageBubble({ message, isOwn }) {
                     </Box>
                 )}
                 {message.type === 'image' && (
-                    <Box
-                        sx={{
-                            position: 'relative',
-                            display: 'inline-block',
-                            width: '100%',
-                            maxWidth: 200,
-                            height: '100%',
-                            overflow: 'hidden',
-                            transition: 'transform 0.2s ease',
-                            '&:hover': {
-                                transform: 'scale(1.025)',
-                            },
-                        }}
-                    >
-                        <Box
-                            component="img"
-                            src={`${BASE_URL}${message.file_url}`}
-                            alt="upload"
-                            sx={{
-                                width: '100%',
-                                height: 'auto',
-                                objectFit: 'cover',
-                                display: 'block',
-                                borderRadius: 2
-                            }}
-                        />
-                        {message.type === 'image' && (
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: isOwn ? 'end' : 'start',
-                                    gap: 0.5,
-                                    position: 'absolute',
-                                    bottom: 10,
-                                    right: 15,
-                                    backgroundColor: 'grey',
-                                    opacity: 0.75,
-                                    borderRadius: 2,
-                                    px: 1,
-                                    color: 'white'
-                                }}
-                            >
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        display: 'block',
-                                        textAlign: 'right',
-                                        opacity: 0.7,
-                                    }}
-                                >
-                                    <FormatTime time={message.created_at} />
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        opacity: 0.7,
-                                    }}
-                                >
-                                    {message.is_read && isOwn && <DoneAllIcon sx={{ fontSize: 16 }} />}
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
+                    <ChatImage
+                        src={`${BASE_URL}${message.file_url}`}
+                        isOwn={isOwn}
+                        created_at={message.created_at}
+                        is_read={message.is_read}
+                    />
                 )}
-                {message.type !== 'image' && (
+
+                {(message.type !== 'image' && message.type !== 'video') && (
                     <Box
                         sx={{
                             display: 'flex',
@@ -215,21 +190,21 @@ function MessageBubble({ message, isOwn }) {
                     </MenuItem>
                 )}
 
-                {isOwn && message.type === 'image' && (
+                {isOwn && (message.type === 'image' || message.type === 'video' || message.type === 'file') && (
                     <MenuItem onClick={() => { handleMenuClose(); }}>
                         <ListItemIcon><AutorenewIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Replace</ListItemText>
                     </MenuItem>
                 )}
 
-                {message.type === 'image' && (
+                {(message.type === 'image' || message.type === 'video' || message.type === 'file' ) && (
                     <MenuItem onClick={() => { handleMenuClose(); }}>
                         <ListItemIcon><PreviewIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Preview</ListItemText>
                     </MenuItem>
                 )}
 
-                {message.type === 'image' && (
+                {(message.type === 'image' || message.type === 'video' || message.type === 'file' || message.type === 'voice') && (
                     <MenuItem onClick={() => { handleMenuClose(); }}>
                         <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Download</ListItemText>

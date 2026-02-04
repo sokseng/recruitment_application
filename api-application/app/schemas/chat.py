@@ -8,6 +8,8 @@ class MessageType(str, Enum):
     TEXT = "text"
     IMAGE = "image"
     VOICE = "voice"
+    VIDEO = "video"
+    FILE = "file"
 
 
 class SendTextMessage(BaseModel):

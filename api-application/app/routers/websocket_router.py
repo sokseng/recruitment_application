@@ -94,6 +94,7 @@ async def websocket_chat(
                 continue
 
     except WebSocketDisconnect:
+        manager.remove_socket_everywhere(websocket)
         manager.disconnect(websocket, current_user_id, room.id)
 
         await manager.broadcast_to_room(

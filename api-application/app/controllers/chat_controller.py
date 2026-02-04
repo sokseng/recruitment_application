@@ -13,6 +13,25 @@ from app.websockets.chat_manager import manager
 from datetime import datetime
 from fastapi.encoders import jsonable_encoder
 
+FILE_RULES = {
+    "image": {
+        "folder": "images",
+        "extensions": {"jpg", "jpeg", "png", "gif", "webp"},
+    },
+    "voice": {
+        "folder": "voice",
+        "extensions": {"webm", "ogg", "m4a", "mp3", "wav"},
+    },
+    "video": {
+        "folder": "videos",
+        "extensions": {"mp4", "webm", "mov", "mkv", "avi"},
+    },
+    "file": {
+        "folder": "files",
+        "extensions": {"pdf", "doc", "docx", "xls", "xlsx", "txt", "zip"},
+    },
+}
+
 def serialize_message(message: ChatMessageOut):
     msg_dict = message.dict()
     if isinstance(msg_dict.get("created_at"), datetime):
@@ -74,12 +93,20 @@ async def send_text_message(db: Session, current_user: User, to_user_id: int, co
 
 async def send_file_message(db: Session, current_user_id: int, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):
     room = get_or_create_chat_room(db, current_user_id, to_user_id)
+    print(f"file type {file_type}")
+
+    rule = FILE_RULES.get(file_type)
+    if not rule:
+        raise HTTPException(400, "Unsupported file type")
 
     ext = file.filename.rsplit(".", 1)[-1].lower()
-    folder = "images" if file_type == "image" else "voice"
-    allowed = {"jpg", "jpeg", "png", "gif", "webp"} if file_type == "image" else {"webm", "ogg", "m4a", "mp3", "wav"}
-    if ext not in allowed:
-        raise HTTPException(400, f"Invalid file type for {file_type}")
+    if ext not in rule["extensions"]:
+        raise HTTPException(
+            400,
+            f"Invalid file extension for {file_type}"
+        )
+
+    folder = rule["folder"]
 
     filename = f"{uuid.uuid4()}.{ext}"
     path = f"uploads/chat/{folder}/{filename}"
@@ -90,7 +117,7 @@ async def send_file_message(db: Session, current_user_id: int, to_user_id: int, 
     msg = ChatMessage(
         room_id=room.id,
         sender_id=current_user_id,
-        type=MessageType.IMAGE if file_type == "image" else MessageType.VOICE,
+        type=MessageType(file_type),
         content=caption,
         file_url=f"/{path}",
         file_size=file.size,
