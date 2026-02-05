@@ -1160,7 +1160,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
             </FormControl>
           </Stack>
           <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField
               fullWidth
               size="small"
