@@ -1,6 +1,6 @@
 // AppliedCandidates.jsx
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Card,
@@ -39,6 +39,7 @@ import {
   Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 import api from "../services/api";
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 const STATUS_MAP = {
   PENDING: { label: "Pending", color: "warning" },
@@ -70,6 +71,7 @@ export default function AppliedCandidates() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
+  const router = useNavigate();
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -267,8 +269,36 @@ export default function AppliedCandidates() {
     tabValue === 0
       ? applications
       : applications.filter(
-          (app) => app.application_status === STATUS_FILTER[tabValue]
-        );
+        (app) => app.application_status === STATUS_FILTER[tabValue]
+      );
+
+  // Chat App Logic Do not touch
+
+  const handleSelect = async (userId) => {
+    console.log("userId being sent:", userId);
+
+    if (!userId) {
+      console.error("userId is missing");
+      return;
+    }
+
+    try {
+      const res = await api.post("/chat/get-or-create-room", {
+        other_user_id: userId,
+      });
+
+      const room = res.data;
+
+      router("/chat", {
+        state: { roomId: room.room_id },
+      });
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // End Chat Logic
 
   if (loadingJobs) {
     return (
@@ -381,8 +411,8 @@ export default function AppliedCandidates() {
                       job.status === "Open"
                         ? "success"
                         : job.status === "Closed"
-                        ? "error"
-                        : "warning"
+                          ? "error"
+                          : "warning"
                     }
                     variant="outlined"
                   />
@@ -473,13 +503,12 @@ export default function AppliedCandidates() {
                 <Tab
                   sx={{ textTransform: "none" }}
                   key={label}
-                  label={`${label} (${
-                    i === 0
-                      ? applications.length
-                      : applications.filter(
-                          (a) => a.application_status === STATUS_FILTER[i]
-                        ).length
-                  })`}
+                  label={`${label} (${i === 0
+                    ? applications.length
+                    : applications.filter(
+                      (a) => a.application_status === STATUS_FILTER[i]
+                    ).length
+                    })`}
                 />
               ))}
             </Tabs>
@@ -528,6 +557,8 @@ export default function AppliedCandidates() {
                     app.resume?.resume_file ||
                     `resume-${candidateName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
                   const hasResume = !!resumeId;
+
+                  const userId = app.candidate?.user_id;
 
                   return (
                     <Card
@@ -614,6 +645,15 @@ export default function AppliedCandidates() {
 
                             {hasResume ? (
                               <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title={`Send ${candidateName} a message`}>
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() => handleSelect(userId)}
+                                  >
+                                    <ChatBubbleIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
                                 <Tooltip title="View Resume">
                                   <IconButton
                                     size="small"
@@ -718,16 +758,16 @@ export default function AppliedCandidates() {
             minHeight: 0,
             ...(isMobile
               ? {
-                  position: "fixed",
-                  inset: 0,
-                  zIndex: showDetailMobile ? 20 : -1,
-                  transform: showDetailMobile
-                    ? "translateX(0)"
-                    : "translateX(100%)",
-                  transition: "transform 0.3s ease-in-out",
-                  bgcolor: "background.default",
-                  overflowY: "auto",
-                }
+                position: "fixed",
+                inset: 0,
+                zIndex: showDetailMobile ? 20 : -1,
+                transform: showDetailMobile
+                  ? "translateX(0)"
+                  : "translateX(100%)",
+                transition: "transform 0.3s ease-in-out",
+                bgcolor: "background.default",
+                overflowY: "auto",
+              }
               : { borderRadius: 2, boxShadow: 1 }),
           }}
         >

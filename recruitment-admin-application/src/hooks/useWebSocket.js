@@ -34,20 +34,20 @@ export function useWebSocket({
   useEffect(() => {
     if (!roomId || !token) return;
 
-    currentRoomId.current = roomId;
-
-    intentionalClose.current = false;
-
-    if (reconnectTimeout.current) {
-      clearTimeout(reconnectTimeout.current);
-      reconnectTimeout.current = null;
+    // Close previous socket if any
+    if (socketRef.current) {
+      socketRef.current.close(1000, "room switch");
     }
+    if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+    if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
+
+    // Reset flags
+    intentionalClose.current = false;
+    currentRoomId.current = roomId;
 
     const wsUrl = `${WS_BASE_URI}/ws/chat/room/${roomId}?token=${token}`;
 
     const connect = () => {
-      if (intentionalClose.current) return;
-
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
 
@@ -55,75 +55,55 @@ export function useWebSocket({
         console.log("WS connected", wsUrl);
         setConnected(true);
         reconnectAttempts.current = 0;
-        resetHeartbeat(); // start heartbeat immediately
+        resetHeartbeat();
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-
           if (data.room_id && data.room_id !== currentRoomId.current) return;
-
           resetHeartbeat();
-
           if (data.type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
             return;
           }
-
           onMessage?.(data);
         } catch (err) {
-          console.error("Invalid WS message", err);
+          console.error("WS message error", err);
         }
       };
 
-      ws.onclose = (event) => {
-        console.log("WS disconnected", event.code, event.reason);
+      ws.onclose = () => {
         setConnected(false);
         socketRef.current = null;
+        if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
 
-        if (heartbeatTimeout.current) {
-          clearTimeout(heartbeatTimeout.current);
-        }
-
-        if (intentionalClose.current) return; // CRITICAL
+        if (intentionalClose.current) return; // do not reconnect if we intentionally closed
 
         if (autoReconnect) {
           const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000);
           reconnectAttempts.current += 1;
-
-          const roomIdAtReconnect = currentRoomId.current;
           reconnectTimeout.current = setTimeout(() => {
-            if (currentRoomId.current === roomIdAtReconnect) {
+            // Only reconnect if still same room
+            if (!intentionalClose.current && currentRoomId.current === roomId) {
               connect();
-            } else {
-              console.log("Skipping reconnect for old room", roomIdAtReconnect);
             }
           }, delay);
         }
       };
 
-      ws.onerror = () => {
-        ws.close();
-      };
+      ws.onerror = () => ws.close();
     };
 
     connect();
 
     return () => {
       intentionalClose.current = true;
-
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-        reconnectTimeout.current = null;
-      }
-
-      if (heartbeatTimeout.current) {
-        clearTimeout(heartbeatTimeout.current);
-      }
-
-      socketRef.current?.close(1000, "room switch");
+      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+      if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
+      socketRef.current?.close(1000, "cleanup");
       socketRef.current = null;
+      setConnected(false);
     };
   }, [roomId, token]);
 
