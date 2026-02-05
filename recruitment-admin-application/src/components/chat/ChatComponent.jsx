@@ -28,7 +28,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, messagesEndRef }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, messagesEndRef, connected }) {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -229,6 +229,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     }
 
     const handleSend = async () => {
+        if (!chat?.room_id || !send) return;
+
         const addMessage = (msg) => {
             setMessages(prev => {
                 // skip if duplicate
@@ -271,12 +273,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         }
 
         if (newMessage.trim()) {
+
             send({
                 type: "text",
                 content: newMessage.trim(),
             });
-            stopTyping();
+
             setNewMessage('');
+            stopTyping();
             setTimeout(scrollToBottom, 50);
         }
     };

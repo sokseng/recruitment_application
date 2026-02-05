@@ -34,27 +34,20 @@ export function useWebSocket({
   useEffect(() => {
     if (!roomId || !token) return;
 
-    // Stop previous socket safely
+    // Close previous socket if any
     if (socketRef.current) {
       socketRef.current.close(1000, "room switch");
     }
-    if (reconnectTimeout.current) {
-      clearTimeout(reconnectTimeout.current);
-      reconnectTimeout.current = null;
-    }
-    if (heartbeatTimeout.current) {
-      clearTimeout(heartbeatTimeout.current);
-      heartbeatTimeout.current = null;
-    }
+    if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+    if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
 
+    // Reset flags
     intentionalClose.current = false;
     currentRoomId.current = roomId;
 
     const wsUrl = `${WS_BASE_URI}/ws/chat/room/${roomId}?token=${token}`;
 
     const connect = () => {
-      if (intentionalClose.current) return;
-
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
 
@@ -76,7 +69,7 @@ export function useWebSocket({
           }
           onMessage?.(data);
         } catch (err) {
-          console.error("Invalid WS message", err);
+          console.error("WS message error", err);
         }
       };
 
@@ -85,13 +78,13 @@ export function useWebSocket({
         socketRef.current = null;
         if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
 
-        if (intentionalClose.current) return;
+        if (intentionalClose.current) return; // do not reconnect if we intentionally closed
 
         if (autoReconnect) {
           const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000);
           reconnectAttempts.current += 1;
           reconnectTimeout.current = setTimeout(() => {
-            // Only reconnect if the current room hasn't changed
+            // Only reconnect if still same room
             if (!intentionalClose.current && currentRoomId.current === roomId) {
               connect();
             }
@@ -105,7 +98,6 @@ export function useWebSocket({
     connect();
 
     return () => {
-      // On cleanup, just mark as intentional close so this socket stops
       intentionalClose.current = true;
       if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
       if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);

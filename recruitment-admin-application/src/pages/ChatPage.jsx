@@ -4,7 +4,7 @@ import {
     InputAdornment, useMediaQuery, useTheme, Chip
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
@@ -235,6 +235,10 @@ function ChatPage() {
         },
     });
 
+    const currentSend = useCallback((data) => {
+        if (connected && send) send(data);
+    }, [connected, send]);
+
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
@@ -386,7 +390,7 @@ function ChatPage() {
                         onBack={() => setSelectedChat(null)}
                         messages={messages}
                         setMessages={setMessages}
-                        send={send}
+                        send={currentSend}
                         currentUserId={currentUserId}
                         isOnline={onlineUsers[selectedChat?.user_id] || false}
                         typingUsers={typingUsers}
@@ -394,6 +398,7 @@ function ChatPage() {
                         onScroll={handleScroll}
                         loadingOlderRef={loadingOlderRef}
                         messagesEndRef={messagesEndRef}
+                        connected={connected}
                     />
                 </Box>
             )}
