@@ -42,7 +42,7 @@ export default function BlueSidebarModern({ candidate }) {
                             border: '2px solid rgba(255,255,255,0.2)',
                         }} />
                         <img
-                            src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            src="https://avatars.githubusercontent.com/u/145982875?v=4"
                             alt={`${candidate.user_name}'s avatar`}
                             style={{
                                 width: '120px',

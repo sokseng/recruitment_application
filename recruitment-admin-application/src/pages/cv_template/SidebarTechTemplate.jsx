@@ -52,7 +52,7 @@ export default function SidebarTechTemplate({ candidate }) {
             border: '3px solid #0f172a'
           }}>
             <img 
-              src={profile.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'} 
+              src={profile.photo || 'https://avatars.githubusercontent.com/u/150273486?v=4'} 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               alt="Candidate"
             />
