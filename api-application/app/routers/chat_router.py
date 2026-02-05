@@ -11,6 +11,7 @@ from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
     ChatMessageOut, ConversationSummary
 )
+from fastapi import Body
 from app.dependencies.chat import get_current_active_user
 from app.websockets.chat_manager import manager
 from app.controllers.chat_controller import (
@@ -18,7 +19,7 @@ from app.controllers.chat_controller import (
     send_file_message,
     mark_conversation_read
 )
-from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut
+from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -103,11 +104,11 @@ def get_my_conversations(
     
 @router.post("/get-or-create-room")
 def get_or_create_room(
-    other_user_id: int,
+    request: GetOrCreateRoomRequest,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token),
 ):
-    room = get_or_create_chat_room(db, current_user_id, other_user_id)
+    room = get_or_create_chat_room(db, current_user_id, request.other_user_id)
 
     other_user = (
         room.employer_user
@@ -119,7 +120,7 @@ def get_or_create_room(
         "room_id": room.id,
         "user_id": other_user.pk_id,
         "username": other_user.user_name,
-        "avatar_url": other_user.avatar_url,
+        "avatar_url": None,
         "last_message": None,
         "last_message_at": None,
         "unread_count": 0,

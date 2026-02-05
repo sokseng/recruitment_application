@@ -72,3 +72,6 @@ class UserSearchOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class GetOrCreateRoomRequest(BaseModel):
+    other_user_id: int
