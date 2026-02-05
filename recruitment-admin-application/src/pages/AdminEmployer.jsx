@@ -236,7 +236,7 @@ const AdminEmployers = () => {
                       <Typography variant="caption" sx={{ fontSize: 10, display: "block" }}>
                         {emp.categories && emp.categories.length > 0
                           ? emp.categories.map(cat => cat.name).join(", ")
-                          : "N/A"}
+                          : "​​​​​​​​​​​​​​​​"}
                       </Typography>
                     </Box>
 
