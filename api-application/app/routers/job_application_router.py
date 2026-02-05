@@ -1,3 +1,4 @@
+#job_application_router.py
 import os
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -26,8 +27,31 @@ import mimetypes
 router = APIRouter(prefix="/applications", tags=["Applications"])
 UPLOAD_FOLDER = "uploads/resumes"
 
+@router.get("/my-jobs/counts", response_model=List[dict])
+def get_application_counts_per_my_jobs(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
+    if not employer:
+        raise HTTPException(status_code=403, detail="Employer profile required")
 
-# ─── Candidate side ──────────────────────────────────────────────────────────
+    from sqlalchemy import func
+    from app.models.job_application_model import JobApplication
+    from app.models.job_model import Job
+
+    counts = (
+        db.query(
+            JobApplication.job_id,
+            func.count(JobApplication.pk_id).label("count")
+        )
+        .join(Job, Job.pk_id == JobApplication.job_id)
+        .filter(Job.employer_id == employer.pk_id)
+        .group_by(JobApplication.job_id)
+        .all()
+    )
+
+    return [{"job_id": row.job_id, "count": row.count} for row in counts]
 
 @router.post("/", response_model=JobApplicationOut, status_code=201)
 def apply_to_job_endpoint(
@@ -42,8 +66,6 @@ def apply_to_job_endpoint(
         data.candidate_resume_id,
         reset_status_on_reapply=True,
     )
-
-# ─── Employer side ────────────────────────────────────a───────────────────────
 
 @router.get("/job/{job_id}", response_model=List[ApplicationOutForEmployer])
 def list_job_applications(

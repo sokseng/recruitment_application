@@ -60,9 +60,11 @@ export default function AppliedCandidates() {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [applications, setApplications] = useState([]);
   const [tabValue, setTabValue] = useState(0);
+
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loadingApps, setLoadingApps] = useState(false);
   const [error, setError] = useState(null);
+
   const [showDetailMobile, setShowDetailMobile] = useState(false);
   const [viewFileOpen, setViewFileOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState(null);
@@ -78,7 +80,7 @@ export default function AppliedCandidates() {
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    loadMyJobs();
+    loadMyJobsWithApplicationCounts();
   }, []);
 
   useEffect(() => {
@@ -88,27 +90,57 @@ export default function AppliedCandidates() {
     }
   }, [selectedJobId]);
 
-  const loadMyJobs = async () => {
+  const loadMyJobsWithApplicationCounts = async () => {
     try {
       setLoadingJobs(true);
-      const res = await api.get("/jobs/my-jobs?limit=100");
-      const jobs = res.data || [];
-      setMyJobs(jobs);
-      if (jobs.length > 0) {
+      setError(null);
+
+      // 1. Fetch all posted jobs
+      const jobsRes = await api.get("/jobs/my-jobs?limit=100");
+      const allMyJobs = jobsRes.data || [];
+
+      if (allMyJobs.length === 0) {
+        setMyJobs([]);
+        setLoadingJobs(false);
+        return;
+      }
+
+      // 2. Fetch application counts per job
+      const countsRes = await api.get("/applications/my-jobs/counts");
+      const countsMap = {};
+
+      (countsRes.data || []).forEach((item) => {
+        countsMap[item.job_id] = item.count || 0;
+      });
+
+      // 3. Filter — only keep jobs that have at least 1 application
+      const jobsWithApplications = allMyJobs.filter((job) => {
+        return (countsMap[job.pk_id] || 0) >= 1;
+      });
+
+      setMyJobs(jobsWithApplications);
+
+      // Auto-select first job (or from URL)
+      if (jobsWithApplications.length > 0) {
         let initialJobId;
         if (selectedJobFromUrl) {
-          const found = jobs.find((j) => j.pk_id === Number(selectedJobFromUrl));
-          initialJobId = found ? found.pk_id : jobs[0].pk_id;
+          const found = jobsWithApplications.find(
+            (j) => j.pk_id === Number(selectedJobFromUrl)
+          );
+          initialJobId = found ? found.pk_id : jobsWithApplications[0].pk_id;
         } else {
-          initialJobId = jobs[0].pk_id;
+          initialJobId = jobsWithApplications[0].pk_id;
         }
+
         setSelectedJobId(initialJobId);
+
         if (!selectedJobFromUrl) {
           setSearchParams({ job: initialJobId.toString() }, { replace: true });
         }
       }
     } catch (err) {
-      setError("Failed to load your posted jobs");
+      console.error("Failed to load jobs or counts:", err);
+      setError("Failed to load your posted jobs or application data");
     } finally {
       setLoadingJobs(false);
     }
@@ -140,11 +172,13 @@ export default function AppliedCandidates() {
       await api.patch(`/applications/${appId}/status`, {
         new_status: newStatusLabel,
       });
+
       setApplications((prev) =>
         prev.map((app) =>
           app.pk_id === appId ? { ...app, application_status: newKey } : app
         )
       );
+
       setSnackbar({
         open: true,
         message: `Status updated to ${newStatusLabel}`,
@@ -162,12 +196,10 @@ export default function AppliedCandidates() {
 
   const handleDownload = async (resumeId, fileName = "resume.pdf") => {
     if (!resumeId) return;
-
     try {
       const res = await api.get(`/applications/resumes/${resumeId}/file`, {
         responseType: "blob",
       });
-
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -187,17 +219,15 @@ export default function AppliedCandidates() {
 
   const handleViewFile = async (resumeId, fileName = "resume") => {
     if (!resumeId) return;
-
     try {
       const res = await api.get(`/applications/resumes/${resumeId}/file`, {
         responseType: "blob",
       });
-
       const contentType = res.headers["content-type"] || "application/octet-stream";
       const blob = new Blob([res.data], { type: contentType });
       const url = URL.createObjectURL(blob);
 
-      // Office documents → better to download than try to preview
+      // Office docs → better to download
       if (
         contentType.includes("word") ||
         contentType.includes("officedocument") ||
@@ -240,7 +270,7 @@ export default function AppliedCandidates() {
           (app) => app.application_status === STATUS_FILTER[tabValue]
         );
 
-  if (loadingJobs)
+  if (loadingJobs) {
     return (
       <Box
         sx={{
@@ -253,19 +283,21 @@ export default function AppliedCandidates() {
         <CircularProgress />
       </Box>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Box sx={{ p: 3, height: "100%" }}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
+  }
 
   // ─── Job List ───────────────────────────────────────────────
   const JobListContent = () => (
     <Card
       sx={{
-        height: "100%",
+        height: { xs: "80vh", sm: "100%"},
         display: "flex",
         flexDirection: "column",
         border: "3px solid",
@@ -275,7 +307,7 @@ export default function AppliedCandidates() {
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h7" fontWeight={700} color="primary.dark">
-          Your Posted Jobs
+          Your Posted Jobs with Applications
         </Typography>
       </Box>
       <Divider />
@@ -292,7 +324,12 @@ export default function AppliedCandidates() {
             }}
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
-            <Typography variant="subtitle1">No jobs posted yet</Typography>
+            <Typography variant="subtitle1">
+              No jobs with applications yet
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+              When candidates apply, their jobs will appear here.
+            </Typography>
           </Box>
         ) : (
           myJobs.map((job) => {
@@ -334,8 +371,7 @@ export default function AppliedCandidates() {
                       {job.job_title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {job.employer?.company_name || "—"} •{" "}
-                      {job.location || "—"}
+                      {job.employer?.company_name || "—"} • {job.location || "—"}
                     </Typography>
                   </Box>
                   <Chip
@@ -359,7 +395,7 @@ export default function AppliedCandidates() {
     </Card>
   );
 
-  // ─── Applications with Tabs ─────────────────────────────────
+  // ─── Applications Detail ────────────────────────────────────
   const ApplicationsDetailContent = () => (
     <Card
       sx={{
@@ -418,9 +454,7 @@ export default function AppliedCandidates() {
               )}
             </Stack>
           </Box>
-
           <Divider />
-
           <Box
             sx={{
               borderBottom: 1,
@@ -450,7 +484,6 @@ export default function AppliedCandidates() {
               ))}
             </Tabs>
           </Box>
-
           <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 1.5, sm: 2 } }}>
             {loadingApps ? (
               <Box
@@ -485,18 +518,15 @@ export default function AppliedCandidates() {
                       label: app.application_status,
                       color: "default",
                     };
-
                   const candidateName =
                     app.candidate?.user?.user_name ||
                     `Candidate #${app.candidate_id}`;
                   const candidateEmail =
                     app.candidate?.user?.email || "No email available";
-
                   const resumeId = app.candidate_resume_id;
                   const resumeFileName =
                     app.resume?.resume_file ||
                     `resume-${candidateName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
-
                   const hasResume = !!resumeId;
 
                   return (
@@ -588,7 +618,9 @@ export default function AppliedCandidates() {
                                   <IconButton
                                     size="small"
                                     color="primary"
-                                    onClick={() => handleViewFile(resumeId, resumeFileName)}
+                                    onClick={() =>
+                                      handleViewFile(resumeId, resumeFileName)
+                                    }
                                   >
                                     <VisibilityIcon fontSize="small" />
                                   </IconButton>
@@ -597,7 +629,9 @@ export default function AppliedCandidates() {
                                   <IconButton
                                     size="small"
                                     color="warning"
-                                    onClick={() => handleDownload(resumeId, resumeFileName)}
+                                    onClick={() =>
+                                      handleDownload(resumeId, resumeFileName)
+                                    }
                                   >
                                     <FileDownloadIcon fontSize="small" />
                                   </IconButton>
@@ -748,7 +782,6 @@ export default function AppliedCandidates() {
             />
           )}
         </DialogContent>
-
         <DialogActions sx={{ py: 0.5, px: 2 }}>
           <Button size="small" onClick={() => setViewFileOpen(false)}>
             Close

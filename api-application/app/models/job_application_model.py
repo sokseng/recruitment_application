@@ -1,4 +1,4 @@
-# New file: models/job_application_model.py
+# job_application_model.py
 from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum as SQLEnum, func
 from sqlalchemy.orm import relationship
 from app.database.session import Base
