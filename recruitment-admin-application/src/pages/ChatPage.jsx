@@ -10,6 +10,7 @@ import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
+import { useLocation } from "react-router-dom";
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -28,6 +29,8 @@ function getLastMessagePreview(chat, currentUserId) {
 }
 
 function ChatPage() {
+    const location = useLocation();
+    const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
     const theme = useTheme();
@@ -50,6 +53,16 @@ function ChatPage() {
     const activeChatIdRef = useRef(null);
     const initialLoadRef = useRef(true);
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (!initialRoomId || chats.length === 0) return;
+
+        const room = chats.find(c => c.room_id === initialRoomId);
+
+        if (room) {
+            setSelectedChat(room);
+        }
+    }, [initialRoomId, chats]);
 
     console.log("selectedChat", selectedChat?.room_id)
 
