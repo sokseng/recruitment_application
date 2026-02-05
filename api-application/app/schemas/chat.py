@@ -43,11 +43,12 @@ class ChatMessageOut(BaseModel):
 
 
 class ConversationSummary(BaseModel):
-    id: int
+    user_id: int
     username: str
     last_message: Optional[ChatMessageOut]
     unread_count: int
     last_message_at: Optional[datetime]
+    room_id: Optional[int] = None
     
 class CreateChatIn(BaseModel):
     user_id: int

@@ -45,7 +45,10 @@ def search_users(
     return users
 
 @router.get("/", response_model=List[ConversationSummary])
-def get_my_conversations(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token),):
+def get_my_conversations(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
     current_user = db.query(User).filter(User.pk_id == current_user_id).first()
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -59,25 +62,37 @@ def get_my_conversations(db: Session = Depends(get_db), current_user_id: int = D
 
     result = []
     for room in rooms:
-        if room.candidate_user_id == current_user.pk_id:
-            other_user = room.employer_user
-        else:
-            other_user = room.candidate_user
+        other_user = (
+            room.employer_user
+            if room.candidate_user_id == current_user.pk_id
+            else room.candidate_user
+        )
 
-        unread_count = db.query(func.count(ChatMessage.id)).filter(
-            ChatMessage.room_id == room.id,
-            ChatMessage.sender_id != current_user.pk_id,
-            ChatMessage.is_read == False
-        ).scalar() or 0
+        last_msg = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.room_id == room.id)
+            .order_by(ChatMessage.created_at.desc())
+            .first()
+        )
 
-        last_msg = room.last_message
+        unread_count = (
+            db.query(func.count(ChatMessage.id))
+            .filter(
+                ChatMessage.room_id == room.id,
+                ChatMessage.sender_id != current_user.pk_id,
+                ChatMessage.is_read == False
+            )
+            .scalar()
+            or 0
+        )
 
         result.append({
-            "id": other_user.pk_id,
+            "room_id": room.id,
+            "user_id": other_user.pk_id,
             "username": other_user.user_name,
             "last_message": ChatMessageOut.from_orm(last_msg) if last_msg else None,
+            "last_message_at": last_msg.created_at if last_msg else None,
             "unread_count": unread_count,
-            "last_message_at": room.last_message_at
         })
 
     return sorted(
@@ -85,45 +100,95 @@ def get_my_conversations(db: Session = Depends(get_db), current_user_id: int = D
         key=lambda x: x["last_message_at"] or datetime.min.replace(tzinfo=timezone.utc),
         reverse=True
     )
+    
+@router.post("/get-or-create-room")
+def get_or_create_room(
+    other_user_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    room = get_or_create_chat_room(db, current_user_id, other_user_id)
+
+    other_user = (
+        room.employer_user
+        if room.candidate_user_id == current_user_id
+        else room.candidate_user
+    )
+
+    return {
+        "room_id": room.id,
+        "user_id": other_user.pk_id,
+        "username": other_user.user_name,
+        "avatar_url": other_user.avatar_url,
+        "last_message": None,
+        "last_message_at": None,
+        "unread_count": 0,
+    }
 
 @router.post("/messages/file", response_model=ChatMessageOut)
 async def send_file(
-    to_user_id: Annotated[int, Form()],
-    type: Annotated[str, Form()],  # "image" or "voice"
+    room_id: Annotated[int, Form()],
+    type: Annotated[str, Form()],  # image | voice | video
     content: Annotated[str | None, Form()] = None,
     file: UploadFile = File(...),
     current_user_id: int = Depends(verify_access_token),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    return await send_file_message(db, current_user_id, to_user_id, type, content, file)
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
 
-@router.get("/{other_user_id}/messages", response_model=List[ChatMessageOut])
+    if current_user_id not in (
+        room.candidate_user_id,
+        room.employer_user_id,
+    ):
+        raise HTTPException(403, "Not allowed")
+
+    return await send_file_message(
+        db=db,
+        room=room,
+        sender_id=current_user_id,
+        file_type=type,
+        caption=content,
+        file=file,
+    )
+
+@router.get("/room/{room_id}/messages", response_model=List[ChatMessageOut])
 def get_messages(
-    other_user_id: int,
+    room_id: int,
     current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db),
     limit: int = 50,
     offset: int = 0
 ):
-    other = db.query(User).get(other_user_id)
-    if not other:
-        raise HTTPException(404, "User not found")
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
 
-    room = get_or_create_chat_room(
-        db,
-        current_user_id ,
-        other.pk_id
+    if current_user_id not in (
+        room.candidate_user_id,
+        room.employer_user_id,
+    ):
+        raise HTTPException(403, "Not allowed")
+
+    msgs = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.room_id == room.id)
+        .order_by(ChatMessage.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
     )
 
-    msgs = db.query(ChatMessage).filter(
-        ChatMessage.room_id == room.id
-    ).order_by(ChatMessage.created_at.desc()).offset(offset).limit(limit).all()
-
-    unread = db.query(ChatMessage).filter(
-        ChatMessage.room_id == room.id,
-        ChatMessage.sender_id != current_user_id,
-        ChatMessage.is_read == False
-    ).all()
+    unread = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.room_id == room.id,
+            ChatMessage.sender_id != current_user_id,
+            ChatMessage.is_read == False
+        )
+        .all()
+    )
 
     if unread:
         now = func.now()
@@ -134,11 +199,15 @@ def get_messages(
 
         manager.broadcast_to_room(
             room.id,
-            {"type": "read", "byUserId": current_user_id, "timestamp": str(now)},
+            {
+                "type": "read",
+                "byUserId": current_user_id,
+                "timestamp": str(now)
+            },
             exclude_user_id=current_user_id
         )
 
-    return reversed(msgs)  # oldest first
+    return list(reversed(msgs))  # oldest → newest
 
 @router.post("/{other_user_id}/messages/read")
 async def mark_read(

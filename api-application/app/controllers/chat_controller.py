@@ -91,8 +91,14 @@ async def send_text_message(db: Session, current_user: User, to_user_id: int, co
     return payload
 
 
-async def send_file_message(db: Session, current_user_id: int, to_user_id: int, file_type: str, caption: str | None, file: UploadFile):
-    room = get_or_create_chat_room(db, current_user_id, to_user_id)
+async def send_file_message(
+    db: Session,
+    room: ChatRoom,
+    sender_id: int,
+    file_type: str,
+    caption: str | None,
+    file: UploadFile,
+):
     print(f"file type {file_type}")
 
     rule = FILE_RULES.get(file_type)
@@ -111,32 +117,47 @@ async def send_file_message(db: Session, current_user_id: int, to_user_id: int, 
     filename = f"{uuid.uuid4()}.{ext}"
     path = f"uploads/chat/{folder}/{filename}"
     os.makedirs(os.path.dirname(path), exist_ok=True)
+
     with open(path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     msg = ChatMessage(
         room_id=room.id,
-        sender_id=current_user_id,
+        sender_id=sender_id,
         type=MessageType(file_type),
         content=caption,
         file_url=f"/{path}",
         file_size=file.size,
-        mime_type=file.content_type
+        mime_type=file.content_type,
     )
+
     db.add(msg)
     db.flush()
+
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
+
     db.commit()
     db.refresh(msg)
 
-    msg_out = ChatMessageOut.from_orm(msg)
+    serialized = serialize_message(ChatMessageOut.from_orm(msg))
+
     await manager.broadcast_to_room(
         room.id,
-        {"type": "message", "message": serialize_message(msg_out)},
-        exclude_user_id=current_user_id
+        {
+            "type": "message",
+            "message": serialized,
+        }
     )
-    return jsonable_encoder(msg_out)
+
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(uid, {
+            "type": "chat_list_update",
+            "room_id": room.id,
+            "last_message": serialized,
+        })
+
+    return jsonable_encoder(serialized)
 
 async def mark_conversation_read(
     db: Session,

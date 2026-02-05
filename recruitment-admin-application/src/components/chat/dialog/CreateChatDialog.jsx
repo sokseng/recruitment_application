@@ -39,11 +39,19 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
     return () => clearTimeout(timeout);
   }, [query]);
 
-  const handleSelect = (user) => {
-    onSelectUser(user);
-    setQuery("");
-    setUsers([]);
-    onClose();
+  const handleSelect = async (user) => {
+    try {
+      const res = await api.post("/chat/get-or-create-room", {
+        other_user_id: user.pk_id,
+      });
+
+      onSelectUser(res.data);
+      setQuery("");
+      setUsers([]);
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -80,7 +88,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
 
       <DialogActions>
         <IconButton onClick={onClose} sx={{ textTransform: "none", position: 'absolute', top: 5, right: 5 }}>
-          <CloseIcon/>
+          <CloseIcon />
         </IconButton>
       </DialogActions>
     </Dialog>

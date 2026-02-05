@@ -135,7 +135,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     };
 
     useEffect(() => {
-        if (!chat?.id) return;
+        if (!chat?.room_id) return;
 
         justOpenedChatRef.current = true;
 
@@ -145,7 +145,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         }, 50);
 
         return () => clearTimeout(timer);
-    }, [chat?.id]);
+    }, [chat?.room_id]);
 
     useEffect(() => {
         const prevCount = prevMessageCountRef.current;
@@ -213,7 +213,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
     const uploadFileMessage = async ({ file, type, caption }) => {
         const formData = new FormData();
-        formData.append("to_user_id", chat.id);
+        formData.append("room_id", chat.room_id);
         formData.append("type", type);  // "image" | "voice"
         if (caption) formData.append("content", caption);
         formData.append("file", file);
@@ -229,13 +229,25 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     }
 
     const handleSend = async () => {
+        const addMessage = (msg) => {
+            setMessages(prev => {
+                // skip if duplicate
+                if (prev.some(m => m.id === msg.id)) return prev;
+                const updated = [...prev, msg];
+                if (isNearBottom() || prev.length === 0) {
+                    setTimeout(scrollToBottom, 50);
+                }
+                return updated;
+            });
+        }
+
         if (audioBlob) {
             const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
                 type: audioBlob.type,
             })
 
             const res = await uploadFileMessage({ file: audioFile, type: 'voice' })
-            setMessages(prev => [...prev, res.data]);
+            addMessage(res.data);
             setAudioBlob(null)
             setRecordTime(0)
             setTimeout(scrollToBottom, 50);
@@ -249,7 +261,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     type: getFileType(file),
                     caption: newMessage || null,
                 })
-                setMessages(prev => [...prev, res.data]);
+                addMessage(res.data);
             }
             setSelectedFiles([])
             setNewMessage('')
@@ -334,8 +346,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         {chat?.username || 'Unkown User'}
                                     </Typography>
 
-                                    <Typography variant="caption" sx={{ color: typingUsers[chat?.id] ? 'primary.main' : isOnline ? 'green' : 'grey', fontWeight: 'bold' }} noWrap>
-                                        {typingUsers[chat?.id] ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
+                                    <Typography variant="caption" sx={{ color: typingUsers[chat?.user_id] ? 'primary.main' : isOnline ? 'green' : 'grey', fontWeight: 'bold' }} noWrap>
+                                        {typingUsers[chat?.user_id] ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -421,7 +433,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         Say something to
                                     </Typography>
                                     <Typography variant='h6' fontWeight={600}>
-                                         {chat?.username}
+                                        {chat?.username}
                                     </Typography>
                                 </Box>
                             ) : (

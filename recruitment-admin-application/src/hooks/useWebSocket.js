@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 export function useWebSocket({
-  otherUserId,
+  roomId,
   token,
   onMessage,
   autoReconnect = true,
@@ -30,9 +30,9 @@ export function useWebSocket({
   };
 
   useEffect(() => {
-    if (!otherUserId || !token) return;
+    if (!roomId  || !token) return;
 
-    const wsUrl = `${WS_BASE_URI}/ws/chat/${otherUserId}?token=${token}`;
+    const wsUrl = `${WS_BASE_URI}/ws/chat/room/${roomId}?token=${token}`;
 
     const connect = () => {
       intentionalClose.current = false;
@@ -105,7 +105,7 @@ export function useWebSocket({
       socketRef.current?.close(1000, "room switch");
       socketRef.current = null;
     };
-  }, [otherUserId, token]);
+  }, [roomId, token]);
 
   const send = (data) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {

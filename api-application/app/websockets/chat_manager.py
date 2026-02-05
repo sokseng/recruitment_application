@@ -124,5 +124,17 @@ class ConnectionManager:
 
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
+                
+    async def broadcast_to_user(self, user_id: int, message: dict):
+        if user_id not in self.user_rooms:
+            return
+        
+        for room_id in self.user_rooms[user_id]:
+            for ws, uid in self.active_connections.get(room_id, []):
+                if uid == user_id:
+                    try:
+                        await ws.send_json(message)
+                    except Exception:
+                        self.remove_socket_everywhere(ws)
 
 manager = ConnectionManager()
