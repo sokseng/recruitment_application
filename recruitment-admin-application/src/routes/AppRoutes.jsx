@@ -31,7 +31,7 @@ export default function AppRoutes() {
         />
 
         <Route
-          path="/admin"
+          path="/admin/dashboard"
           element={
             <ProtectedRoute>
               <AdminDashboard />

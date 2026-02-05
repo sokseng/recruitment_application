@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, Text
+from sqlalchemy import Column, Integer, Text, String
 from app.database.session import Base
 
 
@@ -10,3 +10,4 @@ class GlobalSetting(Base):
     name = Column(Text, nullable=False)
     value = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
+    category = Column(String(150), nullable=True)

@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, ConfigDict
-from typing import  List, Any
+from typing import  List, Any, Optional
 
 class SystemParameterBase(BaseModel):
     code: str
@@ -22,4 +22,5 @@ class SystemParameterRead(BaseModel):
     name: str
     value: str
     type: str
+    category: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)

@@ -155,6 +155,7 @@ const SystemParameters = () => {
             ),
         },
         { field: "type", headerName: "Type", flex: 1 },
+        { field: "category", headerName: "Category", flex: 1 },
     ];
 
     return (

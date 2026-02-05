@@ -131,6 +131,7 @@ export default function Topbar() {
     ],
     1: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
+      { label: "Dashboard", path: "/admin/dashboard", icon: <DashboardIcon /> },
       { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
@@ -202,7 +203,7 @@ export default function Topbar() {
       // navigate by role
       switch (res.data.user_type) {
         case 1:
-          navigate("/admin/employer", { replace: true });
+          navigate("/admin/dashboard", { replace: true });
           break;
         case 2:
           navigate("/employer", { replace: true });
@@ -556,6 +557,85 @@ export default function Topbar() {
             </ListItemButton>
           ))}
 
+          {/* ✅ SETTINGS (Admin only) */}
+          {access_token && user_type === 1 && (
+            <>
+              <ListItemButton
+                onClick={toggleDrawerSettings}
+                selected={isSettingsActive}
+                sx={{
+                  borderRadius: 2,
+                  mb: 0.75,
+                  py: 1.4,
+                  px: 2.5,
+                  transition: "all 0.2s ease",
+
+                  "&.Mui-selected": {
+                    bgcolor: "primary.main",
+                    color: "black",
+                    boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                    "& .MuiListItemIcon-root": {
+                      color: "white",
+                    },
+                  },
+
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    transform: "translateX(4px)",
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 44,
+                    color: isSettingsActive ? "black" : "primary.main",
+                  }}
+                >
+                  <Settings />
+                </ListItemIcon>
+
+                <ListItemText
+                  primary="Settings"
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+
+                {openDrawerSettings ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+
+              <Collapse in={openDrawerSettings} timeout="auto" unmountOnExit>
+                <Box sx={{ pl: 3, pr: 2, pb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => {
+                      goTo("/system_parameter");
+                      setOpenDrawerSettings(false);
+                    }}
+                    selected={location.pathname === "/system_parameter"}
+                    sx={{
+                      borderRadius: 2,
+                      py: 1.2,
+                      px: 2,
+
+                      "&.Mui-selected": {
+                        bgcolor: "primary.lighter",
+                        color: "black",
+                      },
+
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                      <Settings fontSize="small" />
+                    </ListItemIcon>
+
+                    <ListItemText primary="System Parameter" />
+                  </ListItemButton>
+                </Box>
+              </Collapse>
+            </>
+          )}
+
           {/* ── CV Templates (collapsible) ── */}
           {access_token && user_data.user_data?.user_type === 3 && (
             <>
@@ -674,67 +754,6 @@ export default function Topbar() {
             <ListItemText primary="Log out" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </Box>
-      )}
-
-      {/* ── SETTINGS (Admin only) ── */}
-      {access_token && user_type === 1 && (
-        <>
-          <ListItemButton
-            onClick={toggleDrawerSettings}
-            selected={isSettingsActive}
-            sx={{
-              borderRadius: 2,
-              mb: 0.75,
-              py: 1.4,
-              px: 2.5,
-              mt: 1,
-              "&.Mui-selected": {
-                bgcolor: "primary.main",
-                color: "white",
-                boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
-                "& .MuiListItemIcon-root": {
-                  color: "white",
-                },
-              },
-              "&:hover": {
-                bgcolor: "action.hover",
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 44 }}>
-              <Settings />
-            </ListItemIcon>
-            <ListItemText primary="Settings" />
-            {openDrawerSettings ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-
-          <Collapse in={openDrawerSettings} timeout="auto" unmountOnExit>
-            <Box sx={{ pl: 3 }}>
-              <ListItemButton
-                onClick={() => {
-                  goTo("/system_parameter");
-                  setOpenDrawerSettings(false);
-                }}
-                selected={location.pathname === "/system_parameter"}
-                sx={{
-                  borderRadius: 2,
-                  py: 1.2,
-                  px: 2,
-                  mb: 0.5,
-                  "&.Mui-selected": {
-                    bgcolor: "primary.lighter",
-                    color: "primary.main",
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  <Settings fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="System Parameter" />
-              </ListItemButton>
-            </Box>
-          </Collapse>
-        </>
       )}
 
     </Box>
