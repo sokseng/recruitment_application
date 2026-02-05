@@ -17,7 +17,7 @@ export const ClassicSoftwareCV = ({ candidate }) => {
         background: '#ffffff',
         color: '#1a1a1a',
         lineHeight: '1.5',
-        minHeight: '297mm',
+        minHeight: '296.8mm',
         boxSizing: 'border-box'
       }}
     >

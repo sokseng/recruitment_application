@@ -16,7 +16,7 @@ export default function SidebarTechTemplate({ candidate }) {
         background: '#ffffff',
         color: '#334155',
         display: 'flex',
-        minHeight: '297mm',
+        minHeight: '296.8mm',
         boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
         overflow: 'hidden',
       }}
