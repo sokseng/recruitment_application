@@ -11,6 +11,22 @@ import { useWebSocket } from './../hooks/useWebSocket';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 
+function getLastMessagePreview(chat, currentUserId) {
+    const msg = chat.last_message;
+    if (!msg) return "Tap to start a new message";
+
+    const isMe = msg.sender_id === currentUserId;
+
+    switch (msg.type) {
+        case "text": return msg.content || "";
+        case "image": return isMe ? "You sent an image" : `${chat.username} sent you an image`;
+        case "voice": return isMe ? "You sent a voice message" : `${chat.username} sent you a voice message`;
+        case "video": return isMe ? "You sent a video" : `${chat.username} sent you a video`;
+        case "system": return msg.content || "";
+        default: return "New message";
+    }
+}
+
 function ChatPage() {
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
@@ -35,21 +51,24 @@ function ChatPage() {
     const initialLoadRef = useRef(true);
     const messagesEndRef = useRef(null);
 
+    console.log("selectedChat", selectedChat?.room_id)
+
     const fetchChats = async () => {
         const res = await api.get('/chat/');
         setChats(res.data);
 
+        console.log("chats", res.data)
     }
 
     useEffect(() => {
         fetchChats();
     }, []);
 
-    const fetchMessages = async (chatId, reset = false) => {
-        if (!chatId) return [];
+    const fetchMessages = async (roomId, reset = false) => {
+        if (!roomId) return [];
 
         const currentOffset = reset ? 0 : offset;
-        const res = await api.get(`/chat/${chatId}/messages`, {
+        const res = await api.get(`/chat/room/${roomId}/messages`, {
             params: { limit: LIMIT, offset: currentOffset }
         });
 
@@ -64,8 +83,8 @@ function ChatPage() {
     useEffect(() => {
         if (!selectedChat) return;
 
-        const chatId = selectedChat.id;
-        activeChatIdRef.current = chatId;
+        const roomId = selectedChat.room_id;
+        activeChatIdRef.current = roomId;
 
         setMessages([]);
         setOffset(0);
@@ -73,8 +92,8 @@ function ChatPage() {
         loadingOlderRef.current = false;
         initialLoadRef.current = true;
 
-        fetchMessages(chatId, true).then(newMessages => {
-            if (activeChatIdRef.current !== chatId) return;
+        fetchMessages(roomId, true).then(newMessages => {
+            if (activeChatIdRef.current !== roomId) return;
 
             setMessages(newMessages);
 
@@ -90,7 +109,7 @@ function ChatPage() {
             activeChatIdRef.current = null;
             setMessages([]);
         };
-    }, [selectedChat?.id]);
+    }, [selectedChat?.room_id]);
 
     const handleScroll = async () => {
         const el = messagesRef.current;
@@ -104,7 +123,7 @@ function ChatPage() {
 
             const prevScrollHeight = el.scrollHeight;
 
-            const newMessages = await fetchMessages(selectedChat.id);
+            const newMessages = await fetchMessages(selectedChat.room_id);
 
             setMessages(prev => {
                 const existingIds = new Set(prev.map(m => m.id));
@@ -132,30 +151,35 @@ function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const handleSelectUser = (user) => {
-        setSelectedChat({
-            id: user.pk_id,
-            username: user.user_name,
-            avatar_url: user.avatar_url,
+    const handleSelectChat = (chat) => {
+        setSelectedChat(chat);
+
+        setChats(prev => {
+            const exists = prev.some(c => c.room_id === chat.room_id);
+            return exists ? prev : [chat, ...prev];
         });
     };
 
     const { connected, send } = useWebSocket({
-        otherUserId: selectedChat?.id,
+        roomId: selectedChat?.room_id,
         token,
         onMessage: (data) => {
+            console.log("WS EVENT RECEIVED:", data);
+
             switch (data.type) {
                 case "message":
-                    console.log("message res", data.message)
                     setMessages(prev => {
                         const exists = prev.some(msg => msg.id === data.message.id);
                         if (exists) return prev; // skip duplicate
-                        return [...prev, data.message];
-                    });
 
-                    if (isNearBottom() || prev.length === 0) {
-                        setTimeout(scrollToBottom, 50);
-                    }
+                        const updated = [...prev, data.message];
+
+                        if (isNearBottom() || prev.length === 0) {
+                            setTimeout(scrollToBottom, 50);
+                        }
+
+                        return updated;
+                    });
 
                     break;
 
@@ -171,6 +195,38 @@ function ChatPage() {
                         ...prev,
                         [data.user_id]: data.is_typing
                     }));
+                    break;
+
+                case "chat_list_update":
+                    setChats(prev => {
+                        const exists = prev.some(chat => chat.room_id === data.room_id);
+
+                        const updated = exists
+                            ? prev.map(chat =>
+                                chat.room_id === data.room_id
+                                    ? {
+                                        ...chat,
+                                        last_message: data.last_message,
+                                        last_message_at: data.last_message?.created_at
+                                    }
+                                    : chat
+                            )
+                            : [
+                                ...prev,
+                                {
+                                    room_id: data.room_id,
+                                    username: data.username || "New User",
+                                    avatar_url: data.avatar_url || null,
+                                    last_message: data.last_message,
+                                    last_message_at: data.last_message?.created_at,
+                                    unread_count: 0
+                                }
+                            ];
+
+                        return updated.sort(
+                            (a, b) => new Date(b.last_message_at) - new Date(a.last_message_at)
+                        );
+                    });
                     break;
 
                 default:
@@ -229,10 +285,9 @@ function ChatPage() {
                     >
                         <List>
                             {chats.map(chat => {
-                                const isOnline = onlineUsers[chat.id] || false;
                                 return (
                                     <Box
-                                        key={chat.id}
+                                        key={chat.room_id}
                                         onClick={() => setSelectedChat(chat)}
                                         sx={{
                                             display: 'flex',
@@ -241,7 +296,7 @@ function ChatPage() {
                                             p: 1,
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
-                                            backgroundColor: selectedChat?.id === chat.id ? 'primary.main' : 'white',
+                                            backgroundColor: selectedChat?.room_id === chat.room_id ? 'primary.main' : 'white',
                                             '&:hover': {
                                                 transform: { xs: 'none', sm: 'translateY(-2px)' },
                                                 boxShadow: { xs: 'none', sm: '0 4px 12px rgba(0,0,0,0.1)' },
@@ -256,12 +311,22 @@ function ChatPage() {
                                         </ListItemAvatar>
 
                                         <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                                            <Typography sx={{ fontWeight: 'bold', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedChat?.id === chat.id ? 'white' : 'black' }}>
+                                            <Typography sx={{ fontWeight: 'bold', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedChat?.room_id === chat.room_id ? 'white' : 'black' }}>
                                                 {chat.username}
                                             </Typography>
-                                            <Typography sx={{ fontSize: 10, color: selectedChat?.id == chat.id ? 'white' : 'grey.600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mt: 0.25 }}>
-                                                {chat.last_message?.content ?? 'Tap to start new message'}
+                                            <Typography
+                                                sx={{
+                                                    fontSize: 10,
+                                                    color: selectedChat?.room_id === chat.room_id ? "white" : "grey.600",
+                                                    whiteSpace: "nowrap",
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    mt: 0.25,
+                                                }}
+                                            >
+                                                {getLastMessagePreview(chat, currentUserId)}
                                             </Typography>
+
                                         </Box>
 
                                         <Box sx={{
@@ -270,7 +335,7 @@ function ChatPage() {
                                             flexDirection: 'column',
                                             alignItems: 'end'
                                         }}>
-                                            <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.id == chat.id ? 'white' : 'grey.600' }}>
+                                            <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.room_id === chat.room_id ? 'white' : 'grey.600' }}>
                                                 {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
                                             </Typography>
                                             {chat.unread_count > 0 && (
@@ -298,19 +363,6 @@ function ChatPage() {
                                                 </Box>
                                             )}
                                         </Box>
-
-                                        {isOnline && (
-                                            <Chip
-                                                sx={{
-                                                    width: 12,
-                                                    height: 12,
-                                                    backgroundColor: 'rgba(42, 223, 48, 1)',
-                                                    position: 'absolute',
-                                                    top: 6,
-                                                    left: 35,
-                                                }}
-                                            />
-                                        )}
                                     </Box>
                                 );
 
@@ -336,7 +388,7 @@ function ChatPage() {
                         setMessages={setMessages}
                         send={send}
                         currentUserId={currentUserId}
-                        isOnline={onlineUsers[selectedChat?.id] || false}
+                        isOnline={onlineUsers[selectedChat?.user_id] || false}
                         typingUsers={typingUsers}
                         messagesRef={messagesRef}
                         onScroll={handleScroll}
@@ -349,7 +401,7 @@ function ChatPage() {
             <FindUsers
                 open={open}
                 onClose={() => setOpen(false)}
-                onSelectUser={handleSelectUser}
+                onSelectUser={handleSelectChat}
             />
 
         </Box>
