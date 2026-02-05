@@ -1079,7 +1079,7 @@ export default function MyJobs() {
             xs: "repeat(1, 1fr)",
             sm: "repeat(3, 1fr)",
             md: "repeat(4, 1fr)",
-            lg: "repeat(3, 1fr)",
+            lg: "repeat(4, 1fr)",
           },
           gap: 1,
         }}
