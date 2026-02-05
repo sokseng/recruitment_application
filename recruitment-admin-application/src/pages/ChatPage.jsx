@@ -4,12 +4,13 @@ import {
     InputAdornment, useMediaQuery, useTheme, Chip
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
+import { useLocation } from "react-router-dom";
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -28,6 +29,8 @@ function getLastMessagePreview(chat, currentUserId) {
 }
 
 function ChatPage() {
+    const location = useLocation();
+    const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
     const theme = useTheme();
@@ -50,6 +53,16 @@ function ChatPage() {
     const activeChatIdRef = useRef(null);
     const initialLoadRef = useRef(true);
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (!initialRoomId || chats.length === 0) return;
+
+        const room = chats.find(c => c.room_id === initialRoomId);
+
+        if (room) {
+            setSelectedChat(room);
+        }
+    }, [initialRoomId, chats]);
 
     console.log("selectedChat", selectedChat?.room_id)
 
@@ -235,6 +248,10 @@ function ChatPage() {
         },
     });
 
+    const currentSend = useCallback((data) => {
+        if (connected && send) send(data);
+    }, [connected, send]);
+
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
@@ -386,7 +403,7 @@ function ChatPage() {
                         onBack={() => setSelectedChat(null)}
                         messages={messages}
                         setMessages={setMessages}
-                        send={send}
+                        send={currentSend}
                         currentUserId={currentUserId}
                         isOnline={onlineUsers[selectedChat?.user_id] || false}
                         typingUsers={typingUsers}
@@ -394,6 +411,7 @@ function ChatPage() {
                         onScroll={handleScroll}
                         loadingOlderRef={loadingOlderRef}
                         messagesEndRef={messagesEndRef}
+                        connected={connected}
                     />
                 </Box>
             )}

@@ -105,8 +105,10 @@ async def websocket_chat(
                     {
                         "type": "message",
                         "message": serialized
-                    }
-                )
+                    },
+                    exclude_user_id=None
+                    )
+                
 
                 # update chat list for both users
                 for uid in (
