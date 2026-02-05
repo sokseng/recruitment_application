@@ -6,15 +6,17 @@ export function useWebSocket({
   onMessage,
   autoReconnect = true,
 }) {
-  const WS_BASE_URI = import.meta.env.VITE_API_BASE_URL
-    .replace(/^http:/, "ws:")
-    .replace(/^https:/, "wss:");
+  const WS_BASE_URI = import.meta.env.VITE_API_BASE_URL.replace(
+    /^http:/,
+    "ws:",
+  ).replace(/^https:/, "wss:");
 
   const socketRef = useRef(null);
   const reconnectTimeout = useRef(null);
   const reconnectAttempts = useRef(0);
   const heartbeatTimeout = useRef(null);
   const intentionalClose = useRef(false);
+  const currentRoomId = useRef(roomId);
 
   const [connected, setConnected] = useState(false);
 
@@ -30,12 +32,21 @@ export function useWebSocket({
   };
 
   useEffect(() => {
-    if (!roomId  || !token) return;
+    if (!roomId || !token) return;
+
+    currentRoomId.current = roomId;
+
+    intentionalClose.current = false;
+
+    if (reconnectTimeout.current) {
+      clearTimeout(reconnectTimeout.current);
+      reconnectTimeout.current = null;
+    }
 
     const wsUrl = `${WS_BASE_URI}/ws/chat/room/${roomId}?token=${token}`;
 
     const connect = () => {
-      intentionalClose.current = false;
+      if (intentionalClose.current) return;
 
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
@@ -50,6 +61,9 @@ export function useWebSocket({
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+
+          if (data.room_id && data.room_id !== currentRoomId.current) return;
+
           resetHeartbeat();
 
           if (data.type === "ping") {
@@ -75,12 +89,17 @@ export function useWebSocket({
         if (intentionalClose.current) return; // CRITICAL
 
         if (autoReconnect) {
-          const delay = Math.min(
-            1000 * 2 ** reconnectAttempts.current,
-            10000,
-          );
+          const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000);
           reconnectAttempts.current += 1;
-          reconnectTimeout.current = setTimeout(connect, delay);
+
+          const roomIdAtReconnect = currentRoomId.current;
+          reconnectTimeout.current = setTimeout(() => {
+            if (currentRoomId.current === roomIdAtReconnect) {
+              connect();
+            } else {
+              console.log("Skipping reconnect for old room", roomIdAtReconnect);
+            }
+          }, delay);
         }
       };
 
@@ -96,6 +115,7 @@ export function useWebSocket({
 
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
+        reconnectTimeout.current = null;
       }
 
       if (heartbeatTimeout.current) {
