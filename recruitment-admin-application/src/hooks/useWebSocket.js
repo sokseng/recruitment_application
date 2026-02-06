@@ -17,6 +17,7 @@ export function useWebSocket({
   const heartbeatTimeout = useRef(null);
   const intentionalClose = useRef(false);
   const currentRoomId = useRef(roomId);
+  const onMessageRef = useRef(onMessage);
 
   const [connected, setConnected] = useState(false);
 
@@ -32,17 +33,27 @@ export function useWebSocket({
   };
 
   useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  const send = (data) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(data));
+    }
+  };
+
+  useEffect(() => {
     if (!roomId || !token) return;
 
-    // Close previous socket if any
-    if (socketRef.current) {
-      socketRef.current.close(1000, "room switch");
-    }
+    intentionalClose.current = true;
+
+    socketRef.current?.close(1000, "room switch");
+    intentionalClose.current = false;
+
     if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
     if (heartbeatTimeout.current) clearTimeout(heartbeatTimeout.current);
 
     // Reset flags
-    intentionalClose.current = false;
     currentRoomId.current = roomId;
 
     const wsUrl = `${WS_BASE_URI}/ws/chat/room/${roomId}?token=${token}`;
@@ -53,21 +64,29 @@ export function useWebSocket({
 
       ws.onopen = () => {
         console.log("WS connected", wsUrl);
+        intentionalClose.current = false;
         setConnected(true);
+
         reconnectAttempts.current = 0;
         resetHeartbeat();
       };
 
       ws.onmessage = (event) => {
+        console.log("WS raw:", event.data);
+        if (event.data.room_id && event.data.room_id !== currentRoomId.current) {
+          return;
+        }
+
         try {
           const data = JSON.parse(event.data);
-          if (data.room_id && data.room_id !== currentRoomId.current) return;
-          resetHeartbeat();
+
           if (data.type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
+            resetHeartbeat();
             return;
           }
-          onMessage?.(data);
+
+          onMessageRef.current?.(data);
         } catch (err) {
           console.error("WS message error", err);
         }
@@ -80,16 +99,17 @@ export function useWebSocket({
 
         if (intentionalClose.current) return; // do not reconnect if we intentionally closed
 
-        if (autoReconnect) {
-          const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10000);
-          reconnectAttempts.current += 1;
-          reconnectTimeout.current = setTimeout(() => {
-            // Only reconnect if still same room
-            if (!intentionalClose.current && currentRoomId.current === roomId) {
-              connect();
-            }
-          }, delay);
-        }
+        if (!autoReconnect) return;
+
+        const attempt = reconnectAttempts.current;
+        const delay = Math.min(1000 * 2 ** attempt, 10000);
+        reconnectAttempts.current += 1;
+
+        reconnectTimeout.current = setTimeout(() => {
+          if (!intentionalClose.current && currentRoomId.current === roomId) {
+            connect();
+          }
+        }, delay);
       };
 
       ws.onerror = () => ws.close();
@@ -106,12 +126,6 @@ export function useWebSocket({
       setConnected(false);
     };
   }, [roomId, token]);
-
-  const send = (data) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(data));
-    }
-  };
 
   const disconnect = () => {
     intentionalClose.current = true;

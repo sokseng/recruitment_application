@@ -12,14 +12,12 @@ class ConnectionManager:
         self.user_rooms: dict[int, set[int]] = {}
         self.heartbeats: dict[WebSocket, asyncio.Task] = {}
         
-    async def start_heartbeat(self, wesocket: WebSocket, interval: int = 20):
+    async def start_heartbeat(self, websocket: WebSocket, interval: int = 20):
         try:
             while True:
                 await asyncio.sleep(interval)
-                
-                if wesocket.application_state != WebSocketState.CONNECTED:
+                if websocket.application_state != WebSocketState.CONNECTED:
                     break
-                
                 await websocket.send_json({
                     "type": "ping",
                     "ts": time.time()
@@ -28,27 +26,32 @@ class ConnectionManager:
             pass
 
     async def connect(self, websocket: WebSocket, user_id: int, room_id: int):
+
+        # remove from all old rooms
+        self.remove_socket_everywhere(websocket)
+
         websocket.state.user_id = user_id
 
         if room_id not in self.active_connections:
             self.active_connections[room_id] = []
-            
-        self.active_connections[room_id] = [
-            (ws, uid)
-            for ws, uid in self.active_connections[room_id]
-            if uid != user_id
-        ]    
-            
         self.active_connections[room_id].append((websocket, user_id))
-        
+
         if user_id not in self.user_rooms:
             self.user_rooms[user_id] = set()
         self.user_rooms[user_id].add(room_id)
-        
+
         self.heartbeats[websocket] = asyncio.create_task(
             self.start_heartbeat(websocket)
         )
-        
+
+        # notify others in the room that this user is online
+        await self.broadcast_to_room(
+            room_id,
+            {"type": "presence", "userId": user_id, "online": True},
+            exclude_user_id=user_id
+        )
+
+        # also send presence of existing users to the new user
         for _, uid in self.active_connections[room_id]:
             if uid != user_id:
                 await websocket.send_json({
@@ -61,6 +64,8 @@ class ConnectionManager:
         task = self.heartbeats.pop(websocket, None)
         if task:
             task.cancel()
+            
+        self.remove_socket_everywhere(websocket)
             
         if room_id in self.active_connections:
             self.active_connections[room_id] = [
