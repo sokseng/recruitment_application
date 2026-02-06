@@ -790,20 +790,28 @@ export default function Topbar() {
 
           {/* Logo – shown on both mobile & desktop */}
           <Box
-            component="img"
-            src="/logo.png" // Place your logo in the public folder
-            alt="Company Logo"
             sx={{
-              height: { xs: 50, sm: 50, md: 50 },
-              width: { xs: 80, sm: 110, md: 110 },
-              objectFit: "cover",
-              border: "2px solid #1976d2", // MUI primary color border
-              borderRadius: "0.6rem",
-              boxShadow: 2,
-              cursor: "pointer",
+              display: "flex",
+              justifyContent: { xs: "center", sm: "flex-start" },
             }}
-            onClick={() => navigate("/")}
+          >
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Company Logo"
+              sx={{
+                height: 50,
+                width: { xs: 120, sm: 155 },
+                objectFit: "contain",
+                border: "2px solid #1976d2",
+                borderRadius: "0.6rem",
+                boxShadow: 2,
+                cursor: "pointer",
+                p: 0.5
+              }}
+              onClick={() => navigate("/")}
           />
+          </Box>
 
           <Box sx={{ flexGrow: 1 }} />
 
@@ -1387,12 +1395,14 @@ export default function Topbar() {
                 src="/logo.png"
                 alt="Logo"
                 sx={{
-                  height: { xs: 50, sm: 50, md: 50 },
-                  width: { xs: 100, sm: 110, md: 110 },
-                  objectFit: "cover",
-                  border: "2px solid #1976d2", // MUI primary color border
+                  height: 50,
+                  width: { xs: 120, sm: 140 },
+                  objectFit: "contain",
+                  border: "2px solid #1976d2",
                   borderRadius: "0.6rem",
                   boxShadow: 2,
+                  cursor: "pointer",
+                  p: 0.5
                 }}
               />
             </Stack>
@@ -1529,12 +1539,14 @@ export default function Topbar() {
                   alt="Logo"
                   alignItems="center"
                   sx={{
-                    height: { xs: 50, sm: 50, md: 50 },
-                    width: { xs: 100, sm: 110, md: 110 },
-                    objectFit: "cover",
+                    height: 50,
+                    width: { xs: 120, sm: 140 },
+                    objectFit: "contain",
                     border: "2px solid #1976d2",
                     borderRadius: "0.6rem",
                     boxShadow: 2,
+                    cursor: "pointer",
+                    p: 0.5
                   }}
                 />
               </Stack>

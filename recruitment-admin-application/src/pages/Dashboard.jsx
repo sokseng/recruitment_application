@@ -50,7 +50,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { Cancel, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
+import { Cancel, CheckBox, CheckBoxOutlineBlank, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
 
 export default function Dashboard() {
@@ -68,14 +68,26 @@ export default function Dashboard() {
   const [typeFilter, setTypeFilter] = useState("All");
   const [levelFilter, setLevelFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState(["All"]);
+  const [sortBy, setSortBy] = useState("date-desc");
 
   const [categories, setCategories] = useState([]);
 
   const [categoryAnchor, setCategoryAnchor] = useState(null);
-  const openCategory = Boolean(categoryAnchor);
-
   const [typeAnchor, setTypeAnchor] = useState(null);
+  const [dateSortAnchor, setDateSortAnchor] = useState(null);
+  const [titleSortAnchor, setTitleSortAnchor] = useState(null);
+  const [dateFilterAnchor, setDateFilterAnchor] = useState(null);
+
+
+  const openCategory = Boolean(categoryAnchor);
   const openType = Boolean(typeAnchor);
+  const openDateSort = Boolean(dateSortAnchor);
+  const openTitleSort = Boolean(titleSortAnchor);
+  const openDateFilter = Boolean(dateFilterAnchor);
+
+  const [dateFilterMode, setDateFilterMode] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -98,28 +110,26 @@ export default function Dashboard() {
   const [uploadError, setUploadError] = useState(null);
   const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
 
-  useEffect(() => {
-    loadJobs();
-  }, []);
+  const getDateRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  useEffect(() => {
-    if (!isCandidate) {
-      setResumes([]);
-      setSelectedResumeId("");
-      return;
+    if (dateFilterMode === "today") {
+      return { from: today, to: today };
     }
-    const loadResumes = async () => {
-      try {
-        const res = await api.get("/candidate/resumes/");
-        setResumes(res.data || []);
-        const primary = res.data?.find(r => r.is_primary);
-        if (primary) setSelectedResumeId(primary.pk_id);
-      } catch (err) {
-        setResumes([]);
-      }
-    };
-    loadResumes();
-  }, [isCandidate]);
+    if (dateFilterMode === "last7") {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 7);
+      return { from, to: today };
+    }
+    if (dateFilterMode === "custom" && dateFrom && dateTo) {
+      return {
+        from: new Date(dateFrom),
+        to: new Date(dateTo),
+      };
+    }
+    return null;
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -136,10 +146,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (!jobs.length) return;
 
+    let result = [...jobs];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const activeOnly = jobs.filter((job) => {
+    result = result.filter((job) => {
       if (!job.closing_date) return true;
       const closing = new Date(job.closing_date);
       return closing >= today;
@@ -147,7 +159,7 @@ export default function Dashboard() {
 
     const term = searchTerm.toLowerCase().trim();
 
-    const filtered = activeOnly.filter((job) => {
+    result = result.filter((job) => {
       const title = job.job_title?.toLowerCase() || "";
       const company = job.employer?.company_name?.toLowerCase() || "";
       const location = job.location?.toLowerCase() || "";
@@ -171,25 +183,65 @@ export default function Dashboard() {
       return keywordMatch && typeMatch && levelMatch && categoryMatch;
     });
 
-    setFilteredJobs(filtered);
-
-    if (selectedJob && !filtered.some((j) => j.pk_id === selectedJob.pk_id)) {
-      setSelectedJob(filtered[0] || null);
+    //Date range filter
+    const range = getDateRange();
+    if (range) {
+      result = result.filter((job) => {
+        if (!job.posting_date) return false;
+        const posted = new Date(job.posting_date);
+        posted.setHours(0, 0, 0, 0);
+        return posted >= range.from && posted <= range.to;
+      });
     }
-  }, [searchTerm, typeFilter, levelFilter, categoryFilter, jobs, selectedJob]);
+
+    //Sorting
+    result = result.sort((a, b) => {
+      if (sortBy === "date-desc") {
+        return new Date(b.posting_date) - new Date(a.posting_date);
+      }
+      if (sortBy === "date-asc") {
+        return new Date(a.posting_date) - new Date(b.posting_date);
+      }
+      if (sortBy === "title-asc") {
+        return a.job_title.localeCompare(b.job_title);
+      }
+      if (sortBy === "title-desc") {
+        return b.job_title.localeCompare(a.job_title);
+      }
+      return 0;
+    });
+
+    setFilteredJobs(result);
+
+    if (selectedJob && !result.some((j) => j.pk_id === selectedJob.pk_id)) {
+      setSelectedJob(result[0] || null);
+    }
+  }, [
+    searchTerm,
+    typeFilter,
+    levelFilter,
+    categoryFilter,
+    dateFilterMode,
+    dateFrom,
+    dateTo,
+    sortBy,
+    jobs,
+    selectedJob,
+  ]);
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
 
   const loadJobs = async () => {
     try {
       const res = await api.get("/jobs/");
       const data = res.data || [];
-
-      // ─── Filter out expired jobs ───
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       const activeJobs = data.filter((job) => {
         if (!job.closing_date) return true;
-
         const closing = new Date(job.closing_date);
         return closing >= today;
       });
@@ -205,6 +257,25 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isCandidate) {
+      setResumes([]);
+      setSelectedResumeId("");
+      return;
+    }
+    const loadResumes = async () => {
+      try {
+        const res = await api.get("/candidate/resumes/");
+        setResumes(res.data || []);
+        const primary = res.data?.find(r => r.is_primary);
+        if (primary) setSelectedResumeId(primary.pk_id);
+      } catch (err) {
+        setResumes([]);
+      }
+    };
+    loadResumes();
+  }, [isCandidate]);
 
   const handleSelectJob = (job) => {
     setSelectedJob(job);
@@ -370,13 +441,16 @@ export default function Dashboard() {
             }}
             fullWidth
           />
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={0.3}>
           <Tooltip title="Filter by Categories" arrow placement="top">
             <IconButton
               size="small"   
               onClick={(e) => setCategoryAnchor(e.currentTarget)}
               sx={{
-                borderRadius: 1.5,
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
                 bgcolor: "teal",
                 color: "#fff",
                 "&:hover": {
@@ -420,9 +494,14 @@ export default function Dashboard() {
               <ListItemButton
                 selected={categoryFilter.includes("All")}
                 onClick={() => setCategoryFilter(["All"])}
-                sx={{ borderRadius: 1 }}
+                sx={{ borderRadius: 1, py: 0.5 }}
               >
-                <Checkbox checked={categoryFilter.includes("All")} />
+                <Checkbox 
+                  size="small"
+                  checked={categoryFilter.includes("All")}
+                  icon={<CheckBoxOutlineBlank fontSize="small" />}
+                  checkedIcon={<CheckBox fontSize="small" />} 
+                />
                 <ListItemText primary="All" />
               </ListItemButton>
 
@@ -433,7 +512,7 @@ export default function Dashboard() {
                   <ListItemButton
                     key={cat.pk_id}
                     selected={checked}
-                    sx={{ borderRadius: 1 }}
+                    sx={{ borderRadius: 1, py: 0.5 }}
                     onClick={() => {
                       let updated = [...categoryFilter];
 
@@ -449,7 +528,12 @@ export default function Dashboard() {
                       );
                     }}
                   >
-                    <Checkbox checked={checked} />
+                    <Checkbox 
+                      size="small"
+                      checked={checked}
+                      icon={<CheckBoxOutlineBlank fontSize="small" />}
+                      checkedIcon={<CheckBox fontSize="small" />}
+                    />
                     <ListItemText primary={cat.name} />
                   </ListItemButton>
                 );
@@ -462,11 +546,14 @@ export default function Dashboard() {
               size="small"   
               onClick={(e) => setTypeAnchor(e.currentTarget)}
               sx={{
-                borderRadius: 1.5,
-                color: "#fff",
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
                 bgcolor: "teal",
+                color: "#fff",
                 "&:hover": {
-                  bgcolor: "teal", // same as normal, disables hover effect
+                  bgcolor: "teal",
                 },
               }}
             >
@@ -536,16 +623,94 @@ export default function Dashboard() {
               })}
             </List>
           </Popover>
+
+          {/* Sort by Date */}
+          <Tooltip title="Sort by Date" arrow placement="top">
+            <IconButton
+              size="small"
+              onClick={(e) => setDateSortAnchor(e.currentTarget)}
+              sx={{
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
+                bgcolor: "teal",
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: "teal",
+                },
+              }}
+            >
+              <EventIcon />
+            </IconButton>
+          </Tooltip>
+
+          {/* Sort by Title */}
+          <Tooltip title="Sort by Job Title" arrow placement="top">
+            <IconButton
+              size="small"
+              onClick={(e) => setTitleSortAnchor(e.currentTarget)}
+              sx={{
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
+                bgcolor: "teal",
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: "teal",
+                },
+              }}
+            >
+              <BadgeIcon />
+            </IconButton>
+          </Tooltip>
+
+          {/* Date Range Filter */}
+          <Tooltip title="Filter by Posting Date" arrow placement="top">
+            <IconButton
+              size="small"
+              onClick={(e) => setDateFilterAnchor(e.currentTarget)}
+              sx={{
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
+                bgcolor: "teal",
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: "teal",
+                },
+              }}
+            >
+              <EventIcon />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Clear all filter" arrow placement="top">
             <IconButton
+              sx={{
+                p: 0.5,          // 🔥 shrink padding
+                width: 28,
+                height: 28,
+                borderRadius: 1,
+                bgcolor: "gray",
+                color: "#fff",
+                "&:hover": {
+                  bgcolor: "gray",
+                },
+              }}
               onClick={() => {
                   setSearchTerm("");
                   setTypeFilter("All");
                   setLevelFilter("All");
                   setCategoryFilter(["All"]);
+                  setSortBy("date-desc");
+                  setDateFilterMode("all");
+                  setDateFrom("");
+                  setDateTo("");
                 }}
               >
-                <Cancel color="error" />
+                <Cancel />
               </IconButton>
           </Tooltip>
           
@@ -697,6 +862,86 @@ export default function Dashboard() {
         )}
       </Box>
     </Card>
+  );
+
+  const DateFilterPopover = () => (
+    <Popover
+      open={openDateFilter}
+      anchorEl={dateFilterAnchor}
+      onClose={() => setDateFilterAnchor(null)}
+      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      transformOrigin={{ vertical: "top", horizontal: "left" }}
+      PaperProps={{
+        sx: { width: 320, borderRadius: 2, p: 3, boxShadow: 4 },
+      }}
+    >
+      <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+        Filter by Posting Date
+      </Typography>
+
+      <RadioGroup
+        value={dateFilterMode}
+        onChange={(e) => {
+          const mode = e.target.value;
+          setDateFilterMode(mode);
+          if (mode !== "custom") {
+            setDateFrom("");
+            setDateTo("");
+          }
+        }}
+      >
+        <FormControlLabel value="all" control={<Radio />} label="All dates" />
+        <FormControlLabel value="today" control={<Radio />} label="Today" />
+        <FormControlLabel value="last7" control={<Radio />} label="Last 7 days" />
+        <FormControlLabel value="custom" control={<Radio />} label="Custom range" />
+      </RadioGroup>
+
+      {dateFilterMode === "custom" && (
+        <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            label="From"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            size="small"
+          />
+          <TextField
+            label="To"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            size="small"
+          />
+        </Box>
+      )}
+
+      <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 1 }}>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => {
+            setDateFilterMode("all");
+            setDateFrom("");
+            setDateTo("");
+            setDateFilterAnchor(null);
+          }}
+        >
+          Clear
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => setDateFilterAnchor(null)}
+          disabled={dateFilterMode === "custom" && (!dateFrom || !dateTo)}
+        >
+          Apply
+        </Button>
+      </Box>
+    </Popover>
   );
 
   // ────────────────────────────────────────────────
@@ -1519,6 +1764,73 @@ export default function Dashboard() {
           {DetailContent()}
         </Box>
       </Box>
+
+      <DateFilterPopover />
+      {/* Sort Date Popover */}
+      <Popover
+        open={openDateSort}
+        anchorEl={dateSortAnchor}
+        onClose={() => setDateSortAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        PaperProps={{ sx: { width: 240, borderRadius: 2, p: 2, boxShadow: 4 } }}
+      >
+        <Typography fontWeight={700} mb={1.5}>
+          Sort by Posting Date
+        </Typography>
+        <Divider sx={{ mb: 1.5 }} />
+        <List dense disablePadding>
+          {[
+            { label: "Newest first", value: "date-desc" },
+            { label: "Oldest first", value: "date-asc" },
+          ].map((item) => (
+            <ListItemButton
+              key={item.value}
+              selected={sortBy === item.value}
+              onClick={() => {
+                setSortBy(item.value);
+                setDateSortAnchor(null);
+              }}
+              sx={{ borderRadius: 1 }}
+            >
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Popover>
+
+      {/* Sort Title Popover */}
+      <Popover
+        open={openTitleSort}
+        anchorEl={titleSortAnchor}
+        onClose={() => setTitleSortAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        PaperProps={{ sx: { width: 220, borderRadius: 2, p: 2, boxShadow: 4 } }}
+      >
+        <Typography fontWeight={700} mb={1.5}>
+          Sort by Job Title
+        </Typography>
+        <Divider sx={{ mb: 1.5 }} />
+        <List dense disablePadding>
+          {[
+            { label: "A → Z", value: "title-asc" },
+            { label: "Z → A", value: "title-desc" },
+          ].map((item) => (
+            <ListItemButton
+              key={item.value}
+              selected={sortBy === item.value}
+              onClick={() => {
+                setSortBy(item.value);
+                setTitleSortAnchor(null);
+              }}
+              sx={{ borderRadius: 1 }}
+            >
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Popover>
       {/* Snackbar for apply feedback */}
       <Snackbar
         open={snackbar.open}

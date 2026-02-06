@@ -64,7 +64,7 @@ class JobOut(BaseModel):
     location: Optional[str]
     job_description: str
     experience_required: str
-    posting_date: datetime
+    posting_date: date
     closing_date: Optional[date]
     status: JobStatus
     created_at: datetime
