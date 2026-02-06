@@ -50,7 +50,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
-import { Cancel, CheckBox, CheckBoxOutlineBlank, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
+import { Cancel, CheckBox, CheckBoxOutlineBlank, CheckCircle, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -113,6 +113,7 @@ export default function Dashboard() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
   const getDateRange = () => {
     const today = dayjs().startOf('day');
@@ -264,6 +265,22 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    if (!isCandidate || jobs.length === 0) return;
+
+    const fetchAppliedJobIds = async () => {
+      try {
+        const res = await api.get("/applications/my-applied-job-ids");
+        const jobIds = res.data?.job_ids || [];
+        setAppliedJobIds(new Set(jobIds));
+      } catch (err) {
+        console.error("Failed to load applied job IDs:", err);
+      }
+    };
+
+    fetchAppliedJobIds();
+  }, [isCandidate, jobs.length]);
+
+  useEffect(() => {
     if (!isCandidate) {
       setResumes([]);
       setSelectedResumeId("");
@@ -368,6 +385,11 @@ export default function Dashboard() {
       });
 
       setHasAppliedToThisJob(true); // optimistic update
+      setAppliedJobIds((prev) => {
+        const next = new Set(prev);
+        next.add(jobToApply.pk_id);
+        return next;
+      });
       setSnackbar({
         open: true,
         message: hasAppliedToThisJob
@@ -746,6 +768,7 @@ export default function Dashboard() {
             const active = selectedJob?.pk_id === job.pk_id;
             const companyName = job.employer?.company_name;
             const logoFilename = job.employer?.company_logo;
+            const alreadyApplied = isCandidate && appliedJobIds.has(job.pk_id);
             return (
               
               <Box
@@ -784,10 +807,43 @@ export default function Dashboard() {
                   >
                     {companyName.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box minWidth={0}>
-                    <Typography variant="body2" fontWeight={600}>
-                      {job.job_title}
-                    </Typography>
+                  <Box minWidth={0} flex={1}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      width="100%"
+                    >
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        noWrap
+                      >
+                        {job.job_title}
+                      </Typography>
+
+                      {alreadyApplied && (
+                        <Chip
+                          label="Already Applied"
+                          size="small"
+                          color="success"
+                          variant="filled"
+                          icon={<CheckCircle />}
+                          sx={{
+                            height: 20,
+                            fontSize: "0.68rem",
+                            fontWeight: 600,
+                            minWidth: 100,
+                            ml: 1,
+                            bgcolor: alpha(theme.palette.success.main, 0.15),
+                            color: theme.palette.success.dark,
+                            border: `1px solid ${theme.palette.success.main}`,
+                          }}
+                        />
+                      )}
+                    </Stack>
+
+                    
                     {job.categories?.length > 0 && (
                       <Stack
                         direction="row"
