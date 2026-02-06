@@ -49,19 +49,43 @@ import {
   ExpandLess,
   ExpandMore,
 } from "@mui/icons-material";
-import ModeCommentIcon from '@mui/icons-material/ModeComment';
 import { useLocation } from "react-router-dom";
 import html2pdf from "html2pdf.js";
 import { createRoot } from "react-dom/client";
 import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
 import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
 import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
-
+import { useUnreadStore } from "../store/unreadStore";
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 export default function Topbar() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const globalUnread = useUnreadStore(state => state.globalCount);
+
+  useEffect(() => {
+    const fetchUnreadData = async () => {
+      try {
+        const unreadData = await api.get("/chat/messages/unread/count");
+
+        const countsByRoom = unreadData.data.count;
+
+        const countsObject = typeof countsByRoom === "number"
+          ? { 0: countsByRoom }
+          : countsByRoom;
+
+        useUnreadStore.getState().setAllChats(countsObject);
+      } catch (err) {
+        console.error("Failed to fetch unread counts:", err);
+      }
+    };
+
+    fetchUnreadData();
+
+    const interval = setInterval(fetchUnreadData, 15000); // 15s
+    return () => clearInterval(interval);
+  }, []);
 
   const {
     access_token,
@@ -131,7 +155,7 @@ export default function Topbar() {
     ],
     1: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
+      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
       { label: "All Companies", path: "/admin/employer", icon: <BusinessIcon /> },
@@ -139,13 +163,13 @@ export default function Topbar() {
     ],
     2: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
+      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
       { label: "Applied candidates", path: "/applied_candidates", icon: <PersonIcon /> },
       { label: "Job posts", path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [
       { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
+      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
       { label: "Profile", path: "/update_profile", icon: <PersonIcon /> },
       { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
       { label: "All Companies", path: "/company", icon: <BusinessIcon /> },
@@ -792,6 +816,32 @@ export default function Topbar() {
           {isMobile && access_token && (
             <>
               {/* Profile Avatar & Menu */}
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <IconButton onClick={() => navigate("/chat")} sx={{ p: 0, ml: 1 }}>
+                  <ChatBubbleIcon color="primary"/>
+                </IconButton>
+
+                {globalUnread > 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      width: 15,
+                      height: 15,
+                      bgcolor: 'red',
+                      color: 'white',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: 10,
+                    }}
+                  >
+                    {globalUnread > 9 ? '9+' : globalUnread}
+                  </Box>
+                )}
+              </Box>
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
                 <Avatar>
                   {user_data?.user_data?.user_name
@@ -1021,6 +1071,28 @@ export default function Topbar() {
                   }}
                 >
                   <Box sx={{ textTransform: "none" }}>
+                    {item.path === "/chat" && globalUnread > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          width: 15,
+                          height: 15,
+                          bgcolor: 'red',
+                          color: 'white',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Typography
+                          sx={{ fontSize: 10, mt: 0.25 }}>
+                          {globalUnread > 9 ? '9+' : globalUnread}
+                        </Typography>
+                      </Box>
+                    )}
                     {item.label}
                   </Box>
                 </Button>

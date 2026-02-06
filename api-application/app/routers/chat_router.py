@@ -18,7 +18,8 @@ from app.controllers.chat_controller import (
     get_or_create_chat_room,
     send_file_message,
     mark_conversation_read,
-    send_text_message
+    send_text_message,
+    get_total_unread_count
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -245,3 +246,9 @@ async def mark_read(
 ):
     await mark_conversation_read(db, current_user, other_user_id)
     return {"status": "read"}
+
+@router.get("/messages/unread/count")
+def unread_count(db: Session = Depends(get_db),  current_user_id: int = Depends(verify_access_token)):
+    return {
+        "count": get_total_unread_count(db, current_user_id)
+    }

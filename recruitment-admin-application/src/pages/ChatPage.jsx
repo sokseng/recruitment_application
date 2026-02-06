@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
+import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
@@ -34,6 +35,7 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -57,6 +59,10 @@ function ChatPage() {
     const messagesEndRef = useRef(null);
     const selectedChatRef = useRef(selectedChat);
 
+    const chatCounts = useUnreadStore(state => state.chatCounts);
+    const incrementChat = useUnreadStore(state => state.incrementChat);
+    const resetChat = useUnreadStore(state => state.resetChat);
+
     useEffect(() => {
         selectedChatRef.current = selectedChat;
     }, [selectedChat]);
@@ -71,13 +77,20 @@ function ChatPage() {
         }
     }, [initialRoomId, chats]);
 
-    console.log("selectedChat", selectedChat?.room_id)
-
     const fetchChats = async () => {
         const res = await api.get('/chat/');
+        const unreadData = await api.get("/chat/messages/unread/count");
+
         setChats(res.data);
 
-        console.log("chats", res.data)
+        const countsByRoom = unreadData.data.count;
+        const countsObject =
+            typeof countsByRoom === 'number'
+                ? { [res.data[0]?.room_id || 0]: countsByRoom }
+                : countsByRoom;
+
+        useUnreadStore.getState().setAllChats(countsObject);
+
     }
 
     useEffect(() => {
@@ -176,10 +189,13 @@ function ChatPage() {
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
 
+        resetUnread(chat.room_id);
+
         setChats(prev => {
             const exists = prev.some(c => c.room_id === chat.room_id);
             return exists ? prev : [chat, ...prev];
         });
+
     };
 
     const { connected, send } = useWebSocket({
@@ -189,6 +205,9 @@ function ChatPage() {
             console.log("WS EVENT RECEIVED:", data);
 
             switch (data.type) {
+                case "connected":
+                    return;
+
                 case "message":
                     setMessages(prev => {
                         const exists = prev.some(msg => msg.id === data.message.id);
@@ -203,6 +222,9 @@ function ChatPage() {
                         return updated;
                     });
 
+                    if (selectedChat?.room_id !== data.message.room_id && data.message.sender_id !== currentUserId) {
+                        incrementUnread(data.message.room_id);
+                    }
                     break;
 
                 case "presence":
@@ -315,6 +337,8 @@ function ChatPage() {
                     >
                         <List>
                             {chats.map(chat => {
+                                const unreadCount = chatCounts[chat.room_id] || 0;
+
                                 return (
                                     <Box
                                         key={chat.room_id}

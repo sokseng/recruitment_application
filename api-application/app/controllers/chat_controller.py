@@ -196,3 +196,16 @@ async def mark_conversation_read(
             },
             exclude_user_id=current_user.pk_id
         )
+        
+def get_total_unread_count(db, user_id: int) -> int:
+    return (
+        db.query(func.count(ChatMessage.id))
+        .join(ChatRoom, ChatRoom.id == ChatMessage.room_id)
+        .filter(
+            ChatMessage.is_read == False,
+            ChatMessage.sender_id != user_id,
+            (ChatRoom.candidate_user_id == user_id) |
+            (ChatRoom.employer_user_id == user_id)
+        )
+        .scalar()
+    )
