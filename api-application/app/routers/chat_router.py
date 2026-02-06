@@ -17,7 +17,9 @@ from app.websockets.chat_manager import manager
 from app.controllers.chat_controller import (
     get_or_create_chat_room,
     send_file_message,
-    mark_conversation_read
+    mark_conversation_read,
+    send_text_message,
+    get_total_unread_count
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -125,6 +127,32 @@ def get_or_create_room(
         "last_message_at": None,
         "unread_count": 0,
     }
+    
+@router.post("/messages")
+async def send_text(
+    request: SendTextMessage = Body(...),
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db),
+):
+    current_user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not current_user:
+        raise HTTPException(404, "User not found")
+
+    room = db.query(ChatRoom).filter(ChatRoom.id == request.room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
+
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed")
+
+    payload = await send_text_message(
+        db=db,
+        current_user=current_user,
+        room=room,
+        content=request.content
+    )
+    
+    return payload
 
 @router.post("/messages/file", response_model=ChatMessageOut)
 async def send_file(
@@ -218,3 +246,9 @@ async def mark_read(
 ):
     await mark_conversation_read(db, current_user, other_user_id)
     return {"status": "read"}
+
+@router.get("/messages/unread/count")
+def unread_count(db: Session = Depends(get_db),  current_user_id: int = Depends(verify_access_token)):
+    return {
+        "count": get_total_unread_count(db, current_user_id)
+    }

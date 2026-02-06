@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
+import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
@@ -23,6 +24,7 @@ function getLastMessagePreview(chat, currentUserId) {
         case "image": return isMe ? "You sent an image" : `${chat.username} sent you an image`;
         case "voice": return isMe ? "You sent a voice message" : `${chat.username} sent you a voice message`;
         case "video": return isMe ? "You sent a video" : `${chat.username} sent you a video`;
+        case "file": return isMe ? "You sent a file" : `${chat.username} sent you a file`;
         case "system": return msg.content || "";
         default: return "New message";
     }
@@ -33,6 +35,7 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -43,6 +46,7 @@ function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState({});
     const [typingUsers, setTypingUsers] = useState({});
+    const [loadingOlder, setLoadingOlder] = useState(false);
 
     const LIMIT = 50;
 
@@ -53,6 +57,15 @@ function ChatPage() {
     const activeChatIdRef = useRef(null);
     const initialLoadRef = useRef(true);
     const messagesEndRef = useRef(null);
+    const selectedChatRef = useRef(selectedChat);
+
+    const chatCounts = useUnreadStore(state => state.chatCounts);
+    const incrementChat = useUnreadStore(state => state.incrementChat);
+    const resetChat = useUnreadStore(state => state.resetChat);
+
+    useEffect(() => {
+        selectedChatRef.current = selectedChat;
+    }, [selectedChat]);
 
     useEffect(() => {
         if (!initialRoomId || chats.length === 0) return;
@@ -64,13 +77,20 @@ function ChatPage() {
         }
     }, [initialRoomId, chats]);
 
-    console.log("selectedChat", selectedChat?.room_id)
-
     const fetchChats = async () => {
         const res = await api.get('/chat/');
+        const unreadData = await api.get("/chat/messages/unread/count");
+
         setChats(res.data);
 
-        console.log("chats", res.data)
+        const countsByRoom = unreadData.data.count;
+        const countsObject =
+            typeof countsByRoom === 'number'
+                ? { [res.data[0]?.room_id || 0]: countsByRoom }
+                : countsByRoom;
+
+        useUnreadStore.getState().setAllChats(countsObject);
+
     }
 
     useEffect(() => {
@@ -133,6 +153,7 @@ function ChatPage() {
 
         if (el.scrollTop <= 10 && selectedChat) {
             loadingOlderRef.current = true;
+            setLoadingOlder(true);
 
             const prevScrollHeight = el.scrollHeight;
 
@@ -150,6 +171,7 @@ function ChatPage() {
                     el.scrollTop = el.scrollHeight - prevScrollHeight;
                 }
                 loadingOlderRef.current = false;
+                setLoadingOlder(false);
             }, 0);
         }
     };
@@ -167,10 +189,13 @@ function ChatPage() {
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
 
+        resetUnread(chat.room_id);
+
         setChats(prev => {
             const exists = prev.some(c => c.room_id === chat.room_id);
             return exists ? prev : [chat, ...prev];
         });
+
     };
 
     const { connected, send } = useWebSocket({
@@ -180,6 +205,9 @@ function ChatPage() {
             console.log("WS EVENT RECEIVED:", data);
 
             switch (data.type) {
+                case "connected":
+                    return;
+
                 case "message":
                     setMessages(prev => {
                         const exists = prev.some(msg => msg.id === data.message.id);
@@ -194,6 +222,9 @@ function ChatPage() {
                         return updated;
                     });
 
+                    if (selectedChat?.room_id !== data.message.room_id && data.message.sender_id !== currentUserId) {
+                        incrementUnread(data.message.room_id);
+                    }
                     break;
 
                 case "presence":
@@ -252,6 +283,10 @@ function ChatPage() {
         if (connected && send) send(data);
     }, [connected, send]);
 
+    useEffect(() => {
+        if (!connected && !selectedChatRef.current) return;
+    }, [connected]);
+
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
@@ -302,6 +337,8 @@ function ChatPage() {
                     >
                         <List>
                             {chats.map(chat => {
+                                const unreadCount = chatCounts[chat.room_id] || 0;
+
                                 return (
                                     <Box
                                         key={chat.room_id}
@@ -410,8 +447,9 @@ function ChatPage() {
                         messagesRef={messagesRef}
                         onScroll={handleScroll}
                         loadingOlderRef={loadingOlderRef}
+                        loadingOlder={loadingOlder}
+                        hasMore={hasMore}
                         messagesEndRef={messagesEndRef}
-                        connected={connected}
                     />
                 </Box>
             )}

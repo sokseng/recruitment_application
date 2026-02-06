@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from enum import Enum
-
+from typing import Literal
 
 class MessageType(str, Enum):
     TEXT = "text"
@@ -13,9 +13,9 @@ class MessageType(str, Enum):
 
 
 class SendTextMessage(BaseModel):
-    to_user_id: int
+    room_id: int
     content: str
-
+    type: Literal['text'] = 'text'
 
 class SendFileMessage(BaseModel):
     to_user_id: int
