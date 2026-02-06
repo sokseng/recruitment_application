@@ -824,16 +824,15 @@ export default function Dashboard() {
 
                       {alreadyApplied && (
                         <Chip
-                          label="Already Applied"
+                          label="Applied"
                           size="small"
                           color="success"
                           variant="filled"
                           icon={<CheckCircle />}
                           sx={{
-                            height: 20,
-                            fontSize: "0.68rem",
+                            fontSize: "0.60rem",
                             fontWeight: 600,
-                            minWidth: 100,
+                            minWidth: 50,
                             ml: 1,
                             bgcolor: alpha(theme.palette.success.main, 0.15),
                             color: theme.palette.success.dark,
