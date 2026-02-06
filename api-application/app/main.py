@@ -15,7 +15,8 @@ from app.routers import (
     job_application_router,
     chat_router,
     websocket_router,
-    global_setting_router
+    global_setting_router,
+    dashboard_router
 )
 
 from app.database.session import Base, engine
@@ -83,3 +84,4 @@ app.include_router(job_application_router.router)
 app.include_router(chat_router.router)
 app.include_router(websocket_router.router)
 app.include_router(global_setting_router.router)
+app.include_router(dashboard_router.router)

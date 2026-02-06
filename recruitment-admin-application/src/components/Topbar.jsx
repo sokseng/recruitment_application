@@ -135,7 +135,7 @@ export default function Topbar() {
       { label: "Chat", path: "/chat", icon: <ModeCommentIcon /> },
       { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
       { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
-      { label: "All Companies", path: "/admin/employer", icon: <BusinessIcon /> },
+      { label: "Companies", path: "/admin/employer", icon: <BusinessIcon /> },
       { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon /> },
     ],
     2: [
