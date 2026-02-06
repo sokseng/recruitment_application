@@ -13,6 +13,7 @@ import MyJobs from '../pages/MyJobs'
 import ChatPage from '../pages/ChatPage'
 import AppliedCandidates from '../pages/AppliedCandidates'
 import SystemParameter from '../pages/SystemParameter'
+import ForgotPassword from '../pages/ForgotPassword'
 
 export default function AppRoutes() {
   return (
@@ -20,6 +21,7 @@ export default function AppRoutes() {
       <Routes>
         {/* Public route */}
         <Route path="/" element={<Dashboard />} />
+        <Route path="/forgot_password" element={<ForgotPassword />} />
 
         <Route
           path="/system_parameter"

@@ -21,7 +21,8 @@ import {
   Menu,
   ListItemIcon,
   Divider,
-  Collapse
+  Collapse,
+  Link
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useState, useEffect } from "react";
@@ -86,6 +87,13 @@ export default function Topbar() {
     const interval = setInterval(fetchUnreadData, 15000); // 15s
     return () => clearInterval(interval);
   }, []);
+
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    navigate('/forgot_password');
+    handleCloseLoginForm();
+  };
+
 
   const {
     access_token,
@@ -817,7 +825,7 @@ export default function Topbar() {
             sx={{
               display: "flex",
               justifyContent: { xs: "center", sm: "flex-start" },
-              width: {xs: "100%", sm: "0"}
+              width: { xs: "100%", sm: "0" }
             }}
           >
             <Box
@@ -835,7 +843,7 @@ export default function Topbar() {
                 p: 0.5
               }}
               onClick={() => navigate("/")}
-          />
+            />
           </Box>
 
           <Box sx={{ flexGrow: 1 }} />
@@ -846,7 +854,7 @@ export default function Topbar() {
               {/* Profile Avatar & Menu */}
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <IconButton onClick={() => navigate("/chat")} sx={{ p: 0, ml: 1 }}>
-                  <ChatBubbleIcon color="primary"/>
+                  <ChatBubbleIcon color="primary" />
                 </IconButton>
 
                 {globalUnread > 0 && (
@@ -1562,7 +1570,26 @@ export default function Topbar() {
               >
                 Login
               </Button>
+
             </Stack>
+            <Box
+              display="flex"
+              justifyContent="flex-end"
+              sx={{ mt: 1, mb: 1 }}
+            >
+              <Link
+                type="button"
+                component="button"
+                variant="body2"
+                onClick={handleForgotPassword}
+                sx={{
+                  color: "#764ba2",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Forgot Password
+              </Link>
+            </Box>
           </Stack>
         </DialogContent>
       </Dialog>
