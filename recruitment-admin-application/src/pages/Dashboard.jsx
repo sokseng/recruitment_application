@@ -52,6 +52,10 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import BadgeIcon from '@mui/icons-material/Badge';
 import { Cancel, CheckBox, CheckBoxOutlineBlank, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -86,8 +90,8 @@ export default function Dashboard() {
   const openDateFilter = Boolean(dateFilterAnchor);
 
   const [dateFilterMode, setDateFilterMode] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
 
   const baseURL = import.meta.env.VITE_API_BASE_URL;
 
@@ -111,21 +115,21 @@ export default function Dashboard() {
   const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
 
   const getDateRange = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = dayjs().startOf('day');
 
     if (dateFilterMode === "today") {
       return { from: today, to: today };
     }
     if (dateFilterMode === "last7") {
-      const from = new Date(today);
-      from.setDate(today.getDate() - 7);
-      return { from, to: today };
+      return {
+        from: today.subtract(7, 'day'),
+        to: today,
+      };
     }
     if (dateFilterMode === "custom" && dateFrom && dateTo) {
       return {
-        from: new Date(dateFrom),
-        to: new Date(dateTo),
+        from: dayjs(dateFrom).startOf('day'),
+        to: dayjs(dateTo).endOf('day'),  
       };
     }
     return null;
@@ -188,9 +192,11 @@ export default function Dashboard() {
     if (range) {
       result = result.filter((job) => {
         if (!job.posting_date) return false;
-        const posted = new Date(job.posting_date);
-        posted.setHours(0, 0, 0, 0);
-        return posted >= range.from && posted <= range.to;
+        const postedDay = dayjs(job.posting_date).startOf('day');
+        return (
+          postedDay.isAfter(range.from.subtract(1, 'day'), 'day') &&   
+          postedDay.isBefore(range.to.add(1, 'day'), 'day')            
+        );
       });
     }
 
@@ -225,8 +231,7 @@ export default function Dashboard() {
     dateFrom,
     dateTo,
     sortBy,
-    jobs,
-    selectedJob,
+    jobs
   ]);
 
   useEffect(() => {
@@ -885,8 +890,8 @@ export default function Dashboard() {
           const mode = e.target.value;
           setDateFilterMode(mode);
           if (mode !== "custom") {
-            setDateFrom("");
-            setDateTo("");
+            setDateFrom(null);
+            setDateTo(null);
           }
         }}
       >
@@ -898,23 +903,27 @@ export default function Dashboard() {
 
       {dateFilterMode === "custom" && (
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
+          <DatePicker
             label="From"
-            type="date"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-            size="small"
+            onChange={(newValue) => setDateFrom(newValue)}
+            format="YYYY-MM-DD"
+            slotProps={{
+              textField: { size: "small", fullWidth: true },
+            }}
+            maxDate={dateTo || dayjs()}
           />
-          <TextField
+
+          <DatePicker
             label="To"
-            type="date"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-            size="small"
+            onChange={(newValue) => setDateTo(newValue)}
+            format="YYYY-MM-DD"
+            slotProps={{
+              textField: { size: "small", fullWidth: true },
+            }}
+            minDate={dateFrom}
+            maxDate={dayjs()}
           />
         </Box>
       )}
@@ -925,8 +934,8 @@ export default function Dashboard() {
           variant="outlined"
           onClick={() => {
             setDateFilterMode("all");
-            setDateFrom("");
-            setDateTo("");
+            setDateFrom(null);
+            setDateTo(null);
             setDateFilterAnchor(null);
           }}
         >
@@ -936,7 +945,10 @@ export default function Dashboard() {
           size="small"
           variant="contained"
           onClick={() => setDateFilterAnchor(null)}
-          disabled={dateFilterMode === "custom" && (!dateFrom || !dateTo)}
+          disabled={
+          dateFilterMode === "custom" &&
+            (!dateFrom || !dateTo || dayjs(dateTo).isBefore(dayjs(dateFrom), 'day'))
+          }
         >
           Apply
         </Button>
@@ -1642,206 +1654,229 @@ export default function Dashboard() {
   // Main Layout
   // ────────────────────────────────────────────────
   return (
-    <Box
-      sx={{
-        height: "calc(100vh - 120px)",
-        display: "flex",
-        flexDirection: "column",
-        boxSizing: "border-box",
-        gap: 0.5,
-      }}
-    >
-      {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
-        <Card
-          sx={{
-            p: 0.9,
-            border: "3px solid",
-            borderColor: "divider",
-          }}
-        >
-          <Stack
-            direction={{ xs: "row", sm: "row" }}
-            spacing={1}
-            flexWrap="wrap"
-            alignItems={{ xs: "flex-start", sm: "center" }}
-          >
-            {/* LEFT: category chips */}
-            <Stack
-              direction="row"
-              spacing={1}
-              flexWrap="wrap"
-              sx={{ flex: 1 }}
-            >
-              {!categoryFilter.includes("All") &&
-                categoryFilter.map((id) => {
-                  const cat = categories.find((c) => c.pk_id === id);
-                  if (!cat) return null;
-
-                  return (
-                    <Chip
-                      key={id}
-                      label={cat.name}
-                      onDelete={() => {
-                        const updated = categoryFilter.filter((v) => v !== id);
-                        setCategoryFilter(updated.length === 0 ? ["All"] : updated);
-                      }}
-                    />
-                  );
-                })}
-            </Stack>
-
-            {/* RIGHT: reset button */}
-            <Stack
-              direction="row"
-              justifyContent={{ xs: "flex-end", sm: "flex-end" }}
-            >
-              <Tooltip title="Clear all filter" arrow placement="top">
-                <IconButton
-                  onClick={() => {
-                    setSearchTerm("");
-                    setTypeFilter("All");
-                    setLevelFilter("All");
-                    setCategoryFilter(["All"]);
-                  }}
-                >
-                  <Cancel color="error" />
-                </IconButton>
-              </Tooltip>
-              
-            </Stack>
-          </Stack>
-
-        </Card>
-      )}
-
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box
         sx={{
-          flex: 1,
+          height: "calc(100vh - 120px)",
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: "column",
+          boxSizing: "border-box",
           gap: 0.5,
-          minHeight: 0,
         }}
       >
-        {/* Job List – hidden on mobile when detail is open */}
+        {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
+          <Card
+            sx={{
+              p: 0.9,
+              border: "3px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Stack
+              direction={{ xs: "row", sm: "row" }}
+              spacing={1}
+              flexWrap="wrap"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+            >
+              {/* LEFT: category chips */}
+              <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                sx={{ flex: 1 }}
+              >
+                {!categoryFilter.includes("All") &&
+                  categoryFilter.map((id) => {
+                    const cat = categories.find((c) => c.pk_id === id);
+                    if (!cat) return null;
 
-        <Box
-          sx={{
-            width: { xs: "100%", md: 450 },
-            height: {xs: "100%"},
-            flexShrink: 0,
-            display: isMobile && showDetailMobile ? "none" : "block",
-          }}
-        >
-          {ListContent()}
-        </Box>
+                    return (
+                      <Chip
+                        key={id}
+                        label={cat.name}
+                        onDelete={() => {
+                          const updated = categoryFilter.filter(
+                            (v) => v !== id,
+                          );
+                          setCategoryFilter(
+                            updated.length === 0 ? ["All"] : updated,
+                          );
+                        }}
+                      />
+                    );
+                  })}
+              </Stack>
 
-        {/* Job Detail – full-screen on mobile when selected */}
+              {/* RIGHT: reset button */}
+              <Stack
+                direction="row"
+                justifyContent={{ xs: "flex-end", sm: "flex-end" }}
+              >
+                <Tooltip title="Clear all filter" arrow placement="top">
+                  <IconButton
+                  sx={{
+                    p: 0.5,          // 🔥 shrink padding
+                    width: 28,
+                    height: 28,
+                    borderRadius: 1,
+                    bgcolor: "gray",
+                    color: "#fff",
+                    "&:hover": {
+                      bgcolor: "gray",
+                    },
+                  }}
+                    onClick={() => {
+                      setSearchTerm("");
+                      setTypeFilter("All");
+                      setLevelFilter("All");
+                      setCategoryFilter(["All"]);
+                    }}
+                  >
+                    <Cancel />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Stack>
+          </Card>
+        )}
+
         <Box
           sx={{
             flex: 1,
             display: "flex",
-            flexDirection: "column",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 0.5,
             minHeight: 0,
-            ...(isMobile
-              ? {
-                  position: "fixed",
-                  inset: 0,
-                  zIndex: showDetailMobile ? 20 : -1,
-                  transform: showDetailMobile
-                    ? "translateX(0)"
-                    : "translateX(100%)",
-                  transition: "transform 0.3s ease-in-out",
-                  bgcolor: "background.default",
-                  overflowY: "auto",
-                }
-              : {
-                  borderRadius: 2,
-                  boxShadow: 1,
-                }),
           }}
         >
-          {DetailContent()}
+          {/* Job List – hidden on mobile when detail is open */}
+
+          <Box
+            sx={{
+              width: { xs: "100%", md: 450 },
+              height: { xs: "100%" },
+              flexShrink: 0,
+              display: isMobile && showDetailMobile ? "none" : "block",
+            }}
+          >
+            {ListContent()}
+          </Box>
+
+          {/* Job Detail – full-screen on mobile when selected */}
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              ...(isMobile
+                ? {
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: showDetailMobile ? 20 : -1,
+                    transform: showDetailMobile
+                      ? "translateX(0)"
+                      : "translateX(100%)",
+                    transition: "transform 0.3s ease-in-out",
+                    bgcolor: "background.default",
+                    overflowY: "auto",
+                  }
+                : {
+                    borderRadius: 2,
+                    boxShadow: 1,
+                  }),
+            }}
+          >
+            {DetailContent()}
+          </Box>
         </Box>
+
+        <DateFilterPopover />
+        {/* Sort Date Popover */}
+        <Popover
+          open={openDateSort}
+          anchorEl={dateSortAnchor}
+          onClose={() => setDateSortAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          PaperProps={{
+            sx: { width: 240, borderRadius: 2, p: 2, boxShadow: 4 },
+          }}
+        >
+          <Typography fontWeight={700} mb={1.5}>
+            Sort by Posting Date
+          </Typography>
+          <Divider sx={{ mb: 1.5 }} />
+          <List dense disablePadding>
+            {[
+              { label: "Newest first", value: "date-desc" },
+              { label: "Oldest first", value: "date-asc" },
+            ].map((item) => (
+              <ListItemButton
+                key={item.value}
+                selected={sortBy === item.value}
+                onClick={() => {
+                  setSortBy(item.value);
+                  setDateSortAnchor(null);
+                }}
+                sx={{ borderRadius: 1 }}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Popover>
+
+        {/* Sort Title Popover */}
+        <Popover
+          open={openTitleSort}
+          anchorEl={titleSortAnchor}
+          onClose={() => setTitleSortAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          PaperProps={{
+            sx: { width: 220, borderRadius: 2, p: 2, boxShadow: 4 },
+          }}
+        >
+          <Typography fontWeight={700} mb={1.5}>
+            Sort by Job Title
+          </Typography>
+          <Divider sx={{ mb: 1.5 }} />
+          <List dense disablePadding>
+            {[
+              { label: "A → Z", value: "title-asc" },
+              { label: "Z → A", value: "title-desc" },
+            ].map((item) => (
+              <ListItemButton
+                key={item.value}
+                selected={sortBy === item.value}
+                onClick={() => {
+                  setSortBy(item.value);
+                  setTitleSortAnchor(null);
+                }}
+                sx={{ borderRadius: 1 }}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Popover>
+        {/* Snackbar for apply feedback */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
-
-      <DateFilterPopover />
-      {/* Sort Date Popover */}
-      <Popover
-        open={openDateSort}
-        anchorEl={dateSortAnchor}
-        onClose={() => setDateSortAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        PaperProps={{ sx: { width: 240, borderRadius: 2, p: 2, boxShadow: 4 } }}
-      >
-        <Typography fontWeight={700} mb={1.5}>
-          Sort by Posting Date
-        </Typography>
-        <Divider sx={{ mb: 1.5 }} />
-        <List dense disablePadding>
-          {[
-            { label: "Newest first", value: "date-desc" },
-            { label: "Oldest first", value: "date-asc" },
-          ].map((item) => (
-            <ListItemButton
-              key={item.value}
-              selected={sortBy === item.value}
-              onClick={() => {
-                setSortBy(item.value);
-                setDateSortAnchor(null);
-              }}
-              sx={{ borderRadius: 1 }}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Popover>
-
-      {/* Sort Title Popover */}
-      <Popover
-        open={openTitleSort}
-        anchorEl={titleSortAnchor}
-        onClose={() => setTitleSortAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        PaperProps={{ sx: { width: 220, borderRadius: 2, p: 2, boxShadow: 4 } }}
-      >
-        <Typography fontWeight={700} mb={1.5}>
-          Sort by Job Title
-        </Typography>
-        <Divider sx={{ mb: 1.5 }} />
-        <List dense disablePadding>
-          {[
-            { label: "A → Z", value: "title-asc" },
-            { label: "Z → A", value: "title-desc" },
-          ].map((item) => (
-            <ListItemButton
-              key={item.value}
-              selected={sortBy === item.value}
-              onClick={() => {
-                setSortBy(item.value);
-                setTitleSortAnchor(null);
-              }}
-              sx={{ borderRadius: 1 }}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Popover>
-      {/* Snackbar for apply feedback */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: "100%" }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </LocalizationProvider>
   );
 }

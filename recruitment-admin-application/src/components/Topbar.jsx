@@ -793,6 +793,7 @@ export default function Topbar() {
             sx={{
               display: "flex",
               justifyContent: { xs: "center", sm: "flex-start" },
+              width: {xs: "100%", sm: "0"}
             }}
           >
             <Box
