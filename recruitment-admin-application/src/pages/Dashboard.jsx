@@ -455,19 +455,29 @@ export default function Dashboard() {
       <Stack direction="row" spacing={1} p={1} justifyContent="space-between" alignItems="center" >
         {/* title */}
         <TextField
-            size="small"
-            placeholder="Search jobs, companies, locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            fullWidth
-          />
+          size="small"
+          placeholder="Search jobs, companies, locations..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+            endAdornment: searchTerm && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setSearchTerm("")}
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
         <Stack direction="row" spacing={0.3}>
           <Tooltip title="Filter by Categories" arrow placement="top">
             <IconButton
@@ -987,6 +997,9 @@ export default function Dashboard() {
         <Button
           size="small"
           variant="outlined"
+          sx={{textTransform: "none"}}
+          startIcon={<Cancel />}
+          color="error"
           onClick={() => {
             setDateFilterMode("all");
             setDateFrom(null);
@@ -995,17 +1008,6 @@ export default function Dashboard() {
           }}
         >
           Clear
-        </Button>
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => setDateFilterAnchor(null)}
-          disabled={
-          dateFilterMode === "custom" &&
-            (!dateFrom || !dateTo || dayjs(dateTo).isBefore(dayjs(dateFrom), 'day'))
-          }
-        >
-          Apply
         </Button>
       </Box>
     </Popover>
