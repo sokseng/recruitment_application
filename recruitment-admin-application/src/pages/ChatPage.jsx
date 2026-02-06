@@ -23,6 +23,7 @@ function getLastMessagePreview(chat, currentUserId) {
         case "image": return isMe ? "You sent an image" : `${chat.username} sent you an image`;
         case "voice": return isMe ? "You sent a voice message" : `${chat.username} sent you a voice message`;
         case "video": return isMe ? "You sent a video" : `${chat.username} sent you a video`;
+        case "file": return isMe ? "You sent a file" : `${chat.username} sent you a file`;
         case "system": return msg.content || "";
         default: return "New message";
     }
@@ -43,6 +44,7 @@ function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [onlineUsers, setOnlineUsers] = useState({});
     const [typingUsers, setTypingUsers] = useState({});
+    const [loadingOlder, setLoadingOlder] = useState(false);
 
     const LIMIT = 50;
 
@@ -53,6 +55,11 @@ function ChatPage() {
     const activeChatIdRef = useRef(null);
     const initialLoadRef = useRef(true);
     const messagesEndRef = useRef(null);
+    const selectedChatRef = useRef(selectedChat);
+
+    useEffect(() => {
+        selectedChatRef.current = selectedChat;
+    }, [selectedChat]);
 
     useEffect(() => {
         if (!initialRoomId || chats.length === 0) return;
@@ -133,6 +140,7 @@ function ChatPage() {
 
         if (el.scrollTop <= 10 && selectedChat) {
             loadingOlderRef.current = true;
+            setLoadingOlder(true);
 
             const prevScrollHeight = el.scrollHeight;
 
@@ -150,6 +158,7 @@ function ChatPage() {
                     el.scrollTop = el.scrollHeight - prevScrollHeight;
                 }
                 loadingOlderRef.current = false;
+                setLoadingOlder(false);
             }, 0);
         }
     };
@@ -251,6 +260,10 @@ function ChatPage() {
     const currentSend = useCallback((data) => {
         if (connected && send) send(data);
     }, [connected, send]);
+
+    useEffect(() => {
+        if (!connected && !selectedChatRef.current) return;
+    }, [connected]);
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
@@ -410,8 +423,9 @@ function ChatPage() {
                         messagesRef={messagesRef}
                         onScroll={handleScroll}
                         loadingOlderRef={loadingOlderRef}
+                        loadingOlder={loadingOlder}
+                        hasMore={hasMore}
                         messagesEndRef={messagesEndRef}
-                        connected={connected}
                     />
                 </Box>
             )}

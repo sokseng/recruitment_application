@@ -2,9 +2,8 @@ import {
     ArrowBack as ArrowBackIcon,
     EmojiEmotions as EmojiEmotionsIcon,
     InsertEmoticon as InsertEmoticonIcon,
-    Translate,
 } from '@mui/icons-material';
-import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert } from "@mui/material";
+import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert, CircularProgress } from "@mui/material";
 import CallIcon from '@mui/icons-material/Call';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import MessageBubble from './MessageBubble';
@@ -28,7 +27,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, messagesEndRef, connected }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef }) {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -228,6 +227,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
     }
 
+    const sendTextMessage = async (content) => {
+        const res = await api.post("/chat/messages", {
+            room_id: chat.room_id,
+            content,
+        });
+        return res;
+    }
+
     const handleSend = async () => {
         if (!chat?.room_id || !send) return;
 
@@ -274,10 +281,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
         if (newMessage.trim()) {
 
-            send({
-                type: "text",
-                content: newMessage.trim(),
-            });
+            await sendTextMessage(newMessage.trim());
 
             setNewMessage('');
             stopTyping();
@@ -412,14 +416,17 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             }}
                         >
 
-                            {loadingOlderRef.current && (
-                                <Typography
-                                    variant="caption"
-                                    align="center"
-                                    sx={{ py: 1, color: 'grey.600', display: 'flex', justifyContent: 'center' }}
+                            {hasMore && loadingOlder && (
+                                <Box
+                                    sx={{
+                                        py: 1,
+                                        mt: 5,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
                                 >
-                                    Loading older messages…
-                                </Typography>
+                                    <CircularProgress size={20} />
+                                </Box>
                             )}
 
                             {messages.length === 0 ? (
