@@ -27,6 +27,19 @@ import mimetypes
 router = APIRouter(prefix="/applications", tags=["Applications"])
 UPLOAD_FOLDER = "uploads/resumes"
 
+@router.get("/my-applied-job-ids")
+def get_my_applied_job_ids(
+    db: Session = Depends(get_db),
+    candidate_id: int = Depends(get_current_candidate_id)
+):
+    job_ids = [
+        row[0]
+        for row in db.query(JobApplication.job_id)
+            .filter(JobApplication.candidate_id == candidate_id)
+            .all()
+    ]
+    return {"job_ids": job_ids}
+
 @router.get("/my-jobs/counts", response_model=List[dict])
 def get_application_counts_per_my_jobs(
     db: Session = Depends(get_db),
