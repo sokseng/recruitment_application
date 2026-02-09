@@ -13,6 +13,7 @@ import {
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import useAuthStore from "../../store/useAuthStore";
+import { useRef } from "react";
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -44,6 +45,7 @@ const UpdateProfileAdmin = () => {
         address: "",
     };
 
+    const originalFormRef = useRef(null);
     const [formData, setFormData] = useState(initialFormData);
     const [severity, setSeverity] = useState('error')
     const [openSnackbar, setOpenSnackbar] = useState(false)
@@ -67,7 +69,21 @@ const UpdateProfileAdmin = () => {
                     date_of_birth: data.date_of_birth || "",
                     address: data.address || "",
                 });
-                
+
+                const mappedData = {
+                    user_name: data.user_name || "",
+                    email: data.email || "",
+                    phone: data.phone || "",
+                    gender: data.gender || "",
+                    date_of_birth: data.date_of_birth || "",
+                    address: data.address || "",
+                };
+
+                // ✅ save ORIGINAL (once)
+                originalFormRef.current = mappedData;
+
+                setFormData(mappedData);
+
             } catch (error) {
                 console.error("Failed to load profile:", error);
             }
@@ -81,7 +97,10 @@ const UpdateProfileAdmin = () => {
     };
 
     const handleResetForm = () => {
-        setFormData(initialFormData);
+        if (!originalFormRef.current) return;
+
+        setFormData({ ...originalFormRef.current });
+        
     };
 
     const handleSubmit = async (e) => {
@@ -94,7 +113,7 @@ const UpdateProfileAdmin = () => {
                 setMessage('Update Successfully!')
                 setUserData(response.data)
             }
-            
+
         } catch (error) {
             setOpenSnackbar(true)
             setSeverity("error")

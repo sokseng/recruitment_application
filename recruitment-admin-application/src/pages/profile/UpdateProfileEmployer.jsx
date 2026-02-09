@@ -16,6 +16,7 @@ import {
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 
+import { useRef } from "react";
 import { Autocomplete, Chip, InputAdornment } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -68,6 +69,9 @@ const UpdateProfileEmployer = () => {
     const [categories, setCategories] = useState([]);
     const [removeLogo, setRemoveLogo] = useState(false);
 
+    const originalFormRef = useRef(null);
+    const originalLogoRef = useRef(null);
+
     const selectedCategories = categories.filter(cat =>
         formData.category_ids.includes(cat.pk_id)
     );
@@ -90,46 +94,48 @@ const UpdateProfileEmployer = () => {
         setRemoveLogo(true);
     };
 
-    const handleResetForm = () => {
-        setFormData(initialFormData);
-        setLogoPreview(null);
-        setRemoveLogo(true);
+    const fetchUserProfileEmployer = async () => {
+        try {
+            const response = await api.get("/employer/profile/update");
+            const data = response.data;
+
+            const mappedData = {
+                user_name: data.user_name || "",
+                email: data.email || "",
+                phone: data.phone || "",
+                gender: data.gender || "",
+                date_of_birth: data.date_of_birth || "",
+                address: data.address || "",
+                company_name: data.company_name || "",
+                company_email: data.company_email || "",
+                company_contact: data.company_contact || "",
+                company_address: data.company_address || "",
+                company_description: data.company_description || "",
+                company_website: data.company_website || "",
+                category_ids: data.categories?.map(c => c.id) || [],
+            };
+
+            // ✅ save ORIGINAL (once)
+            originalFormRef.current = mappedData;
+
+            setFormData(mappedData);
+
+            // ✅ logo
+            if (data.company_logo) {
+                const logoUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${data.company_logo}`;
+                setLogoPreview(logoUrl);
+                originalLogoRef.current = logoUrl;
+            } else {
+                setLogoPreview(null);
+                originalLogoRef.current = null;
+            }
+
+        } catch (error) {
+            console.error("Failed to load user profile employer:", error);
+        }
     };
 
     useEffect(() => {
-        const fetchUserProfileEmployer = async () => {
-            try {
-                debugger
-                const response = await api.get("/employer/profile/update");
-                const data = response.data;
-
-                setFormData({
-                    user_name: data.user_name || "",
-                    email: data.email || "",
-                    phone: data.phone || "",
-                    gender: data.gender || "",
-                    date_of_birth: data.date_of_birth || "",
-                    address: data.address || "",
-                    company_name: data.company_name || "",
-                    company_email: data.company_email || "",
-                    company_contact: data.company_contact || "",
-                    company_address: data.company_address || "",
-                    company_description: data.company_description || "",
-                    company_website: data.company_website || "",
-                    category_ids: data.categories?.map(c => c.id) || [],
-                });
-
-                // Set initial logo preview
-                if (data.company_logo) {
-                    const logoUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${data.company_logo}`;
-                    setLogoPreview(logoUrl);
-                }
-
-            } catch (error) {
-                console.error("Failed to load user profile employer:", error);
-            }
-        };
-
         fetchUserProfileEmployer();
 
         const fetchCategories = async () => {
@@ -137,7 +143,7 @@ const UpdateProfileEmployer = () => {
                 const res = await api.get("/categories/");
                 const normalized = (res.data || []).map(cat => ({
                     ...cat,
-                    id: Number(cat.id), // 🔥 force number
+                    id: Number(cat.id),
                 }));
                 setCategories(normalized);
             } catch (err) {
@@ -147,6 +153,16 @@ const UpdateProfileEmployer = () => {
 
         fetchCategories();
     }, []);
+
+
+    const handleResetForm = () => {
+        if (!originalFormRef.current) return;
+
+        setFormData({ ...originalFormRef.current });
+        setLogoPreview(originalLogoRef.current);
+        setRemoveLogo(false);
+    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
