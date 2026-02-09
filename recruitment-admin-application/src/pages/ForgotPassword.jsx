@@ -13,7 +13,9 @@ import {
     Step,
     StepLabel,
     IconButton,
-    InputAdornment
+    InputAdornment,
+    Snackbar,
+    Alert
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import api from "../services/api";
@@ -27,34 +29,36 @@ const ForgotPassword = () => {
     const [showPassword, setShowPassword] = useState(false);
     const togglePasswordVisibility = () => setShowPassword((show) => !show);
 
+    const [severity, setSeverity] = useState('error')
+    const [openSnackbar, setOpenSnackbar] = useState(false)
+    const [message, setMessage] = useState('')
+    
+
 
     const steps = ["Enter email", "Verify code", "Reset password"];
 
     // Step 1: Request reset code
     const handleRequestCode = async () => {
-        if (email === "") {
-            alert("Please enter your email");
-            return;
-        }
         try {
             await api.post("/forgot_password", { email: email });
             setStep(1);
         } catch (err) {
             if (err.response && err.response.status === 404 && err.response.data.detail === "Email not found") {
-                alert("Email address not found. Please check and try again.");
+                setSeverity('success')
+                setMessage('Email address not found. Please check and try again.')
+                setOpenSnackbar(true)
             }
             else {
-                alert("Error sending code. Please try again.");
+                setSeverity('error')
+                setMessage('Error sending code. Please try again.')
+                setOpenSnackbar(true)
+                console.error(err)
             }
         }
     };
 
     // Step 2: Verify code
     const handleVerifyCode = async () => {
-        if (code === "") {
-            alert("Please enter the code");
-            return;
-        }
         try {
             await api.post("/forgot_password/verify_code", {
                 email: email,
@@ -63,30 +67,34 @@ const ForgotPassword = () => {
             setStep(2);
         } catch (err) {
             if (err.response && err.response.status === 400 && err.response.data.detail === "code and email not provided") {
-                alert("code and email not provided");
+                setSeverity('error')
+                setMessage('code and email not provided')
+                setOpenSnackbar(true)
             } else if (err.response && err.response.status === 400 && err.response.data.detail === "Invalid email or code") {
-                alert("invalid email or code");
+                setSeverity('error')
+                setMessage('invalid email or code')
+                setOpenSnackbar(true)
             } else if (err.response && err.response.status === 400 && err.response.data.detail === "Code has expired") {
-                alert("code has expired");
+                setSeverity('error')
+                setMessage('code has expired')
+                setOpenSnackbar(true)
             }
             else {
-                alert("Error verifying code. Please try again.");
+                setSeverity('error')
+                setMessage('Error verifying code. Please try again.')
+                setOpenSnackbar(true)
+                console.error(err)
             }
         }
     };
 
     // Step 3: Reset password
     const handleResetPassword = async () => {
-        if (newPassword === "") {
-            alert("Please enter a new password");
-            return;
-        }
-        if (confirmPassword === "") {
-            alert("Please confirm your new password");
-            return;
-        }
+
         if (newPassword !== confirmPassword) {
-            alert("Passwords do not match. Please try again.");
+            setSeverity('error')
+            setMessage('Passwords do not match. Please try again.')
+            setOpenSnackbar(true)
             return;
         }
         try {
@@ -94,13 +102,21 @@ const ForgotPassword = () => {
                 email,
                 new_password: newPassword
             });
-            alert("Password reset successfully");
+
+            setSeverity('success')
+            setMessage('Password reset successfully')
+            setOpenSnackbar(true)
             window.location.href = "/"; // auto redirect
         } catch (err) {
             if (err.response && err.response.status === 400 && err.response.data.detail === "Email not found") {
-                alert("Email address not found. Please check and try again.");
+                setSeverity('error')
+                setMessage('Email address not found. Please check and try again.')
+                setOpenSnackbar(true)
             } else {
-                alert("Error resetting password. Please try again.");
+                setSeverity('error')
+                setMessage('Error resetting password. Please try again.')
+                setOpenSnackbar(true)
+                console.error(err);
             }
         }
     };
@@ -115,131 +131,174 @@ const ForgotPassword = () => {
     };
 
     return (
-        <Container maxWidth="sm">
-            <Paper elevation={4} sx={{ p: 4, mt: 8, borderRadius: 3 }}>
-                <Box display="flex" alignItems="center" mb={2}>
+        <>
+            {/* Snackbar */}
+            <Snackbar
+                open={openSnackbar}
+                autoHideDuration={2500}
+                onClose={() => setOpenSnackbar(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert severity={severity} variant="filled">
+                    {message}
+                </Alert>
+            </Snackbar>
 
-                    <Typography variant="h5" align="center" sx={{ flexGrow: 1 }}>
-                        Forgot Password
-                    </Typography>
-                </Box>
+            <Container maxWidth="sm">
+                <Paper elevation={4} sx={{ p: 4, mt: 8, borderRadius: 3 }}>
+                    <Box display="flex" alignItems="center" mb={2}>
 
-                {/* Stepper progress bar */}
-                <Stepper activeStep={step} alternativeLabel sx={{ mb: 3 }}>
-                    {steps.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-
-                {/* Step 1 */}
-                {step === 0 && (
-                    <Box display="flex" flexDirection="column" gap={2}>
-                        <TextField
-                            label="Email"
-                            type="email"
-                            size="small"
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                            }}
-                            fullWidth
-                        />
-                        <Button size="small" variant="contained" onClick={handleRequestCode}>
-                            Send Code
-                        </Button>
+                        <Typography variant="h5" align="center" sx={{ flexGrow: 1 }}>
+                            Forgot Password
+                        </Typography>
                     </Box>
-                )}
 
-                {/* Step 2 */}
-                {step === 1 && (
-                    <Box display="flex" flexDirection="column" gap={2}>
-                        <TextField
-                            label="Verification Code"
-                            size="small"
-                            type="text"
-                            value={code}
-                            onChange={(e) => {
-                                setCode(e.target.value);
+                    {/* Stepper progress bar */}
+                    <Stepper activeStep={step} alternativeLabel sx={{ mb: 3 }}>
+                        {steps.map((label) => (
+                            <Step key={label}>
+                                <StepLabel>{label}</StepLabel>
+                            </Step>
+                        ))}
+                    </Stepper>
+
+                    {/* Step 1 */}
+                    {step === 0 && (
+                        <Box
+                            component="form"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleRequestCode();
                             }}
-                            fullWidth
-                            error={!!errors.verifyCode}
-                        />
-                        <Button size="small" variant="contained" onClick={handleVerifyCode}>
-                            Verify
-                        </Button>
+                            display="flex"
+                            flexDirection="column"
+                            gap={2}
+
+                        >
+                            <TextField
+                                label="Email"
+                                required
+                                type="email"
+                                size="small"
+                                value={email}
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                }}
+                                fullWidth
+                            />
+                            <Button size="small" variant="contained" type="submit">
+                                Send Code
+                            </Button>
+                        </Box>
+                    )}
+
+                    {/* Step 2 */}
+                    {step === 1 && (
+                        <Box
+                            component="form"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleVerifyCode();
+                            }}
+                            display="flex"
+                            flexDirection="column"
+                            gap={2}
+                        >
+                            <TextField
+                                label="Verification Code"
+                                required
+                                name="code"
+                                size="small"
+                                type="text"
+                                value={code}
+                                onChange={(e) => {
+                                    setCode(e.target.value);
+                                }}
+                                fullWidth
+                            />
+                            <Button size="small" variant="contained" type="submit">
+                                Verify
+                            </Button>
+                        </Box>
+                    )}
+
+                    {/* Step 3 */}
+                    {step === 2 && (
+                        <Box
+                            component="form"
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleResetPassword();
+                            }}
+                            display="flex"
+                            flexDirection="column"
+                            gap={2}
+                        >
+
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Password"
+                                required
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={(e) => {
+                                    setNewPassword(e.target.value);
+                                }}
+                                margin="normal"
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={togglePasswordVisibility} edge="end">
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Confirm Password"
+                                required
+                                name="confirmPassword"
+                                type={showPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={(e) => {
+                                    setConfirmPassword(e.target.value);
+                                }}
+                                margin="normal"
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton onClick={togglePasswordVisibility} edge="end">
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+
+                            />
+
+                            <Button size="small" variant="contained" type="submit">
+                                Reset Password
+                            </Button>
+                        </Box>
+                    )}
+
+                    {/* Optional Back Button (if you want manual navigation) */}
+                    <Box mt={3} display="flex" justifyContent="flex-start">
+                        <IconButton onClick={handleBack}>
+                            <ArrowBack />
+                        </IconButton>
                     </Box>
-                )}
 
-                {/* Step 3 */}
-                {step === 2 && (
-                    <Box display="flex" flexDirection="column" gap={2}>
+                </Paper>
+            </Container>
+        </>
 
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Password"
-                            name="password"
-                            type={showPassword ? "text" : "password"}
-                            value={newPassword}
-                            onChange={(e) => {
-                                setNewPassword(e.target.value);
-                            }}
-                            margin="normal"
-                            required
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton onClick={togglePasswordVisibility} edge="end">
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            error={!!errors.newPassword}
-                        />
-
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Confirm Password"
-                            name="confirmPassword"
-                            type={showPassword ? "text" : "password"}
-                            value={confirmPassword}
-                            onChange={(e) => {
-                                setConfirmPassword(e.target.value);
-                            }}
-                            margin="normal"
-                            required
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton onClick={togglePasswordVisibility} edge="end">
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            error={!!errors.confirmPassword}
-
-                        />
-
-                        <Button size="small" variant="contained" onClick={handleResetPassword}>
-                            Reset Password
-                        </Button>
-                    </Box>
-                )}
-
-                {/* Optional Back Button (if you want manual navigation) */}
-                <Box mt={3} display="flex" justifyContent="flex-start">
-                    <IconButton onClick={handleBack}>
-                        <ArrowBack />
-                    </IconButton>
-                </Box>
-
-            </Paper>
-        </Container>
     );
 };
 
