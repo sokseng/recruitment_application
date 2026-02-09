@@ -160,12 +160,21 @@ export default function VideoMessage({ message, isOwn, BASE_URL }) {
             <Typography
               variant="caption"
               sx={{
-                display: 'block',
+                display: 'flex',
+                alignItems: 'center',
                 textAlign: 'right',
                 opacity: 0.7,
               }}
             >
               <FormatTime time={message.created_at} />
+              {message.edited_at && (
+                <Typography
+                  variant="caption"
+                  sx={{ ml: 0.5, opacity: 0.6 }}
+                >
+                  · edited
+                </Typography>
+              )}
             </Typography>
             <Box sx={{ opacity: 0.7 }}>
               {message.is_read && isOwn && <DoneAllIcon sx={{ fontSize: 16 }} />}

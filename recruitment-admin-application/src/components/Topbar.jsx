@@ -63,8 +63,10 @@ export default function Topbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const globalUnread = useUnreadStore(state => state.globalCount);
+  const accessToken = localStorage.getItem("access_token");
 
   useEffect(() => {
+    if (!accessToken) return;
     const fetchUnreadData = async () => {
       try {
         const unreadData = await api.get("/chat/messages/unread/count");
@@ -817,7 +819,7 @@ export default function Topbar() {
             sx={{
               display: "flex",
               justifyContent: { xs: "center", sm: "flex-start" },
-              width: {xs: "100%", sm: "0"}
+              width: { xs: "100%", sm: "0" }
             }}
           >
             <Box
@@ -835,7 +837,7 @@ export default function Topbar() {
                 p: 0.5
               }}
               onClick={() => navigate("/")}
-          />
+            />
           </Box>
 
           <Box sx={{ flexGrow: 1 }} />
@@ -846,7 +848,7 @@ export default function Topbar() {
               {/* Profile Avatar & Menu */}
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <IconButton onClick={() => navigate("/chat")} sx={{ p: 0, ml: 1 }}>
-                  <ChatBubbleIcon color="primary"/>
+                  <ChatBubbleIcon color="primary" />
                 </IconButton>
 
                 {globalUnread > 0 && (

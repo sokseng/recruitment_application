@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Avatar, Button, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
 import Menu from '@mui/material/Menu';
@@ -11,16 +11,15 @@ import DownloadIcon from '@mui/icons-material/Download';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import React, { useRef } from 'react';
+import React from 'react';
 import ReplyAllIcon from '@mui/icons-material/ReplyAll';
 import { FormatTime } from './FormatTime';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VideoMessage from './VideoMessagePlayer';
-import { getFileIcon } from './FileIcon';
 import ChatImage from './ImageComponent';
 import ChatFile from './ChatFile';
 
-function MessageBubble({ message, isOwn }) {
+function MessageBubble({ message, isOwn, onEdit, onDelete }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -152,12 +151,21 @@ function MessageBubble({ message, isOwn }) {
                         <Typography
                             variant="caption"
                             sx={{
-                                display: 'block',
+                                display: 'flex',
+                                alignItems: 'center',
                                 textAlign: 'right',
                                 opacity: 0.7,
                             }}
                         >
                             <FormatTime time={message.created_at} />
+                            {message.edited_at && (
+                                <Typography
+                                    variant="caption"
+                                    sx={{ ml: 0.5, opacity: 0.7 }}
+                                >
+                                    · edited
+                                </Typography>
+                            )}
                         </Typography>
                         <Box
                             sx={{
@@ -197,7 +205,7 @@ function MessageBubble({ message, isOwn }) {
                     </MenuItem>
                 )}
 
-                {(message.type === 'image' || message.type === 'video' || message.type === 'file' ) && (
+                {(message.type === 'image' || message.type === 'video' || message.type === 'file') && (
                     <MenuItem onClick={() => { handleMenuClose(); }}>
                         <ListItemIcon><PreviewIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Preview</ListItemText>
@@ -212,7 +220,10 @@ function MessageBubble({ message, isOwn }) {
                 )}
 
                 {isOwn && message.type === 'text' && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={() => {
+                        handleMenuClose();
+                        onEdit?.(message);
+                    }}>
                         <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Edit</ListItemText>
                     </MenuItem>
@@ -220,7 +231,10 @@ function MessageBubble({ message, isOwn }) {
 
                 {isOwn && (
                     <MenuItem
-                        onClick={() => { handleMenuClose(); }}
+                        onClick={() => {
+                            handleMenuClose();
+                            onDelete?.(message);
+                        }}
                         sx={{ color: 'error.main' }}
                     >
                         <ListItemIcon sx={{ color: 'error.main' }}>

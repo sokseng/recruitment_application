@@ -28,6 +28,7 @@ class ChatMessage(Base):
     read_at = Column(DateTime(timezone=True), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    edited_at = Column(DateTime(timezone=True), nullable=True)
 
     # Make relationships more explicit
     room = relationship(

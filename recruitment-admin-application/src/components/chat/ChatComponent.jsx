@@ -3,7 +3,7 @@ import {
     EmojiEmotions as EmojiEmotionsIcon,
     InsertEmoticon as InsertEmoticonIcon,
 } from '@mui/icons-material';
-import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert, CircularProgress } from "@mui/material";
+import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert, CircularProgress, Button } from "@mui/material";
 import CallIcon from '@mui/icons-material/Call';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import MessageBubble from './MessageBubble';
@@ -17,6 +17,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
 import api from '../../services/api';
 import TypingIndicator from './TypingIndicator';
+import DeleteDialog from './dialog/DeleteDialog';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -43,12 +44,15 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [newMessage, setNewMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [popup, setPopup] = useState(false);
+    const [editingMessage, setEditingMessage] = useState(null);
 
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
     const prevMessageCountRef = useRef(0);
     const justOpenedChatRef = useRef(false);
     const [error, setError] = useState('');
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [messageToDelete, setMessageToDelete] = useState(null);
 
     const startTyping = () => {
         if (!isTypingRef.current) {
@@ -250,6 +254,19 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             });
         }
 
+        if (editingMessage) {
+            if (!newMessage.trim()) return;
+
+            await api.put(`/chat/room/${chat.room_id}/messages/${editingMessage.id}/text`, {
+                content: newMessage.trim()
+            });
+
+            stopTyping();
+            setEditingMessage(null);
+            setNewMessage('');
+            return;
+        }
+
         if (audioBlob) {
             const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
                 type: audioBlob.type,
@@ -287,6 +304,30 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             stopTyping();
             setTimeout(scrollToBottom, 50);
         }
+    };
+
+    const handleDeleteMessage = (message) => {
+        setMessageToDelete(message);
+        setOpenConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!messageToDelete) return;
+
+        await api.delete(`/chat/room/${chat.room_id}/messages/${messageToDelete.id}`);
+
+        setOpenConfirm(false);
+        setMessageToDelete(null);
+    };
+
+    const cancelDelete = () => {
+        setOpenConfirm(false);
+        setMessageToDelete(null);
+    };
+
+    const handleEditMessage = (message) => {
+        setEditingMessage(message);
+        setNewMessage(message.content || '');
     };
 
     return (
@@ -344,7 +385,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         fontSize: 28
                                     }}
                                     src={chat?.avatar_url}
-                                    onClick={() => setOpen(true)}
+                                // onClick={() => setOpen(true)}
                                 >
                                     {chat?.username?.charAt(0).toUpperCase() || 'P'}
                                 </Avatar>
@@ -453,6 +494,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         key={message.id}
                                         message={message}
                                         isOwn={message.sender_id === currentUserId}
+                                        onEdit={handleEditMessage}
+                                        onDelete={handleDeleteMessage}
                                     />
                                 )))}
 
@@ -549,6 +592,34 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     </Alert>
                                 </Snackbar>
                             </Paper>
+                        )}
+
+                        {editingMessage && (
+                            <Box sx={{
+                                position: 'absolute',
+                                bottom: 60,
+                                width: '100%',
+                                p: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderTop: 1,
+                                borderColor: 'divider',
+                                bgcolor: 'background.paper',
+                                justifyContent: 'space-between'
+                            }}>
+                                <Typography >
+                                    Editing message
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    onClick={() => {
+                                        setEditingMessage(null);
+                                        setNewMessage('');
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            </Box>
                         )}
 
                         <Paper
@@ -689,6 +760,12 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     user={chat}
                 />
             )}
+            <DeleteDialog
+                open={openConfirm}
+                onClose={() => setOpenConfirm(false)}
+                onCancel={cancelDelete}
+                onConfirm={confirmDelete}
+            />
         </Box>
     )
 }

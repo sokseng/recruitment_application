@@ -9,7 +9,7 @@ from app.models.chat_room import ChatRoom
 from app.models.chat_message import ChatMessage
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
-    ChatMessageOut, ConversationSummary
+    ChatMessageOut, ConversationSummary, EditTextMessage
 )
 from fastapi import Body
 from app.dependencies.chat import get_current_active_user
@@ -19,7 +19,9 @@ from app.controllers.chat_controller import (
     send_file_message,
     mark_conversation_read,
     send_text_message,
-    get_total_unread_count
+    get_total_unread_count,
+    edit_message,
+    delete_message
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -252,3 +254,79 @@ def unread_count(db: Session = Depends(get_db),  current_user_id: int = Depends(
     return {
         "count": get_total_unread_count(db, current_user_id)
     }
+
+
+@router.put("/room/{room_id}/messages/{message_id}/text")
+async def edit_text_message(
+    room_id: int,
+    message_id: int,
+    payload: EditTextMessage,
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db),
+):
+    content = payload.content
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
+
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed")
+
+    return await edit_message(
+        db=db,
+        room=room,
+        message_id=message_id,
+        requester_id=current_user_id,
+        new_content=content
+    )
+    
+@router.put("/room/{room_id}/messages/{message_id}/file")
+async def edit_file_message(
+    room_id: int,
+    message_id: int,
+    file_type: Annotated[str, Form()],
+    file: UploadFile = File(...),
+    caption: str | None = Form(None),
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db),
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
+
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed")
+
+    return await edit_message(
+        db=db,
+        room=room,
+        message_id=message_id,
+        requester_id=current_user_id,
+        new_content=caption,
+        new_file=file,
+        new_file_type=file_type
+    )
+    
+@router.delete("/room/{room_id}/messages/{message_id}")
+async def delete_message_by_id(
+    message_id: int,
+    room_id: int,
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db),
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Chat room not found")
+
+    if current_user_id not in (
+        room.candidate_user_id,
+        room.employer_user_id,
+    ):
+        raise HTTPException(403, "Not allowed")
+
+    return await delete_message(
+        db=db,
+        room=room,
+        message_id=message_id,
+        requester_id=current_user_id,
+    )

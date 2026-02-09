@@ -8,7 +8,7 @@ import os
 from app.models.chat_room import ChatRoom
 from app.models.chat_message import ChatMessage, MessageType
 from app.models.user_model import User
-from app.schemas.chat import ChatMessageOut
+from app.schemas.chat import ChatMessageOut, ChatMessageUpdateOut
 from app.websockets.chat_manager import manager
 from datetime import datetime
 from fastapi.encoders import jsonable_encoder
@@ -209,3 +209,161 @@ def get_total_unread_count(db, user_id: int) -> int:
         )
         .scalar()
     )
+    
+async def edit_message(
+    db: Session,
+    room: ChatRoom,
+    message_id: int,
+    requester_id: int,
+    new_content: str | None = None,
+    new_file: UploadFile | None = None,
+    new_file_type: str | None = None,
+):
+    msg: ChatMessage | None = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.id == message_id,
+            ChatMessage.room_id == room.id,
+        )
+        .first()
+    )
+
+    if not msg:
+        raise HTTPException(404, "Message not found")
+
+    if msg.sender_id != requester_id:
+        raise HTTPException(403, "Only sender can edit this message")
+
+    if new_content is not None:
+        msg.content = new_content
+
+    if new_file:
+        if not new_file_type:
+            raise HTTPException(400, "File type is required")
+
+        rule = FILE_RULES.get(new_file_type)
+        if not rule:
+            raise HTTPException(400, "Unsupported file type")
+
+        if "." not in new_file.filename:
+            raise HTTPException(400, "File has no extension")
+
+        ext = new_file.filename.rsplit(".", 1)[-1].lower()
+        if ext not in rule["extensions"]:
+            raise HTTPException(400, "Invalid file extension")
+
+        # delete old file
+        if msg.file_url:
+            old_path = msg.file_url.lstrip("/")
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except Exception:
+                    pass
+
+        folder = rule["folder"]
+        filename = f"{uuid.uuid4()}.{ext}"
+        path = f"uploads/chat/{folder}/{filename}"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        with open(path, "wb") as f:
+            shutil.copyfileobj(new_file.file, f)
+
+        msg.type = MessageType(new_file_type)  # fix: set type not file
+        msg.file_url = f"/{path}"
+        msg.file_size = new_file.size
+        msg.mime_type = new_file.content_type
+
+    msg.edited_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(msg)
+
+    # Convert Pydantic model to JSON-serializable dict
+    serialized = ChatMessageUpdateOut.from_orm(msg).model_dump(mode="json")
+
+    # ---- broadcast ----
+    await manager.broadcast_to_room(
+        room.id,
+        {
+            "type": "message_updated",
+            "message": serialized,
+        },
+    )
+
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_list_update",
+                "room_id": room.id,
+                "last_message": serialized,
+            },
+        )
+
+    return serialized
+
+async def delete_message(
+    db: Session,
+    room: ChatRoom,
+    message_id: int,
+    requester_id: int
+):
+    msg: ChatMessage | None =(
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.id == message_id,
+            ChatMessage.room_id == room.id
+        ).first()
+    )
+    
+    if not msg:
+        raise HTTPException(404, "Message not found")
+    
+    if msg.file_url:
+        file_path = msg.file_url.lstrip("/")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+            
+    db.delete(msg)
+    db.flush()
+
+    last_msg = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.room_id == room.id)
+        .order_by(ChatMessage.created_at.desc())
+        .first()
+    )
+    
+    room.last_message_id = last_msg.id if last_msg else None
+    room.last_message_at = last_msg.created_at if last_msg else None
+    
+    db.commit()
+
+    await manager.broadcast_to_room(
+        room.id,
+        {
+            "type": "message_deleted",
+            "message_id": message_id,
+            "room_id": room.id
+        }
+    )
+    
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_list_update",
+                "room_id": room.id,
+                "last_message": (
+                    serialize_message(ChatMessageOut.from_out(last_msg))
+                    if last_msg
+                    else None
+                )
+            }
+        )
+        
+    return {"status": "ok", "deleted_message_id": message_id}

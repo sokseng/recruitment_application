@@ -227,6 +227,20 @@ function ChatPage() {
                     }
                     break;
 
+                case "message_updated":
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === data.message.id ? data.message : msg
+                        )
+                    );
+                    break;
+
+                case "message_deleted":
+                    setMessages(prev =>
+                        prev.filter(msg => msg.id !== data.message_id)
+                    );
+                    break;
+
                 case "presence":
                     setOnlineUsers(prev => ({
                         ...prev,
@@ -337,8 +351,6 @@ function ChatPage() {
                     >
                         <List>
                             {chats.map(chat => {
-                                const unreadCount = chatCounts[chat.room_id] || 0;
-
                                 return (
                                     <Box
                                         key={chat.room_id}
@@ -392,27 +404,23 @@ function ChatPage() {
                                             <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.room_id === chat.room_id ? 'white' : 'grey.600' }}>
                                                 {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
                                             </Typography>
-                                            {chat.unread_count > 0 && (
+                                            {(chatCounts[chat.room_id] || 0) > 0 && (
                                                 <Box
                                                     sx={{
                                                         width: 15,
                                                         height: 15,
                                                         fontSize: 9,
                                                         mt: 0.25,
-                                                        backgroundColor: chat.unread_count > 0 ? 'orange' : 'grey',
-                                                        color: chat.unread_count > 0 ? 'white' : 'black',
+                                                        backgroundColor: 'orange',
+                                                        color: 'white',
                                                         display: 'flex',
                                                         justifyContent: 'center',
                                                         alignItems: 'center',
-                                                        borderRadius: '50%'
+                                                        borderRadius: '50%',
                                                     }}
                                                 >
-                                                    <Typography
-                                                        sx={{
-                                                            fontSize: 9,
-                                                        }}
-                                                    >
-                                                        {chat.unread_count}
+                                                    <Typography sx={{ fontSize: 9 }}>
+                                                        {chatCounts[chat.room_id]}
                                                     </Typography>
                                                 </Box>
                                             )}
