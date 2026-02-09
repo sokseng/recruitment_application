@@ -22,7 +22,8 @@ import {
   ListItemIcon,
   Divider,
   Collapse,
-  Link
+  Link,
+  Chip
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useState, useEffect } from "react";
@@ -65,6 +66,20 @@ export default function Topbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const globalUnread = useUnreadStore(state => state.globalCount);
   const accessToken = localStorage.getItem("access_token");
+
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showRobotCheck, setShowRobotCheck] = useState(false);
+  const [isHuman, setIsHuman] = useState(false);
+
+  const [robotAnswer, setRobotAnswer] = useState([]);
+  const [robotError, setRobotError] = useState(false);
+
+  const robotOptions = [
+    { id: 1, label: "🍎 Apple", isCorrect: true },
+    { id: 2, label: "🚗 Car", isCorrect: false },
+    { id: 3, label: "🍌 Banana", isCorrect: true },
+    { id: 4, label: "🐶 Dog", isCorrect: false },
+  ];
 
   useEffect(() => {
     if (!accessToken) return;
@@ -129,12 +144,11 @@ export default function Topbar() {
   const handleCloseLoginForm = () => {
     setOpenLogin(false);
     setFormData({ email: "", password: "" });
-    setError({});
+ 
   };
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState({});
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -205,6 +219,29 @@ export default function Topbar() {
     setDrawerOpen(false);
   };
 
+  const handleRobotConfirm = () => {
+    const correctIds = robotOptions
+      .filter(o => o.isCorrect)
+      .map(o => o.id)
+      .sort();
+
+    const selected = [...robotAnswer].sort();
+
+    const isValid =
+      JSON.stringify(correctIds) === JSON.stringify(selected);
+
+    if (!isValid) {
+      setRobotError(true);
+      return;
+    }
+
+    setIsHuman(true);
+    setShowRobotCheck(false);
+    setRobotAnswer([]);
+    setRobotError(false);
+  };
+
+
   useEffect(() => {
     if (isSettingsActive) {
       setOpenDrawerSettings(true);
@@ -214,8 +251,16 @@ export default function Topbar() {
   /* =====================
      Login
      ===================== */
+
   const handleLogin = async (e) => {
-    e.preventDefault(); // ⭐️ REQUIRED
+    e.preventDefault();
+
+    // 🚫 Block login if robot check not completed
+    if (showRobotCheck && !isHuman) {
+      setMessage("Please confirm you are not a robot");
+      setOpenSnackbar(true);
+      return;
+    }
 
     try {
       const res = await api.post("/user/login", {
@@ -223,7 +268,11 @@ export default function Topbar() {
         password: formData.password,
       });
 
-      // save token
+      // ✅ SUCCESS → reset everything
+      setFailedAttempts(0);
+      setShowRobotCheck(false);
+      setIsHuman(false);
+
       setAccessToken(res.data.access_token);
       setUserType(res.data.user_type);
       setUserData(res.data);
@@ -231,7 +280,6 @@ export default function Topbar() {
       setOpenLogin(false);
       setFormData({ email: "", password: "" });
 
-      // navigate by role
       switch (res.data.user_type) {
         case 1:
           navigate("/admin/dashboard", { replace: true });
@@ -247,30 +295,28 @@ export default function Topbar() {
       }
     } catch (err) {
       if (
-        err.response &&
-        err.response?.status === 404 &&
-        err.response?.data?.detail === "Email not found"
-      ) {
-        setMessage(err.response?.data?.detail);
-        setOpenSnackbar(true);
-      } else if (
-        err.response &&
         err.response?.status === 400 &&
         err.response?.data?.detail === "Invalid password"
       ) {
-        setMessage(err.response?.data?.detail);
+        const attempts = failedAttempts + 1;
+        setFailedAttempts(attempts);
+
+        if (attempts >= 3) {
+          setShowRobotCheck(true);
+          setMessage("Too many failed attempts. Please confirm you are not a robot.");
+          setSeverity("warning");
+        } else {
+          setMessage("Invalid password");
+        }
+
         setOpenSnackbar(true);
       } else if (
-        err.response &&
-        err.response?.status === 400 &&
-        err.response?.data?.detail === "User is currently disabled!"
+        err.response?.status === 404 &&
+        err.response?.data?.detail === "Email not found"
       ) {
-        setMessage(err.response?.data?.detail);
+        setMessage("Email not found");
         setOpenSnackbar(true);
-        setSeverity('info')
-      }
-
-      else {
+      } else {
         setMessage(err.response?.data?.detail || "Login failed");
         setOpenSnackbar(true);
       }
@@ -298,7 +344,6 @@ export default function Topbar() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -792,6 +837,70 @@ export default function Topbar() {
 
   return (
     <>
+      <Dialog
+        open={showRobotCheck}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 1,
+          },
+        }}
+      >
+
+        <DialogTitle sx={{ fontWeight: 600 }}>
+          🤖 Security Check
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography mb={2}>
+            Please select <b>all fruits</b> to continue
+          </Typography>
+
+          <Stack direction="row" flexWrap="wrap" gap={1}>
+            {robotOptions.map(option => {
+              const selected = robotAnswer.includes(option.id);
+
+              return (
+                <Chip
+                  key={option.id}
+                  label={option.label}
+                  clickable
+                  color={selected ? "primary" : "default"}
+                  variant={selected ? "filled" : "outlined"}
+                  onClick={() => {
+                    setRobotError(false);
+                    setRobotAnswer(prev =>
+                      selected
+                        ? prev.filter(id => id !== option.id)
+                        : [...prev, option.id]
+                    );
+                  }}
+                  sx={{ fontSize: 16 }}
+                />
+              );
+            })}
+          </Stack>
+
+          {robotError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              Incorrect selection. Please try again.
+            </Alert>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setShowRobotCheck(false)}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleRobotConfirm}>
+            Verify
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
+
+
       {/* Snackbar */}
       <Snackbar
         open={openSnackbar}
