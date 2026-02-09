@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
 
   // ⏳ Wait until hydration finishes
   if (!hydrated) {
-    return null // or loading spinner
+    return null 
   }
 
   // ❌ No token → login

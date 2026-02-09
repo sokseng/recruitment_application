@@ -21,7 +21,10 @@ class SendFileMessage(BaseModel):
     to_user_id: int
     type: str           # "image" | "voice"
     content: Optional[str] = None  # caption
-
+    
+class EditTextMessage(BaseModel):
+    content: str
+    type: Literal['text'] = 'text'
 
 class ChatMessageOut(BaseModel):
     id: int
@@ -34,13 +37,32 @@ class ChatMessageOut(BaseModel):
     mime_type: Optional[str]
     is_read: bool
     created_at: datetime
+    edited_at: Optional[datetime] = None
     read_at: Optional[datetime]
 
     model_config = {
         "from_attributes": True,
         "json_encoders": {datetime: lambda v: v.isoformat()}
     }
+    
+class ChatMessageUpdateOut(BaseModel):
+    id: int
+    room_id: int
+    sender_id: int
+    type: MessageType
+    content: Optional[str]
+    file_url: Optional[str]
+    file_size: Optional[int]
+    mime_type: Optional[str]
+    is_read: bool
+    created_at: datetime
+    edited_at: Optional[datetime] = None
+    read_at: Optional[datetime]
 
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 class ConversationSummary(BaseModel):
     user_id: int

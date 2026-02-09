@@ -21,7 +21,9 @@ export default function MainLayout({ children }) {
       <Box sx={{ p: isChatPage ? 0 : 1.5 }}>
         {children}
       </Box>
-      <Footer />
+      {!isChatPage && (
+        <Footer />
+      )}
     </Box>
   );
 }

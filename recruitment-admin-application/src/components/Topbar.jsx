@@ -64,22 +64,21 @@ export default function Topbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const globalUnread = useUnreadStore(state => state.globalCount);
+  const accessToken = localStorage.getItem("access_token");
 
   useEffect(() => {
+    if (!accessToken) return;
     const fetchUnreadData = async () => {
-      try {
-        const unreadData = await api.get("/chat/messages/unread/count");
+      const unreadData = await api.get("/chat/messages/unread/count");
 
-        const countsByRoom = unreadData.data.count;
+      const countsByRoom = unreadData.data.count;
 
-        const countsObject = typeof countsByRoom === "number"
-          ? { 0: countsByRoom }
-          : countsByRoom;
+      const countsObject = typeof countsByRoom === "number"
+        ? { 0: countsByRoom }
+        : countsByRoom;
 
-        useUnreadStore.getState().setAllChats(countsObject);
-      } catch (err) {
-        console.error("Failed to fetch unread counts:", err);
-      }
+      useUnreadStore.getState().setAllChats(countsObject);
+
     };
 
     fetchUnreadData();
