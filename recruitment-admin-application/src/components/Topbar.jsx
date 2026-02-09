@@ -21,7 +21,8 @@ import {
   Menu,
   ListItemIcon,
   Divider,
-  Collapse
+  Collapse,
+  Link
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import { useState, useEffect } from "react";
@@ -88,6 +89,13 @@ export default function Topbar() {
     const interval = setInterval(fetchUnreadData, 15000); // 15s
     return () => clearInterval(interval);
   }, []);
+
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    navigate('/forgot_password');
+    handleCloseLoginForm();
+  };
+
 
   const {
     access_token,
@@ -1564,7 +1572,26 @@ export default function Topbar() {
               >
                 Login
               </Button>
+
             </Stack>
+            <Box
+              display="flex"
+              justifyContent="flex-end"
+              sx={{ mt: 1, mb: 1 }}
+            >
+              <Link
+                type="button"
+                component="button"
+                variant="body2"
+                onClick={handleForgotPassword}
+                sx={{
+                  color: "#764ba2",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Forgot Password
+              </Link>
+            </Box>
           </Stack>
         </DialogContent>
       </Dialog>

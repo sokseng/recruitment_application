@@ -1,125 +1,298 @@
-import React, { useState } from 'react';
+// ChatMenuDialog.jsx
+
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
-    Box,
-    Dialog,
-    DialogTitle,
-    DialogContent,
     Avatar,
-    Typography,
+    Box,
+    CircularProgress,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     IconButton,
     Menu,
     MenuItem,
-    Tabs,
     Tab,
-    Button
+    Tabs,
+    Typography,
 } from '@mui/material';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import MediaComponent from '../MediaComponent';
+import { useEffect, useState } from 'react';
+import api from '../../../services/api';
 
-function ChatMenuDialog({ open, onClose, user }) {
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [tabValue, setTabValue] = useState(0);
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
+function ChatMenuDialog({ open, onClose, user, roomId }) {
+  const [tabValue, setTabValue] = useState(0);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  useEffect(() => {
+    if (!open || !roomId) {
+      setMessages([]);
+      setErrorMsg(null);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadChatHistory = async () => {
+      setLoading(true);
+      setErrorMsg(null);
+
+      try {
+        const response = await api.get(`/chat/room/${roomId}/messages`, {
+          params: {
+            limit: 120,
+            offset: 0,
+          },
+        });
+
+        if (isMounted) {
+          setMessages(response.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to load chat history for profile', err);
+        if (isMounted) {
+          setErrorMsg('Could not load media / voice / links history');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     };
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+    loadChatHistory();
 
-    const handleTabChange = (event, newValue) => {
-        setTabValue(newValue);
+    return () => {
+      isMounted = false;
     };
+  }, [open, roomId,tabValue]);
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-            <DialogTitle>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const mediaMessages = messages.filter(
+    (m) => (m.type === 'image' || m.type === 'video') && m.file_url
+  );
+
+  const voiceMessages = messages.filter(
+    (m) => m.type === 'voice' && m.file_url
+  );
+
+  const linkMessages = messages.filter((m) => {
+    if (m.type !== 'text' || !m.content) return false;
+    return /https?:\/\/[^\s]+/.test(m.content);
+  });
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        <Box sx={{ position: 'relative', textAlign: 'center', py: 1 }}>
+          <Avatar
+            src={user?.avatar_url || undefined}
+            sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
+          >
+            {user?.username?.charAt(0)?.toUpperCase() || '?'}
+          </Avatar>
+
+          <Typography variant="h6">{user?.username || 'User'}</Typography>
+
+          <Typography
+            variant="caption"
+            color={user?.is_online ? 'success.main' : 'text.secondary'}
+          >
+            {user?.is_online ? 'Online' : 'Offline'}
+          </Typography>
+
+          <IconButton
+            onClick={handleMenuOpen}
+            sx={{ position: 'absolute', top: 8, right: 8 }}
+          >
+            <MoreVertIcon />
+          </IconButton>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleMenuClose}>Mute notifications</MenuItem>
+            <MenuItem onClick={handleMenuClose}>Report user</MenuItem>
+            <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+              Block user
+            </MenuItem>
+          </Menu>
+        </Box>
+      </DialogTitle>
+
+      <DialogContent sx={{ px: 2, pb: 3 }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+        >
+          <Tab label="Media" />
+          <Tab label="Voice" />
+          <Tab label="Links" />
+        </Tabs>
+
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : errorMsg ? (
+          <Typography color="error" align="center" sx={{ py: 6 }}>
+            {errorMsg}
+          </Typography>
+        ) : (
+          <>
+            {tabValue === 0 && (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: 1.5,
+                }}
+              >
+                {mediaMessages.length === 0 ? (
+                  <Typography
+                    color="text.secondary"
+                    align="center"
+                    sx={{ gridColumn: '1 / -1', py: 8 }}
+                  >
+                    No images or videos shared yet
+                  </Typography>
+                ) : (
+                  mediaMessages.map((msg) => (
                     <Box
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '100%'
-                        }}
+                      key={msg.id}
+                      sx={{
+                        aspectRatio: '1',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        bgcolor: 'grey.100',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => {
+                        if (msg.file_url) {
+                          window.open(`${BASE_URL}${msg.file_url}`, '_blank');
+                        }
+                      }}
                     >
-                        <Avatar
-                            src={user.avatar_url}
-                            sx={{
-                                width: 75,
-                                height: 75,
-                            }}
-                        >{user?.username?.charAt(0).toUpperCase() || 'P'}</Avatar>
-                        <Typography variant="subtitle">{user.username}</Typography>
-                        <Typography variant="caption" sx={{ color: user.is_online ? 'primary.main' : 'grey' }}>
-                            {user.is_online ? 'Online' : 'Offline'}
+                      {msg.type === 'video' ? (
+                        <video
+                          src={`${BASE_URL}${msg.file_url}`}
+                          muted
+                          loop
+                          playsInline
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={`${BASE_URL}${msg.file_url}`}
+                          alt="chat media"
+                          loading="lazy"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      )}
+                    </Box>
+                  ))
+                )}
+              </Box>
+            )}
+
+            {tabValue === 1 && (
+              <Box sx={{ px: 1 }}>
+                {voiceMessages.length === 0 ? (
+                  <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
+                    No voice messages yet
+                  </Typography>
+                ) : (
+                  voiceMessages.map((msg) => (
+                    <Box key={msg.id} sx={{ mb: 3 }}>
+                      <audio
+                        controls
+                        src={`${BASE_URL}${msg.file_url}`}
+                        style={{ width: '100%' }}
+                      />
+                      {msg.content && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 0.5, display: 'block' }}
+                        >
+                          {msg.content}
                         </Typography>
+                      )}
                     </Box>
-                    <IconButton
-                        sx={{
-                            position: 'absolute',
-                            top: 10,
-                            right: 10
-                        }}
-                        onClick={handleMenuOpen}
-                    >
-                        <MoreVertIcon />
-                    </IconButton>
-
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={handleMenuClose}
-                    >
-                        <MenuItem onClick={handleMenuClose}>Mute</MenuItem>
-                        <MenuItem onClick={handleMenuClose}>Report</MenuItem>
-                        <MenuItem onClick={handleMenuClose} sx={{ color: 'red' }}>Block User</MenuItem>
-                    </Menu>
-                </Box>
-            </DialogTitle>
-
-            <DialogContent>
-                <Tabs
-                    value={tabValue}
-                    onChange={handleTabChange}
-                    variant="fullWidth"
-                    sx={{ mb: 2 }}
-                >
-                    <Tab label="Media" />
-                    <Tab label="Voice" />
-                    <Tab label="Links" />
-                </Tabs>
-
-                {tabValue === 0 && (
-                    <Box
-                    sx={{
-                        display:'flex',
-                        flexWrap: 'now-wrap',
-                        gap: 1
-                    }}
-                    >
-                        <MediaComponent />
-                        <MediaComponent />
-                        <MediaComponent />
-                        <MediaComponent />
-                    </Box>
+                  ))
                 )}
-                {tabValue === 1 && (
-                    <Box>
-                        <Typography>Voice messages go here...</Typography>
-                    </Box>
-                )}
-                {tabValue === 2 && (
-                    <Box>
-                        <Typography>Links shared in chat go here...</Typography>
-                    </Box>
-                )}
-            </DialogContent>
+              </Box>
+            )}
 
-        </Dialog>
-    );
+            {tabValue === 2 && (
+              <Box sx={{ px: 1 }}>
+                {linkMessages.length === 0 ? (
+                  <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
+                    No links shared yet
+                  </Typography>
+                ) : (
+                  linkMessages.map((msg) => {
+                    const urlMatch = msg.content?.match(/https?:\/\/[^\s]+/);
+                    const url = urlMatch ? urlMatch[0] : '';
+
+                    return (
+                      <Box key={msg.id} sx={{ mb: 2.5 }}>
+                        <Typography
+                          component="a"
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          color="primary"
+                          sx={{ wordBreak: 'break-all' }}
+                        >
+                          {url}
+                        </Typography>
+                        {msg.content && msg.content !== url && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 0.5, display: 'block' }}
+                          >
+                            {msg.content}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })
+                )}
+              </Box>
+            )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default ChatMenuDialog;

@@ -3,19 +3,19 @@ import {
     EmojiEmotions as EmojiEmotionsIcon,
     InsertEmoticon as InsertEmoticonIcon,
 } from '@mui/icons-material';
-import { Box, IconButton, Avatar, Typography, AppBar, Toolbar, Paper, TextField, Snackbar, Alert, CircularProgress, Button } from "@mui/material";
-import CallIcon from '@mui/icons-material/Call';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import MessageBubble from './MessageBubble';
-import MicIcon from '@mui/icons-material/Mic';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
-import SendIcon from '@mui/icons-material/Send';
-import { useRef, useState, useEffect } from 'react';
-import EmojiPicker from './EmojiPicker';
+import CallIcon from '@mui/icons-material/Call';
 import CloseIcon from '@mui/icons-material/Close';
+import MicIcon from '@mui/icons-material/Mic';
+import SendIcon from '@mui/icons-material/Send';
 import StopIcon from '@mui/icons-material/Stop';
-import ChatMenuDialog from './dialog/ChatMenuDialog';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import { Alert, AppBar, Avatar, Box, CircularProgress, IconButton, Paper, Snackbar, TextField, Toolbar, Typography } from "@mui/material";
+import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
+import ChatMenuDialog from './dialog/ChatMenuDialog';
+import EmojiPicker from './EmojiPicker';
+import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import DeleteDialog from './dialog/DeleteDialog';
 
@@ -758,6 +758,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     open={popup}
                     onClose={() => setPopup(false)}
                     user={chat}
+                    roomId={chat?.room_id}
                 />
             )}
             <DeleteDialog

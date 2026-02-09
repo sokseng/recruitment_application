@@ -507,11 +507,11 @@ function JobFormDialog({
                     minHeight: 170,
                     height: "auto",
                   },
-                  "& .ql-editor *": {
-                    backgroundColor: "transparent !important",
-                    height: "auto",
-                    overflowY: "hidden",
-                  },
+                  "& .ql-editor": {
+                    minHeight: 170,
+                    maxHeight: 300,
+                    overflowY: "auto",
+                  }
                 }}
               >
                 <ReactQuill
@@ -565,8 +565,10 @@ function JobFormDialog({
                     minHeight: 170,
                     height: "auto",
                   },
-                  "& .ql-editor *": {
-                    backgroundColor: "transparent !important",
+                  "& .ql-editor": {
+                    minHeight: 170,
+                    maxHeight: 300,
+                    overflowY: "auto",
                   },
                 }}
               >
@@ -845,6 +847,16 @@ export default function MyJobs() {
                 <SearchIcon color="action" />
               </InputAdornment>
             ),
+            endAdornment: search && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setSearch("")}
+                >
+                  <Cancel fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
         />
 
@@ -986,28 +998,37 @@ export default function MyJobs() {
             },
           }}
         >
-          <Button
-            variant="outlined"
-            startIcon={<Cancel />}
-            sx={{ borderRadius: 3, textTransform: "none" }}
-            onClick={() => {
-              setSearch("");
-              setStatusTab("Open");
-              setTypeFilter("All");
-              setLevelFilter("All");
-              setCategoryFilter(["All"]);
-            }}
-          >
-            Reset
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PostAdd />}
-            onClick={openCreate}
-            sx={{ borderRadius: 3, textTransform: "none" }}
-          >
-            Post
-          </Button>
+          <Tooltip title="Reset all filters" arrow placement="top">
+            <Button
+              variant="outlined"
+              startIcon={<Cancel />}
+              color="error"
+              sx={{
+                borderRadius: 3,
+                textTransform: "none",
+              }}
+              onClick={() => {
+                setSearch("");
+                setStatusTab("Open");
+                setTypeFilter("All");
+                setLevelFilter("All");
+                setCategoryFilter(["All"]);
+              }}
+            >
+              Reset
+            </Button>
+          </Tooltip>
+          <Tooltip title="Post a job" arrow placement="top">
+            <Button
+              variant="contained"
+              startIcon={<PostAdd />}
+              onClick={openCreate}
+              sx={{ borderRadius: 3, textTransform: "none" }}
+            >
+              Post
+            </Button>
+          </Tooltip>
+          
         </Stack>
       </Box>
       {/* Small Responsive Tabs */}

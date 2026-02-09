@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import Topbar from '../components/Topbar';
+import Footer from '../components/Footer';
 
 export default function MainLayout({ children }) {
   const location = useLocation();
@@ -17,9 +18,12 @@ export default function MainLayout({ children }) {
       }}
     >
       <Topbar />
-      <Box sx={{ p: isChatPage ? 0 : 2 }}>
+      <Box sx={{ p: isChatPage ? 0 : 1.5 }}>
         {children}
       </Box>
+      {!isChatPage && (
+        <Footer />
+      )}
     </Box>
   );
 }
