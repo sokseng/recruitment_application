@@ -359,7 +359,7 @@ async def delete_message(
                 "type": "chat_list_update",
                 "room_id": room.id,
                 "last_message": (
-                    serialize_message(ChatMessageOut.from_out(last_msg))
+                    serialize_message(ChatMessageOut.from_orm(last_msg))
                     if last_msg
                     else None
                 )

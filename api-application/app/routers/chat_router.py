@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
 from typing import Annotated, List
 from sqlalchemy import or_, func
@@ -307,7 +307,7 @@ async def edit_file_message(
         new_file_type=file_type
     )
     
-@router.delete("/room/{room_id}/messages/{message_id}")
+@router.delete("/room/{room_id}/messages/{message_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_message_by_id(
     message_id: int,
     room_id: int,

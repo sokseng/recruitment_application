@@ -188,6 +188,7 @@ function ChatPage() {
 
     const handleSelectChat = (chat) => {
         setSelectedChat(chat);
+        setOpen(false);
 
         resetUnread(chat.room_id);
 
@@ -195,6 +196,7 @@ function ChatPage() {
             const exists = prev.some(c => c.room_id === chat.room_id);
             return exists ? prev : [chat, ...prev];
         });
+        
 
     };
 
