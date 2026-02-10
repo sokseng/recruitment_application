@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import api from "../services/api";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const ForgotPassword = () => {
     const [step, setStep] = useState(0);
@@ -32,28 +33,35 @@ const ForgotPassword = () => {
     const [severity, setSeverity] = useState('error')
     const [openSnackbar, setOpenSnackbar] = useState(false)
     const [message, setMessage] = useState('')
-    
+    const [loading, setLoading] = useState(false);
 
 
     const steps = ["Enter email", "Verify code", "Reset password"];
 
     // Step 1: Request reset code
     const handleRequestCode = async () => {
+        setLoading(true);
         try {
             await api.post("/forgot_password", { email: email });
             setStep(1);
         } catch (err) {
+
             if (err.response && err.response.status === 404 && err.response.data.detail === "Email not found") {
                 setSeverity('success')
                 setMessage('Email address not found. Please check and try again.')
                 setOpenSnackbar(true)
-            }
-            else {
+            } else if (err.response && err.response.status === 429 && err.response.data.detail === "System email limit reached for today. Please try again tomorrow.") {
+                setSeverity('warning')
+                setMessage('System email limit reached for today. Please try again tomorrow.')
+                setOpenSnackbar(true)
+            } else {
                 setSeverity('error')
                 setMessage('Error sending code. Please try again.')
                 setOpenSnackbar(true)
                 console.error(err)
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -186,8 +194,17 @@ const ForgotPassword = () => {
                                 }}
                                 fullWidth
                             />
-                            <Button size="small" variant="contained" type="submit">
-                                Send Code
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={loading}
+                                size="small"
+                            >
+                                {loading ? (
+                                    <CircularProgress size={22} color="inherit" />
+                                ) : (
+                                    "Send Code"
+                                )}
                             </Button>
                         </Box>
                     )}

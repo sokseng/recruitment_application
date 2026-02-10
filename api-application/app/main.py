@@ -33,6 +33,7 @@ from app.models.job_application_model import JobApplication
 from app.models.employer_category_model import employer_category
 from app.models.global_setting_model import GlobalSetting
 from app.models.forgot_password_model import ForgotPassword
+from app.models.email_log_model import EmailLog
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category
