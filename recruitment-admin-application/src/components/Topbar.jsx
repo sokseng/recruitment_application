@@ -82,9 +82,6 @@ export default function Topbar() {
     };
 
     fetchUnreadData();
-
-    const interval = setInterval(fetchUnreadData, 15000); // 15s
-    return () => clearInterval(interval);
   }, []);
 
   const handleForgotPassword = (e) => {

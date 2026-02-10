@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form, status, Query
+from sqlalchemy.orm import Session, joinedload
 from typing import Annotated, List
 from sqlalchemy import or_, func
 from app.database.deps import get_db
@@ -9,7 +9,8 @@ from app.models.chat_room import ChatRoom
 from app.models.chat_message import ChatMessage
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
-    ChatMessageOut, ConversationSummary, EditTextMessage
+    ChatMessageOut, ConversationSummary, EditTextMessage,
+    ForwardMessageRequest
 )
 from fastapi import Body
 from app.dependencies.chat import get_current_active_user
@@ -21,10 +22,12 @@ from app.controllers.chat_controller import (
     send_text_message,
     get_total_unread_count,
     edit_message,
-    delete_message
+    delete_message,
+    forward_message
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
+from typing import Optional
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -34,19 +37,25 @@ def search_users(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token),
 ):
-    users = (
+    current_user = (
         db.query(User)
-        .filter(
-            User.pk_id != current_user_id,
-            or_(
-                User.user_name.ilike(f"%{q}%"),
-                User.email.ilike(f"%{q}%"),
-                User.phone.ilike(f"%{q}%"),
-            )
-        )
-        .limit(10)
-        .all()
+        .filter(User.pk_id == current_user_id)
+        .first()
     )
+
+    query = db.query(User).filter(
+        User.pk_id != current_user_id,
+        or_(
+            User.user_name.ilike(f"%{q}%"),
+            User.email.ilike(f"%{q}%"),
+            User.phone.ilike(f"%{q}%"),
+        )
+    )
+
+    if current_user.user_type != 1:
+        query = query.filter(User.user_type != 1)
+
+    users = query.limit(10).all()
     return users
 
 @router.get("/", response_model=List[ConversationSummary])
@@ -73,12 +82,17 @@ def get_my_conversations(
             else room.candidate_user
         )
 
-        last_msg = (
-            db.query(ChatMessage)
-            .filter(ChatMessage.room_id == room.id)
-            .order_by(ChatMessage.created_at.desc())
-            .first()
-        )
+        last_msg = None
+        if room.last_message_id:
+            last_msg = (
+                db.query(ChatMessage)
+                .options(
+                    joinedload(ChatMessage.reply_to),
+                    joinedload(ChatMessage.forward_from),
+                )
+                .filter(ChatMessage.id == room.last_message_id)
+                .first()
+            )
 
         unread_count = (
             db.query(func.count(ChatMessage.id))
@@ -113,6 +127,9 @@ def get_or_create_room(
     current_user_id: int = Depends(verify_access_token),
 ):
     room = get_or_create_chat_room(db, current_user_id, request.other_user_id)
+    
+    if not room:
+        return None
 
     other_user = (
         room.employer_user
@@ -129,6 +146,45 @@ def get_or_create_room(
         "last_message_at": None,
         "unread_count": 0,
     }
+    
+@router.get("/recent-rooms")
+def list_recent_rooms(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    rooms = (
+        db.query(ChatRoom)
+        .filter(
+            (ChatRoom.candidate_user_id == current_user_id)
+            | (ChatRoom.employer_user_id == current_user_id)
+        )
+        .order_by(ChatRoom.created_at.desc())
+        .all()
+    )
+
+    results = []
+
+    for room in rooms:
+        other_user = (
+            room.employer_user
+            if room.candidate_user_id == current_user_id
+            else room.candidate_user
+        )
+
+        results.append(
+            {
+                "room_id": room.id,
+                "user_id": other_user.pk_id,
+                "username": other_user.user_name,
+                "avatar_url": None,
+                "last_message": None,
+                "last_message_at": None,
+                "unread_count": 0,
+                "created_at": room.created_at,
+            }
+        )
+
+    return results
     
 @router.post("/messages")
 async def send_text(
@@ -151,7 +207,8 @@ async def send_text(
         db=db,
         current_user=current_user,
         room=room,
-        content=request.content
+        content=request.content,
+        reply_to_id=request.reply_to_id,
     )
     
     return payload
@@ -161,6 +218,7 @@ async def send_file(
     room_id: Annotated[int, Form()],
     type: Annotated[str, Form()],  # image | voice | video
     content: Annotated[str | None, Form()] = None,
+    reply_to_id: Annotated[int | None, Form()] = None,
     file: UploadFile = File(...),
     current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db),
@@ -182,7 +240,58 @@ async def send_file(
         file_type=type,
         caption=content,
         file=file,
+        reply_to_id=reply_to_id
     )
+    
+@router.get("/{current_room_id}")
+def get_chat_list_without_current(
+    current_room_id: int,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db),
+):
+    base_query = (
+        db.query(ChatRoom)
+        .filter(
+            ChatRoom.id != current_room_id,
+            (
+                (ChatRoom.candidate_user_id == current_user_id) |
+                (ChatRoom.employer_user_id == current_user_id)
+            )
+        )
+    )
+
+    total = base_query.count()
+
+    rooms = (
+        base_query
+        .order_by(ChatRoom.last_message_at.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
+
+    items = [
+        {
+            "room_id": room.id,
+            "username": (
+                room.employer.username
+                if room.candidate_user_id == current_user_id
+                else room.candidate_user.user_name
+            ),
+            "last_message_at": room.last_message_at,
+        }
+        for room in rooms
+    ]
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + limit < total,
+    }
 
 @router.get("/room/{room_id}/messages", response_model=List[ChatMessageOut])
 def get_messages(
@@ -307,7 +416,7 @@ async def edit_file_message(
         new_file_type=file_type
     )
     
-@router.delete("/room/{room_id}/messages/{message_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/room/{room_id}/messages/{message_id}")
 async def delete_message_by_id(
     message_id: int,
     room_id: int,
@@ -330,3 +439,30 @@ async def delete_message_by_id(
         message_id=message_id,
         requester_id=current_user_id,
     )
+    
+async def forward_message_to_rooms(
+    request: ForwardMessageRequest,
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db)
+):
+    current_user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not current_user:
+        raise HTTPException(404, "User not found")
+
+    original_msg = db.query(ChatMesssage).filter(ChatMessage.id == request.message_id).first()
+    if not original_msg:
+        raise HTTPException(404, "Message not found")
+
+    rooms = db.query(ChatRoom).filter(ChatRoom.id.in_(request.target_room_ids)).all()
+    if not room:
+        raise HTTPException(404, "No target room found")
+    
+    payloads = await forward_message(
+        db=db,
+        current_user=current_user,
+        original_msg=original_msg,
+        target_rooms=rooms
+    )
+    
+    return {"forwared_messages": payloads}
+

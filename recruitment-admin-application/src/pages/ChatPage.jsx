@@ -48,7 +48,7 @@ function ChatPage() {
     const [typingUsers, setTypingUsers] = useState({});
     const [loadingOlder, setLoadingOlder] = useState(false);
 
-    const LIMIT = 50;
+    const LIMIT = 10;
 
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -109,6 +109,8 @@ function ChatPage() {
         if (newMessages.length < LIMIT) setHasMore(false);
         if (reset) setOffset(LIMIT);
         else setOffset(prev => prev + LIMIT);
+
+        console.log("messages", newMessages)
 
         return newMessages;
     };

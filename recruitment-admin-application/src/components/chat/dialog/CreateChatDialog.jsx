@@ -5,21 +5,31 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Button,
   List,
   ListItemButton,
   ListItemAvatar,
   Avatar,
   ListItemText,
   IconButton,
+  Typography,
 } from "@mui/material";
 import api from "../../../services/api";
-import CloseIcon from '@mui/icons-material/Close';
+import CloseIcon from "@mui/icons-material/Close";
 
 const FindUsers = ({ open, onClose, onSelectUser }) => {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState([]);
+  const [recentRooms, setRecentRooms] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    api
+      .get("/chat/recent-rooms")
+      .then((res) => setRecentRooms(res.data))
+      .catch(console.error);
+  }, [open]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -34,7 +44,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
         .then((res) => setUsers(res.data))
         .catch(console.error)
         .finally(() => setLoading(false));
-    }, 300); // debounce
+    }, 300);
 
     return () => clearTimeout(timeout);
   }, [query]);
@@ -54,9 +64,11 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
     }
   };
 
+  const showRecent = !query.trim();
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>Find Users</DialogTitle>
+      <DialogTitle>Find users</DialogTitle>
 
       <DialogContent>
         <TextField
@@ -68,26 +80,65 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        <List>
-          {users.map((user) => (
-            <ListItemButton key={user.pk_id} onClick={() => handleSelect(user)}>
-              <ListItemAvatar>
-                <Avatar src={user.avatar_url}>
-                  {user.user_name[0]?.toUpperCase()}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText primary={user.user_name} />
-            </ListItemButton>
-          ))}
-        </List>
+        {showRecent && recentRooms.length > 0 && (
+          <>
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
+              Recent users
+            </Typography>
+
+            <List>
+              {recentRooms.map((room) => (
+                <ListItemButton
+                  key={room.room_id}
+                  onClick={() =>
+                    handleSelect({
+                      pk_id: room.user_id,
+                      user_name: room.username,
+                    })
+                  }
+                >
+                  <ListItemAvatar>
+                    <Avatar src={room.avatar_url}>
+                      {room.username[0]?.toUpperCase()}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText primary={room.username} />
+                </ListItemButton>
+              ))}
+            </List>
+          </>
+        )}
+
+        {!showRecent && (
+          <List>
+            {users.map((user) => (
+              <ListItemButton
+                key={user.pk_id}
+                onClick={() => handleSelect(user)}
+              >
+                <ListItemAvatar>
+                  <Avatar src={user.avatar_url}>
+                    {user.user_name[0]?.toUpperCase()}
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText primary={user.user_name} />
+              </ListItemButton>
+            ))}
+          </List>
+        )}
 
         {!loading && query && users.length === 0 && (
-          <p style={{ opacity: 0.6 }}>No users found</p>
+          <Typography sx={{ opacity: 0.6, mt: 2 }}>
+            No users found
+          </Typography>
         )}
       </DialogContent>
 
       <DialogActions>
-        <IconButton onClick={onClose} sx={{ textTransform: "none", position: 'absolute', top: 5, right: 5 }}>
+        <IconButton
+          onClick={onClose}
+          sx={{ position: "absolute", top: 5, right: 5 }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogActions>

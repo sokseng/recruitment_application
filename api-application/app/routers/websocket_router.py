@@ -99,3 +99,36 @@ async def websocket_chat(
             },
             exclude_user_id=current_user_id
         )
+        
+@router.websocket("/ws")
+async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
+    await ws.accept()
+
+    user = await get_current_user_ws(ws, db)
+    if not user:
+        await ws.close(code=1008)
+        return
+
+    user_id = user.pk_id
+    await manager.connect(ws, user_id)
+
+    try:
+        while True:
+            data = await ws.receive_json()
+            event_type = data["type"]
+            payload = data.get("payload", {})
+
+            if event_type == "chat.join":
+                manager.join_room(user_id, payload["room_id"])
+
+            elif event_type == "chat.leave":
+                manager.leave_room(user_id, payload["room_id"])
+                
+            else:
+                await ws.send_json({
+                        "type": "error",
+                        "message": "Invalid event type"
+                    })
+
+    except WebSocketDisconnect:
+        manager.disconnect(ws, user_id)
