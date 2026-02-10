@@ -17,6 +17,7 @@ import ForgotPassword from '../pages/ForgotPassword'
 import About from '../pages/about/About'
 import PrivacyPolicy from '../pages/about/PrivacyPolicy'
 import TermofUse from '../pages/about/TermofUse'
+import CandidateApply from '../pages/CandidateApply'
 
 export default function AppRoutes() {
   return (
@@ -123,6 +124,14 @@ export default function AppRoutes() {
           }
         />
 
+        <Route
+          path="/candidate_apply"
+          element={
+            <ProtectedRoute>
+              <CandidateApply />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Optional */}
         <Route

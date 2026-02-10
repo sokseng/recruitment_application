@@ -192,8 +192,8 @@ export default function Topbar() {
       { label: "Home", path: "/", icon: <HomeIcon /> },
       { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
       { label: "Profile", path: "/update_profile", icon: <PersonIcon /> },
-      { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
-      { label: "All Companies", path: "/company", icon: <BusinessIcon /> },
+      // { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
+      { label: "Candidate Apply", path: "/candidate_apply", icon: <BusinessIcon /> },
     ],
   };
 
@@ -289,7 +289,7 @@ export default function Topbar() {
           navigate("/employer", { replace: true });
           break;
         case 3:
-          navigate("/candidate", { replace: true });
+          navigate("/update_profile", { replace: true });
           break;
         default:
           navigate("/", { replace: true });
