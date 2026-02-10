@@ -1,145 +1,144 @@
-from fastapi import WebSocket
-from typing import Dict, Set
-
-from fastapi import WebSocket
 import asyncio
 import time
-from starlette.websockets import WebSocketState
+from typing import Dict, List, Tuple, Set
+from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, list[tuple[WebSocket, int]]] = {}
-        self.user_rooms: dict[int, set[int]] = {}
-        self.heartbeats: dict[WebSocket, asyncio.Task] = {}
-        
+        self.active_connections: Dict[int, List[Tuple[WebSocket, int]]] = {}
+        self.user_rooms: Dict[int, Set[int]] = {}
+        self.user_connections: Dict[int, Set[WebSocket]] = {}
+        self.heartbeats: Dict[WebSocket, asyncio.Task] = {}
+
     async def start_heartbeat(self, websocket: WebSocket, interval: int = 20):
         try:
             while True:
                 await asyncio.sleep(interval)
                 if websocket.application_state != WebSocketState.CONNECTED:
                     break
-                await websocket.send_json({
-                    "type": "ping",
-                    "ts": time.time()
-                })
+                try:
+                    await asyncio.wait_for(
+                        websocket.send_json({"type": "ping", "ts": time.time()}),
+                        timeout=1.0
+                    )
+                except (RuntimeError, asyncio.TimeoutError):
+                    # Socket is busy or temporarily blocked; skip this heartbeat
+                    continue
         except Exception:
             pass
 
     async def connect(self, websocket: WebSocket, user_id: int, room_id: int):
-
-        # remove from all old rooms
         self.remove_socket_everywhere(websocket)
-
         websocket.state.user_id = user_id
 
-        if room_id not in self.active_connections:
-            self.active_connections[room_id] = []
-        self.active_connections[room_id].append((websocket, user_id))
+        self.user_connections.setdefault(user_id, set()).add(websocket)
+        self.active_connections.setdefault(room_id, []).append((websocket, user_id))
+        self.user_rooms.setdefault(user_id, set()).add(room_id)
 
-        if user_id not in self.user_rooms:
-            self.user_rooms[user_id] = set()
-        self.user_rooms[user_id].add(room_id)
+        # start heartbeat
+        self.heartbeats[websocket] = asyncio.create_task(self.start_heartbeat(websocket))
 
-        self.heartbeats[websocket] = asyncio.create_task(
-            self.start_heartbeat(websocket)
-        )
-
-        # notify others in the room that this user is online
+        # Notify others in the room that this user is online
         await self.broadcast_to_room(
             room_id,
             {"type": "presence", "userId": user_id, "online": True},
             exclude_user_id=user_id
         )
 
-        # also send presence of existing users to the new user
-        for _, uid in self.active_connections[room_id]:
+        # Send presence of existing users to the new user
+        for ws, uid in self.active_connections[room_id]:
             if uid != user_id:
-                await websocket.send_json({
-                    "type": "presence",
-                    "userId": uid,
-                    "online": True
-                })
+                try:
+                    await websocket.send_json({"type": "presence", "userId": uid, "online": True})
+                except Exception:
+                    pass
 
     def disconnect(self, websocket: WebSocket, user_id: int, room_id: int):
         task = self.heartbeats.pop(websocket, None)
         if task:
             task.cancel()
-            
+
+        if user_id in self.user_connections:
+            self.user_connections[user_id].discard(websocket)
+            if not self.user_connections[user_id]:
+                del self.user_connections[user_id]
+
         self.remove_socket_everywhere(websocket)
-            
+
         if room_id in self.active_connections:
             self.active_connections[room_id] = [
                 (ws, uid) for ws, uid in self.active_connections[room_id] if ws != websocket
             ]
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
-            
+
         if user_id in self.user_rooms:
             self.user_rooms[user_id].discard(room_id)
             if not self.user_rooms[user_id]:
                 del self.user_rooms[user_id]
 
     async def broadcast_to_room(self, room_id: int, message: dict, exclude_user_id: int | None = None):
-        print("BROADCAST TO ROOM:", room_id, message)
+        """Broadcast message to all users in a room safely"""
         if room_id not in self.active_connections:
-            print("NO ACTIVE CONNECTIONS FOR ROOM")
             return
 
-        for ws, uid in self.active_connections[room_id][:]:
+        coros = []
+        for ws, uid in list(self.active_connections[room_id]):
             if exclude_user_id is not None and uid == exclude_user_id:
                 continue
-            try:
-                await ws.send_json(message)
-            except RuntimeError:
-                self.active_connections[room_id].remove((ws, uid))
-            except Exception as e:
-                print(f"Error sending to websocket: {e}")
-                
+            coros.append(self._safe_send(ws, message, room_id, uid))
+
+        if coros:
+            await asyncio.gather(*coros)
+
     async def broadcast_typing(self, room_id: int, user_id: int, is_typing: bool):
+        """Broadcast typing event to room"""
         if room_id not in self.active_connections:
-            return 
-        
-        message = {
-            "type": "typing",
-            "user_id": user_id,
-            "is_typing": is_typing
-        }
-        
-        for ws, uid in self.active_connections[room_id][:]:
-            if uid != user_id: # don't send typing event back to the user themselves
-                try:
-                    await ws.send_json(message)
-                except RuntimeError:
-                    self.active_connections[room_id].remove((ws, uid))
-                except Exception as e:
-                    print(f"Error sending typing event: {e}")
-                    
+            return
+        message = {"type": "typing", "user_id": user_id, "is_typing": is_typing}
+        coros = [
+            self._safe_send(ws, message, room_id, uid)
+            for ws, uid in self.active_connections[room_id]
+            if uid != user_id
+        ]
+        if coros:
+            await asyncio.gather(*coros)
+
+    async def broadcast_to_user(self, user_id: int, message: dict):
+        """Send message to all connections of a specific user"""
+        sockets = list(self.user_connections.get(user_id, []))
+        coros = [self._safe_send(ws, message) for ws in sockets]
+        if coros:
+            await asyncio.gather(*coros)
+
+    async def _safe_send(self, ws: WebSocket, message: dict, room_id: int | None = None, uid: int | None = None):
+        """Send message safely without dropping websocket for temporary errors"""
+        try:
+            await ws.send_json(message)
+        except WebSocketDisconnect:
+            if room_id and uid is not None:
+                self.active_connections.get(room_id, []).remove((ws, uid))
+            self.remove_socket_everywhere(ws)
+        except Exception as e:
+            # Just log and ignore other temporary send errors
+            print(f"[WebSocketManager] Warning: failed to send message: {e}")
+
     def get_online_users(self, room_id: int) -> set[int]:
-        if room_id not in self.active_connections:
-            return set()
-        return {uid for _, uid in self.active_connections[room_id]}
-    
+        return {uid for _, uid in self.active_connections.get(room_id, [])}
+
     def remove_socket_everywhere(self, websocket: WebSocket):
+        """Remove websocket from all rooms and user connections"""
         for room_id in list(self.active_connections.keys()):
             self.active_connections[room_id] = [
-                (ws, uid)
-                for ws, uid in self.active_connections[room_id]
-                if ws != websocket
+                (ws, uid) for ws, uid in self.active_connections[room_id] if ws != websocket
             ]
-
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
-                
-    async def broadcast_to_user(self, user_id: int, message: dict):
-        if user_id not in self.user_rooms:
-            return
-        
-        for room_id in self.user_rooms[user_id]:
-            for ws, uid in self.active_connections.get(room_id, []):
-                if uid == user_id:
-                    try:
-                        await ws.send_json(message)
-                    except Exception:
-                        self.remove_socket_everywhere(ws)
+
+        # Remove from user_connections
+        for user_id in list(self.user_connections.keys()):
+            self.user_connections[user_id].discard(websocket)
+            if not self.user_connections[user_id]:
+                del self.user_connections[user_id]
 
 manager = ConnectionManager()

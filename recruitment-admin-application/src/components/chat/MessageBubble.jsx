@@ -18,8 +18,9 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import VideoMessage from './VideoMessagePlayer';
 import ChatImage from './ImageComponent';
 import ChatFile from './ChatFile';
+import ReplyComponent from './ReplyComponent';
 
-function MessageBubble({ message, isOwn, onEdit, onDelete }) {
+function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -69,6 +70,13 @@ function MessageBubble({ message, isOwn, onEdit, onDelete }) {
                 }}
                 onClick={handleMenuOpen}
             >
+                {message.reply_to && (
+                    <ReplyComponent
+                        reply={message.reply_to}
+                        isOwn={isOwn}
+                        isImage={message.type === 'image' || message.type === 'video'}
+                    />
+                )}
 
                 {message.type === 'text' && (
                     <Typography variant="body2">
@@ -185,14 +193,20 @@ function MessageBubble({ message, isOwn, onEdit, onDelete }) {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 {message.type !== 'system' && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={() => {
+                        handleMenuClose();
+                        onReply?.(message);
+                    }}>
                         <ListItemIcon><ReplyIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Reply</ListItemText>
                     </MenuItem>
                 )}
 
                 {message.type !== 'system' && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={() => { 
+                        handleMenuClose();
+                        onForward?.(message);
+                        }}>
                         <ListItemIcon><ReplyAllIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Forward</ListItemText>
                     </MenuItem>

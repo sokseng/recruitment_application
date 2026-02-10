@@ -18,6 +18,7 @@ import EmojiPicker from './EmojiPicker';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import DeleteDialog from './dialog/DeleteDialog';
+import ForwardDialog from './dialog/ForwardDialog';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -45,6 +46,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [popup, setPopup] = useState(false);
     const [editingMessage, setEditingMessage] = useState(null);
+    const [replyingTo, setReplyingTo] = useState(null);
 
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
@@ -53,6 +55,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [error, setError] = useState('');
     const [openConfirm, setOpenConfirm] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState(null);
+
+    const [forwardOpen, setForwardOpen] = useState(false);
+    const [forwardMessage, setForwardMessage] = useState(null);
+    const [forwardRooms, setForwardRooms] = useState([]);
+    const [selectedRooms, setSelectedRooms] = useState(new Set());
+    const [loadingRooms, setLoadingRooms] = useState(false);
+    const [roomOffset, setRoomOffset] = useState(0);
+    const [roomsHasMore, setRoomsHasMore] = useState(true);
+
+    const ROOM_LIMIT = 10;
 
     const startTyping = () => {
         if (!isTypingRef.current) {
@@ -219,6 +231,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         formData.append("room_id", chat.room_id);
         formData.append("type", type);  // "image" | "voice"
         if (caption) formData.append("content", caption);
+        if (replyingTo) formData.append("reply_to_id", replyingTo.id);
         formData.append("file", file);
 
         const res = await api.post("/chat/messages/file", formData, {
@@ -235,6 +248,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         const res = await api.post("/chat/messages", {
             room_id: chat.room_id,
             content,
+            reply_to_id: replyingTo?.id || null,
         });
         return res;
     }
@@ -274,6 +288,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
             const res = await uploadFileMessage({ file: audioFile, type: 'voice' })
             addMessage(res.data);
+            setReplyingTo(null);
             setAudioBlob(null)
             setRecordTime(0)
             setTimeout(scrollToBottom, 50);
@@ -289,8 +304,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 })
                 addMessage(res.data);
             }
-            setSelectedFiles([])
-            setNewMessage('')
+            setSelectedFiles([]);
+            setNewMessage('');
+            setReplyingTo(null);
             clearFiles();
             setTimeout(scrollToBottom, 50);
             return;
@@ -301,10 +317,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             await sendTextMessage(newMessage.trim());
 
             setNewMessage('');
+            setReplyingTo(null);
             stopTyping();
             setTimeout(scrollToBottom, 50);
         }
     };
+
+    const deleteLocalMessage = (messageId) => {
+        setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    };
+
 
     const handleDeleteMessage = (message) => {
         setMessageToDelete(message);
@@ -315,6 +337,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         if (!messageToDelete) return;
 
         await api.delete(`/chat/room/${chat.room_id}/messages/${messageToDelete.id}`);
+
+        deleteLocalMessage(messageToDelete.id);
 
         setOpenConfirm(false);
         setMessageToDelete(null);
@@ -328,6 +352,62 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const handleEditMessage = (message) => {
         setEditingMessage(message);
         setNewMessage(message.content || '');
+    };
+
+    const fetchForwardRooms = async () => {
+        if (loadingRooms || !roomsHasMore) return;
+
+        setLoadingRooms(true);
+
+        const res = await api.get(`/chat/${chat.room_id}`, {
+            params: {
+                limit: ROOM_LIMIT,
+                offset: roomOffset,
+            },
+        });
+
+        console.log("rooms", res.data)
+
+        setForwardRooms(prev => [...prev, ...res.data.items]);
+        setRoomsHasMore(res.data.has_more);
+        setRoomOffset(prev => prev + ROOM_LIMIT);
+        setLoadingRooms(false);
+    };
+
+    useEffect(() => {
+        if (forwardOpen) {
+            fetchForwardRooms();
+        }
+    }, [forwardOpen]);
+
+    const handleForwardMessage = (message) => {
+        setForwardMessage(message);
+        setForwardOpen(true);
+        setForwardRooms([]);
+        setSelectedRooms(new Set());
+        setRoomOffset(0);
+        setRoomsHasMore(true);
+    }
+
+    const toggleRoomSelection = (roomId) => {
+        setSelectedRooms(prev => {
+            const copy = new Set(prev);
+            copy.has(roomId) ? copy.delete(roomId) : copy.add(roomId);
+            return copy;
+        });
+    };
+
+    const confirmForward = async () => {
+        if (!forwardMessage || selectedRooms.size === 0) return;
+
+        await api.post("/chat/messages/forward", {
+            from_message_id: forwardMessage.id,
+            room_ids: Array.from(selectedRooms),
+        });
+
+        setForwardOpen(false);
+        setForwardMessage(null);
+        setSelectedRooms(new Set());
     };
 
     return (
@@ -496,6 +576,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         isOwn={message.sender_id === currentUserId}
                                         onEdit={handleEditMessage}
                                         onDelete={handleDeleteMessage}
+                                        onReply={(msg) => setReplyingTo(msg)}
+                                        onForward={handleForwardMessage}
                                     />
                                 )))}
 
@@ -517,7 +599,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 elevation={0}
                                 sx={{
                                     position: 'absolute',
-                                    bottom: 60,
+                                    bottom: replyingTo ? 120 : 60,
                                     width: '100%',
                                     p: 1,
                                     display: 'flex',
@@ -610,15 +692,48 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 <Typography >
                                     Editing message
                                 </Typography>
-                                <Button
+                                <IconButton
                                     size="small"
                                     onClick={() => {
                                         setEditingMessage(null);
                                         setNewMessage('');
                                     }}
                                 >
-                                    Cancel
-                                </Button>
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+                        )}
+
+                        {replyingTo && (
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: 60,
+                                    width: '100%',
+                                    p: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    borderTop: 1,
+                                    borderColor: 'divider',
+                                    bgcolor: 'background.paper',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                <Box sx={{ maxWidth: '80%' }}>
+                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                                        Replying to
+                                    </Typography>
+                                    <Typography variant="body2" noWrap>
+                                        {replyingTo.content || replyingTo.type}
+                                    </Typography>
+                                </Box>
+
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setReplyingTo(null)}
+                                >
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
                             </Box>
                         )}
 
@@ -766,6 +881,18 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 onClose={() => setOpenConfirm(false)}
                 onCancel={cancelDelete}
                 onConfirm={confirmDelete}
+            />
+            <ForwardDialog
+                open={forwardOpen}
+                onClose={() => setForwardOpen(false)}
+                onConfirm={confirmForward}
+                rooms={forwardRooms}
+                selectedRooms={selectedRooms}
+                toggleRoom={toggleRoomSelection}
+                loadMore={fetchForwardRooms}
+                hasMore={roomsHasMore}
+                loading={loadingRooms}
+                messagePreview={forwardMessage}
             />
         </Box>
     )

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 from typing import Literal
 
@@ -16,6 +16,7 @@ class SendTextMessage(BaseModel):
     room_id: int
     content: str
     type: Literal['text'] = 'text'
+    reply_to_id: Optional[int] = None
 
 class SendFileMessage(BaseModel):
     to_user_id: int
@@ -25,6 +26,19 @@ class SendFileMessage(BaseModel):
 class EditTextMessage(BaseModel):
     content: str
     type: Literal['text'] = 'text'
+    
+class MessagePreview(BaseModel):
+    id: int
+    sender_id: int
+    type: MessageType
+    content: Optional[str]
+    file_url: Optional[str]
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
 
 class ChatMessageOut(BaseModel):
     id: int
@@ -35,6 +49,10 @@ class ChatMessageOut(BaseModel):
     file_url: Optional[str]
     file_size: Optional[int]
     mime_type: Optional[str]
+    
+    reply_to: Optional[MessagePreview] = None
+    forward_from: Optional[MessagePreview] = None
+    
     is_read: bool
     created_at: datetime
     edited_at: Optional[datetime] = None
@@ -54,6 +72,10 @@ class ChatMessageUpdateOut(BaseModel):
     file_url: Optional[str]
     file_size: Optional[int]
     mime_type: Optional[str]
+    
+    reply_to: Optional[MessagePreview] = None
+    forward_from: Optional[MessagePreview] = None
+    
     is_read: bool
     created_at: datetime
     edited_at: Optional[datetime] = None
@@ -97,3 +119,7 @@ class UserSearchOut(BaseModel):
 
 class GetOrCreateRoomRequest(BaseModel):
     other_user_id: int
+    
+class ForwardMessageRequest(BaseModel):
+    message_id: int
+    target_room_ids: List[int]
