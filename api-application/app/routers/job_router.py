@@ -1,4 +1,5 @@
 #job_router.py
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -46,11 +47,26 @@ def get_single_job(job_id: int, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[JobOut])
 def get_public_active_jobs(
     skip: int = 0,
-    limit: int = 50,
+    limit: int = 20,
+    search: str | None = None,
+    job_types: str | None = None,         
+    levels: str | None = None,
+    category_ids: str | None = None,       
+    posted_after: date | None = None,
+    posted_before: date | None = None,
     db: Session = Depends(get_db)
 ):
-    """Public endpoint - shows only Open jobs"""
-    return get_all_active_jobs(db, skip, limit)
+    return get_all_active_jobs(
+        db, 
+        skip=skip, 
+        limit=limit,
+        search=search,
+        job_types=job_types.split(",") if job_types else None,
+        levels=levels.split(",") if levels else None,
+        category_ids=[int(i) for i in category_ids.split(",")] if category_ids else None,
+        posted_after=posted_after,
+        posted_before=posted_before,
+    )
 
 
 @router.put("/{job_id}", response_model=JobOut)

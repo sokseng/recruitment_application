@@ -184,7 +184,7 @@ export default function Dashboard() {
         (job.categories || []).some((cat) =>
           categoryFilter.includes(cat.pk_id),
         );
-
+      
       return keywordMatch && typeMatch && levelMatch && categoryMatch;
     });
 
@@ -236,31 +236,96 @@ export default function Dashboard() {
   ]);
 
   useEffect(() => {
-    loadJobs();
+    loadJobs(false);
   }, []);
 
-  const loadJobs = async () => {
-    try {
-      const res = await api.get("/jobs/");
-      const data = res.data || [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const activeJobs = data.filter((job) => {
-        if (!job.closing_date) return true;
-        const closing = new Date(job.closing_date);
-        return closing >= today;
-      });
+  useEffect(() => {
+    setSkip(0);           
+    setHasMore(true);
+    loadJobs(false);      
+  }, [
+    searchTerm,
+    typeFilter,
+    levelFilter,
+    categoryFilter,
+    dateFilterMode,
+    dateFrom,
+    dateTo,
+  ]);
 
-      setJobs(activeJobs);
-      setFilteredJobs(activeJobs);
-      if (activeJobs.length){
-        setSelectedJob(activeJobs[0]);
-      } 
-    } catch {
-      setError("Failed to load jobs");
+  const [skip, setSkip] = useState(0);
+  const [limit] = useState(20);           
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const loadJobs = async (isLoadMore = false) => {
+    try {
+
+      const params = {
+        skip: isLoadMore ? skip : 0,
+        limit: limit,
+      };
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      if (typeFilter !== "All" && typeFilter.length > 0) {
+        params.job_types = typeFilter.join(",");
+      }
+
+      if (levelFilter !== "All") {
+        params.levels = levelFilter;
+      }
+
+      if (!categoryFilter.includes("All") && categoryFilter.length > 0) {
+        params.category_ids = categoryFilter.join(",");
+      }
+
+      if (dateFilterMode !== "all") {
+        const range = getDateRange();
+        if (range) {
+          params.posted_after = range.from.format("YYYY-MM-DD");
+          params.posted_before = range.to.format("YYYY-MM-DD");
+        }
+      }
+
+      const res = await api.get("/jobs/", { params });
+
+      const newJobs = res.data || [];
+
+      if (isLoadMore) {
+        setJobs((prev) => [...prev, ...newJobs]);
+        setFilteredJobs((prev) => [...prev, ...newJobs]);
+      } else {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const activeJobs = newJobs.filter((job) => {
+          if (!job.closing_date) return true;
+          const closing = new Date(job.closing_date);
+          return closing >= today;
+        });
+
+        setJobs(activeJobs);
+        setFilteredJobs(activeJobs);
+
+        if (activeJobs.length > 0) {
+          setSelectedJob(activeJobs[0]);
+        } else {
+          setSelectedJob(null);
+        }
+      }
+
+      setHasMore(newJobs.length === limit);
+      setSkip((prev) => (isLoadMore ? prev + limit : limit));
+
+    } catch (err) {
+      console.error("Failed to load jobs:", err);
+      setError("Failed to load jobs. Please try again.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -452,7 +517,13 @@ export default function Dashboard() {
       }}
     >
       {/* New: Category - multi select */}
-      <Stack direction="row" spacing={1} p={1} justifyContent="space-between" alignItems="center" >
+      <Stack
+        direction="row"
+        spacing={1}
+        p={1}
+        justifyContent="space-between"
+        alignItems="center"
+      >
         {/* title */}
         <TextField
           size="small"
@@ -461,18 +532,24 @@ export default function Dashboard() {
           onChange={(e) => setSearchTerm(e.target.value)}
           fullWidth
           InputProps={{
+            sx: {
+              fontSize: 12,
+              height: 34,
+              borderRadius: 2,
+            },
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon color="action" />
+                <SearchIcon sx={{ fontSize: 18 }} />
               </InputAdornment>
             ),
             endAdornment: searchTerm && (
               <InputAdornment position="end">
-                <IconButton
-                  size="small"
+                <IconButton 
+                  size="small" 
                   onClick={() => setSearchTerm("")}
+                  sx={{ p: 0.25 }}
                 >
-                  <Cancel fontSize="small" />
+                  <Cancel sx={{ fontSize: 16 }} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -481,10 +558,10 @@ export default function Dashboard() {
         <Stack direction="row" spacing={0.3}>
           <Tooltip title="Filter by Categories" arrow placement="top">
             <IconButton
-              size="small"   
+              size="small"
               onClick={(e) => setCategoryAnchor(e.currentTarget)}
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -533,11 +610,11 @@ export default function Dashboard() {
                 onClick={() => setCategoryFilter(["All"])}
                 sx={{ borderRadius: 1, py: 0.5 }}
               >
-                <Checkbox 
+                <Checkbox
                   size="small"
                   checked={categoryFilter.includes("All")}
                   icon={<CheckBoxOutlineBlank fontSize="small" />}
-                  checkedIcon={<CheckBox fontSize="small" />} 
+                  checkedIcon={<CheckBox fontSize="small" />}
                 />
                 <ListItemText primary="All" />
               </ListItemButton>
@@ -565,7 +642,7 @@ export default function Dashboard() {
                       );
                     }}
                   >
-                    <Checkbox 
+                    <Checkbox
                       size="small"
                       checked={checked}
                       icon={<CheckBoxOutlineBlank fontSize="small" />}
@@ -580,10 +657,10 @@ export default function Dashboard() {
           {/* Job Type – popover */}
           <Tooltip title="Filter by Job Type" arrow placement="top">
             <IconButton
-              size="small"   
+              size="small"
               onClick={(e) => setTypeAnchor(e.currentTarget)}
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -627,31 +704,29 @@ export default function Dashboard() {
                     selected={checked}
                     sx={{ borderRadius: 1 }}
                     onClick={() => {
-                    let updated = [...typeFilter];
+                      let updated = [...typeFilter];
 
-                    if (type === "All") {
-                      // clicking "All" selects only All
-                      updated = ["All"];
-                    } else {
-                      // Remove "All" if it exists
-                      updated = updated.filter((v) => v !== "All");
-
-                      if (updated.includes(type)) {
-                        // uncheck this type
-                        updated = updated.filter((v) => v !== type);
+                      if (type === "All") {
+                        // clicking "All" selects only All
+                        updated = ["All"];
                       } else {
-                        // check this type
-                        updated.push(type);
+                        // Remove "All" if it exists
+                        updated = updated.filter((v) => v !== "All");
+
+                        if (updated.includes(type)) {
+                          // uncheck this type
+                          updated = updated.filter((v) => v !== type);
+                        } else {
+                          // check this type
+                          updated.push(type);
+                        }
+
+                        // fallback to All if nothing selected
+                        if (updated.length === 0) updated = ["All"];
                       }
 
-                      // fallback to All if nothing selected
-                      if (updated.length === 0) updated = ["All"];
-                    }
-
-                    setTypeFilter(updated);
-                  }}
-
-
+                      setTypeFilter(updated);
+                    }}
                   >
                     <Checkbox checked={checked} />
                     <ListItemText primary={type} />
@@ -667,7 +742,7 @@ export default function Dashboard() {
               size="small"
               onClick={(e) => setDateSortAnchor(e.currentTarget)}
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -688,7 +763,7 @@ export default function Dashboard() {
               size="small"
               onClick={(e) => setTitleSortAnchor(e.currentTarget)}
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -709,7 +784,7 @@ export default function Dashboard() {
               size="small"
               onClick={(e) => setDateFilterAnchor(e.currentTarget)}
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -726,7 +801,7 @@ export default function Dashboard() {
           <Tooltip title="Clear all filter" arrow placement="top">
             <IconButton
               sx={{
-                p: 0.5,          // 🔥 shrink padding
+                p: 0.5, // 🔥 shrink padding
                 width: 28,
                 height: 28,
                 borderRadius: 1,
@@ -737,24 +812,24 @@ export default function Dashboard() {
                 },
               }}
               onClick={() => {
-                  setSearchTerm("");
-                  setTypeFilter("All");
-                  setLevelFilter("All");
-                  setCategoryFilter(["All"]);
-                  setSortBy("date-desc");
-                  setDateFilterMode("all");
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-              >
-                <Cancel />
-              </IconButton>
+                setSearchTerm("");
+                setTypeFilter("All");
+                setLevelFilter("All");
+                setCategoryFilter(["All"]);
+                setSortBy("date-desc");
+                setDateFilterMode("all");
+                setDateFrom("");
+                setDateTo("");
+              }}
+            >
+              <Cancel />
+            </IconButton>
           </Tooltip>
-          
         </Stack>
       </Stack>
-      <Divider/>
-          
+
+      <Divider />
+
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
         {filteredJobs.length === 0 ? (
           <Box
@@ -767,168 +842,190 @@ export default function Dashboard() {
               color: "text.secondary",
             }}
           >
-            <Box
-              component="img"
-              src="/No-Data.gif"
-              alt="No data"
-            />
+            <Box component="img" src="/No-Data.gif" alt="No data" />
           </Box>
         ) : (
-          filteredJobs.map((job) => {
-            const active = selectedJob?.pk_id === job.pk_id;
-            const companyName = job.employer?.company_name;
-            const logoFilename = job.employer?.company_logo;
-            const alreadyApplied = isCandidate && appliedJobIds.has(job.pk_id);
-            return (
-              
-              <Box
-                key={job.pk_id}
-                onClick={() => handleSelectJob(job)}
-                sx={{
-                  px: 1,
-                  py: { xs: 1, sm: 1.15 },
-                  cursor: "pointer",
-                  bgcolor: active ? "action.selected" : "transparent",
-                  borderLeft: active ? "3px solid" : "3px solid transparent",
-                  borderColor: active ? "primary.main" : "transparent",
-                  borderBottom: "1px solid",
-                  borderBottomColor: "divider",
-                  "&:hover": { bgcolor: "action.hover" },
-                }}
-              >
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Avatar
-                    src={
-                      logoFilename
-                        ? `${baseURL}/uploads/employers/${logoFilename}`
-                        : undefined
-                    }
-                    alt={`${companyName} logo`}
-                    sx={{
-                      width: { xs: 40, sm: 50 },
-                      height: { xs: 40, sm: 50 },
-                      fontSize: "0.9rem",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      "& img": {
-                        objectFit: "contain",
-                      },
-                    }}
-                  >
-                    {companyName.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <Box minWidth={0} flex={1}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      width="100%"
+          <>
+            {filteredJobs.map((job) => {
+              const active = selectedJob?.pk_id === job.pk_id;
+              const companyName = job.employer?.company_name;
+              const logoFilename = job.employer?.company_logo;
+              const alreadyApplied =
+                isCandidate && appliedJobIds.has(job.pk_id);
+              return (
+                <Box
+                  key={job.pk_id}
+                  onClick={() => handleSelectJob(job)}
+                  sx={{
+                    px: 1,
+                    py: { xs: 1, sm: 1.15 },
+                    cursor: "pointer",
+                    bgcolor: active ? "action.selected" : "transparent",
+                    borderLeft: active ? "3px solid" : "3px solid transparent",
+                    borderColor: active ? "primary.main" : "transparent",
+                    borderBottom: "1px solid",
+                    borderBottomColor: "divider",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Avatar
+                      src={
+                        logoFilename
+                          ? `${baseURL}/uploads/employers/${logoFilename}`
+                          : undefined
+                      }
+                      alt={`${companyName} logo`}
+                      sx={{
+                        width: { xs: 40, sm: 50 },
+                        height: { xs: 40, sm: 50 },
+                        fontSize: "0.9rem",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        "& img": {
+                          objectFit: "contain",
+                        },
+                      }}
                     >
-                      <Typography
-                        variant="body2"
-                        fontWeight={600}
-                        noWrap
-                      >
-                        {job.job_title}
-                      </Typography>
-
-                      {alreadyApplied && (
-                        <Chip
-                          label="Applied"
-                          size="small"
-                          color="success"
-                          variant="filled"
-                          icon={<CheckCircle />}
-                          sx={{
-                            fontSize: "0.60rem",
-                            fontWeight: 600,
-                            minWidth: 50,
-                            ml: 1,
-                            bgcolor: alpha(theme.palette.success.main, 0.15),
-                            color: theme.palette.success.dark,
-                            border: `1px solid ${theme.palette.success.main}`,
-                          }}
-                        />
-                      )}
-                    </Stack>
-
-                    
-                    {job.categories?.length > 0 && (
+                      {companyName.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box minWidth={0} flex={1}>
                       <Stack
                         direction="row"
-                        spacing={0.3}
-                        mt={0.75}
-                        flexWrap="wrap"
+                        justifyContent="space-between"
                         alignItems="center"
+                        width="100%"
                       >
-                        <CategoryRoundedIcon
-                          fontSize=""
-                          sx={{ color: "text.secondary" }}
-                        />
-
-                        <Typography
-                          variant="caption"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          Categories:
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {job.job_title}
                         </Typography>
 
-                        {job.categories.slice(0, 2).map((cat) => (
+                        {alreadyApplied && (
                           <Chip
-                            key={cat.pk_id}
-                            label={cat.name}
+                            label="Applied"
                             size="small"
-                            variant="outlined"
-                            sx={(theme) => ({
-                              fontSize: "0.65rem",
-                              height: 18,
-                              borderRadius: "8px",
-                              borderColor: theme.palette.warning.light,
-                              color: theme.palette.warning.dark,
-                              bgcolor: theme.palette.warning.light + "22",
-                              "& .MuiChip-label": {
-                                px: 0.7,
-                                fontWeight: 600,
-                              },
-                            })}
-                          />
-                        ))}
-
-                        {job.categories.length > 2 && (
-                          <Chip
-                            label={`+${job.categories.length - 2}`}
-                            size="small"
+                            color="success"
+                            variant="filled"
+                            icon={<CheckCircle />}
                             sx={{
-                              fontSize: "0.65rem",
-                              height: 18,
-                              borderRadius: "8px",
+                              fontSize: "0.60rem",
                               fontWeight: 600,
-                              bgcolor: "action.hover",
-                              color: "text.secondary",
+                              minWidth: 50,
+                              ml: 1,
+                              bgcolor: alpha(theme.palette.success.main, 0.15),
+                              color: theme.palette.success.dark,
+                              border: `1px solid ${theme.palette.success.main}`,
                             }}
                           />
                         )}
                       </Stack>
-                    )}
 
-                    <Stack direction="row" spacing={0.3} mt={0.5}>
-                      <Chip
-                        icon={<EventIcon />}
-                        label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        sx={{
-                          fontSize: 12
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                </Stack>
+                      {job.categories?.length > 0 && (
+                        <Stack
+                          direction="row"
+                          spacing={0.3}
+                          mt={0.75}
+                          flexWrap="wrap"
+                          alignItems="center"
+                        >
+                          <CategoryRoundedIcon
+                            fontSize=""
+                            sx={{ color: "text.secondary" }}
+                          />
+
+                          <Typography
+                            variant="caption"
+                            fontWeight={600}
+                            color="text.secondary"
+                          >
+                            Categories:
+                          </Typography>
+
+                          {job.categories.slice(0, 2).map((cat) => (
+                            <Chip
+                              key={cat.pk_id}
+                              label={cat.name}
+                              size="small"
+                              variant="outlined"
+                              sx={(theme) => ({
+                                fontSize: "0.65rem",
+                                height: 18,
+                                borderRadius: "8px",
+                                borderColor: theme.palette.warning.light,
+                                color: theme.palette.warning.dark,
+                                bgcolor: theme.palette.warning.light + "22",
+                                "& .MuiChip-label": {
+                                  px: 0.7,
+                                  fontWeight: 600,
+                                },
+                              })}
+                            />
+                          ))}
+
+                          {job.categories.length > 2 && (
+                            <Chip
+                              label={`+${job.categories.length - 2}`}
+                              size="small"
+                              sx={{
+                                fontSize: "0.65rem",
+                                height: 18,
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                bgcolor: "action.hover",
+                                color: "text.secondary",
+                              }}
+                            />
+                          )}
+                        </Stack>
+                      )}
+
+                      <Stack direction="row" spacing={0.3} mt={0.5}>
+                        <Chip
+                          icon={<EventIcon />}
+                          label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          sx={{
+                            fontSize: 12,
+                          }}
+                        />
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Box>
+              );
+            })}
+            {/* ─── Load More Button ─── */}
+            {hasMore &&(
+                <Box sx={{ p: 1, textAlign: "end" }}>
+                  <Tooltip title="show more" arrow placement="top">
+                    <IconButton
+                      size="small"
+                      onClick={() => loadJobs(true)}
+                      disabled={loadingMore}
+                      sx={{
+                        border: 2,
+                        borderColor: "warning.main",
+                        borderRadius: 2,
+                      }}
+                    >
+                      {loadingMore ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <AutorenewRoundedIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              )}
+
+            {!hasMore && filteredJobs.length > 0 && (
+              <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                <Typography variant="body2">No more jobs to show</Typography>
               </Box>
-            );
-          })
+            )}
+          </>
         )}
       </Box>
     </Card>

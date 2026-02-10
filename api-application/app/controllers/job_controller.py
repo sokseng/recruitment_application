@@ -1,6 +1,6 @@
 #job_controller.py
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from fastapi import HTTPException, status
 from app.models.job_model import Job
 from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
@@ -75,23 +75,63 @@ def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: in
     db.commit() 
     return jobs
 
-
-def get_all_active_jobs(db: Session, skip: int = 0, limit: int = 50) -> list[Job]:
+def get_all_active_jobs(
+    db: Session,
+    skip: int = 0,
+    limit: int = 20,
+    search: str | None = None,
+    job_types: list[str] | None = None,
+    levels: list[str] | None = None,
+    category_ids: list[int] | None = None,
+    posted_after: date | None = None,
+    posted_before: date | None = None,
+) -> list[Job]:
     today = date.today()
+
     stmt = (
         select(Job)
-        .options(joinedload(Job.employer))
+        .options(
+            joinedload(Job.employer),
+            joinedload(Job.categories)
+        )
         .where(Job.status == "Open")
         .where(
-            (Job.closing_date.is_(None)) |
-            (Job.closing_date >= today)
+            (Job.closing_date.is_(None)) | (Job.closing_date >= today)
         )
-        .offset(skip)
-        .limit(limit)
-        .order_by(Job.created_at.desc())
     )
 
-    return db.scalars(stmt).all()
+    # === Filters ===
+    if search:
+        search_term = f"%{search.strip().lower()}%"
+        stmt = stmt.join(Employer) 
+        stmt = stmt.where(
+            or_(
+                Job.job_title.ilike(search_term),
+                Job.location.ilike(search_term),
+                Employer.company_name.ilike(search_term),
+            )
+        )
+    if job_types:
+        stmt = stmt.where(Job.job_type.in_(job_types))
+
+    if levels:
+        stmt = stmt.where(Job.level.in_(levels))
+
+    if category_ids:
+        stmt = stmt.join(Job.categories).where(Category.pk_id.in_(category_ids))
+
+    if posted_after:
+        stmt = stmt.where(Job.posting_date >= posted_after)
+    if posted_before:
+        stmt = stmt.where(Job.posting_date <= posted_before)
+
+    # === Ordering & Pagination ===
+    stmt = stmt.order_by(Job.posting_date.desc()).offset(skip).limit(limit)
+
+    result = db.execute(stmt)
+    jobs = result.unique().scalars().all()
+
+    return jobs
 
 
 def update_job(db: Session, job_id: int, job_data: JobUpdate, employer_id: int) -> Job | None:
