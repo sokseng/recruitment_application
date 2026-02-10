@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 from app.models.job_application_model import ApplicationStatus
+from app.schemas.user_schema import JobOut
 
 class JobApplicationCreate(BaseModel):
     job_id: int
@@ -54,3 +55,13 @@ class ApplicationOutForEmployer(BaseModel):
 
 class ApplicationStatusUpdate(BaseModel):
     new_status: str
+
+class ApplicationWithJobOut(BaseModel):
+    pk_id: int
+    job_id: int
+    candidate_id: int
+    candidate_resume_id: Optional[int]
+    applied_date: datetime
+    application_status: ApplicationStatus
+    job: Optional['JobOut'] = None  # Forward reference
+    model_config = {"from_attributes": True}
