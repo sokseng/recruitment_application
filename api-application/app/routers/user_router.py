@@ -9,6 +9,7 @@ from passlib.context import CryptContext
 from datetime import timedelta, datetime
 from app.dependencies.auth import verify_access_token
 from app.database.deps import get_db
+from app.models.global_setting_model import GlobalSetting
 
 
 router = APIRouter(prefix="/user", tags=["Users"])
@@ -31,14 +32,26 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
 
     #Verify password
     isMatch = user_controller.verify_password(data.password, user.password)
+
+    setting = (
+        db.query(GlobalSetting)
+        .filter(GlobalSetting.code == "PASSWORD_MAX_LOGIN_TRY")
+        .first()
+    )
+
+    max_login_try = (
+        int(setting.value)
+        if setting and setting.value not in (None, "")
+        else None
+    )
     
     # WRONG PASSWORD
     if not isMatch:
         user.wrong_password += 1
         db.commit()
 
-        # 3+ attempts → robot check
-        if user.wrong_password >= 3:
+        #TOO MANY FAILED ATTEMPTS → robot check
+        if max_login_try is not None and user.wrong_password >= max_login_try:
             raise HTTPException(
                 status_code=429,
                 detail="Too many failed attempts. Please verify you are not a robot."
