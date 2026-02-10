@@ -63,7 +63,7 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 export default function Topbar() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const globalUnread = useUnreadStore(state => state.globalCount);
   const accessToken = localStorage.getItem("access_token");
 
