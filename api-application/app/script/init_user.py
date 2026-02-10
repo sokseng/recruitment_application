@@ -47,7 +47,8 @@ BEGIN
             phone,
             date_of_birth,
             address,
-            is_active
+            is_active,
+            wrong_password
         )
         VALUES (
             'Administrator',
@@ -58,7 +59,8 @@ BEGIN
             '093639012',
             '1998-11-11',
             'TK',
-            TRUE
+            TRUE,
+            0
         );
 
         RAISE NOTICE 'Admin user created successfully.';

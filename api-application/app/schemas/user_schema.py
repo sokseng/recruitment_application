@@ -85,6 +85,7 @@ class AccessToken(BaseModel):
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     user_data: Optional[UserResponse] = None
+    wrong_password: int
 
     model_config = ConfigDict(from_attributes=True)
 

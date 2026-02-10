@@ -23,6 +23,7 @@ class User(Base):
     phone = Column(String(20), nullable=True)
     date_of_birth = Column(Date, nullable=True)
     address = Column(String(255), nullable=True)
+    wrong_password = Column(Integer, default=0)
 
     created_date = Column(
         DateTime(timezone=True),

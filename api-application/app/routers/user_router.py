@@ -31,9 +31,28 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
 
     #Verify password
     isMatch = user_controller.verify_password(data.password, user.password)
-    if not isMatch:
-        raise HTTPException(status_code=400, detail="Invalid password")
     
+    # WRONG PASSWORD
+    if not isMatch:
+        user.wrong_password += 1
+        db.commit()
+
+        # 3+ attempts → robot check
+        if user.wrong_password >= 3:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many failed attempts. Please verify you are not a robot."
+            )
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid password"
+        )
+
+    #CORRECT PASSWORD → RESET COUNTER
+    user.wrong_password = 0
+    db.commit()
+
     
     #create access token
     access_token = user_controller.create_access_token(user.pk_id, expires_delta=access_token_expires)
@@ -59,7 +78,8 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
         phone=user.phone,
         date_of_birth=user.date_of_birth,
         address=user.address,
-        user_data=user
+        user_data=user,
+        wrong_password=user.wrong_password
     )
 
 

@@ -67,10 +67,9 @@ export default function Topbar() {
   const globalUnread = useUnreadStore(state => state.globalCount);
   const accessToken = localStorage.getItem("access_token");
 
-  const [failedAttempts, setFailedAttempts] = useState(0);
+  //const [failedAttempts, setFailedAttempts] = useState(0);
   const [showRobotCheck, setShowRobotCheck] = useState(false);
   const [isHuman, setIsHuman] = useState(false);
-
   const [robotAnswer, setRobotAnswer] = useState([]);
   const [robotError, setRobotError] = useState(false);
 
@@ -144,7 +143,7 @@ export default function Topbar() {
   const handleCloseLoginForm = () => {
     setOpenLogin(false);
     setFormData({ email: "", password: "" });
- 
+
   };
   const [showPassword, setShowPassword] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -254,10 +253,11 @@ export default function Topbar() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    // 🚫 Block login if robot check not completed
+    
+    // block if robot check not done
     if (showRobotCheck && !isHuman) {
-      setMessage("Please confirm you are not a robot");
+      setMessage("Please complete the security check");
+      setSeverity("warning");
       setOpenSnackbar(true);
       return;
     }
@@ -268,10 +268,11 @@ export default function Topbar() {
         password: formData.password,
       });
 
-      // ✅ SUCCESS → reset everything
-      setFailedAttempts(0);
+      // ✅ SUCCESS
       setShowRobotCheck(false);
       setIsHuman(false);
+      setRobotAnswer([]);
+      setRobotError(false);
 
       setAccessToken(res.data.access_token);
       setUserType(res.data.user_type);
@@ -293,35 +294,42 @@ export default function Topbar() {
         default:
           navigate("/", { replace: true });
       }
+
     } catch (err) {
+
+      // BACKEND says: robot check required
+      if (err.response?.status === 429) {
+        setShowRobotCheck(true);
+        setIsHuman(false);
+        setMessage(err.response.data.detail);
+        setSeverity("warning");
+        setOpenSnackbar(true);
+        return;
+      }
+
       if (
         err.response?.status === 400 &&
         err.response?.data?.detail === "Invalid password"
       ) {
-        const attempts = failedAttempts + 1;
-        setFailedAttempts(attempts);
-
-        if (attempts >= 3) {
-          setShowRobotCheck(true);
-          setMessage("Too many failed attempts. Please confirm you are not a robot.");
-          setSeverity("warning");
-        } else {
-          setMessage("Invalid password");
-        }
-
+        setMessage("Invalid password");
         setOpenSnackbar(true);
-      } else if (
+        return;
+      }
+
+      if (
         err.response?.status === 404 &&
         err.response?.data?.detail === "Email not found"
       ) {
         setMessage("Email not found");
         setOpenSnackbar(true);
-      } else {
-        setMessage(err.response?.data?.detail || "Login failed");
-        setOpenSnackbar(true);
+        return;
       }
+
+      setMessage(err.response?.data?.detail || "Login failed");
+      setOpenSnackbar(true);
     }
   };
+
 
   /* =====================
      Logout
