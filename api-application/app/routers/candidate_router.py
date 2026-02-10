@@ -1,9 +1,14 @@
 import re
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import desc
+from sqlalchemy.orm import Session, joinedload
 from app.dependencies.auth import verify_access_token, get_db
 from app.models.candidate_model import Candidate
 from app.models.candidate_profile import CandidateProfile
+from app.models.employer_model import Employer
+from app.models.job_application_model import JobApplication
+from app.models.job_model import Job
 from app.schemas.candidate_schema import CandidateCreate, CandidateOut, CandidateProfileUpdate
 from app.controllers.candidate_controller import (
     create_or_update_candidate,
@@ -12,6 +17,7 @@ from app.controllers.candidate_controller import (
     delete_candidate,
     get_candidate_profile_by_candidate_id
 )
+from app.schemas.job_application_schema import ApplicationWithJobOut
 
 router = APIRouter(prefix="/candidate", tags=["Candidates"])
 
@@ -104,3 +110,27 @@ def create_or_update_candidate_profile(profile_in: CandidateProfileUpdate, db: S
     db.refresh(profile)
 
     return profile
+
+@router.get("/me/applications")
+def get_my_job_applications(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    candidate = (db.query(Candidate).filter(Candidate.user_id == current_user_id).first())
+
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidate not found. Please complete your profile first."
+        )
+
+    applications = (
+        db.query(JobApplication)
+        .filter(JobApplication.candidate_id == candidate.pk_id)
+        .join(Job, JobApplication.job_id == Job.pk_id)
+        .join(Employer, Job.employer_id == Employer.pk_id)
+        .options(
+            joinedload(JobApplication.job).joinedload(Job.employer)
+        )
+        .order_by(desc(JobApplication.applied_date))  # newest first
+        .all()
+    )
+
+    return applications
