@@ -40,6 +40,27 @@ class MessagePreview(BaseModel):
         "json_encoders": {datetime: lambda v: v.isoformat()}
     }
 
+class UserPreview(BaseModel):
+    pk_id: int
+    user_name: str
+    # avatar_url: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+    
+class MessagePreview(BaseModel):
+    id: int
+    sender: UserPreview
+    type: MessageType
+    content: Optional[str]
+    file_url: Optional[str]
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+        "json_encoders": {datetime: lambda v: v.isoformat()}
+    }
+
 class ChatMessageOut(BaseModel):
     id: int
     room_id: int

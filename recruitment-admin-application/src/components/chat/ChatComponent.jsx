@@ -366,8 +366,6 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             },
         });
 
-        console.log("rooms", res.data)
-
         setForwardRooms(prev => [...prev, ...res.data.items]);
         setRoomsHasMore(res.data.has_more);
         setRoomOffset(prev => prev + ROOM_LIMIT);
@@ -400,10 +398,12 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const confirmForward = async () => {
         if (!forwardMessage || selectedRooms.size === 0) return;
 
-        await api.post("/chat/messages/forward", {
-            from_message_id: forwardMessage.id,
-            room_ids: Array.from(selectedRooms),
-        });
+        const payload = {
+            message_id: forwardMessage.id,
+            target_room_ids: Array.from(selectedRooms),
+        };
+
+        await api.post("/chat/messages/forward", payload);
 
         setForwardOpen(false);
         setForwardMessage(null);
@@ -892,7 +892,6 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 loadMore={fetchForwardRooms}
                 hasMore={roomsHasMore}
                 loading={loadingRooms}
-                messagePreview={forwardMessage}
             />
         </Box>
     )

@@ -427,13 +427,16 @@ async def forward_message(
 ):
     if not original_msg or not target_rooms:
         raise HTTPException(400, "Invalid message or room")
-    
-    payloads =[]    
+
+    payloads = []
 
     for room in target_rooms:
-        if current_user.pk_id not in (room.candidate_user_id, room.employer_user_id):
+        if current_user.pk_id not in (
+            room.candidate_user_id,
+            room.employer_user_id
+        ):
             continue
-        
+
         new_msg = ChatMessage(
             room_id=room.id,
             sender_id=current_user.pk_id,
@@ -444,30 +447,39 @@ async def forward_message(
             mime_type=original_msg.mime_type,
             forwarded_from_id=original_msg.id,
         )
-        
+
         db.add(new_msg)
         db.flush()
-        
+
         room.last_message_id = new_msg.id
         room.last_message_at = new_msg.created_at
-        
-        db.commit()
-        db.refresh(new_msg)
-        
-        payload = jsonable_encoder(ChatMessageOut.from_out(new_msg))
-        payloads.append(payload)
 
-        await manager.broadcast_to_room(room.id,
-                                        {
-                                            "type":"message",
-                                            "message": payload
-                                        })
-        
+        payload = jsonable_encoder(
+            ChatMessageOut.from_orm(new_msg)
+        )
+
+        payloads.append((room, payload))
+
+    db.commit()
+
+    # Broadcast after commit
+    for room, payload in payloads:
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "message",
+                "message": payload
+            }
+        )
+
         for uid in (room.candidate_user_id, room.employer_user_id):
-            await manager.broadcast_to_user(uid,{
-                "type":"chat_list_update",
-                "room_id": room.id,
-                "last_message": payload
-            })
-            
-        return payload
+            await manager.broadcast_to_user(
+                uid,
+                {
+                    "type": "chat_list_update",
+                    "room_id": room.id,
+                    "last_message": payload
+                }
+            )
+
+    return [payload for _, payload in payloads]

@@ -87,8 +87,13 @@ def get_my_conversations(
             last_msg = (
                 db.query(ChatMessage)
                 .options(
-                    joinedload(ChatMessage.reply_to),
-                    joinedload(ChatMessage.forward_from),
+                    joinedload(ChatMessage.sender),
+
+                    joinedload(ChatMessage.reply_to)
+                        .joinedload(ChatMessage.sender),
+
+                    joinedload(ChatMessage.forward_from)
+                        .joinedload(ChatMessage.sender),
                 )
                 .filter(ChatMessage.id == room.last_message_id)
                 .first()
@@ -242,6 +247,39 @@ async def send_file(
         file=file,
         reply_to_id=reply_to_id
     )
+    
+@router.post("/messages/forward")
+async def forward_message_to_rooms(
+    request: ForwardMessageRequest,
+    current_user_id: int = Depends(verify_access_token),
+    db: Session = Depends(get_db)
+):
+    current_user = db.query(User).filter(
+        User.pk_id == current_user_id
+    ).first()
+    if not current_user:
+        raise HTTPException(404, "User not found")
+
+    original_msg = db.query(ChatMessage).filter(
+        ChatMessage.id == request.message_id
+    ).first()
+    if not original_msg:
+        raise HTTPException(404, "Message not found")
+
+    rooms = db.query(ChatRoom).filter(
+        ChatRoom.id.in_(request.target_room_ids)
+    ).all()
+    if not rooms:
+        raise HTTPException(404, "No target room found")
+
+    payloads = await forward_message(
+        db=db,
+        current_user=current_user,
+        original_msg=original_msg,
+        target_rooms=rooms
+    )
+
+    return {"forwarded_messages": payloads}
     
 @router.get("/{current_room_id}")
 def get_chat_list_without_current(
@@ -439,30 +477,4 @@ async def delete_message_by_id(
         message_id=message_id,
         requester_id=current_user_id,
     )
-    
-async def forward_message_to_rooms(
-    request: ForwardMessageRequest,
-    current_user_id: int = Depends(verify_access_token),
-    db: Session = Depends(get_db)
-):
-    current_user = db.query(User).filter(User.pk_id == current_user_id).first()
-    if not current_user:
-        raise HTTPException(404, "User not found")
-
-    original_msg = db.query(ChatMesssage).filter(ChatMessage.id == request.message_id).first()
-    if not original_msg:
-        raise HTTPException(404, "Message not found")
-
-    rooms = db.query(ChatRoom).filter(ChatRoom.id.in_(request.target_room_ids)).all()
-    if not room:
-        raise HTTPException(404, "No target room found")
-    
-    payloads = await forward_message(
-        db=db,
-        current_user=current_user,
-        original_msg=original_msg,
-        target_rooms=rooms
-    )
-    
-    return {"forwared_messages": payloads}
 

@@ -9,7 +9,6 @@ import {
     Checkbox,
     Button,
     CircularProgress,
-    Typography,
     Box,
 } from "@mui/material";
 
@@ -23,7 +22,6 @@ export default function ForwardDialog({
     loadMore,
     hasMore,
     loading,
-    messagePreview,
 }) {
     return (
         <Dialog
@@ -34,27 +32,13 @@ export default function ForwardDialog({
         >
             <DialogTitle>Forward message</DialogTitle>
 
-            <DialogContent dividers>
-
-                {messagePreview && (
-                    <Box mb={2}>
-                        <Typography variant="caption" color="text.secondary">
-                            Forwarding
-                        </Typography>
-                        <Box
-                            sx={{
-                                p: 1,
-                                mt: 0.5,
-                                borderRadius: 1,
-                                bgcolor: "grey.100",
-                            }}
-                        >
-                            <Typography variant="body2" noWrap>
-                                {messagePreview.content || messagePreview.type}
-                            </Typography>
-                        </Box>
-                    </Box>
-                )}
+            <DialogContent
+                dividers
+                sx={{
+                    maxHeight: "60vh",
+                    overflowY: "auto",
+                }}
+            >
 
                 <List dense>
                     {rooms.map((room) => {
