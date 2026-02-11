@@ -308,6 +308,7 @@ export default function Topbar() {
         err.response?.status === 400 &&
         err.response?.data?.detail === "Invalid password"
       ) {
+        setSeverity("error");
         setMessage("Invalid password");
         setOpenSnackbar(true);
         return;
@@ -317,6 +318,7 @@ export default function Topbar() {
         err.response?.status === 404 &&
         err.response?.data?.detail === "Email not found"
       ) {
+        setSeverity("error");
         setMessage("Email not found");
         setOpenSnackbar(true);
         return;
@@ -894,10 +896,10 @@ export default function Topbar() {
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={() => setShowRobotCheck(false)}>
+          <Button sx={{ textTransform: "none" }} size="small" variant="outlined" onClick={() => setShowRobotCheck(false)}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={handleRobotConfirm}>
+          <Button sx={{ textTransform: "none" }} variant="contained" size="small" onClick={handleRobotConfirm}>
             Verify
           </Button>
         </DialogActions>
