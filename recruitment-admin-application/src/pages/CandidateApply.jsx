@@ -15,7 +15,6 @@ import {
     alpha,
     CircularProgress,
     Chip,
-    AlertTitle
 } from '@mui/material';
 import {
     WorkOutline as WorkIcon,
@@ -346,7 +345,7 @@ export default function MyApplicationsToCompanies() {
             <Grid container spacing={3}>
                 {applications.map((app) => {
                     const job = app.job || {};
-                    const isClosed = job.status === 'Closed';  
+                    const isClosed = job.status === 'Closed';
 
                     const accentColor = isClosed ? '#ef4444' : theme.palette.primary.main;
 
@@ -398,17 +397,49 @@ export default function MyApplicationsToCompanies() {
                                             <Typography
                                                 variant="h6"
                                                 fontWeight={700}
-                                                lineHeight={1.2}
+                                                lineHeight={1.18}
                                                 sx={{
                                                     color: isClosed ? 'error.main' : 'text.primary',
+                                                    letterSpacing: '-0.015em',          
+                                                    mb: 0.5,                          
+                                                    transition: 'color 0.2s ease',
+                                                    '&:hover': {
+                                                        color: isClosed ? 'error.dark' : 'primary.main',
+                                                    },
                                                 }}
                                             >
                                                 {job.job_title || 'Job Title'}
                                             </Typography>
 
-                                            <Typography variant="body2" color="text.secondary" fontWeight={500} mt={0.25}>
-                                                {job.employer?.company_name || ''}
-                                            </Typography>
+                                            <Chip
+                                                label={job.employer?.company_name || 'Unknown Company'}
+                                                size="small"
+                                                color="primary"                 
+                                                variant="filled"                   
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    fontSize: '0.8rem',
+                                                    height: 28,
+                                                    borderRadius: '14px',           
+                                                    backgroundColor: (theme) =>
+                                                        alpha(theme.palette.primary.main, 0.08),
+                                                    color: 'primary.main',
+                                                    '&:hover': {
+                                                        backgroundColor: (theme) =>
+                                                            alpha(theme.palette.primary.main, 0.16),
+                                                        transform: 'translateY(-1px)',    
+                                                        boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`,
+                                                    },
+                                                    '& .MuiChip-label': {
+                                                        px: 1.5,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        maxWidth: '240px',             
+                                                    },
+                                                    transition: 'all 0.22s ease',
+                                                }}
+                                            />
                                         </Box>
 
                                         <Box
