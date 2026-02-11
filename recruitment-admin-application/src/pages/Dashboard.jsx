@@ -49,13 +49,35 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import Checkbox from "@mui/material/Checkbox";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import BadgeIcon from '@mui/icons-material/Badge';
-import { Cancel, CheckBox, CheckBoxOutlineBlank, CheckCircle, DescriptionOutlined, EmailOutlined, Home, HourglassTop, Info, LanguageOutlined, LocationCity, PhoneOutlined, Send, Update, UploadFileSharp } from "@mui/icons-material";
+import BadgeIcon from "@mui/icons-material/Badge";
+import {
+  Cancel,
+  CheckBox,
+  CheckBoxOutlineBlank,
+  CheckCircle,
+  DescriptionOutlined,
+  EmailOutlined,
+  Home,
+  HourglassTop,
+  Image,
+  Info,
+  InfoOutlined,
+  LanguageOutlined,
+  LocationCity,
+  PhoneOutlined,
+  PictureAsPdf,
+  Send,
+  Update,
+  UpdateDisabled,
+  UpdateSharp,
+  UploadFile,
+  UploadFileSharp,
+} from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
 import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs from 'dayjs';
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -82,7 +104,6 @@ export default function Dashboard() {
   const [titleSortAnchor, setTitleSortAnchor] = useState(null);
   const [dateFilterAnchor, setDateFilterAnchor] = useState(null);
 
-
   const openCategory = Boolean(categoryAnchor);
   const openType = Boolean(typeAnchor);
   const openDateSort = Boolean(dateSortAnchor);
@@ -98,7 +119,7 @@ export default function Dashboard() {
   const [companyAnchor, setCompanyAnchor] = useState(null);
   const openCompanyPopover = Boolean(companyAnchor);
 
-  const isCandidate = useAuthStore(state => state.isCandidate());
+  const isCandidate = useAuthStore((state) => state.isCandidate());
 
   const [resumes, setResumes] = useState([]);
   const [selectedResumeId, setSelectedResumeId] = useState(""); // for apply modal
@@ -115,22 +136,25 @@ export default function Dashboard() {
   const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
+  const [coverLetterFile, setCoverLetterFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+
   const getDateRange = () => {
-    const today = dayjs().startOf('day');
+    const today = dayjs().startOf("day");
 
     if (dateFilterMode === "today") {
       return { from: today, to: today };
     }
     if (dateFilterMode === "last7") {
       return {
-        from: today.subtract(7, 'day'),
+        from: today.subtract(7, "day"),
         to: today,
       };
     }
     if (dateFilterMode === "custom" && dateFrom && dateTo) {
       return {
-        from: dayjs(dateFrom).startOf('day'),
-        to: dayjs(dateTo).endOf('day'),  
+        from: dayjs(dateFrom).startOf("day"),
+        to: dayjs(dateTo).endOf("day"),
       };
     }
     return null;
@@ -175,7 +199,8 @@ export default function Dashboard() {
         company.includes(term) ||
         location.includes(term);
 
-      const typeMatch = typeFilter.includes("All") || typeFilter.includes(job.job_type);
+      const typeMatch =
+        typeFilter.includes("All") || typeFilter.includes(job.job_type);
 
       const levelMatch = levelFilter === "All" || job.level === levelFilter;
 
@@ -184,7 +209,7 @@ export default function Dashboard() {
         (job.categories || []).some((cat) =>
           categoryFilter.includes(cat.pk_id),
         );
-      
+
       return keywordMatch && typeMatch && levelMatch && categoryMatch;
     });
 
@@ -193,10 +218,10 @@ export default function Dashboard() {
     if (range) {
       result = result.filter((job) => {
         if (!job.posting_date) return false;
-        const postedDay = dayjs(job.posting_date).startOf('day');
+        const postedDay = dayjs(job.posting_date).startOf("day");
         return (
-          postedDay.isAfter(range.from.subtract(1, 'day'), 'day') &&   
-          postedDay.isBefore(range.to.add(1, 'day'), 'day')            
+          postedDay.isAfter(range.from.subtract(1, "day"), "day") &&
+          postedDay.isBefore(range.to.add(1, "day"), "day")
         );
       });
     }
@@ -232,7 +257,7 @@ export default function Dashboard() {
     dateFrom,
     dateTo,
     sortBy,
-    jobs
+    jobs,
   ]);
 
   useEffect(() => {
@@ -240,9 +265,9 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    setSkip(0);           
+    setSkip(0);
     setHasMore(true);
-    loadJobs(false);      
+    loadJobs(false);
   }, [
     searchTerm,
     typeFilter,
@@ -253,14 +278,20 @@ export default function Dashboard() {
     dateTo,
   ]);
 
+  useEffect(() => {
+    if (applyDialogOpen) {
+      setCoverLetterFile(null);
+      setImageFile(null);
+    }
+  }, [applyDialogOpen]);
+
   const [skip, setSkip] = useState(0);
-  const [limit] = useState(20);           
+  const [limit] = useState(20);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const loadJobs = async (isLoadMore = false) => {
     try {
-
       const params = {
         skip: isLoadMore ? skip : 0,
         limit: limit,
@@ -319,7 +350,6 @@ export default function Dashboard() {
 
       setHasMore(newJobs.length === limit);
       setSkip((prev) => (isLoadMore ? prev + limit : limit));
-
     } catch (err) {
       console.error("Failed to load jobs:", err);
       setError("Failed to load jobs. Please try again.");
@@ -355,7 +385,7 @@ export default function Dashboard() {
       try {
         const res = await api.get("/candidate/resumes/");
         setResumes(res.data || []);
-        const primary = res.data?.find(r => r.is_primary);
+        const primary = res.data?.find((r) => r.is_primary);
         if (primary) setSelectedResumeId(primary.pk_id);
       } catch (err) {
         setResumes([]);
@@ -383,7 +413,9 @@ export default function Dashboard() {
 
     const checkApplication = async () => {
       try {
-        const res = await api.get(`/applications/job/${selectedJob.pk_id}/my-status`);
+        const res = await api.get(
+          `/applications/job/${selectedJob.pk_id}/my-status`,
+        );
         setHasAppliedToThisJob(!!res.data?.applied);
       } catch (err) {
         setHasAppliedToThisJob(false);
@@ -402,8 +434,8 @@ export default function Dashboard() {
 
     const formData = new FormData();
 
-    formData.append("resume_type", "Upload");           
-    formData.append("is_primary", "false");             
+    formData.append("resume_type", "Upload");
+    formData.append("is_primary", "false");
     formData.append("resume_file", file);
 
     try {
@@ -414,7 +446,7 @@ export default function Dashboard() {
       // Success
       const newResume = res.data;
       setResumes((prev) => [...prev, newResume]);
-      setSelectedResumeId(newResume.pk_id.toString());   // auto-select it
+      setSelectedResumeId(newResume.pk_id.toString()); // auto-select it
 
       setSnackbar({
         open: true,
@@ -423,7 +455,7 @@ export default function Dashboard() {
       });
     } catch (err) {
       const errorDetail = err.response?.data?.detail;
-      
+
       if (Array.isArray(errorDetail)) {
         const firstError = errorDetail[0];
         setUploadError(`${firstError.loc?.join(".")}: ${firstError.msg}`);
@@ -439,39 +471,53 @@ export default function Dashboard() {
   };
 
   const handleApplyWithResume = async () => {
-    if (!jobToApply || !selectedResumeId) return;
+    if (!jobToApply) return;
+
+    const formData = new FormData();
+    formData.append("job_id", jobToApply.pk_id.toString());
+
+    if (selectedResumeId) {
+      formData.append("candidate_resume_id", selectedResumeId);
+    }
+
+    if (coverLetterFile) {
+      formData.append("cover_letter_file", coverLetterFile);
+    }
+
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
 
     try {
-      setApplying(prev => ({ ...prev, [jobToApply.pk_id]: true }));
+      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: true }));
 
-      await api.post("/applications/", {
-        job_id: jobToApply.pk_id,
-        candidate_resume_id: parseInt(selectedResumeId),
+      await api.post("/applications/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      setHasAppliedToThisJob(true); // optimistic update
-      setAppliedJobIds((prev) => {
-        const next = new Set(prev);
-        next.add(jobToApply.pk_id);
-        return next;
-      });
       setSnackbar({
         open: true,
         message: hasAppliedToThisJob
-          ? "Resume updated & application refreshed!"
-          : "Application submitted successfully!",
+          ? "Application updated successfully!"
+          : "Application submitted!",
         severity: "success",
       });
 
+      setCoverLetterFile(null);
+      setImageFile(null);
       setApplyDialogOpen(false);
+      setHasAppliedToThisJob(true);
+      setAppliedJobIds((prev) => new Set([...prev, jobToApply.pk_id]));
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.response?.data?.detail || "Failed to apply",
+        message: err.response?.data?.detail || "Failed to submit application",
         severity: "error",
       });
     } finally {
-      setApplying(prev => ({ ...prev, [jobToApply.pk_id]: false }));
+      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: false }));
     }
   };
 
@@ -544,8 +590,8 @@ export default function Dashboard() {
             ),
             endAdornment: searchTerm && (
               <InputAdornment position="end">
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={() => setSearchTerm("")}
                   sx={{ p: 0.25 }}
                 >
@@ -997,28 +1043,28 @@ export default function Dashboard() {
               );
             })}
             {/* ─── Load More Button ─── */}
-            {hasMore &&(
-                <Box sx={{ p: 1, textAlign: "end" }}>
-                  <Tooltip title="show more" arrow placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={() => loadJobs(true)}
-                      disabled={loadingMore}
-                      sx={{
-                        border: 2,
-                        borderColor: "warning.main",
-                        borderRadius: 2,
-                      }}
-                    >
-                      {loadingMore ? (
-                        <CircularProgress size={16} />
-                      ) : (
-                        <AutorenewRoundedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              )}
+            {hasMore && (
+              <Box sx={{ p: 1, textAlign: "end" }}>
+                <Tooltip title="show more" arrow placement="top">
+                  <IconButton
+                    size="small"
+                    onClick={() => loadJobs(true)}
+                    disabled={loadingMore}
+                    sx={{
+                      border: 2,
+                      borderColor: "warning.main",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {loadingMore ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <AutorenewRoundedIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
 
             {!hasMore && filteredJobs.length > 0 && (
               <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
@@ -1059,8 +1105,16 @@ export default function Dashboard() {
       >
         <FormControlLabel value="all" control={<Radio />} label="All dates" />
         <FormControlLabel value="today" control={<Radio />} label="Today" />
-        <FormControlLabel value="last7" control={<Radio />} label="Last 7 days" />
-        <FormControlLabel value="custom" control={<Radio />} label="Custom range" />
+        <FormControlLabel
+          value="last7"
+          control={<Radio />}
+          label="Last 7 days"
+        />
+        <FormControlLabel
+          value="custom"
+          control={<Radio />}
+          label="Custom range"
+        />
       </RadioGroup>
 
       {dateFilterMode === "custom" && (
@@ -1094,7 +1148,7 @@ export default function Dashboard() {
         <Button
           size="small"
           variant="outlined"
-          sx={{textTransform: "none"}}
+          sx={{ textTransform: "none" }}
           startIcon={<Cancel />}
           color="error"
           onClick={() => {
@@ -1206,7 +1260,12 @@ export default function Dashboard() {
                 )}
                 {/* Mobile buttons */}
                 {isMobile && (
-                  <Stack direction="column" spacing={1} sx={{ mt: 2 }} justifyContent="flex-end">
+                  <Stack
+                    direction="column"
+                    spacing={1}
+                    sx={{ mt: 2 }}
+                    justifyContent="flex-end"
+                  >
                     {isCandidate && (
                       <Button
                         variant="contained"
@@ -1235,7 +1294,6 @@ export default function Dashboard() {
                       company Info
                     </Button>
                   </Stack>
-                  
                 )}
                 {/* Desktop */}
                 <Button
@@ -1420,137 +1478,410 @@ export default function Dashboard() {
                 {/* Apply Dialog with Resume Selection */}
                 <Dialog
                   open={applyDialogOpen && isCandidate}
-                  onClose={() => setApplyDialogOpen(false)}
+                  onClose={() => {
+                    setApplyDialogOpen(false);
+                    setCoverLetterFile(null);
+                    setImageFile(null);
+                  }}
                   fullWidth
-                  maxWidth="xs"
+                  maxWidth="sm"
+                  PaperProps={{
+                    sx: {
+                      borderRadius: 3,
+                      overflow: "hidden",
+                    },
+                  }}
                 >
-                  <DialogTitle variant="body2">
+                  {/* Header */}
+                  <DialogTitle
+                    sx={{
+                      background: "linear-gradient(135deg, #1976d2, #42a5f5)",
+                      color: "white",
+                      py: 1.8,
+                      fontSize: 16,
+                      fontWeight: 600,
+                    }}
+                  >
                     {hasAppliedToThisJob
-                      ? "Update Your Application"
-                      : "Apply to this Position"}
+                      ? "Update Application"
+                      : "Apply to Position"}
                   </DialogTitle>
-                  <Divider />
-                  <DialogContent>
-                    {hasAppliedToThisJob ? (
-                      <Alert severity="info" sx={{ mb: 3 }}>
-                        You already applied. Selecting a new resume will update your application.
-                      </Alert>
-                    ) : (
-                      <Alert severity="info" sx={{ mb: 3 }}>
-                        Choose or upload a resume to apply.
+
+                  <DialogContent sx={{ mt: 1 }}>
+                    {hasAppliedToThisJob && (
+                      <Alert
+                        severity="info"
+                        iconMapping={{
+                          info: <InfoOutlined sx={{ fontSize: 16 }} />,
+                        }}
+                        sx={{
+                          py: 0.4,
+                          px: 1,
+                          fontSize: 11,
+                          borderRadius: 1.5,
+                          alignItems: "center",
+                          "& .MuiAlert-message": {
+                            py: 0,
+                          },
+                        }}
+                      >
+                        You already applied. Updating will replace your previous
+                        submission.
                       </Alert>
                     )}
 
-                    {resumes.length === 0 ? (
-                      <Alert severity="warning">
-                        You don't have any resumes yet. Please upload one below.
-                      </Alert>
+                    {/* Resume Selection */}
+                    {resumes.length > 0 ? (
+                      <>
+                        <Box
+                          sx={{
+                            position: "relative",
+                            border: "2px solid",
+                            borderRadius: 2,
+                            borderColor: "divider",
+                            p: 2,
+                            pt: 3,
+                            mt: 2,
+                          }}
+                        >
+                          {/* Floating Label */}
+                          <Typography
+                            sx={{
+                              position: "absolute",
+                              top: -10,
+                              left: 14,
+                              px: 0.8,
+                              fontSize: 13,
+                              fontWeight: 500,
+                              backgroundColor: "background.paper",
+                            }}
+                          >
+                            Select Resume & Upload New Resume (PDF)
+                          </Typography>
+
+                          {/* Scrollable Resume List */}
+                          <Box
+                            sx={{
+                              maxHeight: 180,
+                              overflowY: "auto",
+                              pr: 1,
+                              mb: 1.5,
+                            }}
+                          >
+                            <RadioGroup
+                              value={selectedResumeId}
+                              onChange={(e) =>
+                                setSelectedResumeId(e.target.value)
+                              }
+                            >
+                              {resumes.map((r) => {
+                                const selected =
+                                  selectedResumeId === r.pk_id.toString();
+
+                                return (
+                                  <FormControlLabel
+                                    key={r.pk_id}
+                                    value={r.pk_id.toString()}
+                                    control={
+                                      <Radio size="small" sx={{ p: 0.5 }} />
+                                    }
+                                    sx={{
+                                      mx: 0,
+                                      mb: 0.6,
+                                      px: 1,
+                                      py: 0.6,
+                                      borderRadius: 1.5,
+                                      border: "1px solid",
+                                      borderColor: selected
+                                        ? "primary.main"
+                                        : "divider",
+                                      backgroundColor: selected
+                                        ? "rgba(25,118,210,0.08)"
+                                        : "transparent",
+                                      "& .MuiFormControlLabel-label": {
+                                        width: "100%",
+                                      },
+                                    }}
+                                    label={
+                                      <Box
+                                        sx={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        <Box sx={{ lineHeight: 1 }}>
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              fontWeight: 500,
+                                              fontSize: 12,
+                                            }}
+                                          >
+                                            {r.resume_file || "Text Resume"}
+                                          </Typography>
+
+                                          {r.is_primary && (
+                                            <Typography
+                                              variant="caption"
+                                              sx={{
+                                                fontSize: 10,
+                                                color: "primary.main",
+                                                display: "block",
+                                              }}
+                                            >
+                                              Primary
+                                            </Typography>
+                                          )}
+                                        </Box>
+
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            fontSize: 10,
+                                            color: "text.secondary",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {new Date(
+                                            r.created_date,
+                                          ).toLocaleDateString()}
+                                        </Typography>
+                                      </Box>
+                                    }
+                                  />
+                                );
+                              })}
+                            </RadioGroup>
+                          </Box>
+
+                          {/* Fixed Upload Button */}
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            sx={{
+                              borderRadius: 1.5,
+                              textTransform: "none",
+                              py: 0.7,
+                            }}
+                          >
+                            {uploadLoading
+                              ? "Uploading..."
+                              : "Choose New Resume"}
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf"
+                              onChange={handleNewResumeUpload}
+                              disabled={uploadLoading}
+                            />
+                          </Button>
+                        </Box>
+                      </>
                     ) : (
-                      <RadioGroup
-                        value={selectedResumeId}
-                        onChange={(e) => setSelectedResumeId(e.target.value)}
-                      >
-                        {resumes.map((resume) => (
-                          <FormControlLabel
-                            key={resume.pk_id}
-                            value={resume.pk_id.toString()}
-                            control={<Radio />}
-                            label={
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 1,
-                                }}
-                              >
-                                <DescriptionOutlined color="primary" />
-                                <Box>
-                                  <Typography fontWeight={600} variant="body2">
-                                    {resume.resume_file || "Text Resume"}
-                                  </Typography>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                  >
-                                    {resume.is_primary ? "Primary • " : ""}
-                                    {new Date(
-                                      resume.created_date,
-                                    ).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                            }
-                          />
-                        ))}
-                      </RadioGroup>
+                      <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
+                        No resume found. Please upload one.
+                      </Alert>
                     )}
-                    {/* Upload new resume */}
+
+                    {/* Cover Letter */}
                     <Box
                       sx={{
-                        mt: 4,
-                        pt: 3,
-                        borderTop: "1px solid",
+                        position: "relative",
+                        border: "2px solid",
                         borderColor: "divider",
+                        borderRadius: 2,
+                        p: 1.5,
+                        mt: 2,
                       }}
                     >
-                      <Typography variant="subtitle1" gutterBottom>
-                        Upload a new resume
+                      {/* Floating Label */}
+                      <Typography
+                        sx={{
+                          position: "absolute",
+                          top: -10,
+                          left: 14,
+                          px: 0.8,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          backgroundColor: "background.paper",
+                        }}
+                      >
+                        Cover Letter (PDF)
                       </Typography>
+
+                      {/* Upload Button */}
                       <Button
                         component="label"
                         variant="outlined"
-                        startIcon={<UploadFileSharp />}
+                        size="small"
                         fullWidth
-                        sx={{textTransform: "none" ,justifyContent: "flex-start", py: 1 }}
+                        startIcon={
+                          coverLetterFile ? <PictureAsPdf /> : <UploadFile />
+                        }
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: "none",
+                          justifyContent: "flex-start",
+                          py: 0.8,
+                        }}
                       >
-                        Choose PDF, DOC, DOCX file
+                        {coverLetterFile
+                          ? coverLetterFile.name
+                          : "Choose Cover Letter"}
+
                         <input
                           type="file"
                           hidden
-                          accept=".pdf,.doc,.docx"
-                          onChange={handleNewResumeUpload}
+                          accept=".pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            if (file.size > 5 * 1024 * 1024) {
+                              alert("Max 5MB allowed.");
+                              return;
+                            }
+
+                            setCoverLetterFile(file);
+                          }}
                         />
                       </Button>
 
-                      {uploadLoading && <CircularProgress size={24} sx={{ mt: 2, display: "block", mx: "auto" }} />}
-                      {uploadError && <Alert severity="error" sx={{ mt: 2 }}>{uploadError}</Alert>} 
+                      {/* File Info */}
+                      {coverLetterFile && (
+                        <Box
+                          sx={{
+                            mt: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {(coverLetterFile.size / (1024 * 1024)).toFixed(2)}{" "}
+                            MB
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Image */}
+                    <Box
+                      sx={{
+                        position: "relative",
+                        border: "2px solid",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                        p: 1.5,
+                        mt: 2,
+                      }}
+                    >
+                      {/* Floating Label */}
+                      <Typography
+                        sx={{
+                          position: "absolute",
+                          top: -10,
+                          left: 14,
+                          px: 0.8,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          backgroundColor: "background.paper",
+                        }}
+                      >
+                        Attach Image (JPG / PNG)
+                      </Typography>
+
+                      {/* Upload Button */}
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        startIcon={imageFile ? <Image /> : <UploadFile />}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: "none",
+                          justifyContent: "flex-start",
+                          py: 0.8,
+                        }}
+                      >
+                        {imageFile ? imageFile.name : "Choose Image"}
+
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/jpeg,image/png"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            if (file.size > 5 * 1024 * 1024) {
+                              alert("Max 5MB allowed.");
+                              return;
+                            }
+
+                            setImageFile(file);
+                          }}
+                        />
+                      </Button>
+
+                      {/* File Info */}
+                      {imageFile && (
+                        <Box
+                          sx={{
+                            mt: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </DialogContent>
-                  <Divider />
-                  <DialogActions>
+
+                  {/* Footer */}
+                  <DialogActions sx={{ px: 2, py: 1.5 }}>
                     <Button
+                      size="small"
                       variant="outlined"
                       color="error"
-                      size="small"
-                      sx={{
-                        textTransform: "none",
-                      }}
-                      startIcon={<Cancel />}
                       onClick={() => setApplyDialogOpen(false)}
+                      sx={{ borderRadius: 2, textTransform: "none" }}
+                      startIcon={<Cancel />}
                     >
                       Cancel
                     </Button>
+
                     <Button
                       variant="contained"
-                      onClick={handleApplyWithResume}
                       size="small"
-                      disabled={!selectedResumeId || applying[jobToApply?.pk_id]}
-                      startIcon={
-                        applying[jobToApply?.pk_id] ? (
-                          <HourglassTop />
-                        ) : hasAppliedToThisJob ? (
-                          <Update />
-                        ) : (
-                          <Send />
-                        )
+                      color="primary"
+                      onClick={handleApplyWithResume}
+                      startIcon={<UpdateSharp />}
+                      disabled={
+                        applying[jobToApply?.pk_id] ||
+                        (!selectedResumeId && !coverLetterFile && !imageFile)
                       }
-                      sx={{ textTransform: "none" }}
+                      sx={{
+                        borderRadius: 2,
+                        px: 2.5,
+                        background: "linear-gradient(135deg, #1976d2, #42a5f5)",
+                        textTransform: "none",
+                      }}
                     >
                       {applying[jobToApply?.pk_id]
-                        ? "Processing..."
+                        ? "Submitting..."
                         : hasAppliedToThisJob
-                        ? "Update"
-                        : "Submit"}
+                          ? "Update"
+                          : "Submit"}
                     </Button>
                   </DialogActions>
                 </Dialog>
@@ -1597,7 +1928,9 @@ export default function Dashboard() {
                   <Chip
                     label={
                       selectedJob.closing_date
-                        ? new Date(selectedJob.closing_date).toLocaleDateString('en-CA')   // yyyy-mm-dd
+                        ? new Date(selectedJob.closing_date).toLocaleDateString(
+                            "en-CA",
+                          ) // yyyy-mm-dd
                         : "—"
                     }
                     size="small"
@@ -1683,16 +2016,16 @@ export default function Dashboard() {
                         variant="outlined"
                         color="warning"
                         sx={(theme) => ({
-                              fontSize: "0.70rem",
-                              height: 18,
-                              borderRadius: "8px",
-                              borderColor: theme.palette.warning.light,
-                              color: theme.palette.warning.dark,
-                              bgcolor: theme.palette.warning.light + "22",
-                              "& .MuiChip-label": {
-                                fontWeight: 600,
-                              },
-                            })}
+                          fontSize: "0.70rem",
+                          height: 18,
+                          borderRadius: "8px",
+                          borderColor: theme.palette.warning.light,
+                          color: theme.palette.warning.dark,
+                          bgcolor: theme.palette.warning.light + "22",
+                          "& .MuiChip-label": {
+                            fontWeight: 600,
+                          },
+                        })}
                       />
                     ))}
                   </Stack>
@@ -1868,17 +2201,17 @@ export default function Dashboard() {
               >
                 <Tooltip title="Clear all filter" arrow placement="top">
                   <IconButton
-                  sx={{
-                    p: 0.5,          // 🔥 shrink padding
-                    width: 28,
-                    height: 28,
-                    borderRadius: 1,
-                    bgcolor: "gray",
-                    color: "#fff",
-                    "&:hover": {
+                    sx={{
+                      p: 0.5, // 🔥 shrink padding
+                      width: 28,
+                      height: 28,
+                      borderRadius: 1,
                       bgcolor: "gray",
-                    },
-                  }}
+                      color: "#fff",
+                      "&:hover": {
+                        bgcolor: "gray",
+                      },
+                    }}
                     onClick={() => {
                       setSearchTerm("");
                       setTypeFilter("All");

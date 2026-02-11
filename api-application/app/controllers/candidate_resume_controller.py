@@ -10,7 +10,7 @@ from app.schemas.candidate_resume_schema import ResumeCreate, ResumeUpdate
 UPLOAD_DIR = "uploads/resumes"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-ALLOWED_EXTENSIONS = {'.pdf', '.docx'}
+ALLOWED_EXTENSIONS = {'.pdf'}
 
 
 def allowed_resume_file(filename: str) -> bool:
@@ -40,7 +40,7 @@ def create_resume(
 
     if resume_file:
         if not allowed_resume_file(resume_file.filename):
-            raise HTTPException(400, "Only PDF and DOCX files are allowed")
+            raise HTTPException(400, "Only PDF files is allowed")
 
         ext = Path(resume_file.filename).suffix.lower()
         filename = f"candidate_{candidate_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
@@ -86,7 +86,7 @@ def update_resume(
     # Handle file replacement
     if resume_file:
         if not allowed_resume_file(resume_file.filename):
-            raise HTTPException(400, "Only PDF and DOCX files are allowed")
+            raise HTTPException(400, "Only PDF file is allowed")
 
         # Delete old file if exists
         if db_resume.resume_file:
