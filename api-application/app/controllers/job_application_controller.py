@@ -14,6 +14,8 @@ def apply_to_job(
     job_id: int,
     candidate_id: int,
     resume_id: Optional[int] = None,
+    cover_letter_file: Optional[str] = None,     # ← NEW: filename
+    image_attach_file: Optional[str] = None,
     reset_status_on_reapply: bool = True,
 ) -> JobApplication:
     
@@ -36,7 +38,24 @@ def apply_to_job(
         ).first()
         if not primary:
             raise HTTPException(400, "No primary resume found. Please set one or select a resume.")
+        resume = primary
         resume_id = primary.pk_id
+    
+    # ─── Update cover letter & image if provided ─────────────────────
+    update_needed = False
+
+    if cover_letter_file is not None:
+        resume.cover_letter_file = cover_letter_file
+        update_needed = True
+
+    if image_attach_file is not None:
+        resume.image_attach_file = image_attach_file
+        update_needed = True
+
+    if update_needed:
+        db.add(resume)
+        db.commit()
+        db.refresh(resume)
 
     # ─── Look for existing application ───────────────────────────
     existing = db.query(JobApplication).filter(
@@ -45,12 +64,9 @@ def apply_to_job(
     ).first()
 
     if existing:
-        # ─── UPDATE existing application ─────────────────────────
         existing.candidate_resume_id = resume_id
-        
         if reset_status_on_reapply:
             existing.application_status = ApplicationStatus.PENDING
-        
         db.commit()
         db.refresh(existing)
         return existing

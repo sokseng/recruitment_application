@@ -1,4 +1,4 @@
-// AppliedCandidates.jsx
+// src/pages/AppliedCandidates.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -37,9 +37,9 @@ import {
   Home,
   FileDownload as FileDownloadIcon,
   Visibility as VisibilityIcon,
+  ChatBubble as ChatBubbleIcon,
 } from "@mui/icons-material";
 import api from "../services/api";
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 const STATUS_MAP = {
   PENDING: { label: "Pending", color: "warning" },
@@ -56,6 +56,7 @@ export default function AppliedCandidates() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobFromUrl = searchParams.get("job");
+  const navigate = useNavigate();
 
   const [myJobs, setMyJobs] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState(null);
@@ -71,7 +72,6 @@ export default function AppliedCandidates() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
-  const router = useNavigate();
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -97,7 +97,6 @@ export default function AppliedCandidates() {
       setLoadingJobs(true);
       setError(null);
 
-      // 1. Fetch all posted jobs
       const jobsRes = await api.get("/jobs/my-jobs?limit=100");
       const allMyJobs = jobsRes.data || [];
 
@@ -107,22 +106,18 @@ export default function AppliedCandidates() {
         return;
       }
 
-      // 2. Fetch application counts per job
       const countsRes = await api.get("/applications/my-jobs/counts");
       const countsMap = {};
-
       (countsRes.data || []).forEach((item) => {
         countsMap[item.job_id] = item.count || 0;
       });
 
-      // 3. Filter — only keep jobs that have at least 1 application
-      const jobsWithApplications = allMyJobs.filter((job) => {
-        return (countsMap[job.pk_id] || 0) >= 1;
-      });
+      const jobsWithApplications = allMyJobs.filter(
+        (job) => (countsMap[job.pk_id] || 0) >= 1
+      );
 
       setMyJobs(jobsWithApplications);
 
-      // Auto-select first job (or from URL)
       if (jobsWithApplications.length > 0) {
         let initialJobId;
         if (selectedJobFromUrl) {
@@ -187,7 +182,6 @@ export default function AppliedCandidates() {
         severity: "success",
       });
     } catch (err) {
-      console.error("Update failed:", err?.response?.data);
       setSnackbar({
         open: true,
         message: err?.response?.data?.detail || "Failed to update status",
@@ -196,58 +190,66 @@ export default function AppliedCandidates() {
     }
   };
 
-  const handleDownload = async (resumeId, fileName = "resume.pdf") => {
-    if (!resumeId) return;
+  // ────────────────────────────────────────────────
+  // Combined PDF – View & Download
+  // ────────────────────────────────────────────────
+
+  const getCombinedPdfUrl = (applicationId) =>
+    `${baseURL}/applications/${applicationId}/combined-pdf`;
+
+  const handleViewCombined = (appId, candidateName) => {
+    const url = getCombinedPdfUrl(appId);
+    setFileUrl(url);
+    setFileName(`Application - ${candidateName.replace(/\s+/g, "_")}.pdf`);
+    setFileType("application/pdf");
+    setViewFileOpen(true);
+  };
+
+  const handleDownloadCombined = async (appId, candidateName) => {
     try {
-      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
+      const url = getCombinedPdfUrl(appId);
+      const res = await api.get(`/applications/${appId}/combined-pdf`, {
         responseType: "blob",
       });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      const blob = new Blob([res.data], { type: "application/pdf" });
       const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", fileName);
+      link.href = URL.createObjectURL(blob);
+      link.download = `Application_${candidateName.replace(/\s+/g, "_")}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
+      URL.revokeObjectURL(link.href);
+
       setSnackbar({
         open: true,
-        message: "Failed to download resume",
+        message: "Combined PDF downloaded",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Could not download combined PDF",
         severity: "error",
       });
     }
   };
 
-  const handleViewFile = async (resumeId, fileName = "resume") => {
-    if (!resumeId) return;
+  const handleSelect = async (userId) => {
+    if (!userId) return;
+
     try {
-      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
-        responseType: "blob",
+      const res = await api.post("/chat/get-or-create-room", {
+        other_user_id: userId,
       });
-      const contentType = res.headers["content-type"] || "application/octet-stream";
-      const blob = new Blob([res.data], { type: contentType });
-      const url = URL.createObjectURL(blob);
-
-      // Office docs → better to download
-      if (
-        contentType.includes("word") ||
-        contentType.includes("officedocument") ||
-        contentType.includes("spreadsheet") ||
-        contentType.includes("excel")
-      ) {
-        handleDownload(resumeId, fileName);
-        return;
-      }
-
-      setFileUrl(url);
-      setFileName(fileName);
-      setFileType(contentType);
-      setViewFileOpen(true);
+      const room = res.data;
+      navigate("/chat", { state: { roomId: room.room_id } });
     } catch (err) {
+      console.error("Chat room creation failed:", err);
       setSnackbar({
         open: true,
-        message: "Unable to load resume preview",
+        message: "Failed to start chat",
         severity: "error",
       });
     }
@@ -269,47 +271,12 @@ export default function AppliedCandidates() {
     tabValue === 0
       ? applications
       : applications.filter(
-        (app) => app.application_status === STATUS_FILTER[tabValue]
-      );
-
-  // Chat App Logic Do not touch
-
-  const handleSelect = async (userId) => {
-    console.log("userId being sent:", userId);
-
-    if (!userId) {
-      console.error("userId is missing");
-      return;
-    }
-
-    try {
-      const res = await api.post("/chat/get-or-create-room", {
-        other_user_id: userId,
-      });
-
-      const room = res.data;
-
-      router("/chat", {
-        state: { roomId: room.room_id },
-      });
-
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  // End Chat Logic
+          (app) => app.application_status === STATUS_FILTER[tabValue]
+        );
 
   if (loadingJobs) {
     return (
-      <Box
-        sx={{
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <CircularProgress />
       </Box>
     );
@@ -327,7 +294,7 @@ export default function AppliedCandidates() {
   const JobListContent = () => (
     <Card
       sx={{
-        height: { xs: "80vh", sm: "100%"},
+        height: { xs: "80vh", sm: "100%" },
         display: "flex",
         flexDirection: "column",
         border: "3px solid",
@@ -336,8 +303,8 @@ export default function AppliedCandidates() {
       }}
     >
       <Box sx={{ p: 2 }}>
-        <Typography variant="h7" fontWeight={700} color="primary.dark">
-          Your Posted Jobs with Applications
+        <Typography variant="h6" fontWeight={700} color="primary.dark">
+          Your Jobs with Applications
         </Typography>
       </Box>
       <Divider />
@@ -354,9 +321,7 @@ export default function AppliedCandidates() {
             }}
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
-            <Typography variant="subtitle1">
-              No jobs with applications yet
-            </Typography>
+            <Typography variant="subtitle1">No jobs with applications yet</Typography>
             <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
               When candidates apply, their jobs will appear here.
             </Typography>
@@ -387,12 +352,7 @@ export default function AppliedCandidates() {
                         ? `${baseURL}/uploads/employers/${job.employer.company_logo}`
                         : undefined
                     }
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      border: "1px solid",
-                      borderColor: "divider",
-                    }}
+                    sx={{ width: 48, height: 48, border: "1px solid", borderColor: "divider" }}
                   >
                     {job.employer?.company_name?.[0]?.toUpperCase() || "?"}
                   </Avatar>
@@ -405,14 +365,14 @@ export default function AppliedCandidates() {
                     </Typography>
                   </Box>
                   <Chip
-                    label={job.status}
+                    label={job.status || "Open"}
                     size="small"
                     color={
                       job.status === "Open"
                         ? "success"
                         : job.status === "Closed"
-                          ? "error"
-                          : "warning"
+                        ? "error"
+                        : "warning"
                     }
                     variant="outlined"
                   />
@@ -453,22 +413,17 @@ export default function AppliedCandidates() {
                     ? `${baseURL}/uploads/employers/${selectedJob.employer.company_logo}`
                     : undefined
                 }
-                sx={{
-                  width: 60,
-                  height: 60,
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
+                sx={{ width: 60, height: 60, border: "1px solid", borderColor: "divider" }}
               >
                 {selectedJob?.employer?.company_name?.[0]?.toUpperCase() || "?"}
               </Avatar>
               <Box flex={1}>
-                <Typography variant="h7" fontWeight={700}>
+                <Typography variant="h6" fontWeight={700}>
                   {selectedJob?.job_title}
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
-                  {selectedJob?.employer?.company_name} • {applications.length}{" "}
-                  application{applications.length !== 1 ? "s" : ""}
+                  {selectedJob?.employer?.company_name} • {applications.length} application
+                  {applications.length !== 1 ? "s" : ""}
                 </Typography>
               </Box>
               {isMobile && (
@@ -485,13 +440,7 @@ export default function AppliedCandidates() {
             </Stack>
           </Box>
           <Divider />
-          <Box
-            sx={{
-              borderBottom: 1,
-              borderColor: "divider",
-              px: { xs: 1.5, sm: 2 },
-            }}
-          >
+          <Box sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1.5, sm: 2 } }}>
             <Tabs
               value={tabValue}
               onChange={(_, v) => setTabValue(v)}
@@ -501,26 +450,19 @@ export default function AppliedCandidates() {
             >
               {TAB_LABELS.map((label, i) => (
                 <Tab
-                  sx={{ textTransform: "none" }}
                   key={label}
                   label={`${label} (${i === 0
                     ? applications.length
-                    : applications.filter(
-                      (a) => a.application_status === STATUS_FILTER[i]
-                    ).length
-                    })`}
+                    : applications.filter((a) => a.application_status === STATUS_FILTER[i]).length
+                  })`}
+                  sx={{ textTransform: "none" }}
                 />
               ))}
             </Tabs>
           </Box>
           <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 1.5, sm: 2 } }}>
             {loadingApps ? (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                height="100%"
-              >
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                 <CircularProgress />
               </Box>
             ) : filteredApplications.length === 0 ? (
@@ -548,17 +490,11 @@ export default function AppliedCandidates() {
                       color: "default",
                     };
                   const candidateName =
-                    app.candidate?.user?.user_name ||
-                    `Candidate #${app.candidate_id}`;
-                  const candidateEmail =
-                    app.candidate?.user?.email || "No email available";
+                    app.candidate?.user?.user_name || `Candidate #${app.candidate_id}`;
+                  const candidateEmail = app.candidate?.user?.email || "No email";
                   const resumeId = app.candidate_resume_id;
-                  const resumeFileName =
-                    app.resume?.resume_file ||
-                    `resume-${candidateName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
                   const hasResume = !!resumeId;
-
-                  const userId = app.candidate?.user_id;
+                  const userId = app.candidate?.user?.pk_id || app.candidate?.user_id;
 
                   return (
                     <Card
@@ -569,43 +505,26 @@ export default function AppliedCandidates() {
                         boxShadow: 1,
                         transition: "box-shadow 0.2s",
                         "&:hover": { boxShadow: 3 },
-                        overflow: "hidden",
                       }}
                     >
-                      <CardContent
-                        sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}
-                      >
+                      <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
                           spacing={{ xs: 1.5, sm: 2 }}
                           alignItems={{ xs: "flex-start", sm: "center" }}
                           justifyContent="space-between"
-                          mb={{ xs: 1.5, sm: 1.5 }}
                         >
                           <Stack direction="row" spacing={1.5} alignItems="center">
                             <Avatar
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                fontSize: "1rem",
-                                bgcolor: "primary.main",
-                              }}
+                              sx={{ width: 40, height: 40, bgcolor: "primary.main" }}
                             >
                               {candidateName?.[0]?.toUpperCase() || "?"}
                             </Avatar>
                             <Box>
-                              <Typography
-                                variant="body1"
-                                fontWeight={600}
-                                lineHeight={1.2}
-                              >
+                              <Typography variant="body1" fontWeight={600}>
                                 {candidateName}
                               </Typography>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ display: "block", mt: 0.25 }}
-                              >
+                              <Typography variant="caption" color="text.secondary">
                                 {candidateEmail}
                               </Typography>
                             </Box>
@@ -615,15 +534,9 @@ export default function AppliedCandidates() {
                             direction={{ xs: "column", sm: "row" }}
                             spacing={1.5}
                             alignItems={{ xs: "stretch", sm: "center" }}
-                            sx={{
-                              width: { xs: "100%", sm: "auto" },
-                              mt: { xs: 1, sm: 0 },
-                            }}
+                            sx={{ width: { xs: "100%", sm: "auto" }, mt: { xs: 1, sm: 0 } }}
                           >
-                            <FormControl
-                              size="small"
-                              sx={{ minWidth: { xs: "100%", sm: 140 } }}
-                            >
+                            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 } }}>
                               <InputLabel>Status</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
@@ -633,7 +546,6 @@ export default function AppliedCandidates() {
                                   const label = STATUS_MAP[key]?.label;
                                   if (label) handleStatusChange(app.pk_id, label);
                                 }}
-                                sx={{ fontSize: "0.875rem", height: 36 }}
                               >
                                 {Object.entries(STATUS_MAP).map(([key, { label }]) => (
                                   <MenuItem key={key} value={key}>
@@ -644,8 +556,8 @@ export default function AppliedCandidates() {
                             </FormControl>
 
                             {hasResume ? (
-                              <Stack direction="row" spacing={0.5} alignItems="center">
-                                <Tooltip title={`Send ${candidateName} a message`}>
+                              <Stack direction="row" spacing={0.5}>
+                                <Tooltip title={`Message ${candidateName}`}>
                                   <IconButton
                                     size="small"
                                     color="success"
@@ -654,23 +566,25 @@ export default function AppliedCandidates() {
                                     <ChatBubbleIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
-                                <Tooltip title="View Resume">
+
+                                <Tooltip title="View">
                                   <IconButton
                                     size="small"
                                     color="primary"
                                     onClick={() =>
-                                      handleViewFile(resumeId, resumeFileName)
+                                      handleViewCombined(app.pk_id, candidateName)
                                     }
                                   >
                                     <VisibilityIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
-                                <Tooltip title="Download Resume">
+
+                                <Tooltip title="Download">
                                   <IconButton
                                     size="small"
                                     color="warning"
                                     onClick={() =>
-                                      handleDownload(resumeId, resumeFileName)
+                                      handleDownloadCombined(app.pk_id, candidateName)
                                     }
                                   >
                                     <FileDownloadIcon fontSize="small" />
@@ -678,20 +592,17 @@ export default function AppliedCandidates() {
                                 </Tooltip>
                               </Stack>
                             ) : (
-                              <Tooltip title="Candidate applied without attaching a resume">
-                                <Chip
-                                  label="No resume"
-                                  size="small"
-                                  color="default"
-                                  variant="outlined"
-                                  sx={{ height: 36, fontSize: "0.875rem" }}
-                                />
-                              </Tooltip>
+                              <Chip
+                                label="No resume"
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                              />
                             )}
                           </Stack>
                         </Stack>
 
-                        <Stack direction="row" spacing={1} alignItems="center" mt={1}>
+                        <Stack direction="row" spacing={1} alignItems="center" mt={1.5}>
                           <CalendarIcon fontSize="small" color="action" />
                           <Typography variant="caption" color="text.secondary">
                             Applied: {new Date(app.applied_date).toLocaleDateString()}
@@ -713,9 +624,7 @@ export default function AppliedCandidates() {
           justifyContent="center"
           color="text.secondary"
         >
-          <Typography variant="h6">
-            Select a job to view applications
-          </Typography>
+          <Typography variant="h6">Select a job to view applications</Typography>
         </Box>
       )}
     </Card>
@@ -727,7 +636,6 @@ export default function AppliedCandidates() {
         height: "calc(100vh - 120px)",
         display: "flex",
         flexDirection: "column",
-        boxSizing: "border-box",
         gap: 0.5,
       }}
     >
@@ -753,21 +661,17 @@ export default function AppliedCandidates() {
         <Box
           sx={{
             flex: 1,
-            display: "flex",
-            flexDirection: "column",
             minHeight: 0,
             ...(isMobile
               ? {
-                position: "fixed",
-                inset: 0,
-                zIndex: showDetailMobile ? 20 : -1,
-                transform: showDetailMobile
-                  ? "translateX(0)"
-                  : "translateX(100%)",
-                transition: "transform 0.3s ease-in-out",
-                bgcolor: "background.default",
-                overflowY: "auto",
-              }
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: showDetailMobile ? 20 : -1,
+                  transform: showDetailMobile ? "translateX(0)" : "translateX(100%)",
+                  transition: "transform 0.3s ease-in-out",
+                  bgcolor: "background.default",
+                  overflowY: "auto",
+                }
               : { borderRadius: 2, boxShadow: 1 }),
           }}
         >
@@ -775,57 +679,44 @@ export default function AppliedCandidates() {
         </Box>
       </Box>
 
-      {/* View File Dialog */}
+      {/* Combined PDF Viewer Dialog */}
       <Dialog
         open={viewFileOpen}
         onClose={() => {
           setViewFileOpen(false);
-          if (fileUrl) URL.revokeObjectURL(fileUrl);
+          if (fileUrl && !fileUrl.startsWith("blob:")) {
+            // Only revoke blob URLs
+          }
         }}
         fullWidth
         maxWidth="md"
-        PaperProps={{
-          sx: {
-            height: "90vh",
-            overflow: "hidden",
-          },
-        }}
+        PaperProps={{ sx: { height: "90vh", overflow: "hidden" } }}
       >
-        <DialogContent
-          sx={{
-            p: 0,
-            height: "100%",
-            overflow: "hidden",
-          }}
-        >
-          {fileType.startsWith("image") ? (
-            <Box
-              component="img"
-              src={fileUrl}
-              alt="Resume"
-              sx={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-              }}
-            />
-          ) : (
+        <DialogContent sx={{ p: 0, height: "100%", overflow: "hidden" }}>
+          {fileType === "application/pdf" ? (
             <iframe
               src={fileUrl}
-              title="Resume Viewer"
+              title="Combined Application PDF"
               width="100%"
               height="100%"
-              style={{
-                border: "none",
-                overflow: "auto",
-              }}
+              style={{ border: "none" }}
             />
+          ) : (
+            <Box
+              sx={{
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "text.secondary",
+              }}
+            >
+              <Typography>Preview not available for this file type</Typography>
+            </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ py: 0.5, px: 2 }}>
-          <Button size="small" onClick={() => setViewFileOpen(false)}>
-            Close
-          </Button>
+        <DialogActions>
+          <Button onClick={() => setViewFileOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
