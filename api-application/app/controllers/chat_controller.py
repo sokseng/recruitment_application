@@ -378,6 +378,9 @@ async def delete_message(
     if not msg:
         raise HTTPException(404, "Message not found")
     
+    if msg.sender_id != requester_id:
+        raise HTTPException(403, "Only sender can delete this message")
+    
     if msg.file_url:
         file_path = msg.file_url.lstrip("/")
         asyncio.create_task(remove_file_async(file_path))
@@ -407,18 +410,21 @@ async def delete_message(
         }
     )
     
+    last_message_payload = None
+    if last_msg:
+        last_message_payload = serialize_message(ChatMessageOut.from_orm(last_msg))
+    
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(
             uid,
             {
                 "type": "chat_list_update",
                 "room_id": room.id,
-                "last_message": serialize_message(ChatMessageOut.from_orm(last_msg))
+                "last_message": last_message_payload 
             }
         )
         
     return {"status": "ok", "deleted_message_id": message_id}
-
 async def forward_message(
     db: Session,
     current_user: User,
