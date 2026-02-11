@@ -21,7 +21,7 @@ import ChatFile from './ChatFile';
 import ReplyComponent from './ReplyComponent';
 import ForwardIcon from '@mui/icons-material/Forward';
 
-function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -33,6 +33,28 @@ function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward })
 
     const handleMenuClose = () => {
         setAnchorEl(null);
+    };
+
+    const handleSave = async () => {
+        handleMenuClose();
+        try {
+            const response = await fetch(`${BASE_URL}${message.file_url}`);
+            if (!response.ok) throw new Error('File not found');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = message.file_name || 'file';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.URL.revokeObjectURL(url); // free memory
+        } catch (err) {
+            console.error('Download failed:', err);
+        }
     };
 
     return (
@@ -63,28 +85,34 @@ function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward })
                     >
                         <ForwardIcon />
                         forward from
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                ml: 0.5
-                            }}
-                        >
+                        {isForward ?
+                            (
+                                ' you'
+                            ) :
+                            (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        ml: 0.5
+                                    }}
+                                >
 
-                            <Avatar
-                                sx={{
-                                    width: 15,
-                                    height: 15,
-                                    mr: 0.25,
-                                    fontSize: 10
-                                }}
-                            >
-                                {message.forward_from.sender.user_name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography>
-                                {message.forward_from.sender.user_name}
-                            </Typography>
-                        </Box>
+                                    <Avatar
+                                        sx={{
+                                            width: 15,
+                                            height: 15,
+                                            mr: 0.25,
+                                            fontSize: 10
+                                        }}
+                                    >
+                                        {message.forward_from.sender.user_name.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                    <Typography>
+                                        {message.forward_from.sender.user_name}
+                                    </Typography>
+                                </Box>
+                            )}
                     </Box>
                 )}
                 <Paper
@@ -124,11 +152,11 @@ function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward })
                     )}
 
                     {message.type === 'text' && (
-                        <Typography 
-                        variant="body2"
-                        sx={{
-                            textAlign: isOwn ? 'end':'start'
-                        }}
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                textAlign: isOwn ? 'end' : 'start'
+                            }}
                         >
                             {message.content}
                         </Typography>
@@ -193,6 +221,7 @@ function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward })
                             src={`${BASE_URL}${message.file_url}`}
                             isOwn={isOwn}
                             created_at={message.created_at}
+                            edited_at={message.edited_at}
                             is_read={message.is_read}
                         />
                     )}
@@ -264,23 +293,29 @@ function MessageBubble({ message, isOwn, onEdit, onDelete, onReply, onForward })
                 )}
 
                 {isOwn && (message.type === 'image' || message.type === 'video' || message.type === 'file') && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={() => {
+                        handleMenuClose();
+                        onReplace?.(message);
+                    }}>
                         <ListItemIcon><AutorenewIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Replace</ListItemText>
                     </MenuItem>
                 )}
 
                 {(message.type === 'image' || message.type === 'video' || message.type === 'file') && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={() => {
+                        handleMenuClose();
+                        onPreview?.(message);
+                    }}>
                         <ListItemIcon><PreviewIcon fontSize="small" /></ListItemIcon>
                         <ListItemText>Preview</ListItemText>
                     </MenuItem>
                 )}
 
                 {(message.type === 'image' || message.type === 'video' || message.type === 'file' || message.type === 'voice') && (
-                    <MenuItem onClick={() => { handleMenuClose(); }}>
+                    <MenuItem onClick={handleSave}>
                         <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Download</ListItemText>
+                        <ListItemText>Save</ListItemText>
                     </MenuItem>
                 )}
 

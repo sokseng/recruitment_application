@@ -4,7 +4,7 @@ import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import { FormatTime } from './FormatTime';
 import React, { useState } from 'react';
 
-export default function ChatImage({ src, isOwn, created_at, is_read, width = 200, height = 150 }) {
+export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, width = 200, height = 150 }) {
   const [hasError, setHasError] = useState(false);
 
   return (
@@ -50,7 +50,7 @@ export default function ChatImage({ src, isOwn, created_at, is_read, width = 200
             color: 'white'
           }}
         >
-          <BrokenImageIcon sx={{ fontSize: 48, mb: 1, color:'grey.500' }} />
+          <BrokenImageIcon sx={{ fontSize: 48, mb: 1, color: 'grey.500' }} />
           <Typography
             variant="body2"
             sx={{ textAlign: 'center' }}
@@ -78,9 +78,22 @@ export default function ChatImage({ src, isOwn, created_at, is_read, width = 200
       >
         <Typography
           variant="caption"
-          sx={{ display: 'block', textAlign: 'right', opacity: 0.7 }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            textAlign: 'right',
+            opacity: 0.7,
+          }}
         >
           <FormatTime time={created_at} />
+          {edited_at && (
+            <Typography
+              variant="caption"
+              sx={{ ml: 0.5, opacity: 0.7 }}
+            >
+              · edited
+            </Typography>
+          )}
         </Typography>
         <Box sx={{ opacity: 0.7 }}>
           {is_read && isOwn && <DoneAllIcon sx={{ fontSize: 16 }} />}

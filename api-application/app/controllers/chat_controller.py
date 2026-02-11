@@ -36,10 +36,12 @@ FILE_RULES = {
 
 def serialize_message(message: ChatMessageOut):
     msg_dict = message.dict()
-    if isinstance(msg_dict.get("created_at"), datetime):
-        msg_dict["created_at"] = msg_dict["created_at"].isoformat()
-    if isinstance(msg_dict.get("read_at"), datetime) and msg_dict["read_at"] is not None:
-        msg_dict["read_at"] = msg_dict["read_at"].isoformat()
+    
+    for key in ("created_at", "edited_at", "read_at"):
+        dt = msg_dict.get(key)
+        if isinstance(dt, datetime):
+            msg_dict[key] = dt.isoformat()
+    
     return msg_dict
 
 def get_or_create_chat_room(db: Session, user_a_id: int, user_b_id: int) -> ChatRoom | None:

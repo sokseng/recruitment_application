@@ -19,6 +19,7 @@ import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 import DeleteDialog from './dialog/DeleteDialog';
 import ForwardDialog from './dialog/ForwardDialog';
+import MediaPreviewDialog from './dialog/MediaPreviewDialog';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -30,6 +31,7 @@ const FILE_RULES = {
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef }) {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
@@ -65,6 +67,49 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [roomsHasMore, setRoomsHasMore] = useState(true);
 
     const ROOM_LIMIT = 10;
+
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewIndex, setPreviewIndex] = useState(0);
+    const [previewMedia, setPreviewMedia] = useState('');
+    const mediaMessages = messages.filter(msg => {
+        if (!['image', 'video'].includes(msg.type)) return false;
+        if (!msg.file_url) return false; // skip if no URL
+        return true;
+    });
+
+    const checkMediaUrl = async (url) => {
+        try {
+            const res = await fetch(url, { method: 'HEAD' });
+            return res.ok;
+        } catch {
+            return false;
+        }
+    };
+
+    const handleOpenPreview = async (message) => {
+        const validMedia = await Promise.all(mediaMessages.map(async (msg) => {
+            const isValid = await checkMediaUrl(`${BASE_URL}${msg.file_url}`);
+            return isValid ? msg : null;
+        }));
+        const filtered = validMedia.filter(Boolean);
+
+        const index = filtered.findIndex(m => m.id === message.id);
+        if (index !== -1) {
+            setPreviewMedia(filtered); // store only valid media
+            setPreviewIndex(index);
+            setPreviewOpen(true);
+        }
+    };
+
+    const handleClosePreview = () => setPreviewOpen(false);
+
+    const handlePrevPreview = () => {
+        setPreviewIndex((prev) => (prev > 0 ? prev - 1 : mediaMessages.length - 1));
+    }
+
+    const handleNextPreview = () => {
+        setPreviewIndex((prev) => (prev < mediaMessages.length - 1 ? prev + 1 : 0));
+    }
 
     const startTyping = () => {
         if (!isTypingRef.current) {
@@ -196,7 +241,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 return f.name;
             });
             setError(`Invalid file(s): ${messages.join(', ')}`);
-            e.target.value = ''; // reset input
+            e.target.value = '';
             return;
         }
 
@@ -410,6 +455,63 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         setSelectedRooms(new Set());
     };
 
+    const handleReplaceMessage = (message) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = Object.values(FILE_RULES)
+            .flatMap(r => [...r.extensions])
+            .map(ext => `.${ext}`)
+            .join(',');
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const ext = file.name.split('.').pop().toLowerCase();
+            const allowed = Object.values(FILE_RULES)
+                .some(rule => rule.extensions.has(ext));
+            if (!allowed) {
+                setError(`Invalid file type.`);
+                return;
+            }
+            if (file.size > MAX_SIZE) {
+                setError('File exceeds 500MB');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('file_type', message.type);
+            formData.append('caption', message.content || '');
+
+            try {
+                const data = await api.put(
+                    `/chat/room/${chat.room_id}/messages/${message.id}/file`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    }
+                );
+
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === data.id
+                            ? { ...m, file_url: data.file_url, type: data.type, edited_at: data.edited_at }
+                            : m
+                    )
+                )
+
+            } catch (err) {
+                console.error(err);
+                setError('Failed to replace file');
+            }
+        };
+
+        input.click();
+    };
+
     return (
         <Box
             sx={{
@@ -574,10 +676,13 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         key={message.id}
                                         message={message}
                                         isOwn={message.sender_id === currentUserId}
+                                        isForward={message?.forward_from?.sender?.pk_id === currentUserId}
                                         onEdit={handleEditMessage}
                                         onDelete={handleDeleteMessage}
                                         onReply={(msg) => setReplyingTo(msg)}
                                         onForward={handleForwardMessage}
+                                        onReplace={handleReplaceMessage}
+                                        onPreview={handleOpenPreview}
                                     />
                                 )))}
 
@@ -892,6 +997,15 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 loadMore={fetchForwardRooms}
                 hasMore={roomsHasMore}
                 loading={loadingRooms}
+            />
+            <MediaPreviewDialog
+                open={previewOpen}
+                onClose={handleClosePreview}
+                mediaMessages={previewMedia}
+                currentIndex={previewIndex}
+                onPrev={handlePrevPreview}
+                onNext={handleNextPreview}
+                BASE_URL={BASE_URL}
             />
         </Box>
     )
