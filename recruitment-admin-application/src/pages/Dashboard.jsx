@@ -1531,19 +1531,19 @@ export default function Dashboard() {
                     )}
 
                     {/* Resume Selection */}
-                    {resumes.length > 0 ? (
-                      <>
-                        <Box
-                          sx={{
-                            position: "relative",
-                            border: "2px solid",
-                            borderRadius: 2,
-                            borderColor: "divider",
-                            p: 2,
-                            pt: 3,
-                            mt: 2,
-                          }}
-                        >
+                    <Box
+                      sx={{
+                        position: "relative",
+                        border: "2px solid",
+                        borderRadius: 2,
+                        borderColor: "divider",
+                        p: 2,
+                        pt: 3,
+                        mt: 2,
+                      }}
+                    >
+                      {resumes.length > 0 ? (
+                        <>
                           {/* Floating Label */}
                           <Typography
                             sx={{
@@ -1655,37 +1655,35 @@ export default function Dashboard() {
                               })}
                             </RadioGroup>
                           </Box>
+                        </>
+                      ) : (
+                        <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
+                          No resume found. Please upload one.
+                        </Alert>
+                      )}
 
-                          {/* Fixed Upload Button */}
-                          <Button
-                            component="label"
-                            variant="outlined"
-                            size="small"
-                            fullWidth
-                            sx={{
-                              borderRadius: 1.5,
-                              textTransform: "none",
-                              py: 0.7,
-                            }}
-                          >
-                            {uploadLoading
-                              ? "Uploading..."
-                              : "Choose New Resume"}
-                            <input
-                              type="file"
-                              hidden
-                              accept=".pdf"
-                              onChange={handleNewResumeUpload}
-                              disabled={uploadLoading}
-                            />
-                          </Button>
-                        </Box>
-                      </>
-                    ) : (
-                      <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
-                        No resume found. Please upload one.
-                      </Alert>
-                    )}
+                      {/* Fixed Upload Button */}
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        sx={{
+                          borderRadius: 1.5,
+                          textTransform: "none",
+                          py: 0.7,
+                        }}
+                      >
+                        {uploadLoading ? "Uploading..." : "Choose New Resume"}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".pdf"
+                          onChange={handleNewResumeUpload}
+                          disabled={uploadLoading}
+                        />
+                      </Button>
+                    </Box>
 
                     {/* Cover Letter */}
                     <Box
