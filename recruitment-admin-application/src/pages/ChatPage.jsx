@@ -1,7 +1,9 @@
 import SearchIcon from '@mui/icons-material/Search';
 import {
-    Box, List, IconButton, ListItemAvatar, Avatar, Typography, TextField,
-    InputAdornment, useMediaQuery, useTheme, Chip
+    Box, List, ListItemAvatar, Avatar, Typography, TextField,
+    InputAdornment, useMediaQuery, useTheme, ListItemText,
+    Divider,
+    ListItemButton
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -35,6 +37,7 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
+    const userData = useAuthStore.getState().user_data.user_data;
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -62,6 +65,69 @@ function ChatPage() {
     const chatCounts = useUnreadStore(state => state.chatCounts);
     const incrementChat = useUnreadStore(state => state.incrementChat);
     const resetChat = useUnreadStore(state => state.resetChat);
+
+    const [pinMessage, setPinMessage] = useState(null);
+    const [chatSearch, setChatSearch] = useState("");
+    const [foundUsers, setFoundUsers] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+
+    useEffect(() => {
+        const search = chatSearch.trim();
+
+        if (!search) {
+            setFoundUsers([]);
+            return;
+        }
+
+        if (filteredChats.length > 0) {
+            setFoundUsers([]);
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            setSearchLoading(true);
+
+            api.get("/chat/find-users", { params: { q: search } })
+                .then(res => setFoundUsers(res.data))
+                .catch(console.error)
+                .finally(() => setSearchLoading(false));
+
+        }, 300);
+
+        return () => clearTimeout(timeout);
+
+    }, [chatSearch]);
+
+    const filteredChats = chats.filter(chat =>
+        chat.username.toLowerCase().includes(chatSearch.toLowerCase())
+    );
+
+    const existingUserIds = chats.map(chat => chat.user_id);
+
+    const newUsers = foundUsers.filter(
+        user => !existingUserIds.includes(user.pk_id)
+    );
+
+    const handleStartChat = async (user) => {
+        try {
+            const res = await api.post("/chat/get-or-create-room", {
+                other_user_id: user.pk_id,
+            });
+
+            const newRoom = res.data;
+
+            if (!chats.find(c => c.room_id === newRoom.room_id)) {
+                setChats(prev => [newRoom, ...prev]);
+            }
+
+            setSelectedChat(newRoom);
+            setChatSearch("");
+            setFoundUsers([]);
+
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     useEffect(() => {
         selectedChatRef.current = selectedChat;
@@ -95,6 +161,19 @@ function ChatPage() {
 
     useEffect(() => {
         fetchChats();
+    }, []);
+
+    const fetchPinMessages = async (roomId) => {
+        if (!roomId) return;
+
+        const res = await api.get(`/chat/room/${roomId}/pin`);
+        setPinMessage(res.data);
+    }
+
+    useEffect(() => {
+        if (!selectedChat) return;
+
+        fetchPinMessages();
     }, []);
 
     const fetchMessages = async (roomId, reset = false) => {
@@ -192,13 +271,13 @@ function ChatPage() {
         setSelectedChat(chat);
         setOpen(false);
 
-        resetUnread(chat.room_id);
+        // resetUnread(chat.room_id);
 
         setChats(prev => {
             const exists = prev.some(c => c.room_id === chat.room_id);
             return exists ? prev : [chat, ...prev];
         });
-        
+
 
     };
 
@@ -320,30 +399,54 @@ function ChatPage() {
                         zIndex: 2,
                     }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            All Chats ({chats.length})
-                        </Typography>
-                    </Box>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            px: 1,
+                            pt: 2,
+                            width: '100%',
+                            gap: 1
+                        }}
 
-                    <Box sx={{ py: 2, px: 1 }}>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            label="Search chat"
-                            onClick={() => setOpen(true)}
-                            InputProps={{
-                                readOnly: true,
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton>
-                                            <SearchIcon />
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                        />
+                    >
+                        {/* <Avatar src={userData?.avatar_url} sx={{ borderRadius: 12 }}>
+                            {userData.user_name.charAt(0).toUpperCase()}
+                        </Avatar> */}
+                        <Box sx={{ width: '100%' }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                placeholder="Search..."
+                                value={chatSearch}
+                                onChange={(e) => setChatSearch(e.target.value)}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: '30px',
+                                        // backgroundColor: '#ffffffff',
+                                        paddingRight: 1,
+                                    },
+                                }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon sx={{ color: 'grey.500' }} />
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                        </Box>
                     </Box>
+                    <Divider sx={{ py: 1 }} />
+                    <Typography
+                        sx={{
+                            color: 'primary.main',
+                            fontWeight: 'bold',
+                            px: 1,
+                            pt: 0.5
+                        }}
+                    >Chat ({chats.length})</Typography>
 
                     <Box
                         sx={{
@@ -354,7 +457,7 @@ function ChatPage() {
                         }}
                     >
                         <List>
-                            {chats.map(chat => {
+                            {filteredChats.map(chat => {
                                 return (
                                     <Box
                                         key={chat.room_id}
@@ -433,6 +536,38 @@ function ChatPage() {
                                 );
 
                             })}
+                            {chatSearch && newUsers.length > 0 && (
+                                <>
+                                    <Typography sx={{ px: 2, mt: 1, opacity: 0.6 }}>
+                                        Start new chat
+                                    </Typography>
+
+                                    {newUsers.map(user => (
+                                        <ListItemButton
+                                            key={user.pk_id}
+                                            onClick={() => handleStartChat(user)}
+                                        >
+                                            <ListItemAvatar>
+                                                <Avatar src={user.avatar_url}>
+                                                    {user.user_name[0]?.toUpperCase()}
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={user.user_name}
+                                                secondary={user.email}
+                                            />
+                                        </ListItemButton>
+                                    ))}
+                                </>
+                            )}
+                            {chatSearch &&
+                                filteredChats.length === 0 &&
+                                newUsers.length === 0 &&
+                                !searchLoading && (
+                                    <Typography sx={{ textAlign: 'center', mt: 2, opacity: 0.6 }}>
+                                        No chats or users found
+                                    </Typography>
+                                )}
                         </List>
                     </Box>
                 </Box>

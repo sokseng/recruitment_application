@@ -1,4 +1,6 @@
 import { Box, Typography, Paper, Button, Avatar } from '@mui/material';
+import Popper from '@mui/material/Popper';
+import Fade from '@mui/material/Fade';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { VoiceMessagePlayer } from './VoiceMessagePlayer';
 import Menu from '@mui/material/Menu';
@@ -20,8 +22,9 @@ import ChatImage from './ImageComponent';
 import ChatFile from './ChatFile';
 import ReplyComponent from './ReplyComponent';
 import ForwardIcon from '@mui/icons-material/Forward';
+import PushPinIcon from '@mui/icons-material/PushPin';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -56,6 +59,15 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
             console.error('Download failed:', err);
         }
     };
+
+    const reactions = [
+        { type: "like", emoji: "👍" },
+        { type: "love", emoji: "❤️" },
+        { type: "laugh", emoji: "😂" },
+        { type: "wow", emoji: "😮" },
+        { type: "sad", emoji: "😢" },
+        { type: "angry", emoji: "😡" },
+    ];
 
     return (
         <Box
@@ -265,6 +277,64 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     )}
                 </Paper>
             </Box>
+
+            <Popper
+                open={open && message.type !== 'system'}
+                anchorEl={anchorEl}
+                placement="top"
+                transition
+                modifiers={[
+                    {
+                        name: 'offset',
+                        options: {
+                            offset: [0, -10], // space between emoji bar and menu
+                        },
+                    },
+                ]}
+                sx={{ zIndex: 1600 }}
+            >
+                {({ TransitionProps }) => (
+                    <Fade {...TransitionProps} timeout={150}>
+                        <Paper
+                            elevation={4}
+                            sx={{
+                                display: 'flex',
+                                gap: 1,
+                                px: 1.5,
+                                py: 0.8,
+                                borderRadius: 5,
+                                bgcolor: 'background.paper',
+                                boxShadow: 3,
+                                mb: 2,
+                                mr: isOwn ? 2 : 0,
+                                ml: !isOwn ? 2 : 0
+                            }}
+                        >
+                            {reactions.map((reaction) => (
+                                <Box
+                                    key={reaction.type}
+                                    onClick={() => {
+                                        handleMenuClose();
+                                        // onReact?.(message, reaction.type);
+                                    }}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        fontSize: 22,
+                                        transition: 'transform 0.15s ease',
+                                        '&:hover': {
+                                            transform: 'scale(1.35)',
+                                        },
+                                    }}
+                                >
+                                    {reaction.emoji}
+                                </Box>
+                            ))}
+                        </Paper>
+                    </Fade>
+                )}
+            </Popper>
+
+
             <Menu
                 anchorEl={anchorEl}
                 open={open}
@@ -272,6 +342,16 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
+                {message.type !== 'system' && (
+                    <MenuItem onClick={() => {
+                        handleMenuClose();
+                        onPin?.(message);
+                    }}>
+                        <ListItemIcon><PushPinIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>Pin</ListItemText>
+                    </MenuItem>
+                )}
+
                 {message.type !== 'system' && (
                     <MenuItem onClick={() => {
                         handleMenuClose();

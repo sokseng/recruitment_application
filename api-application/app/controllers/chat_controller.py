@@ -492,3 +492,103 @@ async def forward_message(
             )
 
     return [payload for _, payload in payloads]
+
+async def pin_message(
+    db: Session,
+    room: ChatRoom,
+    message_id: int,
+    requester_id: int
+):
+    if requester_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed in this room")
+
+    # Get message
+    msg: ChatMessage | None = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.id == message_id,
+            ChatMessage.room_id == room.id
+        )
+        .first()
+    )
+
+    if not msg:
+        raise HTTPException(404, "Message not found")
+
+    # Update pin fields
+    room.pinned_message_id = msg.id
+    room.pinned_by_user_id = requester_id
+    room.pinned_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(room)
+
+    payload = jsonable_encoder(
+        ChatMessageOut.from_orm(msg)
+    )
+
+    # Broadcast to room
+    await manager.broadcast_to_room(
+        room.id,
+        {
+            "type": "message_pinned",
+            "room_id": room.id,
+            "pinned_message": payload,
+            "pinned_by": requester_id,
+            "pinned_at": room.pinned_at.isoformat()
+        }
+    )
+
+    # Update chat list for both users
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_pin_update",
+                "room_id": room.id,
+                "pinned_message": payload
+            }
+        )
+
+    return {
+        "status": "ok",
+        "pinned_message_id": msg.id
+    }
+    
+async def unpin_message(
+    db: Session,
+    room: ChatRoom,
+    requester_id: int
+):
+    if requester_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed in this room")
+
+    if not room.pinned_message_id:
+        raise HTTPException(400, "No pinned message")
+
+    room.pinned_message_id = None
+    room.pinned_by_user_id = None
+    room.pinned_at = None
+
+    db.commit()
+
+    await manager.broadcast_to_room(
+        room.id,
+        {
+            "type": "message_unpinned",
+            "room_id": room.id
+        }
+    )
+
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_pin_update",
+                "room_id": room.id,
+                "pinned_message": None
+            }
+        )
+
+    return {"status": "ok"}
+
