@@ -48,6 +48,7 @@ BEGIN
             date_of_birth,
             address,
             is_active,
+            approved,
             wrong_password
         )
         VALUES (
@@ -60,6 +61,7 @@ BEGIN
             '1998-11-11',
             'TK',
             TRUE,
+            true,
             0
         );
 

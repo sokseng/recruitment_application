@@ -36,6 +36,7 @@ class User(Base):
         server_default=text("TRUE"),
         nullable=False,
     )
+    approved = Column(Boolean, default=False, nullable=False)
 
     updated_date = Column(
         DateTime(timezone=True),
