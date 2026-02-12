@@ -55,10 +55,8 @@ import {
   CheckBox,
   CheckBoxOutlineBlank,
   CheckCircle,
-  DescriptionOutlined,
   EmailOutlined,
   Home,
-  HourglassTop,
   Image,
   Info,
   InfoOutlined,
@@ -67,17 +65,18 @@ import {
   PhoneOutlined,
   PictureAsPdf,
   Send,
-  Update,
-  UpdateDisabled,
   UpdateSharp,
   UploadFile,
-  UploadFileSharp,
 } from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -103,6 +102,8 @@ export default function Dashboard() {
   const [dateSortAnchor, setDateSortAnchor] = useState(null);
   const [titleSortAnchor, setTitleSortAnchor] = useState(null);
   const [dateFilterAnchor, setDateFilterAnchor] = useState(null);
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
+  const openFilterMenu = Boolean(filterMenuAnchor);
 
   const openCategory = Boolean(categoryAnchor);
   const openType = Boolean(typeAnchor);
@@ -301,8 +302,15 @@ export default function Dashboard() {
         params.search = searchTerm.trim();
       }
 
+      // if (typeFilter !== "All" && typeFilter.length > 0) {
+      //   params.job_types = typeFilter.join(",");
+      // }
       if (typeFilter !== "All" && typeFilter.length > 0) {
-        params.job_types = typeFilter.join(",");
+        const validTypes = ["Full-time", "Part-time", "Internship"]; // ← match your DB enum!
+        const safeTypes = typeFilter.filter(t => validTypes.includes(t));
+        if (safeTypes.length > 0) {
+          params.job_types = safeTypes.join(",");
+        }
       }
 
       if (levelFilter !== "All") {
@@ -601,26 +609,248 @@ export default function Dashboard() {
             ),
           }}
         />
-        <Stack direction="row" spacing={0.3}>
-          <Tooltip title="Filter by Categories" arrow placement="top">
+          {/* Single MoreVert button */}
+          <Tooltip title="Filters & Sorting" arrow placement="bottom">
             <IconButton
               size="small"
-              onClick={(e) => setCategoryAnchor(e.currentTarget)}
+              onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
               sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
+                p: 0.5,
+                width: 34,
+                height: 34,
                 borderRadius: 1,
                 bgcolor: "teal",
                 color: "#fff",
-                "&:hover": {
-                  bgcolor: "teal",
-                },
+                "&:hover": { bgcolor: "teal" },
               }}
             >
-              <CategoryRoundedIcon />
+              <MoreVertIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+
+          <Menu
+            anchorEl={filterMenuAnchor}
+            open={openFilterMenu}
+            onClose={() => setFilterMenuAnchor(null)}
+            PaperProps={{
+              sx: {
+                width: 320,
+                maxHeight: 480,
+                mt: 1,
+                borderRadius: 2,
+                boxShadow: 4,
+                border: "1px solid",
+                borderColor: "teal"
+              },
+            }}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            {/* Header */}
+            <Box p={1}>
+              <Typography variant="subtitle2" fontWeight={600} color="text.primary">
+                Filter & Sort Jobs
+              </Typography>
+            </Box>
+
+            <Divider />
+
+            {/* FILTERS GROUP */}
+            <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                Filters
+              </Typography>
+            </Box>
+
+            {/* Categories */}
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setCategoryAnchor(e.currentTarget);
+              }}
+              sx={{ py: 1.1 }}
+            >
+              <ListItemIcon>
+                <CategoryRoundedIcon fontSize="small" color="action" />
+              </ListItemIcon>
+              <ListItemText primary="Categories" primaryTypographyProps={{fontSize: "15px"}}/>
+              {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
+                <Chip
+                  size="small"
+                  label={categoryFilter.length}
+                  color="primary"
+                  sx={{ ml: 'auto', minWidth: 32, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </MenuItem>
+
+            {/* Job Type */}
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setTypeAnchor(e.currentTarget);
+              }}
+              sx={{ py: 1.1 }}
+            >
+              <ListItemIcon>
+                <WorkOutlineIcon fontSize="small" color="action" />
+              </ListItemIcon>
+              <ListItemText primary="Job Type" primaryTypographyProps={{fontSize: "15px"}}/>
+              {Array.isArray(typeFilter) && typeFilter.length > 0 && typeFilter[0] !== "All" && (
+                <Chip
+                  size="small"
+                  label={typeFilter.length}
+                  color="primary"
+                  sx={{ ml: 'auto', minWidth: 32, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </MenuItem>
+
+            {/* Posted Date Filter */}
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setDateFilterAnchor(e.currentTarget);
+              }}
+              sx={{ py: 1.1 }}
+            >
+              <ListItemIcon>
+                <EventIcon fontSize="small" color="action" />
+              </ListItemIcon>
+              <ListItemText primary="Posted Date" primaryTypographyProps={{fontSize: "15px"}}/>
+              {dateFilterMode !== "all" && (
+                <Chip
+                  size="small"
+                  label={dateFilterMode === "today" ? "Today" : dateFilterMode === "last7" ? "7 days" : "Custom"}
+                  variant="outlined"
+                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </MenuItem>
+             {/* RESET OPTIONS */}
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                startIcon={<Cancel fontSize="small" />}
+                sx={{ textTransform: "none" }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setTypeFilter("All");
+                  setLevelFilter("All");
+                  setCategoryFilter(["All"]);
+                  setDateFilterMode("all");
+                  setDateFrom(null);
+                  setDateTo(null);
+                  setFilterMenuAnchor(null);
+                }}
+              >
+                Reset
+              </Button>
+            </Box>
+
+            <Divider variant="middle" sx={{ my: 1 }} />
+
+            {/* SORT GROUP */}
+            <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                Sort by
+              </Typography>
+            </Box>
+
+            {/* Sort by Date */}
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setDateSortAnchor(e.currentTarget);
+              }}
+              sx={{ py: 1.1 }}
+            >
+              <ListItemIcon>
+                <EventIcon fontSize="small" color="action" />
+              </ListItemIcon>
+              <ListItemText primary="Date Posted" primaryTypographyProps={{fontSize: "15px"}}/>
+              {sortBy.startsWith("date-") && (
+                <Chip
+                  size="small"
+                  label={sortBy === "date-desc" ? "Newest" : "Oldest"}
+                  variant="outlined"
+                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </MenuItem>
+
+            {/* Sort by Title */}
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setTitleSortAnchor(e.currentTarget);
+              }}
+              sx={{ py: 1.1 }}
+            >
+              <ListItemIcon>
+                <BadgeIcon fontSize="small" color="action" />
+              </ListItemIcon>
+              <ListItemText primary="Job Title" primaryTypographyProps={{fontSize: "15px"}}/>
+              {sortBy.startsWith("title-") && (
+                <Chip
+                  size="small"
+                  label={sortBy === "title-asc" ? "A–Z" : "Z–A"}
+                  variant="outlined"
+                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
+                />
+              )}
+            </MenuItem>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="outlined"
+                color="warning"
+                size="small"
+                startIcon={<Cancel fontSize="small" />}
+                sx={{ textTransform: "none" }}
+                onClick={() => {
+                  setSortBy("date-desc");
+                  setFilterMenuAnchor(null);
+                }}
+              >
+                Reset
+              </Button>
+            </Box>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Box sx={{ display: "flex", justifyContent: "end" }} p={1}>
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                startIcon={<Cancel fontSize="small" />}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setTypeFilter("All");
+                  setLevelFilter("All");
+                  setCategoryFilter(["All"]);
+                  setSortBy("date-desc");
+                  setDateFilterMode("all");
+                  setDateFrom(null);
+                  setDateTo(null);
+                  setFilterMenuAnchor(null);
+                }}
+              >
+                Reset All
+              </Button>
+            </Box>
+
+          </Menu>
+
           <Popover
             open={openCategory}
             anchorEl={categoryAnchor}
@@ -643,12 +873,6 @@ export default function Dashboard() {
               },
             }}
           >
-            <Typography fontWeight={700} mb={1.5}>
-              Categories
-            </Typography>
-
-            <Divider sx={{ mb: 2 }} />
-
             <List dense disablePadding>
               {/* ALL */}
               <ListItemButton
@@ -700,26 +924,6 @@ export default function Dashboard() {
               })}
             </List>
           </Popover>
-          {/* Job Type – popover */}
-          <Tooltip title="Filter by Job Type" arrow placement="top">
-            <IconButton
-              size="small"
-              onClick={(e) => setTypeAnchor(e.currentTarget)}
-              sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                bgcolor: "teal",
-                color: "#fff",
-                "&:hover": {
-                  bgcolor: "teal",
-                },
-              }}
-            >
-              <WorkOutlineIcon />
-            </IconButton>
-          </Tooltip>
           <Popover
             open={openType}
             anchorEl={typeAnchor}
@@ -736,10 +940,6 @@ export default function Dashboard() {
               },
             }}
           >
-            <Typography fontWeight={700} mb={1.5}>
-              Job Type
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
             <List dense disablePadding>
               {["All", "Full-time", "Part-time", "Internship"].map((type) => {
                 const checked = typeFilter.includes(type);
@@ -782,96 +982,6 @@ export default function Dashboard() {
             </List>
           </Popover>
 
-          {/* Sort by Date */}
-          <Tooltip title="Sort by Date" arrow placement="top">
-            <IconButton
-              size="small"
-              onClick={(e) => setDateSortAnchor(e.currentTarget)}
-              sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                bgcolor: "teal",
-                color: "#fff",
-                "&:hover": {
-                  bgcolor: "teal",
-                },
-              }}
-            >
-              <EventIcon />
-            </IconButton>
-          </Tooltip>
-
-          {/* Sort by Title */}
-          <Tooltip title="Sort by Job Title" arrow placement="top">
-            <IconButton
-              size="small"
-              onClick={(e) => setTitleSortAnchor(e.currentTarget)}
-              sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                bgcolor: "teal",
-                color: "#fff",
-                "&:hover": {
-                  bgcolor: "teal",
-                },
-              }}
-            >
-              <BadgeIcon />
-            </IconButton>
-          </Tooltip>
-
-          {/* Date Range Filter */}
-          <Tooltip title="Filter by Posting Date" arrow placement="top">
-            <IconButton
-              size="small"
-              onClick={(e) => setDateFilterAnchor(e.currentTarget)}
-              sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                bgcolor: "teal",
-                color: "#fff",
-                "&:hover": {
-                  bgcolor: "teal",
-                },
-              }}
-            >
-              <EventIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Clear all filter" arrow placement="top">
-            <IconButton
-              sx={{
-                p: 0.5, // 🔥 shrink padding
-                width: 28,
-                height: 28,
-                borderRadius: 1,
-                bgcolor: "gray",
-                color: "#fff",
-                "&:hover": {
-                  bgcolor: "gray",
-                },
-              }}
-              onClick={() => {
-                setSearchTerm("");
-                setTypeFilter("All");
-                setLevelFilter("All");
-                setCategoryFilter(["All"]);
-                setSortBy("date-desc");
-                setDateFilterMode("all");
-                setDateFrom("");
-                setDateTo("");
-              }}
-            >
-              <Cancel />
-            </IconButton>
-          </Tooltip>
-        </Stack>
       </Stack>
 
       <Divider />
@@ -1088,10 +1198,6 @@ export default function Dashboard() {
         sx: { width: 320, borderRadius: 2, p: 3, boxShadow: 4 },
       }}
     >
-      <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-        Filter by Posting Date
-      </Typography>
-
       <RadioGroup
         value={dateFilterMode}
         onChange={(e) => {
@@ -2289,10 +2395,6 @@ export default function Dashboard() {
             sx: { width: 240, borderRadius: 2, p: 2, boxShadow: 4 },
           }}
         >
-          <Typography fontWeight={700} mb={1.5}>
-            Sort by Posting Date
-          </Typography>
-          <Divider sx={{ mb: 1.5 }} />
           <List dense disablePadding>
             {[
               { label: "Newest first", value: "date-desc" },
@@ -2324,10 +2426,6 @@ export default function Dashboard() {
             sx: { width: 220, borderRadius: 2, p: 2, boxShadow: 4 },
           }}
         >
-          <Typography fontWeight={700} mb={1.5}>
-            Sort by Job Title
-          </Typography>
-          <Divider sx={{ mb: 1.5 }} />
           <List dense disablePadding>
             {[
               { label: "A → Z", value: "title-asc" },
