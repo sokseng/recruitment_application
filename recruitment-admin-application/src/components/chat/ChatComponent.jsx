@@ -512,6 +512,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         input.click();
     };
 
+    const handlePinMessage = async (message) =>{
+        const res = await api.post(`/chat/room/${chat.room_id}/messages/${message.id}/pin`)
+        
+    }
+
     return (
         <Box
             sx={{
@@ -683,6 +688,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onForward={handleForwardMessage}
                                         onReplace={handleReplaceMessage}
                                         onPreview={handleOpenPreview}
+                                        onPin={handlePinMessage}
                                     />
                                 )))}
 

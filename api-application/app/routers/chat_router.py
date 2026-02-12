@@ -23,7 +23,9 @@ from app.controllers.chat_controller import (
     get_total_unread_count,
     edit_message,
     delete_message,
-    forward_message
+    forward_message,
+    pin_message,
+    unpin_message
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -477,4 +479,69 @@ async def delete_message_by_id(
         message_id=message_id,
         requester_id=current_user_id,
     )
+    
+@router.post("/rooms/{room_id}/messages/{message_id}/pin")
+async def pin_message_route(
+    room_id: int,
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Room not found")
+
+    result = await pin_message(
+        db=db,
+        room=room,
+        message_id=message_id,
+        requester_id=current_user_id
+    )
+
+    return result
+
+@router.delete("/rooms/{room_id}/pin")
+async def unpin_message_route(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(404, "Room not found")
+
+    result = await unpin_message(
+        db=db,
+        room=room,
+        requester_id=current_user_id
+    )
+
+    return result
+
+@router.get("/rooms/{room_id}/pin", response_model=Optional[ChatMessageOut])
+async def get_pinned_message(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    room = (
+        db.query(ChatRoom)
+        .options(joinedload(ChatRoom.pinned_message))
+        .filter(ChatRoom.id == room_id)
+        .first()
+    )
+
+    if not room:
+        raise HTTPException(404, "Room not found")
+
+    if current_user_id not in (
+        room.candidate_user_id,
+        room.employer_user_id,
+    ):
+        raise HTTPException(403, "Not allowed in this room")
+
+    if not room.pinned_message:
+        return None
+
+    return ChatMessageOut.from_orm(room.pinned_message)
 

@@ -28,7 +28,7 @@ class ChatMessage(Base):
     
     reply_to_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="SET NULL"), nullable=True, index=True)
     forwarded_from_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="SET NULL"), nullable=True, index=True)
-
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     edited_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -47,5 +47,6 @@ class ChatMessage(Base):
     reply_to = relationship("ChatMessage", remote_side=[id], foreign_keys=[reply_to_id], backref="replies")
     forward_from  = relationship("ChatMessage", remote_side=[id], foreign_keys=[forwarded_from_id], backref="forwards")
 
+    
     def __repr__(self):
         return f"<ChatMessage #{self.id} | Room #{self.room_id} | Sender #{self.sender_id}>"

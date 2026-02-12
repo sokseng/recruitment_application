@@ -32,6 +32,10 @@ class ChatRoom(Base):
 
     last_message_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="SET NULL"), nullable=True)
     last_message_at = Column(DateTime(timezone=True), nullable=True)
+    
+    pinned_message_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="SET NULL"), nullable=True)
+    pinned_by_user_id = Column(Integer, ForeignKey("t_user.pk_id", ondelete="SET NULL"), nullable=True)
+    pinned_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     candidate_user = relationship(
@@ -60,6 +64,18 @@ class ChatRoom(Base):
         foreign_keys=[last_message_id],
         post_update=True  # This helps with circular dependencies
     )
+    
+    pinned_message = relationship(
+        "ChatMessage",
+        foreign_keys=[pinned_message_id],
+        post_update=True
+    )
+
+    pinned_by_user = relationship(
+        "User",
+        foreign_keys=[pinned_by_user_id]
+    )
+
 
     __table_args__ = (
         UniqueConstraint("candidate_user_id", "employer_user_id", name="uix_chat_cand_emp"),

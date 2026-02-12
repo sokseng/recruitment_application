@@ -134,6 +134,7 @@ class UserSearchOut(BaseModel):
     pk_id: int
     user_name: str
     avatar_url: str | None = None
+    email: str
 
     class Config:
         from_attributes = True

@@ -64,6 +64,24 @@ async def websocket_chat(
         return
     
     await manager.connect(websocket, current_user_id, room.id)
+    
+    if room.pinned_message_id:
+        pinned_msg = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.id == room.pinned_message_id)
+            .first()
+        )
+
+        if pinned_msg:
+            await websocket.send_json({
+                "type": "message_pinned",
+                "room_id": room.id,
+                "pinned_message": jsonable_encoder(
+                    ChatMessageOut.from_orm(pinned_msg)
+                ),
+                "pinned_by": room.pinned_by_user_id,
+                "pinned_at": room.pinned_at.isoformat() if room.pinned_at else None
+            })
 
     try:
         while True:
