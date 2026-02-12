@@ -951,9 +951,7 @@ export default function Topbar() {
                 height: 50,
                 width: { xs: 120, sm: 155 },
                 objectFit: "contain",
-                border: "2px solid #1976d2",
                 borderRadius: "0.6rem",
-                boxShadow: 2,
                 cursor: "pointer",
                 p: 0.5
               }}
