@@ -37,7 +37,6 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore.getState().access_token;
     const currentUserId = useAuthStore.getState().user_data.pk_id;
-    const userData = useAuthStore.getState().user_data.user_data;
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -166,15 +165,16 @@ function ChatPage() {
     const fetchPinMessages = async (roomId) => {
         if (!roomId) return;
 
-        const res = await api.get(`/chat/room/${roomId}/pin`);
+        const res = await api.get(`/chat/rooms/${roomId}/pin`);
         setPinMessage(res.data);
+        console.log("pinMessage", res.data)
     }
 
     useEffect(() => {
         if (!selectedChat) return;
 
-        fetchPinMessages();
-    }, []);
+        fetchPinMessages(selectedChat.room_id);
+    }, [selectedChat]);
 
     const fetchMessages = async (roomId, reset = false) => {
         if (!roomId) return [];
@@ -369,6 +369,28 @@ function ChatPage() {
                         );
                     });
                     break;
+                case "message_pinned":
+                    if (data.room_id === selectedChat?.room_id){
+                        setPinMessage(data);
+                    }
+                    setChats(prev => 
+                        prev.map(chat => 
+                            chat.room_id === data.room_id
+                            ? {...chat, message: data} : chat
+                        )
+                    );
+                    break;
+                case "message_unpinned":
+                    if(data.room_id === selectedChat?.room_id){
+                        setPinMessage(null);
+                    }
+                    setChats(prev => 
+                        prev.map(chat =>
+                            chat.room_id === data.room_id
+                            ? {...chat, message: null} : chat
+                        )
+                    );
+                    break;
 
                 default:
                     console.log("WS event", data);
@@ -410,9 +432,6 @@ function ChatPage() {
                         }}
 
                     >
-                        {/* <Avatar src={userData?.avatar_url} sx={{ borderRadius: 12 }}>
-                            {userData.user_name.charAt(0).toUpperCase()}
-                        </Avatar> */}
                         <Box sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
@@ -597,6 +616,7 @@ function ChatPage() {
                         loadingOlder={loadingOlder}
                         hasMore={hasMore}
                         messagesEndRef={messagesEndRef}
+                        pinMessage={pinMessage}
                     />
                 </Box>
             )}

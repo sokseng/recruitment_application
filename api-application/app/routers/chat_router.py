@@ -10,7 +10,7 @@ from app.models.chat_message import ChatMessage
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
     ChatMessageOut, ConversationSummary, EditTextMessage,
-    ForwardMessageRequest
+    ForwardMessageRequest, PinnedMessageOut
 )
 from fastapi import Body
 from app.dependencies.chat import get_current_active_user
@@ -488,6 +488,7 @@ async def pin_message_route(
     current_user_id: int = Depends(verify_access_token)
 ):
     room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    print("Room not found")
     if not room:
         raise HTTPException(404, "Room not found")
 
@@ -518,30 +519,28 @@ async def unpin_message_route(
 
     return result
 
-@router.get("/rooms/{room_id}/pin", response_model=Optional[ChatMessageOut])
+@router.get("/rooms/{room_id}/pin", response_model=Optional[PinnedMessageOut])
 async def get_pinned_message(
     room_id: int,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    room = (
-        db.query(ChatRoom)
-        .options(joinedload(ChatRoom.pinned_message))
-        .filter(ChatRoom.id == room_id)
-        .first()
-    )
+    room = db.query(ChatRoom).options(joinedload(ChatRoom.pinned_message)).filter(ChatRoom.id == room_id).first()
 
     if not room:
         raise HTTPException(404, "Room not found")
 
-    if current_user_id not in (
-        room.candidate_user_id,
-        room.employer_user_id,
-    ):
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed in this room")
 
     if not room.pinned_message:
         return None
 
-    return ChatMessageOut.from_orm(room.pinned_message)
+    return PinnedMessageOut(
+        message=ChatMessageOut.model_validate(room.pinned_message).model_dump(),
+        pinned_by_user=room.pinned_by_user,
+        pinned_at=room.pinned_at
+    )
+
+
 

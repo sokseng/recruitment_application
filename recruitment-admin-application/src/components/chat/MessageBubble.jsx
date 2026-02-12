@@ -24,7 +24,7 @@ import ReplyComponent from './ReplyComponent';
 import ForwardIcon from '@mui/icons-material/Forward';
 import PushPinIcon from '@mui/icons-material/PushPin';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -256,6 +256,16 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     opacity: 0.7,
                                 }}
                             >
+                                {isPin && (
+                                    <PushPinIcon
+                                        sx={{
+                                            fontSize: 16,
+                                            mr: 0.5,
+                                            transform: 'rotate(30deg)'
+                                        }}
+                                    />
+                                )}
+
                                 <FormatTime time={message.created_at} />
                                 {message.edited_at && (
                                     <Typography
@@ -348,7 +358,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onPin?.(message);
                     }}>
                         <ListItemIcon><PushPinIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Pin</ListItemText>
+                        <ListItemText>{isPin ? 'Unpin' : 'Pin'}</ListItemText>
                     </MenuItem>
                 )}
 

@@ -14,6 +14,11 @@ from app.websockets.chat_manager import manager
 from datetime import datetime
 from fastapi.encoders import jsonable_encoder
 from typing import Optional
+from zoneinfo import ZoneInfo
+import pytz
+
+# Cambodia timezone
+cambodia_tz = pytz.timezone("Asia/Phnom_Penh")
 
 FILE_RULES = {
     "image": {
@@ -514,11 +519,13 @@ async def pin_message(
 
     if not msg:
         raise HTTPException(404, "Message not found")
+    
+    requester = db.query(User).filter(User.pk_id == requester_id).first()
 
     # Update pin fields
     room.pinned_message_id = msg.id
     room.pinned_by_user_id = requester_id
-    room.pinned_at = datetime.utcnow()
+    room.pinned_at = datetime.now(cambodia_tz)
 
     db.commit()
     db.refresh(room)
@@ -533,8 +540,11 @@ async def pin_message(
         {
             "type": "message_pinned",
             "room_id": room.id,
-            "pinned_message": payload,
-            "pinned_by": requester_id,
+            "message": payload,
+            "pinned_by_user": {
+                'pk_id': requester.pk_id,
+                'user_name': requester.user_name
+                },
             "pinned_at": room.pinned_at.isoformat()
         }
     )
@@ -576,7 +586,8 @@ async def unpin_message(
         room.id,
         {
             "type": "message_unpinned",
-            "room_id": room.id
+            "room_id": room.id,
+            "message": None
         }
     )
 
