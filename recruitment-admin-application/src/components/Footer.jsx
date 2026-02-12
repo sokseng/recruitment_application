@@ -5,10 +5,8 @@ import {
   Container,
   Typography,
   Link,
-  Divider,
   IconButton,
   Stack,
-  useTheme,
 } from '@mui/material';
 import {
   Facebook,
@@ -18,31 +16,40 @@ import {
   Copyright,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../store/useAuthStore';
-
 export default function Footer() {
-  const theme = useTheme();
   const navigate = useNavigate();
-  
-  const { access_token, user_type } = useAuthStore();
+
 
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { icon: <Facebook fontSize="small" />, url: 'https://www.facebook.com/mok.kolsambath012', label: 'Facebook' },
-    { icon: <Twitter fontSize="small" />, url: '', label: 'Twitter' },
-    { icon: <LinkedIn fontSize="small" />, url: '', label: 'LinkedIn' },
-    { icon: <Instagram fontSize="small" />, url: '', label: 'Instagram' },
+    { 
+      icon: <Facebook fontSize="small" />, 
+      // url: "", 
+      label: "Facebook" 
+    },
+    { 
+      icon: <Twitter fontSize="small" />, 
+      // url: "", 
+      label: "Twitter" 
+    },
+    { 
+      icon: <LinkedIn fontSize="small" />, 
+      // url: "", 
+      label: "LinkedIn" 
+    },
+    { 
+      icon: <Instagram fontSize="small" />, 
+      // url: "", 
+      label: "Instagram" 
+    },
   ];
 
   return (
     <Box
       component="footer"
       sx={{
-        // bgcolor: 'grey.900',
         color: 'grey.400',
-        // borderTop: '1px solid',
-        // borderColor: 'grey.800',
         mt: 'auto',
       }}
     >
