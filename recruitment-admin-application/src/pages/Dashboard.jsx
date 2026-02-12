@@ -1215,26 +1215,38 @@ export default function Dashboard() {
                   >
                     {companyName.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box flex={1}>
-                    <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                  <Stack direction="column" spacing={1} flexWrap="wrap">
+                      <Typography variant="h7" fontWeight={700} lineHeight={1.2}>
                       {selectedJob.job_title}
                     </Typography>
-                    <Chip
-                      icon={<BusinessRoundedIcon />}
+                      <Chip
+                      icon={<BusinessRoundedIcon sx={{ fontSize: 16 }} />}
                       label={`Company: ${companyName}`}
                       size="small"
                       sx={(theme) => ({
+                        height: 22,
+                        fontSize: "0.72rem",
+                        alignSelf: "flex-start",
+                        px: 0.5,
                         backgroundColor: alpha(
                           theme.palette.primary.main,
                           0.08,
                         ),
                         color: alpha(theme.palette.primary.main, 0.9),
+
                         "& .MuiChip-icon": {
+                          fontSize: 16,
                           color: alpha(theme.palette.primary.main, 0.7),
+                          ml: 0.5,
+                        },
+
+                        "& .MuiChip-label": {
+                          px: 0.5,
                         },
                       })}
                     />
-                  </Box>
+                    
+                  </Stack>
                 </Stack>
 
                 {/* Apply button – only for candidates */}
@@ -1281,34 +1293,23 @@ export default function Dashboard() {
                         {hasAppliedToThisJob ? "Re-apply" : "Apply"}
                       </Button>
                     )}
-                    <Button
-                      variant="outlined"
-                      startIcon={<InfoOutlinedIcon />}
-                      onClick={(e) => setCompanyAnchor(e.currentTarget)}
-                      size="small"
-                      sx={{
-                        display: { xs: "inline-flex", sm: "none" },
-                        textTransform: "none",
-                      }}
-                    >
-                      company Info
-                    </Button>
                   </Stack>
                 )}
                 {/* Desktop */}
-                <Button
-                  variant="outlined"
-                  startIcon={<InfoOutlinedIcon />}
-                  onClick={(e) => setCompanyAnchor(e.currentTarget)}
-                  size="small"
-                  sx={{
-                    whiteSpace: "nowrap",
-                    display: { xs: "none", sm: "inline-flex" },
-                    textTransform: "none",
-                  }}
-                >
-                  Company Info
-                </Button>
+                <Tooltip title="Company information" arrow>
+                  <Button
+                    variant="outlined"
+                    onClick={(e) => setCompanyAnchor(e.currentTarget)}
+                    size="small"
+                    color="info"
+                    sx={{
+                      minWidth: 0,
+                      px: 1,
+                    }}
+                  >
+                    <InfoOutlinedIcon color="warning" />
+                  </Button>
+                </Tooltip>
 
                 {/* // Popover component */}
                 <Popover
@@ -2057,7 +2058,7 @@ export default function Dashboard() {
               <Box mb={4}>
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <DescriptionOutlinedIcon color="action" fontSize="medium" />
-                  <Typography variant="h6" fontWeight={700}>
+                  <Typography variant="h7" fontWeight={700}>
                     Job Description
                   </Typography>
                 </Stack>
@@ -2071,7 +2072,7 @@ export default function Dashboard() {
 
               <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                 <ChecklistOutlinedIcon color="action" fontSize="medium" />
-                <Typography variant="h6" fontWeight={700}>
+                <Typography variant="h7" fontWeight={700}>
                   Requirements
                 </Typography>
               </Stack>

@@ -303,7 +303,7 @@ export default function AppliedCandidates() {
       }}
     >
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6" fontWeight={700} color="primary.dark">
+        <Typography variant="h7" fontWeight={700} color="primary.dark">
           Your Jobs with Applications
         </Typography>
       </Box>
@@ -321,7 +321,7 @@ export default function AppliedCandidates() {
             }}
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
-            <Typography variant="subtitle1">No jobs with applications yet</Typography>
+            <Typography variant="subtitle2">No jobs with applications yet</Typography>
             <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
               When candidates apply, their jobs will appear here.
             </Typography>
@@ -624,7 +624,7 @@ export default function AppliedCandidates() {
           justifyContent="center"
           color="text.secondary"
         >
-          <Typography variant="h6">Select a job to view applications</Typography>
+          <Typography variant="h7">Select a job to view applications</Typography>
         </Box>
       )}
     </Card>
