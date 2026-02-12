@@ -634,7 +634,7 @@ export default function Dashboard() {
             onClose={() => setFilterMenuAnchor(null)}
             PaperProps={{
               sx: {
-                width: 320,
+                width: 220,
                 maxHeight: 480,
                 mt: 1,
                 borderRadius: 2,
@@ -739,8 +739,14 @@ export default function Dashboard() {
                 variant="outlined"
                 color="error"
                 size="small"
-                startIcon={<Cancel fontSize="small" />}
-                sx={{ textTransform: "none" }}
+                startIcon={<Cancel />}
+                sx={{
+                  textTransform: "none",
+                  fontSize: "0.75rem",
+                  py: 0.25,
+                  px: 0.50,
+                  mt: 0.5,
+                }}
                 onClick={() => {
                   setSearchTerm("");
                   setTypeFilter("All");
@@ -755,6 +761,7 @@ export default function Dashboard() {
                 Reset
               </Button>
             </Box>
+
 
             <Divider variant="middle" sx={{ my: 1 }} />
 
@@ -814,7 +821,13 @@ export default function Dashboard() {
                 color="warning"
                 size="small"
                 startIcon={<Cancel fontSize="small" />}
-                sx={{ textTransform: "none" }}
+                sx={{ 
+                  textTransform: "none",
+                  fontSize: "0.75rem",
+                  py: 0.25,
+                  px: 0.50,
+                  mt: 0.5, 
+                }}
                 onClick={() => {
                   setSortBy("date-desc");
                   setFilterMenuAnchor(null);
@@ -865,11 +878,14 @@ export default function Dashboard() {
             }}
             PaperProps={{
               sx: {
-                width: 520, // ⬅ wider like image
+                width: 310,
                 maxHeight: 420,
                 borderRadius: 2,
                 p: 2.5,
                 overflowY: "auto",
+                border: "3px solid",
+                borderColor: "divider"
+
               },
             }}
           >
@@ -937,6 +953,8 @@ export default function Dashboard() {
                 borderRadius: 2,
                 p: 2.5,
                 overflowY: "auto",
+                border: "3px solid",
+                borderColor: "divider"
               },
             }}
           >
@@ -1195,7 +1213,14 @@ export default function Dashboard() {
       anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       transformOrigin={{ vertical: "top", horizontal: "left" }}
       PaperProps={{
-        sx: { width: 320, borderRadius: 2, p: 3, boxShadow: 4 },
+        sx: { 
+          width: 320, 
+          borderRadius: 2, 
+          p: 3, 
+          boxShadow: 4,
+          border: "3px solid",
+          borderColor: "divider" 
+        },
       }}
     >
       <RadioGroup
@@ -2392,7 +2417,14 @@ export default function Dashboard() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           PaperProps={{
-            sx: { width: 240, borderRadius: 2, p: 2, boxShadow: 4 },
+            sx: { 
+              width: 240, 
+              borderRadius: 2, 
+              p: 2, 
+              boxShadow: 4,
+              border: "3px solid",
+              borderColor: "divider" 
+            },
           }}
         >
           <List dense disablePadding>
@@ -2423,7 +2455,14 @@ export default function Dashboard() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           PaperProps={{
-            sx: { width: 220, borderRadius: 2, p: 2, boxShadow: 4 },
+            sx: { 
+              width: 220, 
+              borderRadius: 2, 
+              p: 2, 
+              boxShadow: 4,
+              border: "3px solid",
+              borderColor: "divider" 
+            },
           }}
         >
           <List dense disablePadding>
