@@ -235,6 +235,16 @@ def create_or_update_user(user: UserCreate, db: Session):
     
     return db_user
 
+
+# update user
+def update_user(db: Session, pk_id: int):
+    db_user = db.query(User).filter(User.pk_id == pk_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db_user.approved = True
+    db.commit()
+    return db_user
 #get all users
 def get_all_users(db: Session):
     return db.query(User).order_by(User.user_name).all()

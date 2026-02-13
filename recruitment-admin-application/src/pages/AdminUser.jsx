@@ -37,6 +37,31 @@ const AdminUsers = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionType, setActionType] = useState(null); // "enable" | "disable"
+  const [selectedEmployer, setSelectedEmployer] = useState(null);
+  const [openApproveDialog, setOpenApproveDialog] = useState(false);
+
+  const confirmApprove = (row) => {
+    setSelectedEmployer(row);
+    setOpenApproveDialog(true);
+  };
+
+  const handleApprove = async () => {
+    try {
+      if (!selectedEmployer) return;
+      const pk_id = selectedEmployer.pk_id;
+      await api.put(`/user/approve/${pk_id}`);
+      
+      setMessage("Employer approved successfully");
+      setSeverity("success");
+      setOpenSnackbar(true);
+      setOpenApproveDialog(false);
+
+      fetchUsers();
+    } catch (err) {
+      console.log(err);
+    }
+
+  };
 
   const confirmDisable = (row) => {
     setSelectedUser(row);
@@ -89,36 +114,36 @@ const AdminUsers = () => {
   };
 
   const OnOffSwitch = styled(Switch)(({ theme }) => ({
-  width: 42,          // ⬅ smaller width
-  height: 20,         // ⬅ smaller height
-  padding: 0,
-  display: "flex",
+    width: 42,          // ⬅ smaller width
+    height: 20,         // ⬅ smaller height
+    padding: 0,
+    display: "flex",
 
-  "& .MuiSwitch-switchBase": {
-    padding: 2,
-    marginLeft: -1,
-    "&.Mui-checked": {
-      transform: "translateX(22px)", // ⬅ adjusted for smaller width
-      color: "#1976d2",
-      "& + .MuiSwitch-track": {
-        backgroundColor: "#1976d2",
-        opacity: 1,
+    "& .MuiSwitch-switchBase": {
+      padding: 2,
+      marginLeft: -1,
+      "&.Mui-checked": {
+        transform: "translateX(22px)", // ⬅ adjusted for smaller width
+        color: "#1976d2",
+        "& + .MuiSwitch-track": {
+          backgroundColor: "#1976d2",
+          opacity: 1,
+        },
       },
     },
-  },
 
-  "& .MuiSwitch-thumb": {
-    width: 16,        // ⬅ smaller thumb
-    height: 16,
-    backgroundColor: "#fff",
-  },
+    "& .MuiSwitch-thumb": {
+      width: 16,        // ⬅ smaller thumb
+      height: 16,
+      backgroundColor: "#fff",
+    },
 
-  "& .MuiSwitch-track": {
-    borderRadius: 10,
-    backgroundColor: "#000",
-    opacity: 1,
-  },
-}));
+    "& .MuiSwitch-track": {
+      borderRadius: 10,
+      backgroundColor: "#000",
+      opacity: 1,
+    },
+  }));
 
 
   /* ================= Columns ================= */
@@ -135,6 +160,13 @@ const AdminUsers = () => {
       headerName: "Email",
       flex: 2,
       minWidth: 200,
+      sortable: true,
+    },
+    {
+      field: "phone",
+      headerName: "Phone",
+      flex: 1,
+      minWidth: 100,
       sortable: true,
     },
     {
@@ -189,6 +221,56 @@ const AdminUsers = () => {
         />
       ),
     },
+    {
+      field: "approved",
+      headerName: "Approval",
+      flex: 1.2,
+      minWidth: 160,
+      sortable: false,
+      renderCell: ({ row }) => {
+        if (row.user_type !== 2) return null;
+
+        const isApproved = row.approved === true;
+
+        const handleToggle = () => {
+          if (!isApproved) {
+            confirmApprove(row);
+          }
+        };
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {/* Status Chip */}
+            <Chip
+              size="small"
+              label={isApproved ? "Approved" : "Pending"}
+              sx={{
+                fontWeight: 600,
+                fontSize: 12,
+                borderRadius: 2,
+                px: 1.2,
+                bgcolor: isApproved ? "#e8f5e9" : "#fff3e0",
+                color: isApproved ? "#2e7d32" : "#ef6c00",
+              }}
+            />
+
+            {/* Switch */}
+            <Switch
+              checked={isApproved}
+              onChange={handleToggle}
+              color="success"
+            />
+          </Box>
+        );
+      },
+    },
+
     {
       field: "actions",
       headerName: "Actions",
@@ -258,6 +340,45 @@ const AdminUsers = () => {
 
   return (
     <>
+      <Dialog
+        open={openApproveDialog}
+        onClose={() => setOpenApproveDialog(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" fontWeight={600}>
+            Approve Employer
+          </Typography>
+
+          <Typography sx={{ mt: 1, color: "text.secondary" }}>
+            Are you sure you want to approve{" "}
+            <strong>{selectedEmployer?.user_name}</strong>?
+          </Typography>
+
+          <Stack direction="row" spacing={1.5} justifyContent="flex-end" mt={3}>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "none" }}
+              onClick={() => setOpenApproveDialog(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              sx={{ textTransform: "none" }}
+              onClick={handleApprove}
+            >
+              Approve
+            </Button>
+          </Stack>
+        </Box>
+      </Dialog>
+
       {/* Snackbar */}
       <Snackbar
         open={openSnackbar}

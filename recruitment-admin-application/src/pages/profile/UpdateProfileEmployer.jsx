@@ -341,7 +341,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Company Contact"
+                                            label="Company Phone"
                                             name="company_contact"
                                             value={formData.company_contact}
                                             onChange={handleChange}

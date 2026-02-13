@@ -106,6 +106,11 @@ def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(
 def create_or_update_user(user: UserCreate, db: Session = Depends(get_db)):
     return user_controller.create_or_update_user(user, db)
 
+#update user
+@router.put("/approve/{pk_id}", response_model=UserResponse)
+def update_user(pk_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    return user_controller.update_user(db, pk_id)
+
 #delete mutiple users = disable
 @router.delete("/delete")
 def delete_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
