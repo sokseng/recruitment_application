@@ -1140,14 +1140,26 @@ export default function AppliedCandidates() {
 
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
-          <Typography variant="body2">
-            Change status from
-            <strong>
-              {STATUS_MAP[confirmDialog.currentStatus]?.label ||
-                confirmDialog.currentStatus}
-            </strong>
-            to <strong>{confirmDialog.newStatusLabel}</strong>?
-          </Typography>
+          <Box
+            component="p"
+            sx={{ fontSize: 14, lineHeight: 1.5 }}
+          >
+            Change status from{" "}
+            <Box
+              component="span"
+              sx={{ fontWeight: 600 }}
+            >
+              {STATUS_MAP[confirmDialog.currentStatus]?.label || confirmDialog.currentStatus}
+            </Box>{" "}
+            to{" "}
+            <Box
+              component="span"
+              sx={{ fontWeight: 600 }}
+            >
+              {confirmDialog.newStatusLabel}
+            </Box>
+            ?
+          </Box>
         </DialogContent>
 
         {/* Actions */}
