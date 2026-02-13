@@ -31,6 +31,10 @@ class EmployerOut(BaseModel):
     company_logo: Optional[str] = None
     company_email: Optional[str] = None
     company_contact: Optional[str] = None
+    company_address: Optional[str] = None
+    company_description: Optional[str] = None
+    company_website: Optional[str] = None
+    company_description: Optional[str] = None
     is_active: bool
     created_date: datetime
     job_count: int
