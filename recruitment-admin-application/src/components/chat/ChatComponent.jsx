@@ -31,7 +31,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, setReactionsData }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -523,6 +523,29 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
     }
 
+    const toggleReactMessage = async (message, reactionType) => {
+        try {
+
+            await api.post(
+                `/chat/rooms/${chat.room_id}/messages/${message.id}/react`,
+                { reaction: reactionType }
+            );
+        } catch (err) {
+            console.error("Reaction failed", err);
+        }
+    };
+
+    const handleRemoveReact = async (messageId) => {
+        try {
+
+            await api.delete(
+                `/chat/rooms/${chat.room_id}/messages/${messageId}/react`
+            );
+        } catch (err) {
+            console.error("Reaction failed", err);
+        }
+    }
+
     return (
         <Box
             sx={{
@@ -632,24 +655,24 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                         </Toolbar>
                     </AppBar>
                     {pinMessage && (
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            position: 'absolute',
-                            top: 64,
-                            width: '100%',
-                            p: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            borderTop: 1,
-                            borderColor: 'divider',
-                            bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
-                            zIndex: 1200,
-                            borderRadius: 0
-                        }}
-                    >
-                        <PinnedMessageComponent pinMessage={pinMessage} currentUserId={currentUserId} onUnpin={handleUnpinMessage}/>
-                    </Paper>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                position: 'absolute',
+                                top: 64,
+                                width: '100%',
+                                p: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderTop: 1,
+                                borderColor: 'divider',
+                                bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
+                                zIndex: 1200,
+                                borderRadius: 0
+                            }}
+                        >
+                            <PinnedMessageComponent pinMessage={pinMessage} currentUserId={currentUserId} onUnpin={handleUnpinMessage} />
+                        </Paper>
                     )}
                     <Box
                         sx={{
@@ -717,6 +740,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onPreview={handleOpenPreview}
                                         onPin={handlePinMessage}
                                         isPin={pinMessage?.message?.id === message?.id}
+                                        onUnpin={handleUnpinMessage}
+                                        onReact={toggleReactMessage}
+                                        reactionsData={reactionsData}
+                                        onRemoveReact={handleRemoveReact}
+                                        currentUserId={currentUserId}
                                     />
                                 )))}
 
@@ -969,10 +997,10 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                             }
                                         }}
                                         sx={{ '& fieldset': { borderRadius: 3 } }}
-                                        onFocus={() => setSowContent(true)}
+                                        // onFocus={() => setSowContent(true)}
                                         onBlur={() => {
                                             stopTyping();
-                                            setSowContent(false);
+                                            // setSowContent(false);
                                         }}
                                     />
                                 </>

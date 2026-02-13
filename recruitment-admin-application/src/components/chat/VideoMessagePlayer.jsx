@@ -5,8 +5,10 @@ import PauseIcon from '@mui/icons-material/Pause';
 import { FormatTime } from './FormatTime';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
+import ReactionComponent from './ReactionComponent';
+import PushPinIcon from '@mui/icons-material/PushPin';
 
-export default function VideoMessage({ message, isOwn, BASE_URL }) {
+export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reactionsData, onRemoveReact }) {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -96,9 +98,25 @@ export default function VideoMessage({ message, isOwn, BASE_URL }) {
                 display: 'flex',
                 alignItems: 'center',
                 textAlign: 'right',
-                opacity: 0.7,
+                flexDirection: isOwn ? 'row' : 'row-reverse',
               }}
             >
+              <ReactionComponent
+                messageId={message.id}
+                reactionsData={reactionsData}
+                onRemoveReact={onRemoveReact}
+              />
+              {isPin && (
+                <PushPinIcon
+                  sx={{
+                    fontSize: 16,
+                    mr: 0.5,
+                    transform: 'rotate(30deg)',
+                    opacity: 0.7,
+                  }}
+                />
+              )}
+
               <FormatTime time={message.created_at} />
               {message.edited_at && (
                 <Typography
@@ -162,23 +180,41 @@ export default function VideoMessage({ message, isOwn, BASE_URL }) {
               gap: 0.5,
               position: 'absolute',
               bottom: 10,
-              right: 15,
+              right: isOwn && 15,
+              left: !isOwn && 15,
               backgroundColor: 'grey',
-              opacity: 0.75,
-              borderRadius: 2,
-              px: 1,
+              borderRadius: 5,
+              pl: 0.5,
               color: 'white',
             }}
           >
+
             <Typography
               variant="caption"
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 textAlign: 'right',
-                opacity: 0.7,
+                flexDirection: isOwn ? 'row' : 'row-reverse',
+                gap: 0.5
               }}
             >
+              <ReactionComponent
+                messageId={message.id}
+                reactionsData={reactionsData}
+                onRemoveReact={onRemoveReact}
+              />
+              {isPin && (
+                <PushPinIcon
+                  sx={{
+                    fontSize: 16,
+                    mr: 0.5,
+                    transform: 'rotate(30deg)',
+                    opacity: 0.7,
+                  }}
+                />
+              )}
+
               <FormatTime time={message.created_at} />
               {message.edited_at && (
                 <Typography

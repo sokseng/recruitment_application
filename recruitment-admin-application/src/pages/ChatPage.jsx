@@ -49,6 +49,7 @@ function ChatPage() {
     const [onlineUsers, setOnlineUsers] = useState({});
     const [typingUsers, setTypingUsers] = useState({});
     const [loadingOlder, setLoadingOlder] = useState(false);
+    const [reactionsData, setReactionsData] = useState({});
 
     const LIMIT = 10;
 
@@ -170,6 +171,16 @@ function ChatPage() {
         console.log("pinMessage", res.data)
     }
 
+    const fetchReactions = async (roomId, messageId) => {
+        try {
+            const res = await api.get(`/chat/rooms/${roomId}/messages/${messageId}/reactions`);
+            return res.data; // array of reactions
+        } catch (err) {
+            console.error("Error fetching reactions:", err);
+            return [];
+        }
+    };
+
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -206,10 +217,16 @@ function ChatPage() {
         loadingOlderRef.current = false;
         initialLoadRef.current = true;
 
-        fetchMessages(roomId, true).then(newMessages => {
+        fetchMessages(roomId, true).then(async (newMessages) => {
             if (activeChatIdRef.current !== roomId) return;
 
             setMessages(newMessages);
+
+            const reactionsMap = {};
+            for (let msg of newMessages) {
+                reactionsMap[msg.id] = await fetchReactions(roomId, msg.id);
+            }
+            setReactionsData(reactionsMap);
 
             setTimeout(() => {
                 const el = messagesRef.current;
@@ -222,6 +239,7 @@ function ChatPage() {
         return () => {
             activeChatIdRef.current = null;
             setMessages([]);
+            setReactionsData({});
         };
     }, [selectedChat?.room_id]);
 
@@ -370,27 +388,58 @@ function ChatPage() {
                     });
                     break;
                 case "message_pinned":
-                    if (data.room_id === selectedChat?.room_id){
+                    if (data.room_id === selectedChat?.room_id) {
                         setPinMessage(data);
                     }
-                    setChats(prev => 
-                        prev.map(chat => 
+                    setChats(prev =>
+                        prev.map(chat =>
                             chat.room_id === data.room_id
-                            ? {...chat, message: data} : chat
+                                ? { ...chat, message: data } : chat
                         )
                     );
                     break;
                 case "message_unpinned":
-                    if(data.room_id === selectedChat?.room_id){
+                    if (data.room_id === selectedChat?.room_id) {
                         setPinMessage(null);
                     }
-                    setChats(prev => 
+                    setChats(prev =>
                         prev.map(chat =>
                             chat.room_id === data.room_id
-                            ? {...chat, message: null} : chat
+                                ? { ...chat, message: null } : chat
                         )
                     );
                     break;
+                case "message_reaction":
+                    setReactionsData(prev => ({
+                        ...prev,
+                        [data.message_id]: {
+                            message_id: data.message_id,
+                            reactions: data.reactions,
+                            my_reaction: data.my_reaction
+                        }
+                    }));
+                    break;
+                case "message_reaction_removed":
+                    setReactionsData(prev => {
+                        const updated = { ...prev };
+
+                        if (updated[data.message_id]) {
+                            // Remove the user's reaction
+                            updated[data.message_id] = {
+                                ...updated[data.message_id],
+                                reactions: data.reactions,
+                                my_reaction: null
+                            };
+
+                            if (Object.keys(data.reactions).length === 0) {
+                                delete updated[data.message_id];
+                            }
+                        }
+
+                        return updated;
+                    });
+                    break;
+
 
                 default:
                     console.log("WS event", data);
@@ -617,6 +666,8 @@ function ChatPage() {
                         hasMore={hasMore}
                         messagesEndRef={messagesEndRef}
                         pinMessage={pinMessage}
+                        reactionsData={reactionsData}
+                        setReactionsData={setReactionsData}
                     />
                 </Box>
             )}

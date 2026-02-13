@@ -31,5 +31,5 @@ export const FormatTime = ({ time }) => {
     .replace(" years ago", "y")
     .replace(" year ago", "y");
 
-  return <span>{shortText}</span>;
+  return <span style={{opacity: 0.7,}}>{shortText}</span>;
 };

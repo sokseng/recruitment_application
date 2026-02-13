@@ -3,8 +3,10 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import { FormatTime } from './FormatTime';
 import React, { useState } from 'react';
+import ReactionComponent from './ReactionComponent';
+import PushPinIcon from '@mui/icons-material/PushPin';
 
-export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, width = 200, height = 150 }) {
+export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, isPin, messageId, reactionsData, onRemoveReact, width = 200, height = 150 }) {
   const [hasError, setHasError] = useState(false);
 
   return (
@@ -68,12 +70,13 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
           gap: 0.5,
           position: 'absolute',
           bottom: 10,
-          right: 15,
+          right: isOwn && 15,
+          left: !isOwn && 15,
           backgroundColor: 'grey',
-          opacity: 0.75,
-          borderRadius: 2,
-          px: 1,
+          borderRadius: 5,
+          pl: 0.5,
           color: 'white',
+          gap: 0.5
         }}
       >
         <Typography
@@ -82,9 +85,29 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
             display: 'flex',
             alignItems: 'center',
             textAlign: 'right',
-            opacity: 0.7,
+            flexDirection: isOwn ? 'row' : 'row-reverse',
+            gap: 0.5
           }}
         >
+          <Box sx={{
+            color: isOwn ? 'white' : 'black',
+          }}>
+            <ReactionComponent
+              messageId={messageId}
+              reactionsData={reactionsData}
+              onRemoveReact={onRemoveReact}
+            />
+          </Box>
+          {isPin && (
+            <PushPinIcon
+              sx={{
+                fontSize: 16,
+                mr: 0.5,
+                transform: 'rotate(30deg)',
+              }}
+            />
+          )}
+
           <FormatTime time={created_at} />
           {edited_at && (
             <Typography
