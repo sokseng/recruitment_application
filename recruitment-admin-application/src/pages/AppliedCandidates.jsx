@@ -38,16 +38,15 @@ import {
   Home,
   FileDownload as FileDownloadIcon,
   Visibility as VisibilityIcon,
-  ChatBubble as ChatBubbleIcon,
   CancelOutlined,
   CheckCircleOutline,
-  Cancel,
-  PersonOutlineOutlined,
-  PersonOutline,
   PersonOutlineSharp,
-  CancelPresentationOutlined,
+  InsertDriveFileSharp,
+  BadgeSharp,
+  Image,
 } from "@mui/icons-material";
 import api from "../services/api";
+import { FaFacebookMessenger } from "react-icons/fa";
 
 const STATUS_MAP = {
   PENDING: { label: "Pending", color: "warning" },
@@ -404,7 +403,7 @@ export default function AppliedCandidates() {
   );
 
   const InfoRow = ({ label, value }) => (
-    <Stack direction="row" justifyContent="space-between" sx={{ maxWidth: 400 }}>
+    <Stack direction="row" justifyContent="space-between" sx={{ maxWidth: 550 }}>
       <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
         {label}:
       </Typography>
@@ -625,7 +624,13 @@ export default function AppliedCandidates() {
                                 color="error"
                                 size="small"
                                 variant="filled"
-                                sx={{ fontWeight: 500 }}
+                                sx={{
+                                  fontWeight: 500,
+                                  p: 2.5, 
+                                  borderRadius: 2,
+                                  backgroundColor: "rgba(211, 47, 47, 0.15)",
+                                  color: "error.main", 
+                                }}
                               />
                             )}
                           </Stack>
@@ -639,7 +644,7 @@ export default function AppliedCandidates() {
                         >
                           <CalendarIcon fontSize="small" color="action" />
                           <Typography variant="caption" color="text.secondary">
-                            Applied:{" "}
+                            Applied:
                             {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
                         </Stack>
@@ -758,12 +763,15 @@ export default function AppliedCandidates() {
       {/* Detail candidate */}
       <Dialog
         open={candidateDetailOpen}
-        onClose={() => {
+        onClose={(even, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") return;
           setCandidateDetailOpen(false);
           setSelectedCandidateApp(null);
         }}
-        fullWidth
-        maxWidth="xs"
+        PaperProps={{
+          sx: { width: 500 }   // exact width in px
+        }}
+        maxWidth="sm"
         scroll="body"
       >
         {selectedCandidateApp && (() => {
@@ -778,36 +786,48 @@ export default function AppliedCandidates() {
 
           return (
             <>
-              <Stack direction={"row"} sx={{ p: 1.5, pb: 1, borderBottom: 1, borderColor: "divider", justifyContent: "space-between" }}>
+              {/* Header */}
+              <Stack
+                direction="row"
+                sx={{
+                  p: 2,
+                  pb: 1.5,
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <Typography variant="subtitle1" fontWeight={600}>
                   Candidate Details
                 </Typography>
-               <IconButton
-                size="small"
-                color="error"
-                onClick={() => setCandidateDetailOpen(false)}
-              >
-                <CancelOutlined fontSize="small" />
-              </IconButton>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setCandidateDetailOpen(false)}
+                >
+                  <CancelOutlined fontSize="small" />
+                </IconButton>
               </Stack>
 
-              <DialogContent dividers sx={{ px: 1.5, py: 1.5 }}>
-                <Stack spacing={2}>
-                  {/* Basic Info */}
-                  <Stack direction="row" spacing={1.5} alignItems="center">
+              {/* Content */}
+              <DialogContent dividers sx={{ px: 2, py: 2 }}>
+                <Stack spacing={2.5}>
+                  {/* Candidate basic info + message button */}
+                  <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar
                       sx={{
-                        width: 48,
-                        height: 48,
+                        width: 56,
+                        height: 56,
                         bgcolor: "primary.dark",
-                        fontSize: "1.4rem",
+                        fontSize: "1.6rem",
                         fontWeight: "bold",
                       }}
                     >
                       {candidateName?.[0]?.toUpperCase() || "?"}
                     </Avatar>
 
-                    <Box>
+                    <Box sx={{ flex: 1 }}>
                       <Typography variant="subtitle1" fontWeight={700}>
                         {candidateName}
                       </Typography>
@@ -815,6 +835,16 @@ export default function AppliedCandidates() {
                         {selectedCandidateApp.candidate?.user?.email || "—"}
                       </Typography>
                     </Box>
+
+                    <Tooltip title={`Message ${candidateName}`}>
+                      <IconButton
+                        color="success"
+                        size="large"
+                        onClick={() => handleSelect(userId)}
+                      >
+                        <FaFacebookMessenger size={34} />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
 
                   {/* Personal Information */}
@@ -822,28 +852,35 @@ export default function AppliedCandidates() {
                     <Stack
                       direction="row"
                       alignItems="center"
-                      spacing={0.7}
-                      sx={{ mb: 0.5 }}
+                      spacing={1}
+                      sx={{ mb: 1 }}
                     >
-                      <PersonOutlineSharp color="primary" sx={{ fontSize: 18 }} />
-
-                      <Typography variant="body2" fontWeight={700}>
+                      <PersonOutlineSharp color="primary" />
+                      <Typography variant="body1" fontWeight={700}>
                         Personal Information
                       </Typography>
                     </Stack>
-                    <Divider sx={{mb: 1}}/>
-                    <Stack spacing={1} sx={{ pl: 0.5 }}>
+
+                    <Divider sx={{ mb: 1.5 }} />
+
+                    <Stack spacing={1.2} sx={{ pl: 1 }}>
                       <InfoRow
                         label="Phone"
-                        value={selectedCandidateApp.candidate?.user?.phone || ""}
+                        value={
+                          selectedCandidateApp.candidate?.user?.phone || "—"
+                        }
                       />
                       <InfoRow
                         label="Gender"
                         value={
                           selectedCandidateApp.candidate?.user?.gender
-                            ? selectedCandidateApp.candidate.user.gender.charAt(0).toUpperCase() +
-                              selectedCandidateApp.candidate.user.gender.slice(1).toLowerCase()
-                            : ""
+                            ? selectedCandidateApp.candidate.user.gender
+                                .charAt(0)
+                                .toUpperCase() +
+                              selectedCandidateApp.candidate.user.gender
+                                .slice(1)
+                                .toLowerCase()
+                            : "—"
                         }
                       />
                       <InfoRow
@@ -851,86 +888,227 @@ export default function AppliedCandidates() {
                         value={
                           selectedCandidateApp.candidate?.user?.date_of_birth
                             ? new Date(
-                                selectedCandidateApp.candidate.user.date_of_birth
+                                selectedCandidateApp.candidate.user
+                                  .date_of_birth,
                               ).toLocaleDateString("en-GB", {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
                               })
-                            : ""
+                            : "—"
                         }
                       />
                       <InfoRow
                         label="Address"
-                        value={selectedCandidateApp.candidate?.user?.address || ""}
+                        value={
+                          selectedCandidateApp.candidate?.user?.address || "—"
+                        }
                       />
                     </Stack>
                   </Box>
-
-                  {/* Professional Summary */}
-                  {selectedCandidateApp.candidate?.description && (
-                    <Box>
-                      <Typography variant="body2" fontWeight={600} gutterBottom>
-                        Professional Summary
-                      </Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
-                        {selectedCandidateApp.candidate.description}
-                      </Typography>
-                    </Box>
-                  )}
                 </Stack>
               </DialogContent>
 
-              {/* Actions Footer */}
-              <DialogActions sx={{ px: 2, py: 1.5, justifyContent: "space-between" }}>
-                <Box></Box>
-                <Stack direction="row" spacing={1}>
-                  {hasResume ? (
-                    <>
-                      <Tooltip title={`Message ${candidateName}`}>
-                        <IconButton
-                          color="success"
-                          size="small"
-                          onClick={() => handleSelect(userId)}
-                        >
-                          <ChatBubbleIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+              {/* Bottom actions - matching screenshot style, no DialogActions */}
+              <Box sx={{ p: 1.2, borderTop: 1, borderColor: "divider" }}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+                  {/* LEFT BOX */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      position: "relative",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1.5,
+                      p: 1.2,
+                      pt: 2,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        top: -8,
+                        left: 10,
+                        px: 0.6,
+                        fontSize: 11,
+                        bgcolor: "background.paper",
+                        fontWeight: 600,
+                        color: "text.secondary",
+                      }}
+                    >
+                      One at a Time
+                    </Typography>
 
-                      <Tooltip title="View Combined PDF">
+                    <Stack direction="row" spacing={0.5}>
+                      <Tooltip title="View Resume" arrow>
                         <IconButton
+                          sx={{
+                            border: 1,
+                            borderColor: "primary.main",
+                            color: "primary.main",
+                          }}
                           color="primary"
                           size="small"
-                          onClick={() =>
-                            handleViewCombined(selectedCandidateApp.pk_id, candidateName)
-                          }
                         >
-                          <VisibilityIcon fontSize="small" />
+                          <InsertDriveFileSharp fontSize="small" />
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title="Download Combined PDF">
+                      <Tooltip title="View CV" arrow>
                         <IconButton
-                          color="warning"
+                          sx={{
+                            border: 1,
+                            borderColor: "primary.main",
+                            color: "primary.main",
+                          }}
+                          color="primary"
                           size="small"
-                          onClick={() =>
-                            handleDownloadCombined(selectedCandidateApp.pk_id, candidateName)
-                          }
                         >
-                          <FileDownloadIcon fontSize="small" />
+                          <BadgeSharp fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                    </>
-                  ) : (
-                    <Chip
-                      label="No resume available"
-                      size="small"
-                      color="default"
-                      variant="outlined"
-                    />
-                  )}
+                        
+                      <Tooltip title="View Image" arrow>
+                        <IconButton
+                          sx={{
+                            border: 1,
+                            borderColor: "primary.main",
+                            color: "primary.main",
+                          }}
+                          color="primary"
+                          size="small"
+                        >
+                          <Image fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Stack direction="row" spacing={0.5} sx={{ pl: 0.5 }}>
+                        <Tooltip title="Download Resume" arrow>
+                          <IconButton
+                            sx={{
+                              border: 1,
+                              borderColor: "warning.main",
+                              color: "warning.main",
+                            }}
+                            color="warning"
+                            size="small"
+                          >
+                            <FileDownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Download CV" arrow>
+                          <IconButton
+                            sx={{
+                              border: 1,
+                              borderColor: "warning.main",
+                              color: "warning.main",
+                            }}
+                            color="warning"
+                            size="small"
+                          >
+                            <FileDownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Download Image" arrow>
+                          <IconButton
+                            sx={{
+                              border: 1,
+                              borderColor: "warning.main",
+                              color: "warning.main",
+                            }}
+                            color="warning"
+                            size="small"
+                          >
+                            <FileDownloadIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Stack>
+                  </Box>
+
+                  {/* RIGHT BOX */}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      position: "relative",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1.5,
+                      p: 1.2,
+                      pt: 2,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        top: -8,
+                        left: 10,
+                        px: 0.6,
+                        fontSize: 11,
+                        bgcolor: "background.paper",
+                        fontWeight: 600,
+                        color: "text.secondary",
+                      }}
+                    >
+                      Combined
+                    </Typography>
+
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {hasResume ? (
+                        <>
+                          <Tooltip title="View combined" arrow>
+                            <IconButton
+                              color="primary"
+                              size="small"
+                              sx={{
+                                border: 1,
+                                borderColor: "primary.main",
+                                color: "primary.main",
+                              }}
+                              onClick={() =>
+                                handleViewCombined(
+                                  selectedCandidateApp.pk_id,
+                                  candidateName,
+                                )
+                              }
+                            >
+                              <VisibilityIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Download combined" arrow>
+                            <IconButton
+                              color="warning"
+                              size="small"
+                              sx={{
+                                border: 1,
+                                borderColor: "warning.main",
+                                color: "warning.main",
+                              }}
+                              onClick={() =>
+                                handleDownloadCombined(
+                                  selectedCandidateApp.pk_id,
+                                  candidateName,
+                                )
+                              }
+                            >
+                              <FileDownloadIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <Chip
+                          label="No resume available"
+                          size="small"
+                          color="default"
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                  </Box>
                 </Stack>
-              </DialogActions>
+              </Box>
             </>
           );
         })()}
@@ -963,11 +1141,11 @@ export default function AppliedCandidates() {
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
           <Typography variant="body2">
-            Change status from{" "}
+            Change status from
             <strong>
               {STATUS_MAP[confirmDialog.currentStatus]?.label ||
                 confirmDialog.currentStatus}
-            </strong>{" "}
+            </strong>
             to <strong>{confirmDialog.newStatusLabel}</strong>?
           </Typography>
         </DialogContent>
