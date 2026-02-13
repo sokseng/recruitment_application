@@ -14,6 +14,13 @@ from app.websockets.chat_manager import manager
 from datetime import datetime
 from fastapi.encoders import jsonable_encoder
 from typing import Optional
+from zoneinfo import ZoneInfo
+import pytz
+from app.models.message_react_model import MessageReaction, ReactionType
+from collections import defaultdict
+
+# Cambodia timezone
+cambodia_tz = pytz.timezone("Asia/Phnom_Penh")
 
 FILE_RULES = {
     "image": {
@@ -514,11 +521,13 @@ async def pin_message(
 
     if not msg:
         raise HTTPException(404, "Message not found")
+    
+    requester = db.query(User).filter(User.pk_id == requester_id).first()
 
     # Update pin fields
     room.pinned_message_id = msg.id
     room.pinned_by_user_id = requester_id
-    room.pinned_at = datetime.utcnow()
+    room.pinned_at = datetime.now(cambodia_tz)
 
     db.commit()
     db.refresh(room)
@@ -533,8 +542,11 @@ async def pin_message(
         {
             "type": "message_pinned",
             "room_id": room.id,
-            "pinned_message": payload,
-            "pinned_by": requester_id,
+            "message": payload,
+            "pinned_by_user": {
+                'pk_id': requester.pk_id,
+                'user_name': requester.user_name
+                },
             "pinned_at": room.pinned_at.isoformat()
         }
     )
@@ -544,7 +556,7 @@ async def pin_message(
         await manager.broadcast_to_user(
             uid,
             {
-                "type": "chat_pin_update",
+                "type": "chat_list_update",
                 "room_id": room.id,
                 "pinned_message": payload
             }
@@ -576,7 +588,8 @@ async def unpin_message(
         room.id,
         {
             "type": "message_unpinned",
-            "room_id": room.id
+            "room_id": room.id,
+            "message": None
         }
     )
 
@@ -584,7 +597,7 @@ async def unpin_message(
         await manager.broadcast_to_user(
             uid,
             {
-                "type": "chat_pin_update",
+                "type": "chat_list_update",
                 "room_id": room.id,
                 "pinned_message": None
             }
@@ -592,3 +605,172 @@ async def unpin_message(
 
     return {"status": "ok"}
 
+async def toggle_reaction(
+    db: Session,
+    room: ChatRoom,
+    message_id: int,
+    user_id: int,
+    reaction: ReactionType
+):
+    existing = db.query(MessageReaction).filter_by(
+        message_id=message_id,
+        user_id=user_id
+    ).first()
+
+    action = None
+
+    if existing:
+        if existing.reaction != reaction.value:
+            existing.reaction = reaction.value
+            action = "updated"
+        else:
+            # same emoji clicked → do nothing
+            action = "unchanged"
+    else:
+        new_reaction = MessageReaction(
+            message_id=message_id,
+            user_id=user_id,
+            reaction=reaction.value
+        )
+        db.add(new_reaction)
+        action = "added"
+
+    db.commit()
+
+    reactions_summary = (
+        db.query(
+            MessageReaction.reaction,
+            func.count(MessageReaction.id)
+        )
+        .filter(MessageReaction.message_id == message_id)
+        .group_by(MessageReaction.reaction)
+        .all()
+    )
+
+    reactions_dict = {
+        r: {"count": c}
+        for r, c in reactions_summary
+    }
+    
+    my_reaction = (
+        db.query(MessageReaction)
+        .filter_by(message_id=message_id, user_id=user_id)
+        .first()
+    )
+
+    payload = {
+        "type": "message_reaction",
+        "room_id": room.id,
+        "message_id": message_id,
+        "user_id": user_id,
+        "reaction": reaction.value,
+        "action": action,
+        "reactions": reactions_dict,
+        "my_reaction": my_reaction.reaction if my_reaction else None
+    }
+
+    await manager.broadcast_to_room(room.id, payload)
+
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_list_update",
+                "room_id": room.id,
+                "last_message": "Reacted to a message"
+            }
+        )
+
+    return payload
+
+async def remove_reaction(
+    db: Session,
+    room: ChatRoom,
+    message_id: int,
+    user_id: int
+):
+    # Check if reaction exists
+    existing = db.query(MessageReaction).filter_by(
+        message_id=message_id,
+        user_id=user_id
+    ).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Reaction not found")
+
+    # Delete the reaction
+    db.delete(existing)
+    db.commit()
+
+    # Fix typo: message_id (was messge_id)
+    reactions_summary = (
+        db.query(
+            MessageReaction.reaction,
+            func.count(MessageReaction.id)
+        )
+        .filter(MessageReaction.message_id == message_id)
+        .group_by(MessageReaction.reaction)
+        .all()
+    )
+
+    # Fix dictionary comprehension syntax
+    reactions_dict = {r: {"count": c} for r, c in reactions_summary}
+
+    payload = {
+        "type": "message_reaction_removed",
+        "room_id": room.id,
+        "message_id": message_id,
+        "user_id": user_id,
+        "reactions": reactions_dict,
+        "my_reaction": None
+    }
+
+    # Broadcast the removal
+    await manager.broadcast_to_room(room.id, payload)
+
+    # Notify participants
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(
+            uid,
+            {
+                "type": "chat_list_update",
+                "room_id": room.id,
+                "last_message": "Removed a reaction"
+            }
+        )
+
+    return payload
+
+def get_message_reactions(
+    db: Session,
+    message_id: int,
+    current_user_id: int
+):
+    results = (
+        db.query(
+            MessageReaction.reaction,
+            User.pk_id,
+            User.user_name
+        )
+        .join(User, User.pk_id == MessageReaction.user_id)
+        .filter(MessageReaction.message_id == message_id)
+        .all()
+    )
+
+    reactions_data = defaultdict(lambda: {"count": 0, "users": []})
+    my_reaction = None
+
+    for reaction, user_id, user_name in results:
+        reactions_data[reaction]["count"] += 1
+        reactions_data[reaction]["users"].append({
+            "id": user_id,
+            "user_name": user_name
+        })
+
+        if user_id == current_user_id:
+            my_reaction = reaction
+
+    return {
+        "message_id": message_id,
+        "reactions": reactions_data,
+        "my_reaction": my_reaction
+    }

@@ -20,6 +20,7 @@ import TypingIndicator from './TypingIndicator';
 import DeleteDialog from './dialog/DeleteDialog';
 import ForwardDialog from './dialog/ForwardDialog';
 import MediaPreviewDialog from './dialog/MediaPreviewDialog';
+import PinnedMessageComponent from './PinnedMessageComponent';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -30,7 +31,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, setReactionsData }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -512,9 +513,37 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         input.click();
     };
 
-    const handlePinMessage = async (message) =>{
-        const res = await api.post(`/chat/room/${chat.room_id}/messages/${message.id}/pin`)
-        
+    const handlePinMessage = async (message) => {
+        await api.post(`/chat/rooms/${chat.room_id}/messages/${message.id}/pin`)
+
+    }
+
+    const handleUnpinMessage = async () => {
+        await api.delete(`/chat/rooms/${chat.room_id}/pin`)
+
+    }
+
+    const toggleReactMessage = async (message, reactionType) => {
+        try {
+
+            await api.post(
+                `/chat/rooms/${chat.room_id}/messages/${message.id}/react`,
+                { reaction: reactionType }
+            );
+        } catch (err) {
+            console.error("Reaction failed", err);
+        }
+    };
+
+    const handleRemoveReact = async (messageId) => {
+        try {
+
+            await api.delete(
+                `/chat/rooms/${chat.room_id}/messages/${messageId}/react`
+            );
+        } catch (err) {
+            console.error("Reaction failed", err);
+        }
     }
 
     return (
@@ -539,6 +568,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             borderBottom: 1,
                             borderColor: error ? 'red' : 'divider',
                             '&:hover': { bgcolor: 'grey.200' },
+                            zIndex: 1300
                         }}
                         onClick={() => setPopup(true)}
                     >
@@ -624,6 +654,26 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             </Box>
                         </Toolbar>
                     </AppBar>
+                    {pinMessage && (
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                position: 'absolute',
+                                top: 64,
+                                width: '100%',
+                                p: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderTop: 1,
+                                borderColor: 'divider',
+                                bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
+                                zIndex: 1200,
+                                borderRadius: 0
+                            }}
+                        >
+                            <PinnedMessageComponent pinMessage={pinMessage} currentUserId={currentUserId} onUnpin={handleUnpinMessage} />
+                        </Paper>
+                    )}
                     <Box
                         sx={{
                             display: 'flex',
@@ -689,6 +739,12 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onReplace={handleReplaceMessage}
                                         onPreview={handleOpenPreview}
                                         onPin={handlePinMessage}
+                                        isPin={pinMessage?.message?.id === message?.id}
+                                        onUnpin={handleUnpinMessage}
+                                        onReact={toggleReactMessage}
+                                        reactionsData={reactionsData}
+                                        onRemoveReact={handleRemoveReact}
+                                        currentUserId={currentUserId}
                                     />
                                 )))}
 
@@ -941,10 +997,10 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                             }
                                         }}
                                         sx={{ '& fieldset': { borderRadius: 3 } }}
-                                        onFocus={() => setSowContent(true)}
+                                        // onFocus={() => setSowContent(true)}
                                         onBlur={() => {
                                             stopTyping();
-                                            setSowContent(false);
+                                            // setSowContent(false);
                                         }}
                                     />
                                 </>

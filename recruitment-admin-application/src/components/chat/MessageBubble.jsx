@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Button, Avatar } from '@mui/material';
+import { Box, Typography, Paper, Button, Avatar, IconButton } from '@mui/material';
 import Popper from '@mui/material/Popper';
 import Fade from '@mui/material/Fade';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
@@ -13,7 +13,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReplyAllIcon from '@mui/icons-material/ReplyAll';
 import { FormatTime } from './FormatTime';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
@@ -23,11 +23,17 @@ import ChatFile from './ChatFile';
 import ReplyComponent from './ReplyComponent';
 import ForwardIcon from '@mui/icons-material/Forward';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import ReactionComponent from './ReactionComponent';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, currentUserId }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    const [reactionOpen, setReactionOpen] = React.useState(false);
+    const [reactionAnchorEl, setReactionAnchorEl] = React.useState(null);
+    const [isHovered, setIsHovered] = React.useState(false);
 
     const handleMenuOpen = (event) => {
         if (message.type === 'system') return;
@@ -69,14 +75,29 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
         { type: "angry", emoji: "😡" },
     ];
 
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (
+                reactionAnchorEl &&
+                !reactionAnchorEl.contains(event.target)
+            ) {
+                setReactionOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [reactionAnchorEl]);
+
+
     return (
         <Box
             sx={{
                 display: 'flex',
                 justifyContent: isOwn ? 'flex-end' : 'flex-start',
                 mb: 1.5,
-                gap: 1
+                gap: 1,
             }}
+
         >
             <Box
                 sx={{
@@ -130,7 +151,6 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                 <Paper
                     elevation={1}
                     sx={{
-                        // maxWidth: '70%',
                         px: message.type === 'image' || message.type === 'video' ? 0 : 2,
                         py: message.type === 'image' || message.type === 'video' ? 0 : 1,
                         bgcolor:
@@ -151,8 +171,13 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                         : 'grey.200',
                             transition: 'transform 0.2s ease',
                         },
+                        position: 'relative'
                     }}
                     onClick={handleMenuOpen}
+                    onMouseEnter={() => {
+                        setIsHovered(true);
+                    }}
+                    onMouseLeave={() => setIsHovered(false)}
                 >
 
                     {message.reply_to && (
@@ -185,6 +210,9 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             message={message}
                             isOwn={isOwn}
                             BASE_URL={BASE_URL}
+                            isPin={isPin}
+                            reactionsData={reactionsData}
+                            onRemoveReact={onRemoveReact}
                         />
                     )}
 
@@ -235,8 +263,34 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             created_at={message.created_at}
                             edited_at={message.edited_at}
                             is_read={message.is_read}
+                            isPin={isPin}
+                            messageId={message.id}
+                            reactionsData={reactionsData}
+                            onRemoveReact={onRemoveReact}
                         />
                     )}
+
+                    <IconButton
+                        size="small"
+                        sx={{
+                            position: 'absolute',
+                            bottom: 4,
+                            left: isOwn && 4,
+                            right: !isOwn && 4,
+                            color: isOwn ? '#fff' : 'grey',
+                            opacity: isHovered ? 1 : 0,
+                            pointerEvents: isHovered ? 'auto' : 'none',
+                            transition: 'opacity 0.2s',
+                            '&:hover': { color: '#ffcc00ff', transform: 'scale(1.2)' },
+                        }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setReactionAnchorEl(e.currentTarget);
+                            setReactionOpen((prev) => !prev);
+                        }}
+                    >
+                        <EmojiEmotionsIcon fontSize="small" />
+                    </IconButton>
 
                     {(message.type !== 'image' && message.type !== 'video') && (
                         <Box
@@ -253,14 +307,31 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     display: 'flex',
                                     alignItems: 'center',
                                     textAlign: 'right',
-                                    opacity: 0.7,
+                                    flexDirection: isOwn? 'row':'row-reverse',
+                                    gap: 0.5
                                 }}
                             >
+                                <ReactionComponent
+                                    messageId={message.id}
+                                    reactionsData={reactionsData}
+                                    onRemoveReact={onRemoveReact}
+                                />
+                                {isPin && (
+                                    <PushPinIcon
+                                        sx={{
+                                            fontSize: 16,
+                                            mr: 0.5,
+                                            transform: 'rotate(30deg)',
+                                            opacity: 0.7,
+                                        }}
+                                    />
+                                )}
+
                                 <FormatTime time={message.created_at} />
                                 {message.edited_at && (
                                     <Typography
                                         variant="caption"
-                                        sx={{ ml: 0.5, opacity: 0.7 }}
+                                        sx={{ ml: 0.5, opacity: 0.7, opacity: 0.7, }}
                                     >
                                         · edited
                                     </Typography>
@@ -278,63 +349,6 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                 </Paper>
             </Box>
 
-            <Popper
-                open={open && message.type !== 'system'}
-                anchorEl={anchorEl}
-                placement="top"
-                transition
-                modifiers={[
-                    {
-                        name: 'offset',
-                        options: {
-                            offset: [0, -10], // space between emoji bar and menu
-                        },
-                    },
-                ]}
-                sx={{ zIndex: 1600 }}
-            >
-                {({ TransitionProps }) => (
-                    <Fade {...TransitionProps} timeout={150}>
-                        <Paper
-                            elevation={4}
-                            sx={{
-                                display: 'flex',
-                                gap: 1,
-                                px: 1.5,
-                                py: 0.8,
-                                borderRadius: 5,
-                                bgcolor: 'background.paper',
-                                boxShadow: 3,
-                                mb: 2,
-                                mr: isOwn ? 2 : 0,
-                                ml: !isOwn ? 2 : 0
-                            }}
-                        >
-                            {reactions.map((reaction) => (
-                                <Box
-                                    key={reaction.type}
-                                    onClick={() => {
-                                        handleMenuClose();
-                                        // onReact?.(message, reaction.type);
-                                    }}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        fontSize: 22,
-                                        transition: 'transform 0.15s ease',
-                                        '&:hover': {
-                                            transform: 'scale(1.35)',
-                                        },
-                                    }}
-                                >
-                                    {reaction.emoji}
-                                </Box>
-                            ))}
-                        </Paper>
-                    </Fade>
-                )}
-            </Popper>
-
-
             <Menu
                 anchorEl={anchorEl}
                 open={open}
@@ -343,12 +357,28 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 {message.type !== 'system' && (
+                    <MenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setReactionAnchorEl(e.currentTarget);
+                            setReactionOpen((prev) => !prev);
+                        }}
+                    >
+                        <ListItemIcon><EmojiEmotionsIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>React</ListItemText>
+                    </MenuItem>
+                )}
+                {message.type !== 'system' && (
                     <MenuItem onClick={() => {
                         handleMenuClose();
-                        onPin?.(message);
+                        if (isPin) {
+                            onUnpin();
+                        } else {
+                            onPin?.(message);
+                        }
                     }}>
                         <ListItemIcon><PushPinIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Pin</ListItemText>
+                        <ListItemText>{isPin ? 'Unpin' : 'Pin'}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -424,6 +454,68 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     </MenuItem>
                 )}
             </Menu>
+
+            <Popper
+                open={reactionOpen}
+                anchorEl={reactionAnchorEl}
+                placement="top"
+                transition
+                disablePortal={false}
+                modifiers={[
+                    { name: 'offset', options: { offset: [0, 8] } },
+                    { name: 'preventOverflow', options: { padding: 8 } },
+                ]}
+                sx={{
+                    zIndex: 1600,
+                    position: 'absolute',
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        right: -6,
+                        top: '20px',
+                        width: '2px',
+                        height: '20px',
+                        bgcolor: 'divider',
+                    },
+                }}
+            >
+                {({ TransitionProps }) => (
+                    <Fade {...TransitionProps} timeout={150}>
+                        <Paper
+                            elevation={4}
+                            sx={{
+                                display: 'flex',
+                                gap: 1,
+                                px: 1.5,
+                                py: 0.8,
+                                borderRadius: 5,
+                                bgcolor: 'background.paper',
+                                boxShadow: 3,
+                                position: 'relative',
+                            }}
+                        >
+                            {reactions.map((reaction) => (
+                                <Box
+                                    key={reaction.type}
+                                    onClick={() => {
+                                        handleMenuClose();
+                                        setReactionOpen(false);
+                                        onReact?.(message, reaction.type);
+                                    }}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        fontSize: 22,
+                                        transition: 'transform 0.15s ease',
+                                        '&:hover': { transform: 'scale(1.35)' },
+                                    }}
+                                >
+                                    {reaction.emoji}
+                                </Box>
+                            ))}
+                        </Paper>
+                    </Fade>
+                )}
+            </Popper>
         </Box>
     );
 }

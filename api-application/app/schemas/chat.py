@@ -10,7 +10,14 @@ class MessageType(str, Enum):
     VOICE = "voice"
     VIDEO = "video"
     FILE = "file"
-
+    
+class ReactionType(str, Enum):
+    LIKE = "like"
+    LOVE = "love"
+    LAUGH = "laugh"
+    WOW = "wow"
+    SAD = "sad"
+    ANGRY = "angry"
 
 class SendTextMessage(BaseModel):
     room_id: int
@@ -145,3 +152,11 @@ class GetOrCreateRoomRequest(BaseModel):
 class ForwardMessageRequest(BaseModel):
     message_id: int
     target_room_ids: List[int]
+    
+class PinnedMessageOut(BaseModel):
+    message: ChatMessageOut
+    pinned_by_user: UserPreview
+    pinned_at: datetime
+
+class ReactionRequest(BaseModel):
+    reaction: ReactionType

@@ -7,10 +7,11 @@ from app.database.deps import get_db
 from app.models.user_model import User
 from app.models.chat_room import ChatRoom
 from app.models.chat_message import ChatMessage
+from app.models.message_react_model import MessageReaction, ReactionType
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
     ChatMessageOut, ConversationSummary, EditTextMessage,
-    ForwardMessageRequest
+    ForwardMessageRequest, PinnedMessageOut, ReactionRequest
 )
 from fastapi import Body
 from app.dependencies.chat import get_current_active_user
@@ -25,7 +26,10 @@ from app.controllers.chat_controller import (
     delete_message,
     forward_message,
     pin_message,
-    unpin_message
+    unpin_message,
+    toggle_reaction,
+    get_message_reactions,
+    remove_reaction
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -490,6 +494,9 @@ async def pin_message_route(
     room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
     if not room:
         raise HTTPException(404, "Room not found")
+    
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed in this room")
 
     result = await pin_message(
         db=db,
@@ -509,6 +516,9 @@ async def unpin_message_route(
     room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
     if not room:
         raise HTTPException(404, "Room not found")
+    
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(403, "Not allowed in this room")
 
     result = await unpin_message(
         db=db,
@@ -518,30 +528,110 @@ async def unpin_message_route(
 
     return result
 
-@router.get("/rooms/{room_id}/pin", response_model=Optional[ChatMessageOut])
+@router.get("/rooms/{room_id}/pin", response_model=Optional[PinnedMessageOut])
 async def get_pinned_message(
     room_id: int,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    room = (
-        db.query(ChatRoom)
-        .options(joinedload(ChatRoom.pinned_message))
-        .filter(ChatRoom.id == room_id)
-        .first()
-    )
+    room = db.query(ChatRoom).options(joinedload(ChatRoom.pinned_message)).filter(ChatRoom.id == room_id).first()
 
     if not room:
         raise HTTPException(404, "Room not found")
 
-    if current_user_id not in (
-        room.candidate_user_id,
-        room.employer_user_id,
-    ):
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed in this room")
 
     if not room.pinned_message:
         return None
 
-    return ChatMessageOut.from_orm(room.pinned_message)
+    return PinnedMessageOut(
+        message=ChatMessageOut.model_validate(room.pinned_message).model_dump(),
+        pinned_by_user=room.pinned_by_user,
+        pinned_at=room.pinned_at
+    )
+
+@router.post("/rooms/{room_id}/messages/{message_id}/react")
+async def react_by_id(
+    room_id: int,
+    message_id: int,
+    payload: ReactionRequest,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    room = (
+        db.query(ChatRoom)
+        .filter(ChatRoom.id == room_id)
+        .first()
+    )
+
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if current_user_id not in (room.candidate_user_id, room.employer_user_id):
+        raise HTTPException(status_code=403, detail="Not allowed in this room")
+
+    return await toggle_reaction(
+        db=db,
+        room=room,
+        message_id=message_id,
+        user_id=current_user_id,
+        reaction=payload.reaction
+    )
+    
+@router.get("/rooms/{room_id}/messages/{message_id}/reactions")
+def get_reactions(
+    room_id: int,
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    message = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.id == message_id,
+            ChatMessage.room_id == room_id
+        )
+        .first()
+    )
+
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    return get_message_reactions(
+        db=db,
+        message_id=message_id,
+        current_user_id=current_user_id
+    )
+
+@router.delete("/rooms/{room_id}/messages/{message_id}/react")
+async def remove_reaction_by_id(
+    room_id: int,
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    # Check if the message exists
+    message = db.query(ChatMessage).filter(
+        ChatMessage.id == message_id,
+        ChatMessage.room_id == room_id
+    ).first()
+
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    # Assuming you have a ChatRoom object
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    # Call the remove_reaction function
+    return await remove_reaction(
+        db=db,
+        room=room,
+        message_id=message_id,
+        user_id=current_user_id
+    )
+
+
 

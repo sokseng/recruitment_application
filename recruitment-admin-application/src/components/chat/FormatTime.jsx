@@ -1,17 +1,22 @@
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export const FormatTime = ({ time }) => {
-  let fullText = formatDistanceToNow(parseISO(time), { addSuffix: true });
+  if (!time) return <span>—</span>; // or null, or "unknown"
 
-  // Remove "about" if present
-  fullText = fullText.replace("about ", "");
-
-  // Handle "less than a minute ago"
-  if (fullText.includes("less than a minute")) {
-    return <span>just now</span>; // or "0m ago"
+  let fullText;
+  try {
+    fullText = formatDistanceToNow(parseISO(time), { addSuffix: true });
+  } catch (err) {
+    console.error("Invalid date:", time, err);
+    return <span>—</span>; // fallback for invalid dates
   }
 
-  // Shorten the text
+  fullText = fullText.toLowerCase().replace("about ", "").trim();
+
+  if (fullText.includes("less than a minute")) {
+    return <span>Just now</span>;
+  }
+
   const shortText = fullText
     .replace(" seconds ago", "s")
     .replace(" second ago", "s")
@@ -26,5 +31,5 @@ export const FormatTime = ({ time }) => {
     .replace(" years ago", "y")
     .replace(" year ago", "y");
 
-  return <span>{shortText}</span>;
+  return <span style={{opacity: 0.7,}}>{shortText}</span>;
 };

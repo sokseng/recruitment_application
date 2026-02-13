@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, Text, Boolean, DateTime, func, Enum as SQLEnum
+from sqlalchemy import Column, Integer, ForeignKey, String, Text, Boolean, DateTime, func, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 import enum
@@ -14,7 +14,7 @@ class ReactionType(str, enum.Enum):
 class MessageReaction(Base):
     __tablename__ = 't_chat_message_reaction'
     
-    id = Column(Integer, primary_key=Ture, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     
     message_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("t_user.pk_id", ondelete="CASCADE"), nullable=True, index=True)
