@@ -626,10 +626,14 @@ export default function AppliedCandidates() {
                                 variant="filled"
                                 sx={{
                                   fontWeight: 500,
-                                  p: 2.5, 
                                   borderRadius: 2,
                                   backgroundColor: "rgba(211, 47, 47, 0.15)",
-                                  color: "error.main", 
+                                  color: "error.main",
+                                  width: {xs: "100%", sm: 180},      
+                                  height: 40,      
+                                  display: "flex", 
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                 }}
                               />
                             )}
