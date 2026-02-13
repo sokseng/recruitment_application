@@ -1,6 +1,6 @@
 #job_application_schema.py
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from app.models.job_application_model import ApplicationStatus
 from app.schemas.user_schema import JobOut
@@ -22,8 +22,13 @@ class JobApplicationOut(BaseModel):
 # For EMPLOYER view (includes candidate & resume details)
 # ────────────────────────────────────────────────
 class UserBasicOut(BaseModel):
+    pk_id: int
     user_name: str
     email: str
+    phone: Optional[str] = None
+    gender: Optional[str] = None          
+    date_of_birth: Optional[date] = None  
+    address: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class CandidateBasicOut(BaseModel):
@@ -51,6 +56,7 @@ class ApplicationOutForEmployer(BaseModel):
     resume: Optional[ResumeBasicOut]
     applied_date: datetime
     application_status: ApplicationStatus
+    cancelled: bool
     model_config = {"from_attributes": True}
 
 class ApplicationStatusUpdate(BaseModel):

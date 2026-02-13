@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  DialogTitle,
 } from "@mui/material";
 import {
   Work as WorkIcon,
@@ -38,6 +39,13 @@ import {
   FileDownload as FileDownloadIcon,
   Visibility as VisibilityIcon,
   ChatBubble as ChatBubbleIcon,
+  CancelOutlined,
+  CheckCircleOutline,
+  Cancel,
+  PersonOutlineOutlined,
+  PersonOutline,
+  PersonOutlineSharp,
+  CancelPresentationOutlined,
 } from "@mui/icons-material";
 import api from "../services/api";
 
@@ -79,7 +87,18 @@ export default function AppliedCandidates() {
     severity: "success",
   });
 
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    appId: null,
+    currentStatus: "",
+    newStatusLabel: "",
+    newStatusKey: "",
+  });
+
   const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+  const [candidateDetailOpen, setCandidateDetailOpen] = useState(false);
+  const [selectedCandidateApp, setSelectedCandidateApp] = useState(null);
 
   useEffect(() => {
     loadMyJobsWithApplicationCounts();
@@ -207,7 +226,6 @@ export default function AppliedCandidates() {
 
   const handleDownloadCombined = async (appId, candidateName) => {
     try {
-      const url = getCombinedPdfUrl(appId);
       const res = await api.get(`/applications/${appId}/combined-pdf`, {
         responseType: "blob",
       });
@@ -385,6 +403,17 @@ export default function AppliedCandidates() {
     </Card>
   );
 
+  const InfoRow = ({ label, value }) => (
+    <Stack direction="row" justifyContent="space-between" sx={{ maxWidth: 400 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+        {label}:
+      </Typography>
+      <Typography variant="body2" fontWeight={500} sx={{ flex: 1, textAlign: "right" }}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+
   // ─── Applications Detail ────────────────────────────────────
   const ApplicationsDetailContent = () => (
     <Card
@@ -484,11 +513,6 @@ export default function AppliedCandidates() {
             ) : (
               <Stack spacing={2}>
                 {filteredApplications.map((app) => {
-                  const statusObj =
-                    STATUS_MAP[app.application_status] || {
-                      label: app.application_status,
-                      color: "default",
-                    };
                   const candidateName =
                     app.candidate?.user?.user_name || `Candidate #${app.candidate_id}`;
                   const candidateEmail = app.candidate?.user?.email || "No email";
@@ -500,11 +524,17 @@ export default function AppliedCandidates() {
                     <Card
                       key={app.pk_id}
                       variant="outlined"
+                      onClick={() => {
+                        setSelectedCandidateApp(app);
+                        setCandidateDetailOpen(true);
+                      }}
                       sx={{
                         borderRadius: 2,
                         boxShadow: 1,
                         transition: "box-shadow 0.2s",
                         "&:hover": { boxShadow: 3 },
+                        cursor: "pointer",
+                        
                       }}
                     >
                       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
@@ -514,9 +544,17 @@ export default function AppliedCandidates() {
                           alignItems={{ xs: "flex-start", sm: "center" }}
                           justifyContent="space-between"
                         >
-                          <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={1.5}
+                            alignItems="center"
+                          >
                             <Avatar
-                              sx={{ width: 40, height: 40, bgcolor: "primary.main" }}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                bgcolor: "primary.main",
+                              }}
                             >
                               {candidateName?.[0]?.toUpperCase() || "?"}
                             </Avatar>
@@ -524,7 +562,10 @@ export default function AppliedCandidates() {
                               <Typography variant="body1" fontWeight={600}>
                                 {candidateName}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
                                 {candidateEmail}
                               </Typography>
                             </Box>
@@ -534,78 +575,72 @@ export default function AppliedCandidates() {
                             direction={{ xs: "column", sm: "row" }}
                             spacing={1.5}
                             alignItems={{ xs: "stretch", sm: "center" }}
-                            sx={{ width: { xs: "100%", sm: "auto" }, mt: { xs: 1, sm: 0 } }}
+                            sx={{
+                              width: { xs: "100%", sm: "auto" },
+                              mt: { xs: 1, sm: 0 },
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 } }}>
+                            <FormControl
+                              size="small"
+                              sx={{ minWidth: { xs: "100%", sm: 140 } }}
+                            >
                               <InputLabel>Status</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
                                 label="Status"
                                 onChange={(e) => {
-                                  const key = e.target.value;
-                                  const label = STATUS_MAP[key]?.label;
-                                  if (label) handleStatusChange(app.pk_id, label);
+                                  const newKey = e.target.value;
+                                  const newLabel = STATUS_MAP[newKey]?.label;
+
+                                  if (
+                                    !newLabel ||
+                                    newKey === app.application_status
+                                  ) {
+                                    return;
+                                  }
+
+                                  setConfirmDialog({
+                                    open: true,
+                                    appId: app.pk_id,
+                                    currentStatus: app.application_status,
+                                    newStatusLabel: newLabel,
+                                    newStatusKey: newKey,
+                                  });
                                 }}
                               >
-                                {Object.entries(STATUS_MAP).map(([key, { label }]) => (
-                                  <MenuItem key={key} value={key}>
-                                    {label}
-                                  </MenuItem>
-                                ))}
+                                {Object.entries(STATUS_MAP).map(
+                                  ([key, { label }]) => (
+                                    <MenuItem key={key} value={key}>
+                                      {label}
+                                    </MenuItem>
+                                  ),
+                                )}
                               </Select>
                             </FormControl>
 
-                            {hasResume ? (
-                              <Stack direction="row" spacing={0.5}>
-                                <Tooltip title={`Message ${candidateName}`}>
-                                  <IconButton
-                                    size="small"
-                                    color="success"
-                                    onClick={() => handleSelect(userId)}
-                                  >
-                                    <ChatBubbleIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-
-                                <Tooltip title="View">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    onClick={() =>
-                                      handleViewCombined(app.pk_id, candidateName)
-                                    }
-                                  >
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-
-                                <Tooltip title="Download">
-                                  <IconButton
-                                    size="small"
-                                    color="warning"
-                                    onClick={() =>
-                                      handleDownloadCombined(app.pk_id, candidateName)
-                                    }
-                                  >
-                                    <FileDownloadIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            ) : (
+                            {app.cancelled && (
                               <Chip
-                                label="No resume"
+                                label="Canceled by the candidate"
+                                color="error"
                                 size="small"
-                                color="default"
-                                variant="outlined"
+                                variant="filled"
+                                sx={{ fontWeight: 500 }}
                               />
                             )}
                           </Stack>
                         </Stack>
 
-                        <Stack direction="row" spacing={1} alignItems="center" mt={1.5}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          mt={1.5}
+                        >
                           <CalendarIcon fontSize="small" color="action" />
                           <Typography variant="caption" color="text.secondary">
-                            Applied: {new Date(app.applied_date).toLocaleDateString()}
+                            Applied:{" "}
+                            {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
                         </Stack>
                       </CardContent>
@@ -717,6 +752,269 @@ export default function AppliedCandidates() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewFileOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Detail candidate */}
+      <Dialog
+        open={candidateDetailOpen}
+        onClose={() => {
+          setCandidateDetailOpen(false);
+          setSelectedCandidateApp(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+        scroll="body"
+      >
+        {selectedCandidateApp && (() => {
+          const candidateName =
+            selectedCandidateApp.candidate?.user?.user_name ||
+            `Candidate #${selectedCandidateApp.candidate_id}`;
+          const resumeId = selectedCandidateApp.candidate_resume_id;
+          const hasResume = !!resumeId;
+          const userId =
+            selectedCandidateApp.candidate?.user?.pk_id ||
+            selectedCandidateApp.candidate?.user_id;
+
+          return (
+            <>
+              <Stack direction={"row"} sx={{ p: 1.5, pb: 1, borderBottom: 1, borderColor: "divider", justifyContent: "space-between" }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Candidate Details
+                </Typography>
+               <IconButton
+                size="small"
+                color="error"
+                onClick={() => setCandidateDetailOpen(false)}
+              >
+                <CancelOutlined fontSize="small" />
+              </IconButton>
+              </Stack>
+
+              <DialogContent dividers sx={{ px: 1.5, py: 1.5 }}>
+                <Stack spacing={2}>
+                  {/* Basic Info */}
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "primary.dark",
+                        fontSize: "1.4rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {candidateName?.[0]?.toUpperCase() || "?"}
+                    </Avatar>
+
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {candidateName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedCandidateApp.candidate?.user?.email || "—"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  {/* Personal Information */}
+                  <Box>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={0.7}
+                      sx={{ mb: 0.5 }}
+                    >
+                      <PersonOutlineSharp color="primary" sx={{ fontSize: 18 }} />
+
+                      <Typography variant="body2" fontWeight={700}>
+                        Personal Information
+                      </Typography>
+                    </Stack>
+                    <Divider sx={{mb: 1}}/>
+                    <Stack spacing={1} sx={{ pl: 0.5 }}>
+                      <InfoRow
+                        label="Phone"
+                        value={selectedCandidateApp.candidate?.user?.phone || ""}
+                      />
+                      <InfoRow
+                        label="Gender"
+                        value={
+                          selectedCandidateApp.candidate?.user?.gender
+                            ? selectedCandidateApp.candidate.user.gender.charAt(0).toUpperCase() +
+                              selectedCandidateApp.candidate.user.gender.slice(1).toLowerCase()
+                            : ""
+                        }
+                      />
+                      <InfoRow
+                        label="Date of Birth"
+                        value={
+                          selectedCandidateApp.candidate?.user?.date_of_birth
+                            ? new Date(
+                                selectedCandidateApp.candidate.user.date_of_birth
+                              ).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : ""
+                        }
+                      />
+                      <InfoRow
+                        label="Address"
+                        value={selectedCandidateApp.candidate?.user?.address || ""}
+                      />
+                    </Stack>
+                  </Box>
+
+                  {/* Professional Summary */}
+                  {selectedCandidateApp.candidate?.description && (
+                    <Box>
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        Professional Summary
+                      </Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
+                        {selectedCandidateApp.candidate.description}
+                      </Typography>
+                    </Box>
+                  )}
+                </Stack>
+              </DialogContent>
+
+              {/* Actions Footer */}
+              <DialogActions sx={{ px: 2, py: 1.5, justifyContent: "space-between" }}>
+                <Box></Box>
+                <Stack direction="row" spacing={1}>
+                  {hasResume ? (
+                    <>
+                      <Tooltip title={`Message ${candidateName}`}>
+                        <IconButton
+                          color="success"
+                          size="small"
+                          onClick={() => handleSelect(userId)}
+                        >
+                          <ChatBubbleIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="View Combined PDF">
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() =>
+                            handleViewCombined(selectedCandidateApp.pk_id, candidateName)
+                          }
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Download Combined PDF">
+                        <IconButton
+                          color="warning"
+                          size="small"
+                          onClick={() =>
+                            handleDownloadCombined(selectedCandidateApp.pk_id, candidateName)
+                          }
+                        >
+                          <FileDownloadIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <Chip
+                      label="No resume available"
+                      size="small"
+                      color="default"
+                      variant="outlined"
+                    />
+                  )}
+                </Stack>
+              </DialogActions>
+            </>
+          );
+        })()}
+      </Dialog>
+
+
+      {/* Confirm status */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={(even, reason) => {
+          if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+          setConfirmDialog({ ...confirmDialog, open: false })
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        {/* Title */}
+        <DialogTitle
+          sx={{
+            fontWeight: 600,
+            fontSize: 16,
+            py: 1.2,
+            px: 2
+          }}
+        >
+          Confirm Status Change
+        </DialogTitle>
+        <Divider/>
+
+        {/* Content */}
+        <DialogContent sx={{ py: 1.5, px: 2 }}>
+          <Typography variant="body2">
+            Change status from{" "}
+            <strong>
+              {STATUS_MAP[confirmDialog.currentStatus]?.label ||
+                confirmDialog.currentStatus}
+            </strong>{" "}
+            to <strong>{confirmDialog.newStatusLabel}</strong>?
+          </Typography>
+        </DialogContent>
+
+        {/* Actions */}
+        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+          <Stack direction="row" spacing={1}>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<CancelOutlined />}
+              onClick={() =>
+                setConfirmDialog({ ...confirmDialog, open: false })
+              }
+              sx={{textTransform: "none"}}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<CheckCircleOutline />}
+              sx={{textTransform: "none"}}
+              color={
+                confirmDialog.newStatusLabel === "Rejected"
+                  ? "error"
+                  : confirmDialog.newStatusLabel === "Accepted"
+                  ? "success"
+                  : confirmDialog.newStatusLabel === "Shortlisted"
+                  ? "primary"
+                  : "warning"
+              }
+              onClick={async () => {
+                if (!confirmDialog.appId || !confirmDialog.newStatusLabel) return;
+
+                await handleStatusChange(
+                  confirmDialog.appId,
+                  confirmDialog.newStatusLabel
+                );
+
+                setConfirmDialog({ ...confirmDialog, open: false });
+              }}
+            >
+              Confirm
+            </Button>
+          </Stack>
         </DialogActions>
       </Dialog>
 
