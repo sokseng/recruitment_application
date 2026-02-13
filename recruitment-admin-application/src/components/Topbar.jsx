@@ -65,7 +65,6 @@ export default function Topbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const globalUnread = useUnreadStore(state => state.globalCount);
-  const accessToken = localStorage.getItem("access_token");
 
   //const [failedAttempts, setFailedAttempts] = useState(0);
   const [showRobotCheck, setShowRobotCheck] = useState(false);
@@ -81,7 +80,6 @@ export default function Topbar() {
   ];
 
   useEffect(() => {
-    if (!accessToken) return;
     const fetchUnreadData = async () => {
       const unreadData = await api.get("/chat/messages/unread/count");
 

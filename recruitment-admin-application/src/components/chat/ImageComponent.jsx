@@ -76,7 +76,6 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
           borderRadius: 5,
           pl: 0.5,
           color: 'white',
-          gap: 0.5
         }}
       >
         <Typography

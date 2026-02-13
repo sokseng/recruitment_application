@@ -331,7 +331,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                 {message.edited_at && (
                                     <Typography
                                         variant="caption"
-                                        sx={{ ml: 0.5, opacity: 0.7, opacity: 0.7, }}
+                                        sx={{ ml: 0.5, opacity: 0.7}}
                                     >
                                         · edited
                                     </Typography>
