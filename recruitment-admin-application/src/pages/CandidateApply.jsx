@@ -81,7 +81,16 @@ export default function MyApplicationsToCompanies() {
     }, []);
 
     const handleViewDetails = (app) => {
-        alert(`Opening details for "${app.job?.job_title || 'Job'}" at ${app.job?.company_name || 'Company'}`);
+        const jobId = app.job?.pk_id || app.job?.id;
+        if (jobId) {
+            navigate(`/job/${jobId}`);
+        } else {
+            setSnackbar({
+                open: true,
+                message: 'Job details are unavailable for this application.',
+                severity: 'warning',
+            });
+        }
     };
 
     const handleSnackbarClose = (event, reason) => {
@@ -394,7 +403,8 @@ export default function MyApplicationsToCompanies() {
             <Grid container spacing={3}>
                 {applications.map((app) => {
                     const job = app.job || {};
-                    const isClosed = job.status === 'Closed';
+                    const today = new Date();
+                    const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
                     const isCancelled = app.cancelled === true;
 
                     const accentColor = isCancelled ? theme.palette.grey[500] : (isClosed ? '#ef4444' : theme.palette.primary.main);

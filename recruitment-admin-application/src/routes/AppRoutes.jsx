@@ -25,6 +25,16 @@ export default function AppRoutes() {
       <Routes>
         {/* Public route */}
         <Route path="/" element={<Dashboard />} />
+        
+        <Route 
+          path="/job/:jobId" 
+          element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+
         <Route path="/forgot_password" element={<ForgotPassword />} />
 
         <Route

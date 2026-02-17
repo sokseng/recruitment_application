@@ -77,10 +77,12 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import { useParams } from 'react-router-dom';
 
 export default function Dashboard() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { jobId } = useParams();
 
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
@@ -139,6 +141,7 @@ export default function Dashboard() {
 
   const [coverLetterFile, setCoverLetterFile] = useState(null);
   const [imageFile, setImageFile] = useState(null);
+  var job_id = jobId && !isNaN(Number(jobId)) ? Number(jobId) : null;
 
   const getDateRange = () => {
     const today = dayjs().startOf("day");
@@ -183,6 +186,11 @@ export default function Dashboard() {
 
     result = result.filter((job) => {
       if (!job.closing_date) return true;
+      // modif by rathana
+      if (job_id !== null && job_id !== undefined && (job.pk_id === job_id || job.id === job_id)) {
+        return true;
+      }
+      // end modif
       const closing = new Date(job.closing_date);
       return closing >= today;
     });
@@ -296,6 +304,7 @@ export default function Dashboard() {
       const params = {
         skip: isLoadMore ? skip : 0,
         limit: limit,
+        job_id: job_id,
       };
 
       if (searchTerm.trim()) {
@@ -342,6 +351,11 @@ export default function Dashboard() {
 
         const activeJobs = newJobs.filter((job) => {
           if (!job.closing_date) return true;
+          // modif by rathana
+          if (job_id !== null && job_id !== undefined && (job.pk_id === job_id || job.id === job_id)) {
+            return true;
+          }
+          // end modif
           const closing = new Date(job.closing_date);
           return closing >= today;
         });

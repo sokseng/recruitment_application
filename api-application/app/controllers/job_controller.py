@@ -1,4 +1,5 @@
 #job_controller.py
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, select
 from fastapi import HTTPException, status
@@ -85,6 +86,7 @@ def get_all_active_jobs(
     category_ids: list[int] | None = None,
     posted_after: date | None = None,
     posted_before: date | None = None,
+    job_id: Optional[int] = None,
 ) -> list[Job]:
     today = date.today()
 
@@ -94,11 +96,18 @@ def get_all_active_jobs(
             joinedload(Job.employer),
             joinedload(Job.categories)
         )
-        .where(Job.status == "Open")
-        .where(
-            (Job.closing_date.is_(None)) | (Job.closing_date >= today)
-        )
+        # modif by rathana
+        # .where(Job.status == "Open")
+        # .where(
+        #     (Job.closing_date.is_(None)) | (Job.closing_date >= today)
+        # )
     )
+
+    if job_id is not None:
+        stmt = stmt.where(Job.pk_id == job_id)
+    else:
+        stmt = stmt.where(Job.status == "Open")
+        stmt = stmt.where((Job.closing_date.is_(None)) | (Job.closing_date >= today))
 
     # === Filters ===
     if search:
