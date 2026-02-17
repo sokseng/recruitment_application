@@ -11,15 +11,6 @@ function ReactionComponent({ messageId, reactionsData, onRemoveReact }) {
         angry: "😡",
     };
 
-    const reactionColorMap = {
-        like: "#1877F2",   // blue
-        love: "#E0245E",   // red/pink
-        laugh: "#F7B125",  // yellow
-        wow: "#F7B125",    // yellow
-        sad: "#F7B125",    // yellow
-        angry: "#E9710F",  // orange
-    };
-
     const messageReactions = reactionsData[messageId];
 
     return (

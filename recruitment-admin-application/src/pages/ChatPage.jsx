@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
+import { useGlobalWebSocket } from './../hooks/useGlobalWebSocket';
 import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
@@ -144,20 +145,15 @@ function ChatPage() {
     }, [initialRoomId, chats]);
 
     const fetchChats = async () => {
-        const res = await api.get('/chat/');
-        const unreadData = await api.get("/chat/messages/unread/count");
+        const [roomsRes, unreadRes] = await Promise.all([
+            api.get('/chat/'),
+            api.get('/chat/messages/unread/counts')
+        ]);
 
-        setChats(res.data);
+        setChats(roomsRes.data);
 
-        const countsByRoom = unreadData.data.count;
-        const countsObject =
-            typeof countsByRoom === 'number'
-                ? { [res.data[0]?.room_id || 0]: countsByRoom }
-                : countsByRoom;
-
-        useUnreadStore.getState().setAllChats(countsObject);
-
-    }
+        useUnreadStore.getState().setAllChats(unreadRes.data);
+    };
 
     useEffect(() => {
         fetchChats();
@@ -221,6 +217,8 @@ function ChatPage() {
             if (activeChatIdRef.current !== roomId) return;
 
             setMessages(newMessages);
+
+            resetChat(roomId);
 
             const reactionsMap = {};
             for (let msg of newMessages) {
@@ -289,7 +287,7 @@ function ChatPage() {
         setSelectedChat(chat);
         setOpen(false);
 
-        // resetUnread(chat.room_id);
+        resetChat(chat.room_id);
 
         setChats(prev => {
             const exists = prev.some(c => c.room_id === chat.room_id);
@@ -323,9 +321,12 @@ function ChatPage() {
                         return updated;
                     });
 
-                    if (selectedChat?.room_id !== data.message.room_id && data.message.sender_id !== currentUserId) {
-                        incrementUnread(data.message.room_id);
+                    const isCurrentRoom = selectedChatRef.current?.room_id === data.message.room_id;
+
+                    if (!isCurrentRoom && data.message.sender_id !== currentUserId) {
+                        incrementChat(data.message.room_id);
                     }
+
                     break;
 
                 case "message_updated":
@@ -356,37 +357,6 @@ function ChatPage() {
                     }));
                     break;
 
-                case "chat_list_update":
-                    setChats(prev => {
-                        const exists = prev.some(chat => chat.room_id === data.room_id);
-
-                        const updated = exists
-                            ? prev.map(chat =>
-                                chat.room_id === data.room_id
-                                    ? {
-                                        ...chat,
-                                        last_message: data.last_message,
-                                        last_message_at: data.last_message?.created_at
-                                    }
-                                    : chat
-                            )
-                            : [
-                                ...prev,
-                                {
-                                    room_id: data.room_id,
-                                    username: data.username || "New User",
-                                    avatar_url: data.avatar_url || null,
-                                    last_message: data.last_message,
-                                    last_message_at: data.last_message?.created_at,
-                                    unread_count: 0
-                                }
-                            ];
-
-                        return updated.sort(
-                            (a, b) => new Date(b.last_message_at) - new Date(a.last_message_at)
-                        );
-                    });
-                    break;
                 case "message_pinned":
                     if (data.room_id === selectedChat?.room_id) {
                         setPinMessage(data);
@@ -413,12 +383,22 @@ function ChatPage() {
                     setReactionsData(prev => ({
                         ...prev,
                         [data.message_id]: {
-                            message_id: data.message_id,
-                            reactions: data.reactions,
+                            ...prev[data.message_id],
+                            reactions: data.reactions
+                        }
+                    }));
+                    break;
+
+                case "message_reaction_personal":
+                    setReactionsData(prev => ({
+                        ...prev,
+                        [data.message_id]: {
+                            ...prev[data.message_id],
                             my_reaction: data.my_reaction
                         }
                     }));
                     break;
+
                 case "message_reaction_removed":
                     setReactionsData(prev => {
                         const updated = { ...prev };
@@ -439,6 +419,15 @@ function ChatPage() {
                         return updated;
                     });
                     break;
+                case "read":
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.sender_id === currentUserId
+                                ? { ...msg, is_read: true, read_at: data.timestamp }
+                                : msg
+                        )
+                    );
+                    break;
 
 
                 default:
@@ -454,6 +443,43 @@ function ChatPage() {
     useEffect(() => {
         if (!connected && !selectedChatRef.current) return;
     }, [connected]);
+
+    useGlobalWebSocket((data) => {
+        switch (data.type) {
+            case "chat_list_update":
+                setChats(prev => {
+                    const exists = prev.some(chat => chat.room_id === data.room_id);
+
+                    const updated = exists
+                        ? prev.map(chat =>
+                            chat.room_id === data.room_id
+                                ? {
+                                    ...chat,
+                                    last_message: data.last_message,
+                                    last_message_at: data.last_message?.created_at
+                                }
+                                : chat
+                        )
+                        : [
+                            ...prev,
+                            {
+                                room_id: data.room_id,
+                                username: data.username || "New User",
+                                avatar_url: data.avatar_url || null,
+                                last_message: data.last_message,
+                                last_message_at: data.last_message?.created_at,
+                                unread_count: 0
+                            }
+                        ];
+
+                    return updated.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
+                });
+                break;
+
+            default:
+                break;
+        }
+    });
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>

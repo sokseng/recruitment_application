@@ -162,24 +162,39 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         };
 
         mediaRecorderRef.current.onstop = () => {
-            const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            setAudioBlob(blob);
             clearInterval(timerRef.current);
         };
 
         mediaRecorderRef.current.start();
     };
 
-    const stopRecording = () => {
-        mediaRecorderRef.current?.stop();
-        setIsRecording(false);
-    };
-
     const cancelRecording = () => {
-        mediaRecorderRef.current?.stop();
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+        }
         setAudioBlob(null);
         setIsRecording(false);
         clearInterval(timerRef.current);
+    };
+
+    // Helper to stop and get blob for sending
+    const stopRecordingAndGetBlob = () => {
+        return new Promise((resolve) => {
+            if (!mediaRecorderRef.current) return resolve(null);
+
+            const recorder = mediaRecorderRef.current;
+
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                setAudioBlob(blob);
+                clearInterval(timerRef.current);
+                resolve(blob);
+            };
+
+            recorder.stop();
+            setIsRecording(false);
+            clearInterval(timerRef.current);
+        });
     };
 
     const scrollToBottom = () => {
@@ -325,6 +340,20 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             setEditingMessage(null);
             setNewMessage('');
             return;
+        }
+
+        if (isRecording) {
+            const blob = await stopRecordingAndGetBlob();
+            if (blob) {
+                const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+                const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
+                addMessage(res.data);
+                setReplyingTo(null);
+                setAudioBlob(null);
+                setRecordTime(0);
+                setTimeout(scrollToBottom, 50);
+                return;
+            }
         }
 
         if (audioBlob) {
@@ -921,7 +950,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             {(isRecording || audioBlob) && (
                                 <>
                                     <IconButton color="error" onClick={cancelRecording}>
-                                        {isRecording ? <StopIcon /> : <CloseIcon />}
+                                        <CloseIcon />
                                     </IconButton>
 
                                     <Typography sx={{ flexGrow: 1 }}>
@@ -951,9 +980,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                             <IconButton
                                                 color="primary"
                                                 onMouseDown={startRecording}
-                                                onMouseUp={stopRecording}
+                                                onMouseUp={handleSend}
                                                 onTouchStart={startRecording}
-                                                onTouchEnd={stopRecording}
+                                                onTouchEnd={handleSend}
                                             >
                                                 <MicIcon />
                                             </IconButton>
@@ -1010,8 +1039,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 color="primary"
                                 onClick={handleSend}
                                 disabled={
-                                    isRecording ||
-                                    (!newMessage.trim() && !audioBlob && selectedFiles.length === 0)
+                                    (!newMessage.trim() && !audioBlob && selectedFiles.length === 0 && !isRecording)
                                 }
                             >
                                 <SendIcon />
