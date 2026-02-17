@@ -338,7 +338,7 @@ def get_chat_list_without_current(
     }
 
 @router.get("/room/{room_id}/messages", response_model=List[ChatMessageOut])
-def get_messages(
+async def get_messages(
     room_id: int,
     current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db),
@@ -375,18 +375,18 @@ def get_messages(
     )
 
     if unread:
-        now = func.now()
+        now = datetime.utcnow()
         for m in unread:
             m.is_read = True
             m.read_at = now
         db.commit()
 
-        manager.broadcast_to_room(
+        await manager.broadcast_to_room(
             room.id,
             {
                 "type": "read",
                 "byUserId": current_user_id,
-                "timestamp": str(now)
+                "timestamp": now.isoformat()
             },
             exclude_user_id=current_user_id
         )
@@ -402,12 +402,28 @@ async def mark_read(
     await mark_conversation_read(db, current_user, other_user_id)
     return {"status": "read"}
 
-@router.get("/messages/unread/count")
-def unread_count(db: Session = Depends(get_db),  current_user_id: int = Depends(verify_access_token)):
-    return {
-        "count": get_total_unread_count(db, current_user_id)
-    }
+@router.get("/messages/unread/counts")
+def unread_counts(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    rows = (
+        db.query(
+            ChatMessage.room_id,
+            func.count(ChatMessage.id)
+        )
+        .join(ChatRoom, ChatRoom.id == ChatMessage.room_id)
+        .filter(
+            ChatMessage.is_read == False,
+            ChatMessage.sender_id != current_user_id,
+            (ChatRoom.candidate_user_id == current_user_id) |
+            (ChatRoom.employer_user_id == current_user_id)
+        )
+        .group_by(ChatMessage.room_id)
+        .all()
+    )
 
+    return {room_id: count for room_id, count in rows}
 
 @router.put("/room/{room_id}/messages/{message_id}/text")
 async def edit_text_message(

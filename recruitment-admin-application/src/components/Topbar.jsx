@@ -81,15 +81,9 @@ export default function Topbar() {
 
   useEffect(() => {
     const fetchUnreadData = async () => {
-      const unreadData = await api.get("/chat/messages/unread/count");
+      const res = await api.get("/chat/messages/unread/counts");
 
-      const countsByRoom = unreadData.data.count;
-
-      const countsObject = typeof countsByRoom === "number"
-        ? { 0: countsByRoom }
-        : countsByRoom;
-
-      useUnreadStore.getState().setAllChats(countsObject);
+      useUnreadStore.getState().setAllChats(res.data);
 
     };
 

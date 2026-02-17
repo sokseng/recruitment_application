@@ -144,20 +144,15 @@ function ChatPage() {
     }, [initialRoomId, chats]);
 
     const fetchChats = async () => {
-        const res = await api.get('/chat/');
-        const unreadData = await api.get("/chat/messages/unread/count");
+        const [roomsRes, unreadRes] = await Promise.all([
+            api.get('/chat/'),
+            api.get('/chat/messages/unread/counts')
+        ]);
 
-        setChats(res.data);
+        setChats(roomsRes.data);
 
-        const countsByRoom = unreadData.data.count;
-        const countsObject =
-            typeof countsByRoom === 'number'
-                ? { [res.data[0]?.room_id || 0]: countsByRoom }
-                : countsByRoom;
-
-        useUnreadStore.getState().setAllChats(countsObject);
-
-    }
+        useUnreadStore.getState().setAllChats(unreadRes.data);
+    };
 
     useEffect(() => {
         fetchChats();
@@ -221,6 +216,8 @@ function ChatPage() {
             if (activeChatIdRef.current !== roomId) return;
 
             setMessages(newMessages);
+
+            resetChat(roomId);
 
             const reactionsMap = {};
             for (let msg of newMessages) {
@@ -289,7 +286,7 @@ function ChatPage() {
         setSelectedChat(chat);
         setOpen(false);
 
-        // resetUnread(chat.room_id);
+        resetChat(chat.room_id);
 
         setChats(prev => {
             const exists = prev.some(c => c.room_id === chat.room_id);
@@ -323,9 +320,12 @@ function ChatPage() {
                         return updated;
                     });
 
-                    if (selectedChat?.room_id !== data.message.room_id && data.message.sender_id !== currentUserId) {
-                        incrementUnread(data.message.room_id);
+                    const isCurrentRoom = selectedChatRef.current?.room_id === data.message.room_id;
+
+                    if (!isCurrentRoom && data.message.sender_id !== currentUserId) {
+                        incrementChat(data.message.room_id);
                     }
+
                     break;
 
                 case "message_updated":
@@ -438,6 +438,15 @@ function ChatPage() {
 
                         return updated;
                     });
+                    break;
+                case "read":
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.sender_id === currentUserId
+                                ? { ...msg, is_read: true, read_at: data.timestamp }
+                                : msg
+                        )
+                    );
                     break;
 
 

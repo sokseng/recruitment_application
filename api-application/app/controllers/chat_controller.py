@@ -120,6 +120,18 @@ async def send_text_message(db: Session, current_user: User, room: ChatRoom, con
 
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
+    
+    receiver_id = (
+        room.employer_user_id
+        if current_user.pk_id == room.candidate_user_id
+        else room.candidate_user_id
+    )
+    
+    online_users = manager.get_online_users(room.id)
+
+    if receiver_id in online_users:
+        msg.is_read = True
+        msg.read_at = datetime.utcnow()
 
     db.commit()
     db.refresh(msg)
@@ -134,6 +146,16 @@ async def send_text_message(db: Session, current_user: User, room: ChatRoom, con
         },
         exclude_user_id=None,
     )
+    
+    if msg.is_read:
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "read",
+                "byUserId": receiver_id,
+                "timestamp": msg.read_at.isoformat()
+            }
+        )
 
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(uid, {
@@ -203,6 +225,18 @@ async def send_file_message(
 
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
+    
+    receiver_id = (
+        room.employer_user_id
+        if sender_id == room.candidate_user_id
+        else room.candidate_user_id
+    )
+
+    online_users = manager.get_online_users(room.id)
+
+    if receiver_id in online_users:
+        msg.is_read = True
+        msg.read_at = datetime.utcnow()
 
     db.commit()
     db.refresh(msg)
@@ -216,6 +250,16 @@ async def send_file_message(
             "message": payload,
         }
     )
+    
+    if msg.is_read:
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "read",
+                "byUserId": receiver_id,
+                "timestamp": msg.read_at.isoformat(),
+            },
+        )
 
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(uid, {
@@ -260,11 +304,12 @@ async def mark_conversation_read(
             exclude_user_id=current_user.pk_id
         )
         
-def get_total_unread_count(db, user_id: int) -> int:
+def get_total_unread_count(db, room_id: int, user_id: int) -> int:
     return (
         db.query(func.count(ChatMessage.id))
         .join(ChatRoom, ChatRoom.id == ChatMessage.room_id)
         .filter(
+            ChatMessage.room_id == room_id,
             ChatMessage.is_read == False,
             ChatMessage.sender_id != user_id,
             (ChatRoom.candidate_user_id == user_id) |
