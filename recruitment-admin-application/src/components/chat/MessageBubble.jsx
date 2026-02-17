@@ -307,7 +307,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     display: 'flex',
                                     alignItems: 'center',
                                     textAlign: 'right',
-                                    flexDirection: isOwn? 'row':'row-reverse',
+                                    flexDirection: isOwn ? 'row' : 'row-reverse',
                                     gap: 0.5
                                 }}
                             >
@@ -326,16 +326,22 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                         }}
                                     />
                                 )}
-
-                                <FormatTime time={message.created_at} />
-                                {message.edited_at && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ ml: 0.5, opacity: 0.7}}
-                                    >
-                                        · edited
-                                    </Typography>
-                                )}
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <FormatTime time={message.created_at} />
+                                    {message.edited_at && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ ml: 0.5, opacity: 0.7 }}
+                                        >
+                                            · edited
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Typography>
                             <Box
                                 sx={{

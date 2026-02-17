@@ -72,8 +72,6 @@ function ChatPage() {
     const [foundUsers, setFoundUsers] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
 
-    const setAllChats = useUnreadStore(state => state.setAllChats);
-
     useEffect(() => {
         const search = chatSearch.trim();
 
@@ -358,7 +356,7 @@ function ChatPage() {
                         [data.user_id]: data.is_typing
                     }));
                     break;
-                    
+
                 case "message_pinned":
                     if (data.room_id === selectedChat?.room_id) {
                         setPinMessage(data);
@@ -385,12 +383,22 @@ function ChatPage() {
                     setReactionsData(prev => ({
                         ...prev,
                         [data.message_id]: {
-                            message_id: data.message_id,
-                            reactions: data.reactions,
+                            ...prev[data.message_id],
+                            reactions: data.reactions
+                        }
+                    }));
+                    break;
+
+                case "message_reaction_personal":
+                    setReactionsData(prev => ({
+                        ...prev,
+                        [data.message_id]: {
+                            ...prev[data.message_id],
                             my_reaction: data.my_reaction
                         }
                     }));
                     break;
+
                 case "message_reaction_removed":
                     setReactionsData(prev => {
                         const updated = { ...prev };
@@ -456,7 +464,7 @@ function ChatPage() {
                             ...prev,
                             {
                                 room_id: data.room_id,
-                                user_name: data.user_name || "New User",
+                                username: data.username || "New User",
                                 avatar_url: data.avatar_url || null,
                                 last_message: data.last_message,
                                 last_message_at: data.last_message?.created_at,

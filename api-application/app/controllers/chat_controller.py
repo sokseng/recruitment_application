@@ -172,7 +172,7 @@ async def send_text_message(
             "type": "chat_list_update",
             "room_id": room.id,
             "last_message": payload,
-            "user_name": other_user.user_name,
+            "username": other_user.user_name,
             "avatar_url": None
         })
 
@@ -267,10 +267,16 @@ async def send_file_message(
         )
 
     for uid in (room.candidate_user_id, room.employer_user_id):
+        other_user_id = (
+            room.candidate_user_id if uid != room.candidate_user_id else room.employer_user_id
+        )
+        other_user = db.query(User).filter(User.pk_id == other_user_id).first()
         await manager.broadcast_to_user(uid, {
             "type": "chat_list_update",
             "room_id": room.id,
             "last_message": payload,
+            "username": other_user.user_name,
+            "avatar_url": None
         })
 
     return payload
@@ -687,39 +693,28 @@ async def toggle_reaction(
 
     db.commit()
 
-    reactions_summary = (
-        db.query(
-            MessageReaction.reaction,
-            func.count(MessageReaction.id)
-        )
-        .filter(MessageReaction.message_id == message_id)
-        .group_by(MessageReaction.reaction)
-        .all()
+    reaction_data = get_message_reactions(
+        db=db,
+        message_id=message_id,
+        current_user_id=user_id
     )
 
-    reactions_dict = {
-        r: {"count": c}
-        for r, c in reactions_summary
-    }
-    
-    my_reaction = (
-        db.query(MessageReaction)
-        .filter_by(message_id=message_id, user_id=user_id)
-        .first()
-    )
-
-    payload = {
+    room_payload = {
         "type": "message_reaction",
         "room_id": room.id,
-        "message_id": message_id,
-        "user_id": user_id,
-        "reaction": reaction.value,
-        "action": action,
-        "reactions": reactions_dict,
-        "my_reaction": my_reaction.reaction if my_reaction else None
+        "message_id": reaction_data["message_id"],
+        "reactions": reaction_data["reactions"],
     }
 
-    await manager.broadcast_to_room(room.id, payload)
+    await manager.broadcast_to_room(room.id, room_payload)
+
+    personal_payload = {
+        "type": "message_reaction_personal",
+        "message_id": reaction_data["message_id"],
+        "my_reaction": reaction_data["my_reaction"],
+    }
+
+    await manager.broadcast_to_user(user_id, personal_payload)
 
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(
@@ -731,7 +726,11 @@ async def toggle_reaction(
             }
         )
 
-    return payload
+    return {
+        "message_id": reaction_data["message_id"],
+        "reactions": reaction_data["reactions"],
+        "my_reaction": reaction_data["my_reaction"],
+    }
 
 async def remove_reaction(
     db: Session,
@@ -810,14 +809,18 @@ def get_message_reactions(
     my_reaction = None
 
     for reaction, user_id, user_name in results:
-        reactions_data[reaction]["count"] += 1
-        reactions_data[reaction]["users"].append({
+        reaction_value = (
+            reaction.value if hasattr(reaction, "value") else reaction
+        )
+
+        reactions_data[reaction_value]["count"] += 1
+        reactions_data[reaction_value]["users"].append({
             "id": user_id,
             "user_name": user_name
         })
 
         if user_id == current_user_id:
-            my_reaction = reaction
+            my_reaction = reaction_value
 
     return {
         "message_id": message_id,
