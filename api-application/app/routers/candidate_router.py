@@ -1,8 +1,8 @@
 import re
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc
+from sqlalchemy import desc, update
 from sqlalchemy.orm import Session, joinedload
+from tomlkit import datetime
 from app.dependencies.auth import verify_access_token, get_db
 from app.models.candidate_model import Candidate
 from app.models.candidate_profile import CandidateProfile
@@ -134,3 +134,35 @@ def get_my_job_applications(db: Session = Depends(get_db), current_user_id: int 
     )
 
     return applications
+
+@router.put("/me/applications/{application_id}/cancel")
+def cancel_my_application(application_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    candidate = db.query(Candidate).filter(Candidate.user_id == current_user_id).first()
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidate not found. Please complete your profile first."
+        )
+
+    application = (db.query(JobApplication).filter(JobApplication.pk_id == application_id, JobApplication.candidate_id == candidate.pk_id).first())
+
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found or does not belong to you."
+        )
+
+    if application.cancelled == True:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This application is already cancelled."
+        )
+
+    db.execute(
+        update(JobApplication)
+        .where(JobApplication.pk_id == application_id)
+        .values(cancelled=True)
+    )
+    db.commit()
+
+    return {"message": "Application cancelled successfully"}

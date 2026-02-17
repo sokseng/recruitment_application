@@ -15,6 +15,13 @@ import {
     alpha,
     CircularProgress,
     Chip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    IconButton,
+    Snackbar,
 } from '@mui/material';
 import {
     WorkOutline as WorkIcon,
@@ -24,6 +31,8 @@ import {
     Cancel,
     ArrowForward as ArrowIcon,
     LocationOn,
+    WarningAmber as WarningAmberIcon,
+    Close as CloseIcon,
 } from '@mui/icons-material';
 import api from "../services/api";
 import { useTheme, useMediaQuery } from "@mui/material";
@@ -36,6 +45,16 @@ export default function MyApplicationsToCompanies() {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [cancelDialog, setCancelDialog] = useState({
+        open: false,
+        applicationId: null,
+        loading: false,
+    });
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
     useEffect(() => {
         const fetchApplications = async () => {
@@ -65,15 +84,45 @@ export default function MyApplicationsToCompanies() {
         alert(`Opening details for "${app.job?.job_title || 'Job'}" at ${app.job?.company_name || 'Company'}`);
     };
 
-    const handleCancel = async (id) => {
-        if (!window.confirm('Are you sure you want to cancel this application?')) return;
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') return;
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    };
+
+    const handleOpenCancelDialog = (id) => {
+        setCancelDialog({ open: true, applicationId: id, loading: false });
+    };
+
+    const handleCloseCancelDialog = () => {
+        if (cancelDialog.loading) return;
+        setCancelDialog({ open: false, applicationId: null, loading: false });
+    };
+
+    const handleConfirmCancel = async () => {
+        const id = cancelDialog.applicationId;
+        if (!id) return;
+
+        setCancelDialog((prev) => ({ ...prev, loading: true }));
 
         try {
-            await api.delete(`/applications/${id}`);
-            setApplications((prev) => prev.filter((app) => app.id !== id));
-            alert('Application cancelled successfully');
+            await api.put(`/candidate/me/applications/${id}/cancel`);
+
+            setApplications((prev) => prev.map((app) => app.pk_id === id ? { ...app, cancelled: true } : app));
+
+            setSnackbar({
+                open: true,
+                message: 'Application cancelled successfully.',
+                severity: 'success',
+            });
+
+            handleCloseCancelDialog();
         } catch (err) {
-            alert('Failed to cancel application. Please try again.');
+            setSnackbar({
+                open: true,
+                message: err.response?.data?.detail || 'Failed to cancel application. Please try again.',
+                severity: 'error',
+            });
+            setCancelDialog((prev) => ({ ...prev, loading: false }));
         }
     };
 
@@ -346,8 +395,9 @@ export default function MyApplicationsToCompanies() {
                 {applications.map((app) => {
                     const job = app.job || {};
                     const isClosed = job.status === 'Closed';
+                    const isCancelled = app.cancelled === true;
 
-                    const accentColor = isClosed ? '#ef4444' : theme.palette.primary.main;
+                    const accentColor = isCancelled ? theme.palette.grey[500] : (isClosed ? '#ef4444' : theme.palette.primary.main);
 
                     return (
                         <Grid item xs={12} sm={6} md={4} lg={3} key={app.pk_id} sx={{ width: isMobile ? '100%' : 'auto', px: 1 }}>
@@ -377,6 +427,24 @@ export default function MyApplicationsToCompanies() {
                                         background: `linear-gradient(90deg, ${accentColor}, ${alpha(accentColor, 0.4)})`,
                                     }}
                                 />
+                                {/* Cancelled badge */}
+                                {isCancelled && (
+                                    <Chip
+                                        label="Cancelled"
+                                        size="small"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8,
+                                            right: 16,
+                                            bgcolor: accentColor,
+                                            color: '#fff',
+                                            fontWeight: 400,
+                                            fontSize: '0.8rem',
+                                            zIndex: 10,
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                                        }}
+                                    />
+                                )}
 
                                 <CardContent sx={{ p: 3 }}>
                                     <Stack direction="row" spacing={2.5} alignItems="center" mb={2}>
@@ -400,8 +468,8 @@ export default function MyApplicationsToCompanies() {
                                                 lineHeight={1.18}
                                                 sx={{
                                                     color: isClosed ? 'error.main' : 'text.primary',
-                                                    letterSpacing: '-0.015em',          
-                                                    mb: 0.5,                          
+                                                    letterSpacing: '-0.015em',
+                                                    mb: 0.5,
                                                     transition: 'color 0.2s ease',
                                                     '&:hover': {
                                                         color: isClosed ? 'error.dark' : 'primary.main',
@@ -414,20 +482,20 @@ export default function MyApplicationsToCompanies() {
                                             <Chip
                                                 label={job.employer?.company_name || 'Unknown Company'}
                                                 size="small"
-                                                color="primary"                 
-                                                variant="filled"                   
+                                                color="primary"
+                                                variant="filled"
                                                 sx={{
                                                     fontWeight: 600,
                                                     fontSize: '0.8rem',
                                                     height: 28,
-                                                    borderRadius: '14px',           
+                                                    borderRadius: '14px',
                                                     backgroundColor: (theme) =>
                                                         alpha(theme.palette.primary.main, 0.08),
                                                     color: 'primary.main',
                                                     '&:hover': {
                                                         backgroundColor: (theme) =>
                                                             alpha(theme.palette.primary.main, 0.16),
-                                                        transform: 'translateY(-1px)',    
+                                                        transform: 'translateY(-1px)',
                                                         boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`,
                                                     },
                                                     '& .MuiChip-label': {
@@ -435,7 +503,7 @@ export default function MyApplicationsToCompanies() {
                                                         whiteSpace: 'nowrap',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        maxWidth: '240px',             
+                                                        maxWidth: '240px',
                                                     },
                                                     transition: 'all 0.22s ease',
                                                 }}
@@ -525,7 +593,7 @@ export default function MyApplicationsToCompanies() {
                                         color="error"
                                         size="small"
                                         startIcon={<Cancel fontSize="small" />}
-                                        onClick={() => handleCancel(app.pk_id || app.id)}
+                                        onClick={() => handleOpenCancelDialog(app.pk_id || app.id)}
                                         sx={{
                                             fontSize: '0.8125rem',
                                             textTransform: 'none',
@@ -540,6 +608,230 @@ export default function MyApplicationsToCompanies() {
                     );
                 })}
             </Grid>
+
+            {/* ── Beautiful Confirmation Dialog ── */}
+            <Dialog
+                open={cancelDialog.open}
+                onClose={handleCloseCancelDialog}
+                fullScreen={isMobile}
+                maxWidth="xs"
+                fullWidth={!isMobile}
+                TransitionProps={{
+                    // Optional: smoother appear animation
+                    timeout: { enter: 320, exit: 240 },
+                }}
+                sx={{
+                    // Slight modern backdrop tint
+                    '& .MuiBackdrop-root': {
+                        backgroundColor: alpha('#000', isMobile ? 0.72 : 0.68),
+                        backdropFilter: 'blur(6px)',
+                    },
+                    '& .MuiDialog-paper': {
+                        borderRadius: isMobile ? 0 : 3,
+                        boxShadow: isMobile
+                            ? 'none'
+                            : '0 20px 60px rgba(0,0,0,0.28), 0 0 0 1px rgba(239,68,68,0.08)',
+                        overflow: 'hidden',
+                    },
+                }}
+            >
+                {/* Header with accent color */}
+                <Box
+                    sx={{
+                        bgcolor: alpha(theme.palette.error.main, 0.08),
+                        px: { xs: 3, sm: 4 },
+                        py: 2.5,
+                        borderBottom: `1px solid ${alpha(theme.palette.error.main, 0.18)}`,
+                        position: 'relative',
+                    }}
+                >
+                    <DialogTitle
+                        sx={{
+                            p: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.8,
+                            color: theme.palette.error.dark,
+                            fontWeight: 700,
+                            fontSize: '1.28rem',
+                        }}
+                    >
+                        <WarningAmberIcon
+                            color="error"
+                            sx={{
+                                fontSize: 32,
+                                animation: 'pulseWarning 2s infinite',
+                                '@keyframes pulseWarning': {
+                                    '0%, 100%': { transform: 'scale(1)' },
+                                    '50%': { transform: 'scale(1.15)' },
+                                },
+                            }}
+                        />
+                        Cancel Application
+                    </DialogTitle>
+
+                    {/* Close button – visible on both, more prominent on mobile */}
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleCloseCancelDialog}
+                        disabled={cancelDialog.loading}
+                        sx={{
+                            position: 'absolute',
+                            right: 16,
+                            top: 16,
+                            color: theme.palette.error.main,
+                            '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.12) },
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </Box>
+
+                <DialogContent sx={{
+                    px: { xs: 3, sm: 4 },
+                    py: 3.5,
+                    pb: isMobile ? 4 : 3,
+                }}>
+                    <DialogContentText
+                        sx={{
+                            color: 'text.primary',
+                            fontSize: '1.03rem',
+                            lineHeight: 1.65,
+                        }}
+                    >
+                        Are you sure you want to <strong>cancel</strong> this application?
+                    </DialogContentText>
+                </DialogContent>
+
+                <DialogActions
+                    sx={{
+                        px: { xs: 2.5, sm: 3.5 },
+                        pb: { xs: 3, sm: 2.5 },
+                        pt: 1.5,
+                        flexDirection: isMobile ? 'column' : 'row',
+                        justifyContent: isMobile ? 'stretch' : 'flex-end',
+                        gap: { xs: 2, sm: 1.5 },
+                        borderTop: `1px solid ${theme.palette.divider}`,
+                        bgcolor: alpha(theme.palette.background.paper, isMobile ? 0.5 : 0.3),
+                    }}
+                >
+                    {/* Secondary button (No, keep it) */}
+                    <Button
+                        fullWidth={isMobile}
+                        onClick={handleCloseCancelDialog}
+                        disabled={cancelDialog.loading}
+                        variant={isMobile ? "outlined" : "text"}
+                        color="inherit"
+                        size={isMobile ? "medium" : "small"}           // medium on mobile → still tappable
+                        sx={{
+                            borderRadius: isMobile ? 28 : 2,             // softer pill on mobile
+                            px: isMobile ? 4 : 2.5,
+                            py: isMobile ? 1.1 : 0.5,                    // ← smaller height on mobile
+                            fontWeight: isMobile ? 600 : 500,
+                            textTransform: 'none',
+                            minWidth: 'auto',
+                        }}
+                    >
+                        No, keep it
+                    </Button>
+
+                    {/* Main destructive button */}
+                    <Button
+                        fullWidth={isMobile}
+                        variant="contained"
+                        color="error"
+                        size={isMobile ? "medium" : "small"}
+                        loading={cancelDialog.loading}
+                        loadingIndicator={
+                            <CircularProgress
+                                color="inherit"
+                                size={isMobile ? 20 : 16}
+                                thickness={5}
+                            />
+                        }
+                        onClick={handleConfirmCancel}
+                        disabled={cancelDialog.loading}
+                        autoFocus
+                        sx={{
+                            borderRadius: isMobile ? 28 : 2,
+                            px: isMobile ? 4 : 3,
+                            py: isMobile ? 1.1 : 0.6,                    // ← reduced vertical padding on mobile
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            minWidth: 'auto',
+                            boxShadow: isMobile
+                                ? '0 3px 14px rgba(239,68,68,0.28)'
+                                : '0 1px 6px rgba(239,68,68,0.16)',
+                            '&:hover': {
+                                boxShadow: isMobile
+                                    ? '0 6px 20px rgba(239,68,68,0.38)'
+                                    : '0 2px 10px rgba(239,68,68,0.24)',
+                                transform: isMobile ? 'translateY(-1px)' : 'none',
+                                bgcolor: theme.palette.error.dark,
+                            },
+                            transition: 'all 0.18s ease',
+                            ...(!isMobile && {
+                                background: `linear-gradient(135deg, ${theme.palette.error.main} 20%, ${theme.palette.error.dark} 100%)`,
+                                '&:hover': {
+                                    background: `linear-gradient(135deg, ${theme.palette.error.dark} 20%, ${theme.palette.error.main} 100%)`,
+                                },
+                            }),
+                        }}
+                    >
+                        {cancelDialog.loading ? 'Cancelling…' : 'Yes, Cancel'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}           // disappears after 6 seconds
+                onClose={handleSnackbarClose}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center'            // or 'right' / 'left'
+                }}
+                // Optional: better mobile feel
+                sx={{
+                    maxWidth: { xs: '90%', sm: 400 },
+                    bottom: { xs: 16, sm: 24 },
+                }}
+            >
+                <Alert
+                    onClose={handleSnackbarClose}
+                    severity={snackbar.severity}
+                    variant="filled"                  // filled looks modern & prominent
+                    sx={{
+                        width: '100%',
+                        borderRadius: 2,
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        '& .MuiAlert-action': {
+                            paddingRight: 1,
+                        },
+                    }}
+                    action={
+                        // Optional UNDO button – only show for success case
+                        snackbar.severity === 'success' ? (
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={() => {
+                                    handleUndoCancel();           // implement if you add undo logic
+                                    handleSnackbarClose();
+                                }}
+                                sx={{
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                }}
+                            >
+                                UNDO
+                            </Button>
+                        ) : null
+                    }
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }
