@@ -114,7 +114,8 @@ def create_or_update_user(user: UserCreate, db: Session):
             address=db_user.address,
             is_active=db_user.is_active,
             created_date=db_user.created_date,
-            updated_date=db_user.updated_date
+            updated_date=db_user.updated_date,
+            approved=db_user.approved
         )
     
     #----------------Create new user----------------#

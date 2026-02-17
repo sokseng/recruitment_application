@@ -29,9 +29,24 @@ def get_employers(db: Session):
             Employer.is_active,
             Employer.created_date,
             func.count(Job.pk_id).label("job_count"),
+            User.approved.label("approved"),
+            User.is_active.label("is_active"),
         )
         .outerjoin(Job, Job.employer_id == Employer.pk_id)
-        .group_by(Employer.pk_id)
+        .join(User, Employer.user_id == User.pk_id)
+        .group_by(
+            Employer.pk_id,
+            Employer.company_name,
+            Employer.company_logo,
+            Employer.company_email,
+            Employer.company_contact,
+            Employer.company_address,
+            Employer.company_description,
+            Employer.company_website,
+            Employer.created_date,
+            User.approved,
+            User.is_active
+        )
         .order_by(Employer.created_date.desc())
         .all()
     )
@@ -45,6 +60,14 @@ def get_employers(db: Session):
             for c in employer_obj.categories
         ]
 
+        # ✅ STATUS LOGIC
+        if r.is_active is False:
+            status = "Disabled"
+        elif r.approved is False:
+            status = "Pending"
+        else:
+            status = "Approved"
+
         result.append({
             "pk_id": r.pk_id,
             "company_name": r.company_name,
@@ -54,10 +77,10 @@ def get_employers(db: Session):
             "company_address": r.company_address,
             "company_description": r.company_description,
             "company_website": r.company_website,
-            "is_active": r.is_active,
             "created_date": r.created_date,
             "job_count": r.job_count,
             "categories": categories,  # <-- added categories
+            "status": status
         })
 
     return result

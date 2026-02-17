@@ -63,7 +63,7 @@ class UserResponse(BaseModel):
     date_of_birth: Optional[date] = None
     address: Optional[str] = None
     is_active: bool
-    approved: bool
+    approved: Optional[bool] = None
     created_date: datetime
     updated_date: Optional[datetime]
 

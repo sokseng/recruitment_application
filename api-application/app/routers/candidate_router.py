@@ -2,7 +2,6 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, update
 from sqlalchemy.orm import Session, joinedload
-from tomlkit import datetime
 from app.dependencies.auth import verify_access_token, get_db
 from app.models.candidate_model import Candidate
 from app.models.candidate_profile import CandidateProfile
