@@ -29,7 +29,8 @@ from app.controllers.chat_controller import (
     unpin_message,
     toggle_reaction,
     get_message_reactions,
-    remove_reaction
+    remove_reaction,
+    get_unread_counts_for_user
 )
 from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
 from app.dependencies.auth import verify_access_token
@@ -400,6 +401,17 @@ async def mark_read(
     db: Session = Depends(get_db)
 ):
     await mark_conversation_read(db, current_user, other_user_id)
+    
+    counts = get_unread_counts_for_user(db, current_user.pk_id)
+
+    await manager.broadcast_to_user(
+        current_user.pk_id,
+        {
+            "type": "unread_update",
+            "counts": counts
+        }
+    )
+    
     return {"status": "read"}
 
 @router.get("/messages/unread/counts")

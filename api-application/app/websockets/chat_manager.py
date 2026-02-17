@@ -27,33 +27,32 @@ class ConnectionManager:
         except Exception:
             pass
 
-    async def connect(self, websocket: WebSocket, user_id: int, room_id: int):
+    async def connect(self, websocket: WebSocket, user_id: int, room_id: int | None):
         self.remove_socket_everywhere(websocket)
         websocket.state.user_id = user_id
-
         self.user_connections.setdefault(user_id, set()).add(websocket)
-        self.active_connections.setdefault(room_id, []).append((websocket, user_id))
-        self.user_rooms.setdefault(user_id, set()).add(room_id)
 
-        # start heartbeat
+        # If joining a room
+        if room_id is not None:
+            self.active_connections.setdefault(room_id, []).append((websocket, user_id))
+            self.user_rooms.setdefault(user_id, set()).add(room_id)
+
+            # Broadcast to others that this user is online
+            await self.broadcast_to_room(
+                room_id,
+                {"type": "presence", "userId": user_id, "online": True},
+                exclude_user_id=user_id
+            )
+
+            # Send info about users already online in this room to the connecting websocket
+            online_users = self.get_online_users(room_id) - {user_id}
+            for uid in online_users:
+                await websocket.send_json({"type": "presence", "userId": uid, "online": True})
+
+        # Start heartbeat for this socket
         self.heartbeats[websocket] = asyncio.create_task(self.start_heartbeat(websocket))
 
-        # Notify others in the room that this user is online
-        await self.broadcast_to_room(
-            room_id,
-            {"type": "presence", "userId": user_id, "online": True},
-            exclude_user_id=user_id
-        )
-
-        # Send presence of existing users to the new user
-        for ws, uid in self.active_connections[room_id]:
-            if uid != user_id:
-                try:
-                    await websocket.send_json({"type": "presence", "userId": uid, "online": True})
-                except Exception:
-                    pass
-
-    def disconnect(self, websocket: WebSocket, user_id: int, room_id: int):
+    def disconnect(self, websocket: WebSocket, user_id: int, room_id: int | None = None):
         task = self.heartbeats.pop(websocket, None)
         if task:
             task.cancel()
@@ -63,19 +62,20 @@ class ConnectionManager:
             if not self.user_connections[user_id]:
                 del self.user_connections[user_id]
 
-        self.remove_socket_everywhere(websocket)
-
-        if room_id in self.active_connections:
+        if room_id is not None and room_id in self.active_connections:
             self.active_connections[room_id] = [
                 (ws, uid) for ws, uid in self.active_connections[room_id] if ws != websocket
             ]
             if not self.active_connections[room_id]:
                 del self.active_connections[room_id]
 
-        if user_id in self.user_rooms:
+        if room_id is not None and user_id in self.user_rooms:
             self.user_rooms[user_id].discard(room_id)
             if not self.user_rooms[user_id]:
                 del self.user_rooms[user_id]
+
+        # Always remove websocket from everywhere to be safe
+        self.remove_socket_everywhere(websocket)
 
     async def broadcast_to_room(self, room_id: int, message: dict, exclude_user_id: int | None = None):
         """Broadcast message to all users in a room safely"""
@@ -140,5 +140,8 @@ class ConnectionManager:
             self.user_connections[user_id].discard(websocket)
             if not self.user_connections[user_id]:
                 del self.user_connections[user_id]
+    def get_user_rooms(self, user_id: int) -> set[int]:
+        """Return all rooms a user is currently connected to"""
+        return self.user_rooms.get(user_id, set())
 
 manager = ConnectionManager()
