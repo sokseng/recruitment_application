@@ -164,10 +164,16 @@ async def send_text_message(
         )
 
     for uid in (room.candidate_user_id, room.employer_user_id):
+        other_user_id = (
+            room.candidate_user_id if uid != room.candidate_user_id else room.employer_user_id
+        )
+        other_user = db.query(User).filter(User.pk_id == other_user_id).first()
         await manager.broadcast_to_user(uid, {
             "type": "chat_list_update",
             "room_id": room.id,
             "last_message": payload,
+            "user_name": other_user.user_name,
+            "avatar_url": None
         })
 
     return payload

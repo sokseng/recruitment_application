@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useUnreadStore } from "../store/unreadStore";
 import useAuthStore from "../store/useAuthStore";
+import { useUnreadStore } from '../store/unreadStore';
 
-export function useGlobalWebSocket() {
+export function useGlobalWebSocket(onGlobalEvent) {
   const WS_BASE_URI = import.meta.env.VITE_API_BASE_URL
     .replace(/^http:/, "ws:")
     .replace(/^https:/, "wss:");
@@ -14,11 +14,10 @@ export function useGlobalWebSocket() {
 
   const setAllChats = useUnreadStore(state => state.setAllChats);
 
-  // ✅ Subscribe to token changes
   const token = useAuthStore(state => state.access_token);
 
   useEffect(() => {
-    if (!token) return; // wait until token exists
+    if (!token) return;
 
     const wsUrl = `${WS_BASE_URI}/ws/?token=${token}`;
 
@@ -35,19 +34,19 @@ export function useGlobalWebSocket() {
         try {
           const data = JSON.parse(event.data);
 
-          switch (data.type) {
-            case "unread_snapshot":
-            case "unread_update":
-              setAllChats(data.counts);
-              break;
-
-            case "ping":
-              ws.send(JSON.stringify({ type: "pong" }));
-              break;
-
-            default:
-              break;
+          if(data.type === "unread_snapshot" || data.type === "unread_update"){
+            setAllChats(data.counts);
           }
+
+          if (data.type === "ping") {
+            ws.send(JSON.stringify({ type: "pong" }));
+            return;
+          }
+
+          if (onGlobalEvent) {
+            onGlobalEvent(data);
+          }
+
         } catch (err) {
           console.error("Global WS parse error", err);
         }
@@ -73,5 +72,5 @@ export function useGlobalWebSocket() {
       if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
       socketRef.current?.close();
     };
-  }, [token]); // ✅ Reconnect when token becomes available
+  }, [token]);
 }

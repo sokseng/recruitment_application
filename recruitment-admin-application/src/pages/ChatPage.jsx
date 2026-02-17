@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import FindUsers from '../components/chat/dialog/CreateChatDialog';
 import api from '../services/api';
 import { useWebSocket } from './../hooks/useWebSocket';
+import { useGlobalWebSocket } from './../hooks/useGlobalWebSocket';
 import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
@@ -70,6 +71,8 @@ function ChatPage() {
     const [chatSearch, setChatSearch] = useState("");
     const [foundUsers, setFoundUsers] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    const setAllChats = useUnreadStore(state => state.setAllChats);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -355,38 +358,7 @@ function ChatPage() {
                         [data.user_id]: data.is_typing
                     }));
                     break;
-
-                case "chat_list_update":
-                    setChats(prev => {
-                        const exists = prev.some(chat => chat.room_id === data.room_id);
-
-                        const updated = exists
-                            ? prev.map(chat =>
-                                chat.room_id === data.room_id
-                                    ? {
-                                        ...chat,
-                                        last_message: data.last_message,
-                                        last_message_at: data.last_message?.created_at
-                                    }
-                                    : chat
-                            )
-                            : [
-                                ...prev,
-                                {
-                                    room_id: data.room_id,
-                                    username: data.username || "New User",
-                                    avatar_url: data.avatar_url || null,
-                                    last_message: data.last_message,
-                                    last_message_at: data.last_message?.created_at,
-                                    unread_count: 0
-                                }
-                            ];
-
-                        return updated.sort(
-                            (a, b) => new Date(b.last_message_at) - new Date(a.last_message_at)
-                        );
-                    });
-                    break;
+                    
                 case "message_pinned":
                     if (data.room_id === selectedChat?.room_id) {
                         setPinMessage(data);
@@ -463,6 +435,43 @@ function ChatPage() {
     useEffect(() => {
         if (!connected && !selectedChatRef.current) return;
     }, [connected]);
+
+    useGlobalWebSocket((data) => {
+        switch (data.type) {
+            case "chat_list_update":
+                setChats(prev => {
+                    const exists = prev.some(chat => chat.room_id === data.room_id);
+
+                    const updated = exists
+                        ? prev.map(chat =>
+                            chat.room_id === data.room_id
+                                ? {
+                                    ...chat,
+                                    last_message: data.last_message,
+                                    last_message_at: data.last_message?.created_at
+                                }
+                                : chat
+                        )
+                        : [
+                            ...prev,
+                            {
+                                room_id: data.room_id,
+                                user_name: data.user_name || "New User",
+                                avatar_url: data.avatar_url || null,
+                                last_message: data.last_message,
+                                last_message_at: data.last_message?.created_at,
+                                unread_count: 0
+                            }
+                        ];
+
+                    return updated.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
+                });
+                break;
+
+            default:
+                break;
+        }
+    });
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
