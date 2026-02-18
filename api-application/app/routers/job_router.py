@@ -33,7 +33,7 @@ def get_my_jobs(
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer:
         return [] 
-    return get_jobs_by_employer(db, employer.pk_id, skip, limit)
+    return get_jobs_by_employer(db, employer.pk_id, skip, limit, current_user_id)
 
 
 @router.get("/{job_id}", response_model=JobOut)

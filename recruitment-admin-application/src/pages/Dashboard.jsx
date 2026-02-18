@@ -143,8 +143,7 @@ export default function Dashboard() {
   const [imagesToDelete, setImagesToDelete] = useState([]);
   const [coverLetterToDelete, setCoverLetterToDelete] = useState(false);
   const [originalResumeId, setOriginalResumeId] = useState(null);
-  const canUploadNewCoverLetter =
-    !previousCoverLetterName || coverLetterToDelete;
+  const canUploadNewCoverLetter = !previousCoverLetterName || coverLetterToDelete;
 
   const handleStageDeleteCoverLetter = () => {
     setCoverLetterToDelete(true);
@@ -164,7 +163,7 @@ export default function Dashboard() {
   const handleUndoDeleteImage = (imageId) => {
     setImagesToDelete((prev) => prev.filter((id) => id !== imageId));
   };
-  const [imageFile, setImageFile] = useState(null);
+
   var job_id = jobId && !isNaN(Number(jobId)) ? Number(jobId) : null;
 
   const getDateRange = () => {
@@ -362,6 +361,7 @@ export default function Dashboard() {
     setImagesToDelete([]);
     setImageFiles([]);
     setCoverLetterFile(null);
+    setCoverLetterToDelete(null);
 
     try {
       const res = await api.get(
@@ -2149,7 +2149,6 @@ export default function Dashboard() {
                               borderStyle: coverLetterToDelete
                                 ? "dashed"
                                 : "solid",
-                              opacity: !canUploadNewCoverLetter ? 0.6 : 1,
                             }}
                           >
                             {coverLetterFile

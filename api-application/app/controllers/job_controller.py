@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, select
 from fastapi import HTTPException, status
 from app.models.job_model import Job
+from app.models.user_model import User
 from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
 from app.models.employer_model import Employer
 from sqlalchemy.orm import joinedload
@@ -60,7 +61,8 @@ def create_job(db: Session, job_data: JobCreate, user_id: int) -> JobOut:
 def get_job(db: Session, job_id: int) -> Job | None:
     return db.get(Job, job_id)
 
-def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: int = 20) -> list[Job]:
+def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: int = 20, user_id = int) -> list[Job]:
+    approved = (db.query(User.approved).filter(User.pk_id == user_id).scalar())
     ensure_jobs_not_expired(db, employer_id=employer_id)
 
     jobs = (
@@ -74,7 +76,27 @@ def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: in
     )
 
     db.commit() 
-    return jobs
+    return [{
+        "pk_id": job.pk_id,
+        "employer_id": job.employer_id,
+        "employer": job.employer,
+        "job_title": job.job_title,
+        "job_type": job.job_type,
+        "categories": job.categories,
+        "level": job.level,
+        "position_number": job.position_number,
+        "salary_range": job.salary_range,
+        "location": job.location,
+        "job_description": job.job_description,
+        "experience_required": job.experience_required,
+        "posting_date": job.posting_date,
+        "closing_date": job.closing_date,
+        "status": job.status,
+        "created_at": job.created_at,
+        "approved": approved
+    } for job in jobs]
+        
+    
 
 def get_all_active_jobs(
     db: Session,

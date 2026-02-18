@@ -33,20 +33,26 @@ import CloseIcon from "@mui/icons-material/Close";
 import WorkIcon from "@mui/icons-material/Work";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Badge from "@mui/material/Badge";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SearchIcon from "@mui/icons-material/Search";
-import AllInboxRoundedIcon from '@mui/icons-material/AllInboxRounded';
-import ReactQuill from 'react-quill-new';
-import 'quill/dist/quill.snow.css';
+import AllInboxRoundedIcon from "@mui/icons-material/AllInboxRounded";
+import ReactQuill from "react-quill-new";
+import "quill/dist/quill.snow.css";
 import api from "../services/api";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { Cancel, CategoryRounded, PostAdd, Save } from "@mui/icons-material";
+import {
+  Cancel,
+  CategoryRounded,
+  PostAdd,
+  Save,
+  WarningAmber,
+} from "@mui/icons-material";
 import Draggable from "react-draggable";
 
 const JOB_TYPES = [
@@ -100,7 +106,7 @@ function JobFormDialog({
   };
 
   const [formData, setFormData] = useState(
-    initialData ? { ...initialData } : defaultData
+    initialData ? { ...initialData } : defaultData,
   );
 
   const [loading, setLoading] = useState(false);
@@ -109,17 +115,19 @@ function JobFormDialog({
 
   useEffect(() => {
     if (open && initialData) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       let adjustedStatus = initialData.status;
 
       if (initialData.closing_date && initialData.closing_date < today) {
-        adjustedStatus = "Closed";  
+        adjustedStatus = "Closed";
       }
       setFormData({
         ...initialData,
-        closing_date: initialData.closing_date ? initialData.closing_date.slice(0, 10) : "",
+        closing_date: initialData.closing_date
+          ? initialData.closing_date.slice(0, 10)
+          : "",
         status: adjustedStatus,
-        category_ids: initialData.categories?.map(c => c.pk_id) || [],
+        category_ids: initialData.categories?.map((c) => c.pk_id) || [],
       });
     } else if (open) {
       setFormData({
@@ -206,9 +214,16 @@ function JobFormDialog({
     }
   };
 
-  const title = isEdit ? "Edit Job" : isDuplicate ? "Duplicate Job" : "Post a New Job";
-  const submitText = isEdit ? "Save Changes" : isDuplicate ? "Create Copy" : "Post Job";
-  const statuses = isEdit ? JOB_STATUSES_EDIT : JOB_STATUSES_CREATE;
+  const title = isEdit
+    ? "Edit Job"
+    : isDuplicate
+      ? "Duplicate Job"
+      : "Post a New Job";
+  const submitText = isEdit
+    ? "Save Changes"
+    : isDuplicate
+      ? "Create Copy"
+      : "Post Job";
 
   return (
     <Dialog
@@ -224,7 +239,7 @@ function JobFormDialog({
           overflow: "hidden",
         },
       }}
-      PaperComponent= {DraggablePaper}
+      PaperComponent={DraggablePaper}
     >
       <DialogTitle
         id="draggable-dialog-title"
@@ -232,7 +247,7 @@ function JobFormDialog({
           background: "#023F6B",
           color: "white",
           position: "relative",
-          cursor: "move"
+          cursor: "move",
         }}
       >
         <div>
@@ -240,7 +255,7 @@ function JobFormDialog({
             {title}
           </Typography>
         </div>
-       
+
         <IconButton
           aria-label="close"
           onClick={handleCloseDialog}
@@ -251,8 +266,7 @@ function JobFormDialog({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ backgroundColor: "#F4F1F1", }}>
-
+      <DialogContent dividers sx={{ backgroundColor: "#F4F1F1" }}>
         <form onSubmit={handleSubmit} id="job-form">
           <Box
             sx={{
@@ -267,7 +281,7 @@ function JobFormDialog({
               options={categories}
               getOptionLabel={(option) => option.name}
               value={categories.filter((cat) =>
-                formData.category_ids?.includes(cat.pk_id)
+                formData.category_ids?.includes(cat.pk_id),
               )}
               onChange={(_, newValue) => {
                 const ids = newValue.map((cat) => cat.pk_id);
@@ -299,20 +313,20 @@ function JobFormDialog({
                 />
               )}
               renderTags={(value, getTagProps) =>
-              value.map((option, index) => {
-                const { key, ...tagProps } = getTagProps({ index }); // ← extract key
-                return (
-                  <Chip
-                    key={key}                    // ← pass explicitly
-                    label={option.name}
-                    size="small"
-                    {...tagProps}                // ← spread the rest (no key inside)
-                  />
-                );
-              })
-            }
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index }); // ← extract key
+                  return (
+                    <Chip
+                      key={key} // ← pass explicitly
+                      label={option.name}
+                      size="small"
+                      {...tagProps} // ← spread the rest (no key inside)
+                    />
+                  );
+                })
+              }
             />
-           
+
             {/* Job Title */}
             <TextField
               fullWidth
@@ -331,7 +345,9 @@ function JobFormDialog({
               size="small"
               options={JOB_TYPES}
               getOptionLabel={(opt) => opt.label}
-              value={JOB_TYPES.find((t) => t.value === formData.job_type) || null}
+              value={
+                JOB_TYPES.find((t) => t.value === formData.job_type) || null
+              }
               onChange={(_, newValue) => {
                 setFormData((prev) => ({
                   ...prev,
@@ -385,12 +401,12 @@ function JobFormDialog({
             {/* Status */}
             <Autocomplete
               size="small"
-              options={JOB_STATUSES_EDIT.map(s => ({ value: s, label: s }))}
+              options={JOB_STATUSES_EDIT.map((s) => ({ value: s, label: s }))}
               getOptionLabel={(option) => option.label}
               value={
-                JOB_STATUSES_EDIT
-                  .map(s => ({ value: s, label: s }))
-                  .find(s => s.value === (formData.status || "Open")) || null
+                JOB_STATUSES_EDIT.map((s) => ({ value: s, label: s })).find(
+                  (s) => s.value === (formData.status || "Open"),
+                ) || null
               }
               onChange={(_, newValue) => {
                 setFormData((prev) => ({
@@ -399,14 +415,9 @@ function JobFormDialog({
                 }));
               }}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Status *"
-                  fullWidth
-                />
+                <TextField {...params} label="Status *" fullWidth />
               )}
             />
-
 
             {/* Number of Positions */}
             <TextField
@@ -418,7 +429,8 @@ function JobFormDialog({
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  position_number: e.target.value === "" ? "" : Number(e.target.value),
+                  position_number:
+                    e.target.value === "" ? "" : Number(e.target.value),
                 }))
               }
               placeholder="Please enter Number of Positions"
@@ -449,7 +461,9 @@ function JobFormDialog({
             <DatePicker
               label="Application Closing Date *"
               format="YYYY-MM-DD"
-              value={formData.closing_date ? dayjs(formData.closing_date) : null}
+              value={
+                formData.closing_date ? dayjs(formData.closing_date) : null
+              }
               onChange={(newValue) => {
                 setFormData((prev) => ({
                   ...prev,
@@ -469,26 +483,23 @@ function JobFormDialog({
             {/* Location */}
             <TextField
               sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
-              
-                fullWidth
-                label="Location *"
-                name="location"
-                value={formData.location || ""}
-                onChange={handleChange}
-                placeholder="Enter location"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LocationOnIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-                error={!!errors.location}
-                helperText={errors.location}
-
-                size="small"
+              fullWidth
+              label="Location *"
+              name="location"
+              value={formData.location || ""}
+              onChange={handleChange}
+              placeholder="Enter location"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+              error={!!errors.location}
+              helperText={errors.location}
+              size="small"
             />
-            
           </Box>
           {/* Job Description - Rich Text Editor */}
           <Box mb={2} mt={2}>
@@ -511,7 +522,7 @@ function JobFormDialog({
                     minHeight: 170,
                     maxHeight: 300,
                     overflowY: "auto",
-                  }
+                  },
                 }}
               >
                 <ReactQuill
@@ -525,7 +536,10 @@ function JobFormDialog({
                     }));
 
                     if (errors.job_description) {
-                      setErrors((prev) => ({ ...prev, job_description: undefined }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        job_description: undefined,
+                      }));
                     }
                   }}
                   modules={{
@@ -614,7 +628,7 @@ function JobFormDialog({
           disabled={loading}
           sx={{
             textTransform: "none",
-            backgroundColor:"#023F6B"
+            backgroundColor: "#023F6B",
           }}
           startIcon={<Save />}
         >
@@ -643,7 +657,15 @@ function DraggablePaper(props) {
       handle="#draggable-dialog-title"
       cancel={'[class*="MuiDialogContent-root"]'}
     >
-      <div ref={nodeRef} style={{height: "100vh", width: '100%', justifyContent: 'center', display: 'flex'  }}>
+      <div
+        ref={nodeRef}
+        style={{
+          height: "100vh",
+          width: "100%",
+          justifyContent: "center",
+          display: "flex",
+        }}
+      >
         <Paper {...props} />
       </div>
     </Draggable>
@@ -669,13 +691,15 @@ export default function MyJobs() {
   const [categoryFilter, setCategoryFilter] = useState(["All"]);
 
   const statusCounts = {
-    Open: jobs.filter(j => j.status === "Open").length,
-    Closed: jobs.filter(j => j.status === "Closed").length,
+    Open: jobs.filter((j) => j.status === "Open").length,
+    Closed: jobs.filter((j) => j.status === "Closed").length,
   };
 
   const [openDuplicateDialog, setOpenDuplicateDialog] = useState(false);
   const [duplicateJob, setDuplicateJob] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [approved, setApproved] = useState(null);
+  const [openApprovalWarning, setOpenApprovalWarning] = useState(false);
 
   useEffect(() => {
     fetchMyJobs();
@@ -698,16 +722,21 @@ export default function MyJobs() {
       setLoading(true);
       const res = await api.get("/jobs/my-jobs?limit=100");
       setJobs(res.data || []);
-      const autoClosedCount = res.data.filter(j => 
-        j.status === "Closed" && 
-        j.closing_date && 
-        new Date(j.closing_date) < new Date()
+      const autoClosedCount = res.data.filter(
+        (j) =>
+          j.status === "Closed" &&
+          j.closing_date &&
+          new Date(j.closing_date) < new Date(),
       ).length;
+      if (res.data?.length > 0) {
+        setApproved(res.data[0].approved);
+      }
       if (autoClosedCount > 0) {
-      toast.info(`${autoClosedCount} job(s) were automatically closed due to expiry`);
-    }
+        toast.info(
+          `${autoClosedCount} job(s) were automatically closed due to expiry`,
+        );
+      }
     } catch {
-
     } finally {
       setLoading(false);
     }
@@ -732,6 +761,10 @@ export default function MyJobs() {
   };
 
   const openCreate = () => {
+    if (!approved) {
+      setOpenApprovalWarning(true);
+      return;
+    }
     setEditingJob(null);
     setOpenFormDialog(true);
   };
@@ -744,7 +777,7 @@ export default function MyJobs() {
   const handleFormSuccess = (updatedJob) => {
     if (editingJob?.pk_id) {
       setJobs((prev) =>
-        prev.map((j) => (j.pk_id === updatedJob.pk_id ? updatedJob : j))
+        prev.map((j) => (j.pk_id === updatedJob.pk_id ? updatedJob : j)),
       );
     } else {
       // fetchMyJobs();
@@ -763,7 +796,7 @@ export default function MyJobs() {
         status: "Closed",
       });
       setJobs((prev) =>
-        prev.map((j) => (j.pk_id === closingJob.pk_id ? res.data : j))
+        prev.map((j) => (j.pk_id === closingJob.pk_id ? res.data : j)),
       );
       setOpenCloseDialog(false);
     } catch {
@@ -789,13 +822,14 @@ export default function MyJobs() {
     const typeMatch = typeFilter === "All" || job.job_type === typeFilter;
 
     const levelMatch = levelFilter === "All" || job.level === levelFilter;
-    
-    const categoryMatch = categoryFilter.includes("All") ||                           // "All" selected → show everything
-    (job.categories || []).some((cat) =>
-      categoryFilter.includes(cat.pk_id)
-    );
 
-    return keywordMatch && statusMatch && typeMatch && levelMatch && categoryMatch;
+    const categoryMatch =
+      categoryFilter.includes("All") || // "All" selected → show everything
+      (job.categories || []).some((cat) => categoryFilter.includes(cat.pk_id));
+
+    return (
+      keywordMatch && statusMatch && typeMatch && levelMatch && categoryMatch
+    );
   });
 
   return (
@@ -849,10 +883,7 @@ export default function MyJobs() {
             ),
             endAdornment: search && (
               <InputAdornment position="end">
-                <IconButton
-                  size="small"
-                  onClick={() => setSearch("")}
-                >
+                <IconButton size="small" onClick={() => setSearch("")}>
                   <Cancel fontSize="small" />
                 </IconButton>
               </InputAdornment>
@@ -867,7 +898,7 @@ export default function MyJobs() {
           options={categories}
           getOptionLabel={(option) => option.name}
           sx={{
-            gridColumn: { xs: "1 / -1", sm: "span 2" },   // ← added
+            gridColumn: { xs: "1 / -1", sm: "span 2" }, // ← added
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
             },
@@ -954,7 +985,6 @@ export default function MyJobs() {
           )}
         />
 
-
         {/* Level */}
         <Autocomplete
           size="small"
@@ -1028,7 +1058,6 @@ export default function MyJobs() {
               Post
             </Button>
           </Tooltip>
-          
         </Stack>
       </Box>
       {/* Small Responsive Tabs */}
@@ -1044,7 +1073,7 @@ export default function MyJobs() {
             minHeight: 36,
             fontSize: "0.875rem",
             px: 1.5,
-            textTransform: "none"
+            textTransform: "none",
           },
           "& .MuiBadge-root": { mr: 0.5 },
           mb: 0.5,
@@ -1070,11 +1099,10 @@ export default function MyJobs() {
           value="Open"
         />
 
-
         <Tab
           label={
-            <Badge 
-              badgeContent={statusCounts.Closed} 
+            <Badge
+              badgeContent={statusCounts.Closed}
               color="error"
               sx={{
                 "& .MuiBadge-badge": {
@@ -1091,7 +1119,6 @@ export default function MyJobs() {
           value="Closed"
         />
       </Tabs>
-
       {/* JOBS GRID */}
       <Box
         sx={{
@@ -1165,11 +1192,12 @@ export default function MyJobs() {
                       fontWeight: 500,
                       justifyContent: "center",
                       borderWidth: 1.5,
-                      color: job.status === "Open" ? "success.main" : "error.main",
-                      borderColor: job.status === "Open" ? "success.main" : "error.main",
+                      color:
+                        job.status === "Open" ? "success.main" : "error.main",
+                      borderColor:
+                        job.status === "Open" ? "success.main" : "error.main",
                     }}
                   />
-
                 </Box>
               </Stack>
 
@@ -1328,7 +1356,6 @@ export default function MyJobs() {
           </Box>
         )}
       </Box>
-
       {/* DIALOGS */}
       <JobFormDialog
         open={openFormDialog}
@@ -1343,7 +1370,6 @@ export default function MyJobs() {
         isDuplicate={!!editingJob && !editingJob.pk_id}
         categories={categories}
       />
-
       <Dialog
         open={openCloseDialog}
         onClose={() => setOpenCloseDialog(false)}
@@ -1438,7 +1464,6 @@ export default function MyJobs() {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={openDuplicateDialog}
         onClose={() => setOpenDuplicateDialog(false)}
@@ -1530,6 +1555,119 @@ export default function MyJobs() {
             }}
           >
             Duplicate
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog approve */}
+      <Dialog
+        open={openApprovalWarning}
+        onClose={() => setOpenApprovalWarning(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: 8,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            background: "linear-gradient(135deg, #fff3e0, #ffe0b2)",
+            fontWeight: 600,
+            color: "#e65100",
+          }}
+        >
+          <WarningAmber color="warning" />
+          Account Awaiting Approval
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ py: 3, backgroundColor: "#fffaf0" }}>
+          <DialogContentText
+            sx={{ fontSize: "1rem", color: "text.primary", mb: 2 }}
+          >
+            Your employer account has not been approved yet.
+          </DialogContentText>
+
+          <Box
+            sx={{
+              mt: 1,
+              p: 2.5,
+              borderRadius: 2,
+              backgroundColor: "#fff8e1",
+              border: "1px solid",
+              borderColor: "warning.light",
+              fontSize: "0.95rem",
+              color: "text.primary",
+            }}
+          >
+            <strong>
+              You cannot post new jobs until admin approval is complete.
+            </strong>
+            <br />
+            <br />
+            Please wait for the administrator to review and approve your
+            account.
+            <Box sx={{ mt: 2.5, fontWeight: 500 }}>
+              Need help or want to check status?
+              <br />
+              Contact us at:{" "}
+              <Typography
+                component="a"
+                href="tel:+85512345678"
+                sx={{
+                  ml: 1,
+                  color: "primary.main",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  "&:hover": { color: "primary.dark" },
+                }}
+              >
+                +855 12 345 678
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Optional: smaller support note */}
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 2,
+              display: "block",
+              color: "text.secondary",
+              textAlign: "center",
+            }}
+          >
+            We're here to help!
+          </Typography>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            backgroundColor: "#fffaf0",
+            justifyContent: "center", // centered button looks nicer in small dialogs
+          }}
+        >
+          <Button
+            onClick={() => setOpenApprovalWarning(false)}
+            variant="contained"
+            color="warning"
+            size="small"
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              px: 5,
+              minWidth: 140,
+            }}
+          >
+            I Understand
           </Button>
         </DialogActions>
       </Dialog>
