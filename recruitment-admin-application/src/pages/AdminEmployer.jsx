@@ -18,6 +18,9 @@ import {
   IconButton,
   Button,
   alpha,
+  Tabs,
+  Tab,
+  Badge,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -33,10 +36,10 @@ const ITEMS_PER_PAGE = 8;
 
 const AdminEmployers = () => {
   const [employers, setEmployers] = useState([]);
-  const [filteredEmployers, setFilteredEmployers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [tabValue, setTabValue] = useState(0); // 0=Pending, 1=Approved, 2=Inactive
   const [selectedEmployer, setSelectedEmployer] = useState(null);
   const [openDetail, setOpenDetail] = useState(false);
 
@@ -46,7 +49,6 @@ const AdminEmployers = () => {
       const res = await api.get("/employer");
       const data = res.data || [];
       setEmployers(data);
-      setFilteredEmployers(data);
     } catch (err) {
       console.error("Failed to load employers:", err);
     } finally {
@@ -58,18 +60,48 @@ const AdminEmployers = () => {
     fetchEmployers();
   }, []);
 
-  useEffect(() => {
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) {
-      setFilteredEmployers(employers);
-      return;
+  // Compute counts for badges
+  const counts = {
+    Pending: employers.filter((e) => e.status === "Pending").length,
+    Approved: employers.filter((e) => e.status === "Approved").length,
+    Inactive: employers.filter((e) => e.status === "Inactive").length,
+  };
+
+  // Filter by tab + search
+  const getFilteredEmployers = () => {
+    let statusFiltered = employers;
+
+    if (tabValue === 0) {
+      statusFiltered = employers.filter((emp) => emp.status === "Pending");
+    } else if (tabValue === 1) {
+      statusFiltered = employers.filter((emp) => emp.status === "Approved");
+    } else if (tabValue === 2) {
+      statusFiltered = employers.filter((emp) => emp.status === "Inactive");
     }
-    const filtered = employers.filter((emp) =>
+
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return statusFiltered;
+
+    return statusFiltered.filter((emp) =>
       emp.company_name?.toLowerCase().includes(term)
     );
-    setFilteredEmployers(filtered);
+  };
+
+  const filteredEmployers = getFilteredEmployers();
+
+  const totalItems = filteredEmployers.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (page - 1) * ITEMS_PER_PAGE;
+  const paginatedEmployers = filteredEmployers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset page when tab or search changes
+  useEffect(() => {
     setPage(1);
-  }, [searchTerm, employers]);
+  }, [tabValue, searchTerm]);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
   const handleOpenDetail = (emp) => {
     setSelectedEmployer(emp);
@@ -80,26 +112,64 @@ const AdminEmployers = () => {
     setOpenDetail(false);
   };
 
-  const totalItems = filteredEmployers.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-  const startIndex = (page - 1) * ITEMS_PER_PAGE;
-  const paginatedEmployers = filteredEmployers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1600, mx: "auto" }}>
-      {/* Header + Search */}
-      <Box
-        sx={{
-          mb: 2,
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          gap: 2,
-        }}
-      >
 
+      <Box sx={{ mb: 3 }}>
+        {/* Tabs – nice modern style */}
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          allowScrollButtonsMobile
+          sx={{
+            mb: 2.5,
+            borderRadius: 3,
+            overflow: "hidden",
+            bgcolor: alpha("#f8f9fa", 0.7),
+            boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+            "& .MuiTabs-indicator": {
+              height: 4,
+              borderRadius: "4px 4px 0 0",
+            },
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "1rem",
+              py: 1.8,
+              minHeight: 56,
+              color: "text.primary",
+              "&.Mui-selected": {
+                color: "primary.main",
+                fontWeight: 700,
+              },
+            },
+          }}
+        >
+          <Tab
+            label={
+              <Badge badgeContent={counts.Pending} color="warning" sx={{ px: 1 }}>
+                Pending
+              </Badge>
+            }
+          />
+          <Tab
+            label={
+              <Badge badgeContent={counts.Approved} color="success" sx={{ px: 1 }}>
+                Approved
+              </Badge>
+            }
+          />
+          <Tab
+            label={
+              <Badge badgeContent={counts.Inactive} color="error" sx={{ px: 1 }}>
+                Inactive
+              </Badge>
+            }
+          />
+        </Tabs>
 
+        {/* Search */}
         <TextField
           size="small"
           placeholder="Search companies..."
@@ -113,7 +183,7 @@ const AdminEmployers = () => {
             ),
           }}
           sx={{
-            width: { xs: "100%", sm: 320 },
+            width: { xs: "100%", sm: 360 },
             "& .MuiOutlinedInput-root": {
               borderRadius: 12,
               bgcolor: alpha("#f8f9fa", 0.85),
@@ -123,14 +193,18 @@ const AdminEmployers = () => {
             },
           }}
         />
+
         {/* Results count */}
         {!loading && totalItems > 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 1.5, display: { xs: "block", sm: "inline-block" }, ml: { sm: 2 } }}
+          >
             Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} of {totalItems}
           </Typography>
         )}
       </Box>
-
 
       {/* Grid */}
       <Box
@@ -155,6 +229,7 @@ const AdminEmployers = () => {
               onClick={() => handleOpenDetail(emp)}
               elevation={1}
               sx={{
+                position: "relative",
                 borderRadius: 4,
                 overflow: "hidden",
                 transition: "all 0.22s ease",
@@ -186,6 +261,43 @@ const AdminEmployers = () => {
                   }}
                 />
               </Box>
+
+              {/* Status Chip – keeping your last version (outlined + subtle bg) */}
+              <Chip
+                label={emp.status}
+                size="small"
+                variant="outlined"
+                sx={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  height: 26,
+                  borderRadius: "12px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  px: 1.5,
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  ...(emp.status === "Approved" && {
+                    borderColor: "#10b981",
+                    color: "#10b981",
+                    bgcolor: "rgba(16,185,129,0.08)",
+                    "&:hover": { bgcolor: "rgba(16,185,129,0.14)" },
+                  }),
+                  ...(emp.status === "Pending" && {
+                    borderColor: "#f59e0b",
+                    color: "#f59e0b",
+                    bgcolor: "rgba(245,158,11,0.08)",
+                    "&:hover": { bgcolor: "rgba(245,158,11,0.14)" },
+                  }),
+                  ...(emp.status === "Inactive" && {
+                    borderColor: "#ef4444",
+                    color: "#ef4444",
+                    bgcolor: "rgba(239,68,68,0.08)",
+                    "&:hover": { bgcolor: "rgba(239,68,68,0.14)" },
+                  }),
+                }}
+              />
 
               <CardContent sx={{ pt: 6, pb: 3, textAlign: "center" }}>
                 <Typography variant="h6" fontWeight={700} noWrap>
@@ -249,7 +361,7 @@ const AdminEmployers = () => {
         </Box>
       )}
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog – unchanged */}
       <Dialog
         open={openDetail}
         onClose={handleCloseDetail}
@@ -264,7 +376,7 @@ const AdminEmployers = () => {
       >
         {selectedEmployer && (
           <>
-            <DialogTitle sx={{ pb: 1, pr: 8 }}>
+            <DialogTitle sx={{ pb: 1, pr: 8, position: "relative" }}>
               Company Profile
               <IconButton
                 onClick={handleCloseDetail}
@@ -275,6 +387,7 @@ const AdminEmployers = () => {
             </DialogTitle>
 
             <DialogContent dividers sx={{ pt: 2 }}>
+              {/* Top Header with Avatar + Company Name + Status */}
               <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
                 <Avatar
                   src={
@@ -282,18 +395,60 @@ const AdminEmployers = () => {
                       ? `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${selectedEmployer.company_logo}`
                       : "/default-company.png"
                   }
-                  sx={{ width: 80, height: 80, boxShadow: 2 }}
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    boxShadow: 3,
+                    border: "2px solid #f0f0f0",
+                  }}
                 />
-                <Box>
-                  <Typography variant="h5" fontWeight={700}>
-                    {selectedEmployer.company_name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="h5" fontWeight={700}>
+                      {selectedEmployer.company_name}
+                    </Typography>
+
+                    {/* Status Chip */}
+                    <Chip
+                      label={selectedEmployer.status || "Pending"}
+                      size="small"
+                      sx={{
+                        background: selectedEmployer.status === "Approved"
+                          ? "linear-gradient(135deg, #43a047 0%, #66bb6a 100%)"
+                          : selectedEmployer.status === "Pending"
+                            ? "linear-gradient(135deg, #fb8c00 0%, #ffa726 100%)"
+                            : "linear-gradient(135deg, #e53935 0%, #ef5350 100%)",
+                        color: "white",
+                        fontWeight: 600,
+                        fontSize: 11,
+                        height: 26,
+                        borderRadius: 14,
+                        px: 1.5,
+                        boxShadow:
+                          selectedEmployer.status === "Approved"
+                            ? "0 3px 6px rgba(76,175,80,0.4)"
+                            : selectedEmployer.status === "Pending"
+                              ? "0 3px 6px rgba(251,140,0,0.4)"
+                              : "0 3px 6px rgba(229,57,53,0.4)",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    />
+                  </Stack>
+
+                  {/* Email */}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}
+                  >
                     <EmailIcon fontSize="inherit" /> {selectedEmployer.company_email || "—"}
                   </Typography>
                 </Box>
               </Stack>
 
+              {/* Contact, Address, Website */}
               <Stack spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <PhoneIcon fontSize="small" color="action" />
@@ -327,38 +482,41 @@ const AdminEmployers = () => {
                     )}
                   </Typography>
                 </Stack>
+              </Stack>
 
-                <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 2 }} />
 
-                <Stack direction="row" spacing={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Jobs Posted
-                    </Typography>
-                    <Typography variant="h6">{selectedEmployer.job_count || 0}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Categories
-                    </Typography>
-                    <Typography variant="body2">
-                      {selectedEmployer.categories?.map((c) => c.name).join(", ") || "—"}
-                    </Typography>
-                  </Box>
-                </Stack>
-
-                <Divider sx={{ my: 2 }} />
-
+              {/* Jobs Posted + Categories */}
+              <Stack direction="row" spacing={4} sx={{ mb: 2 }}>
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    About the Company
+                  <Typography variant="subtitle2" color="text.secondary">
+                    <strong>Jobs Posted</strong>
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
-                    {selectedEmployer.company_description || "No description provided."}
+                  <Typography variant="h6">{selectedEmployer.job_count || 0}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    <strong>Categories</strong>
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedEmployer.categories?.map((c) => c.name).join(", ") || "—"}
                   </Typography>
                 </Box>
               </Stack>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* About */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  About the Company
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
+                  {selectedEmployer.company_description || "No description provided."}
+                </Typography>
+              </Box>
             </DialogContent>
+
           </>
         )}
       </Dialog>

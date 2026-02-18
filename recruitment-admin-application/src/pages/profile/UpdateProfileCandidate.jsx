@@ -1130,9 +1130,27 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
             </Avatar>
             <TextField size="small" fullWidth label="Full Name" name="user_name" required value={form.user_name} onChange={handleChange} />
           </Stack>
-          <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
           <Stack direction="row" spacing={2}>
+            <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
             <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+          </Stack>
+          <Stack direction="row" spacing={2}>
+            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+            <TextField
+              fullWidth
+              size="small"
+              name="gender"
+              label="Gender"
+              select
+              required
+              value={form.gender} onChange={handleChange}
+            >
+              <MenuItem value="Male">Male</MenuItem>
+              <MenuItem value="Female">Female</MenuItem>
+            </TextField>
+          </Stack>
+          <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
+          <Stack direction="row" spacing={2}>
             <FormControl fullWidth size="small">
               <InputLabel id="job-category-label">
                 Job Category
@@ -1158,24 +1176,6 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
                 ))}
               </Select>
             </FormControl>
-          </Stack>
-          <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
-            <TextField
-              fullWidth
-              size="small"
-              name="gender"
-              label="Gender"
-              select
-              required
-              value={form.gender} onChange={handleChange}
-            >
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
-            </TextField>
-          </Stack>
-          <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
-          <Stack direction="row" spacing={2}>
             <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({ ...prev, experience_level: e.target.value === "" ? null : e.target.value }))} />
             <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({ ...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value }))} />
           </Stack>

@@ -35,7 +35,7 @@ class EmployerOut(BaseModel):
     company_description: Optional[str] = None
     company_website: Optional[str] = None
     company_description: Optional[str] = None
-    is_active: bool
+    status: str
     created_date: datetime
     job_count: int
     categories: list[CategoryOut] = []

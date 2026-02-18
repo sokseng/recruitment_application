@@ -54,7 +54,8 @@ def get_public_active_jobs(
     category_ids: str | None = None,       
     posted_after: date | None = None,
     posted_before: date | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    job_id: int | None = None
 ):
     return get_all_active_jobs(
         db, 
@@ -66,6 +67,7 @@ def get_public_active_jobs(
         category_ids=[int(i) for i in category_ids.split(",")] if category_ids else None,
         posted_after=posted_after,
         posted_before=posted_before,
+        job_id=job_id
     )
 
 

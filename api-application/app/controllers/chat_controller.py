@@ -93,30 +93,44 @@ def get_or_create_chat_room(db: Session, user_a_id: int, user_b_id: int) -> Chat
 
     return room
 
-async def send_text_message(db: Session, current_user: User, room: ChatRoom, content: str, reply_to_id: Optional[int] = None,):
-
+async def send_text_message(
+    db: Session,
+    current_user: User,
+    room: ChatRoom,
+    content: str,
+    reply_to_id: Optional[int] = None,
+    message_type: MessageType = MessageType.TEXT,
+):
     reply_to = None
-    
     if reply_to_id:
         reply_to = (
             db.query(ChatMessage)
-            .filter(
-                ChatMessage.id == reply_to_id,
-                ChatMessage.room_id == room.id
-            ).first()
+            .filter(ChatMessage.id == reply_to_id, ChatMessage.room_id == room.id)
+            .first()
         )
         if not reply_to:
             raise HTTPException(400, "Invalid reply_to_id")
-    
+
     msg = ChatMessage(
         room_id=room.id,
         sender_id=current_user.pk_id,
-        type=MessageType.TEXT,
+        type=message_type,
         content=content,
         reply_to_id=reply_to.id if reply_to else None,
     )
     db.add(msg)
     db.flush()
+
+    receiver_id = (
+        room.employer_user_id
+        if current_user.pk_id == room.candidate_user_id
+        else room.candidate_user_id
+    )
+
+    online_users = manager.get_online_users(room.id)
+    if receiver_id in online_users:
+        msg.is_read = True
+        msg.read_at = datetime.utcnow()
 
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
@@ -124,25 +138,46 @@ async def send_text_message(db: Session, current_user: User, room: ChatRoom, con
     db.commit()
     db.refresh(msg)
 
+    counts = get_unread_counts_for_user(db, receiver_id)
+
+    await manager.broadcast_to_user(
+        receiver_id,
+        {"type": "unread_update", "counts": counts}
+    )
+
     payload = jsonable_encoder(ChatMessageOut.from_orm(msg))
 
     await manager.broadcast_to_room(
         room.id,
-        {
-            "type": "message",
-            "message": payload,
-        },
-        exclude_user_id=None,
+        {"type": "message", "message": payload},
+        exclude_user_id=None  # everyone sees it
     )
 
+    if msg.is_read:
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "read",
+                "byUserId": receiver_id,
+                "timestamp": msg.read_at.isoformat()
+            },
+            exclude_user_id=None
+        )
+
     for uid in (room.candidate_user_id, room.employer_user_id):
+        other_user_id = (
+            room.candidate_user_id if uid != room.candidate_user_id else room.employer_user_id
+        )
+        other_user = db.query(User).filter(User.pk_id == other_user_id).first()
         await manager.broadcast_to_user(uid, {
             "type": "chat_list_update",
             "room_id": room.id,
             "last_message": payload,
+            "username": other_user.user_name,
+            "avatar_url": None
         })
 
-    return payload 
+    return payload
 
 async def send_file_message(
     db: Session,
@@ -153,33 +188,25 @@ async def send_file_message(
     file: UploadFile,
     reply_to_id: int | None = None,
 ):
-    print(f"file type {file_type}")
-
     rule = FILE_RULES.get(file_type)
     if not rule:
         raise HTTPException(400, "Unsupported file type")
 
     ext = file.filename.rsplit(".", 1)[-1].lower()
     if ext not in rule["extensions"]:
-        raise HTTPException(
-            400,
-            f"Invalid file extension for {file_type}"
-        )
-        
+        raise HTTPException(400, f"Invalid file extension for {file_type}")
+
     reply_to = None
     if reply_to_id:
         reply_to = (
             db.query(ChatMessage)
-            .filter(
-                ChatMessage.id == reply_to_id,
-                ChatMessage.room_id == room.id
-            ).first()
+            .filter(ChatMessage.id == reply_to_id, ChatMessage.room_id == room.id)
+            .first()
         )
         if not reply_to:
             raise HTTPException(400, "Invalid reply to id")
 
     folder = rule["folder"]
-
     filename = f"{uuid.uuid4()}.{ext}"
     path = f"uploads/chat/{folder}/{filename}"
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -197,9 +224,19 @@ async def send_file_message(
         mime_type=file.content_type,
         reply_to_id=reply_to.id if reply_to else None,
     )
-
     db.add(msg)
     db.flush()
+
+    receiver_id = (
+        room.employer_user_id
+        if sender_id == room.candidate_user_id
+        else room.candidate_user_id
+    )
+
+    online_users = manager.get_online_users(room.id)
+    if receiver_id in online_users:
+        msg.is_read = True
+        msg.read_at = datetime.utcnow()
 
     room.last_message_id = msg.id
     room.last_message_at = msg.created_at
@@ -207,21 +244,40 @@ async def send_file_message(
     db.commit()
     db.refresh(msg)
 
+    counts = get_unread_counts_for_user(db, receiver_id)
+    await manager.broadcast_to_user(
+        receiver_id,
+        {"type": "unread_update", "counts": counts}
+    )
+
     payload = ChatMessageOut.from_orm(msg).model_dump(mode="json")
 
     await manager.broadcast_to_room(
         room.id,
-        {
-            "type": "message",
-            "message": payload,
-        }
+        {"type": "message", "message": payload}
     )
+    
+    if msg.is_read:
+        await manager.broadcast_to_room(
+            room.id,
+            {
+                "type": "read",
+                "byUserId": receiver_id,
+                "timestamp": msg.read_at.isoformat(),
+            }
+        )
 
     for uid in (room.candidate_user_id, room.employer_user_id):
+        other_user_id = (
+            room.candidate_user_id if uid != room.candidate_user_id else room.employer_user_id
+        )
+        other_user = db.query(User).filter(User.pk_id == other_user_id).first()
         await manager.broadcast_to_user(uid, {
             "type": "chat_list_update",
             "room_id": room.id,
             "last_message": payload,
+            "username": other_user.user_name,
+            "avatar_url": None
         })
 
     return payload
@@ -260,11 +316,12 @@ async def mark_conversation_read(
             exclude_user_id=current_user.pk_id
         )
         
-def get_total_unread_count(db, user_id: int) -> int:
+def get_total_unread_count(db, room_id: int, user_id: int) -> int:
     return (
         db.query(func.count(ChatMessage.id))
         .join(ChatRoom, ChatRoom.id == ChatMessage.room_id)
         .filter(
+            ChatMessage.room_id == room_id,
             ChatMessage.is_read == False,
             ChatMessage.sender_id != user_id,
             (ChatRoom.candidate_user_id == user_id) |
@@ -637,39 +694,28 @@ async def toggle_reaction(
 
     db.commit()
 
-    reactions_summary = (
-        db.query(
-            MessageReaction.reaction,
-            func.count(MessageReaction.id)
-        )
-        .filter(MessageReaction.message_id == message_id)
-        .group_by(MessageReaction.reaction)
-        .all()
+    reaction_data = get_message_reactions(
+        db=db,
+        message_id=message_id,
+        current_user_id=user_id
     )
 
-    reactions_dict = {
-        r: {"count": c}
-        for r, c in reactions_summary
-    }
-    
-    my_reaction = (
-        db.query(MessageReaction)
-        .filter_by(message_id=message_id, user_id=user_id)
-        .first()
-    )
-
-    payload = {
+    room_payload = {
         "type": "message_reaction",
         "room_id": room.id,
-        "message_id": message_id,
-        "user_id": user_id,
-        "reaction": reaction.value,
-        "action": action,
-        "reactions": reactions_dict,
-        "my_reaction": my_reaction.reaction if my_reaction else None
+        "message_id": reaction_data["message_id"],
+        "reactions": reaction_data["reactions"],
     }
 
-    await manager.broadcast_to_room(room.id, payload)
+    await manager.broadcast_to_room(room.id, room_payload)
+
+    personal_payload = {
+        "type": "message_reaction_personal",
+        "message_id": reaction_data["message_id"],
+        "my_reaction": reaction_data["my_reaction"],
+    }
+
+    await manager.broadcast_to_user(user_id, personal_payload)
 
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(
@@ -681,7 +727,11 @@ async def toggle_reaction(
             }
         )
 
-    return payload
+    return {
+        "message_id": reaction_data["message_id"],
+        "reactions": reaction_data["reactions"],
+        "my_reaction": reaction_data["my_reaction"],
+    }
 
 async def remove_reaction(
     db: Session,
@@ -760,17 +810,40 @@ def get_message_reactions(
     my_reaction = None
 
     for reaction, user_id, user_name in results:
-        reactions_data[reaction]["count"] += 1
-        reactions_data[reaction]["users"].append({
+        reaction_value = (
+            reaction.value if hasattr(reaction, "value") else reaction
+        )
+
+        reactions_data[reaction_value]["count"] += 1
+        reactions_data[reaction_value]["users"].append({
             "id": user_id,
             "user_name": user_name
         })
 
         if user_id == current_user_id:
-            my_reaction = reaction
+            my_reaction = reaction_value
 
     return {
         "message_id": message_id,
         "reactions": reactions_data,
         "my_reaction": my_reaction
     }
+
+def get_unread_counts_for_user(db: Session, user_id: int) -> dict[int, int]:
+    rows = (
+        db.query(
+            ChatMessage.room_id,
+            func.count(ChatMessage.id)
+        )
+        .join(ChatRoom, ChatRoom.id == ChatMessage.room_id)
+        .filter(
+            ChatMessage.is_read == False,
+            ChatMessage.sender_id != user_id,
+            (ChatRoom.candidate_user_id == user_id) |
+            (ChatRoom.employer_user_id == user_id)
+        )
+        .group_by(ChatMessage.room_id)
+        .all()
+    )
+
+    return {room_id: count for room_id, count in rows}

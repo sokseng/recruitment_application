@@ -79,23 +79,6 @@ export default function Topbar() {
     { id: 4, label: "🐶 Dog", isCorrect: false },
   ];
 
-  useEffect(() => {
-    const fetchUnreadData = async () => {
-      const unreadData = await api.get("/chat/messages/unread/count");
-
-      const countsByRoom = unreadData.data.count;
-
-      const countsObject = typeof countsByRoom === "number"
-        ? { 0: countsByRoom }
-        : countsByRoom;
-
-      useUnreadStore.getState().setAllChats(countsObject);
-
-    };
-
-    fetchUnreadData();
-  }, []);
-
   const handleForgotPassword = (e) => {
     e.preventDefault();
     navigate('/forgot_password');

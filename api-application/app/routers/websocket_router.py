@@ -16,7 +16,8 @@ from app.websockets.chat_manager import manager
 from app.controllers.chat_controller import (
     get_or_create_chat_room,
     send_file_message,
-    mark_conversation_read
+    mark_conversation_read,
+    get_unread_counts_for_user
 )
 from app.dependencies.auth import verify_access_token
 from starlette.websockets import WebSocketClose
@@ -24,9 +25,50 @@ import time
 from fastapi.encoders import jsonable_encoder
 
 
-router = APIRouter(prefix="/ws/chat", tags=["chat"])
+router = APIRouter(prefix="/ws", tags=["chat"])
 
-@router.websocket("/room/{room_id}")
+@router.websocket("/")
+async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
+    await ws.accept()
+
+    user = await get_current_user_ws(ws, db)
+    if not user:
+        await ws.close(code=1008)
+        return
+
+    user_id = user.pk_id
+    
+    await manager.connect(ws, user_id, room_id=None)
+    
+    unread_counts = get_unread_counts_for_user(db, user_id) 
+
+    await ws.send_json({
+        "type": "unread_snapshot",
+        "counts": unread_counts
+    })
+
+    try:
+        while True:
+            data = await ws.receive_json()
+            event_type = data["type"]
+            payload = data.get("payload", {})
+
+            if event_type == "chat.join":
+                manager.join_room(user_id, payload["room_id"])
+
+            elif event_type == "chat.leave":
+                manager.leave_room(user_id, payload["room_id"])
+                
+            else:
+                await ws.send_json({
+                        "type": "error",
+                        "message": "Invalid event type"
+                    })
+
+    except WebSocketDisconnect:
+        manager.disconnect(ws, user_id)
+
+@router.websocket("/chat/room/{room_id}")
 async def websocket_chat(
     websocket: WebSocket,
     room_id: int,
@@ -67,6 +109,10 @@ async def websocket_chat(
     
     await manager.connect(websocket, current_user_id, room.id)
     
+    online_users = manager.get_online_users(room.id) - {current_user_id}
+    for uid in online_users:
+        await websocket.send_json({"type": "presence", "userId": uid, "online": True})
+
     try:
         while True:
             data = await websocket.receive_json()
@@ -101,36 +147,3 @@ async def websocket_chat(
             },
             exclude_user_id=current_user_id
         )
-        
-@router.websocket("/ws")
-async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
-    await ws.accept()
-
-    user = await get_current_user_ws(ws, db)
-    if not user:
-        await ws.close(code=1008)
-        return
-
-    user_id = user.pk_id
-    await manager.connect(ws, user_id)
-
-    try:
-        while True:
-            data = await ws.receive_json()
-            event_type = data["type"]
-            payload = data.get("payload", {})
-
-            if event_type == "chat.join":
-                manager.join_room(user_id, payload["room_id"])
-
-            elif event_type == "chat.leave":
-                manager.leave_room(user_id, payload["room_id"])
-                
-            else:
-                await ws.send_json({
-                        "type": "error",
-                        "message": "Invalid event type"
-                    })
-
-    except WebSocketDisconnect:
-        manager.disconnect(ws, user_id)

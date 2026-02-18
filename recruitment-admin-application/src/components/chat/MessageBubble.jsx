@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Button, Avatar, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Button, Avatar, IconButton, Link } from '@mui/material';
 import Popper from '@mui/material/Popper';
 import Fade from '@mui/material/Fade';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
@@ -36,7 +36,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
     const [isHovered, setIsHovered] = React.useState(false);
 
     const handleMenuOpen = (event) => {
-        if (message.type === 'system') return;
+        if (message.type === 'call') return;
         setAnchorEl(event.currentTarget);
     };
 
@@ -198,6 +198,35 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             {message.content}
                         </Typography>
                     )}
+                    {message.type === 'system' && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                                color: isOwn ? 'white' : 'gray',
+                                whiteSpace: 'pre-line',
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            {message.content.split(' ').map((word, i) =>
+                                word.startsWith('/') || word.startsWith('http') ? (
+                                    <Link
+                                        key={i}
+                                        href={word}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        sx={{ color: isOwn ? 'orange' : 'primary.main', p:0 }}
+                                    >
+                                        {word}{' '}
+                                    </Link>
+                                ) : (
+                                    word + ' '
+                                )
+                            )}
+                        </Typography>
+                    )}
+
                     {message.type === 'voice' && (
                         <VoiceMessagePlayer
                             url={`${BASE_URL}${message.file_url}`}
@@ -223,7 +252,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         />
                     )}
 
-                    {message.type === 'system' && (
+                    {message.type === 'call' && (
                         <Box
                             sx={{
                                 color: isOwn ? 'white' : 'text.primary',
@@ -307,7 +336,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     display: 'flex',
                                     alignItems: 'center',
                                     textAlign: 'right',
-                                    flexDirection: isOwn? 'row':'row-reverse',
+                                    flexDirection: isOwn ? 'row' : 'row-reverse',
                                     gap: 0.5
                                 }}
                             >
@@ -326,16 +355,22 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                         }}
                                     />
                                 )}
-
-                                <FormatTime time={message.created_at} />
-                                {message.edited_at && (
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ ml: 0.5, opacity: 0.7}}
-                                    >
-                                        · edited
-                                    </Typography>
-                                )}
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <FormatTime time={message.created_at} />
+                                    {message.edited_at && (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ ml: 0.5, opacity: 0.7 }}
+                                        >
+                                            · edited
+                                        </Typography>
+                                    )}
+                                </Box>
                             </Typography>
                             <Box
                                 sx={{
@@ -356,7 +391,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-                {message.type !== 'system' && (
+                {message.type !== 'call' && (
                     <MenuItem
                         onClick={(e) => {
                             e.stopPropagation();
@@ -368,7 +403,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         <ListItemText>React</ListItemText>
                     </MenuItem>
                 )}
-                {message.type !== 'system' && (
+                {message.type !== 'call' && (
                     <MenuItem onClick={() => {
                         handleMenuClose();
                         if (isPin) {
@@ -382,7 +417,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     </MenuItem>
                 )}
 
-                {message.type !== 'system' && (
+                {message.type !== 'call' && (
                     <MenuItem onClick={() => {
                         handleMenuClose();
                         onReply?.(message);
@@ -392,7 +427,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     </MenuItem>
                 )}
 
-                {message.type !== 'system' && (
+                {message.type !== 'call' && (
                     <MenuItem onClick={() => {
                         handleMenuClose();
                         onForward?.(message);
