@@ -11,6 +11,10 @@ from app.models.employer_model import Employer
 from app.models.job_application_model import JobApplication
 from app.models.candidate_resume_model import CandidateResume
 from app.models.job_model import Job
+from app.models.chat_room import ChatRoom
+from app.models.chat_message import MessageType
+from app.models.user_model import User
+from app.controllers.chat_controller import get_or_create_chat_room
 from app.schemas.job_application_schema import (
     ApplicationStatusUpdate,
     JobApplicationOut,
@@ -27,6 +31,7 @@ import os
 from PyPDF2 import PdfReader, PdfWriter
 from PIL import Image
 import mimetypes
+from app.controllers.chat_controller import send_text_message
 
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
@@ -165,7 +170,7 @@ def list_job_applications(
     return get_applications_for_job(db, job_id, employer.pk_id, skip, limit)
 
 @router.patch("/{application_id}/status", response_model=dict)
-def update_status(
+async def update_status(
     application_id: int,
     data: ApplicationStatusUpdate,               
     db: Session = Depends(get_db),
@@ -176,6 +181,35 @@ def update_status(
         raise HTTPException(403, "Employer profile required")
 
     updated = update_application_status(db, application_id, data.new_status, employer.pk_id)
+    
+    print(f"application_status: {updated.application_status}")
+    
+    room = get_or_create_chat_room(
+        db=db,
+        user_a_id=updated.candidate.user.pk_id,
+        user_b_id=current_user_id,
+    )
+    
+    if room:
+        current_user = db.query(User).filter(User.pk_id == current_user_id).first()
+        
+        job_link = f"/applied_candidates?job={updated.job_id}"
+
+        message = (
+            f"📌 Application Status Update\n\n"
+            f"Your application has been "
+            f"{updated.application_status.value}.\n\n"
+            # f"View details: {job_link}"
+        )
+        
+        await send_text_message(
+            db=db,
+            current_user=current_user,
+            room=room,
+            content=message,
+            message_type=MessageType.SYSTEM,
+        )
+        
     return {"message": f"Application status updated to {updated.application_status}"}
 
 @router.get("/job/{job_id}/my-status")

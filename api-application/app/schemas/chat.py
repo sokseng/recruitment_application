@@ -10,6 +10,8 @@ class MessageType(str, Enum):
     VOICE = "voice"
     VIDEO = "video"
     FILE = "file"
+    SYSTEM = "system"
+    CALL = "call"
     
 class ReactionType(str, Enum):
     LIKE = "like"

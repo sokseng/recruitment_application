@@ -9,6 +9,8 @@ class MessageType(str, enum.Enum):
     VOICE = "voice"
     VIDEO = "video"
     FILE = "file"
+    SYSTEM = "system"
+    CALL = "call"
 
 class ChatMessage(Base):
     __tablename__ = "t_chat_message"
