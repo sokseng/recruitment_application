@@ -1,4 +1,6 @@
 #job_application_controller.py
+import logging
+import os
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from app.models.job_application_model import JobApplication, ApplicationStatus
@@ -6,16 +8,21 @@ from app.models.job_model import Job, JobStatus
 from app.models.candidate_resume_model import CandidateResume
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy import select
+from sqlalchemy import func, select
 from app.models.candidate_model import Candidate
+from app.models.resume_image_model import ResumeImage
+from app.routers import job_application_router
+
+logger = logging.getLogger(__name__)
 
 def apply_to_job(
     db: Session,
     job_id: int,
     candidate_id: int,
-    resume_id: Optional[int] = None,
-    cover_letter_file: Optional[str] = None,     # ← NEW: filename
-    image_attach_file: Optional[str] = None,
+    resume_id: int,                           
+    cover_letter_filename: Optional[str] = None,  
+    new_image_filenames: Optional[List[str]] = None,
+    delete_cover_letter: bool = False,
     reset_status_on_reapply: bool = True,
 ) -> JobApplication:
     
@@ -26,30 +33,47 @@ def apply_to_job(
     if job.status != JobStatus.OPEN:
         raise HTTPException(400, "This job is no longer accepting applications")
 
-    # ─── Resume validation ───────────────────────────────────────
-    if resume_id:
-        resume = db.get(CandidateResume, resume_id)
-        if not resume or resume.candidate_id != candidate_id:
-            raise HTTPException(400, "Invalid or unauthorized resume")
-    else:
-        primary = db.query(CandidateResume).filter(
-            CandidateResume.candidate_id == candidate_id,
-            CandidateResume.is_primary == True
-        ).first()
-        if not primary:
-            raise HTTPException(400, "No primary resume found. Please set one or select a resume.")
-        resume = primary
-        resume_id = primary.pk_id
-    
-    # ─── Update cover letter & image if provided ─────────────────────
+    resume = db.get(CandidateResume, resume_id)
+    if not resume or resume.candidate_id != candidate_id:
+        raise HTTPException(400, "Invalid or unauthorized resume")
+
     update_needed = False
 
-    if cover_letter_file is not None:
-        resume.cover_letter_file = cover_letter_file
+    if cover_letter_filename is not None:
+        resume.cover_letter_file = cover_letter_filename
         update_needed = True
+    
+    elif delete_cover_letter:
+        if resume.cover_letter_file:
+            file_path = os.path.join(job_application_router.UPLOAD_FOLDER_ATTACHMENTS, resume.cover_letter_file)
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Deleted cover letter file: {file_path}")
+                else:
+                    logger.warning(f"Cover letter file not found on disk: {file_path}")
+            except Exception as e:
+                logger.exception(f"Failed to delete cover letter file {file_path}: {e}")
+                # Continue – do not fail the whole request
 
-    if image_attach_file is not None:
-        resume.image_attach_file = image_attach_file
+            resume.cover_letter_file = None
+            update_needed = True
+
+    if new_image_filenames and len(new_image_filenames) > 0:
+        current_max_order = (
+            db.query(func.max(ResumeImage.sort_order))
+            .filter(ResumeImage.resume_id == resume.pk_id)
+            .scalar() or -1
+        )
+        for fname in new_image_filenames:
+            new_img = ResumeImage(
+                resume_id=resume.pk_id,
+                filename=fname,
+                original_name=fname,  # you can improve this later
+                size_bytes=None,
+                sort_order=current_max_order + 1
+            )
+            db.add(new_img)
         update_needed = True
 
     if update_needed:
@@ -64,12 +88,16 @@ def apply_to_job(
     ).first()
 
     if existing:
-        existing.candidate_resume_id = resume_id
-        if reset_status_on_reapply:
-            existing.application_status = ApplicationStatus.PENDING
-        db.commit()
-        db.refresh(existing)
+        # Only update resume_id if it actually changed
+        if existing.candidate_resume_id != resume_id:
+            existing.candidate_resume_id = resume_id
+            if reset_status_on_reapply:
+                existing.application_status = ApplicationStatus.PENDING
+            db.add(existing)
+            db.commit()
+            db.refresh(existing)
         return existing
+
     else:
         # ─── CREATE new application ──────────────────────────────
         new_application = JobApplication(

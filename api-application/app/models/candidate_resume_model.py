@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Foreign
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 import enum
+from app.models.resume_image_model import ResumeImage
 
 
 class ResumeType(str, enum.Enum):
@@ -24,7 +25,6 @@ class CandidateResume(Base):
     resume_content = Column(Text, nullable=True)
     recommendation_letter = Column(Text, nullable=True)
     cover_letter_file = Column(String(255), nullable=True)    
-    image_attach_file = Column(String(255), nullable=True)
 
     is_primary = Column(Boolean, nullable=False, default=False)
 
@@ -32,3 +32,9 @@ class CandidateResume(Base):
     updated_date = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
     candidate = relationship("Candidate", back_populates="resumes")
+    images = relationship(
+        "ResumeImage",
+        back_populates="resume",
+        cascade="all, delete-orphan",   
+        order_by="ResumeImage.sort_order"
+    )

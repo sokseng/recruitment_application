@@ -57,15 +57,12 @@ import {
   CheckCircle,
   EmailOutlined,
   Home,
-  Image,
   Info,
-  InfoOutlined,
   LanguageOutlined,
   LocationCity,
   PhoneOutlined,
   PictureAsPdf,
   Send,
-  UpdateSharp,
   UploadFile,
 } from "@mui/icons-material";
 import useAuthStore from "../store/useAuthStore";
@@ -73,10 +70,10 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -138,7 +135,33 @@ export default function Dashboard() {
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
   const [coverLetterFile, setCoverLetterFile] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [previousCoverLetterName, setPreviousCoverLetterName] = useState(null);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [coverLetterToDelete, setCoverLetterToDelete] = useState(false);
+  const [originalResumeId, setOriginalResumeId] = useState(null);
+  const canUploadNewCoverLetter =
+    !previousCoverLetterName || coverLetterToDelete;
+
+  const handleStageDeleteCoverLetter = () => {
+    setCoverLetterToDelete(true);
+    setCoverLetterFile(null);
+  };
+
+  const handleUndoDeleteCoverLetter = () => {
+    setCoverLetterToDelete(false);
+  };
+
+  const handleStageDeleteImage = (imageId) => {
+    if (!imagesToDelete.includes(imageId)) {
+      setImagesToDelete((prev) => [...prev, imageId]);
+    }
+  };
+
+  const handleUndoDeleteImage = (imageId) => {
+    setImagesToDelete((prev) => prev.filter((id) => id !== imageId));
+  };
 
   const getDateRange = () => {
     const today = dayjs().startOf("day");
@@ -280,11 +303,93 @@ export default function Dashboard() {
   ]);
 
   useEffect(() => {
-    if (applyDialogOpen) {
-      setCoverLetterFile(null);
-      setImageFile(null);
+    if (applyDialogOpen && selectedResumeId) {
+      loadResumeExtras(selectedResumeId);
     }
-  }, [applyDialogOpen]);
+  }, [selectedResumeId, applyDialogOpen]);
+
+  const loadResumeExtras = async (resumeId) => {
+    if (!resumeId) {
+      setExistingImages([]);
+      setPreviousCoverLetterName(null);
+      return;
+    }
+
+    try {
+      const imagesRes = await api.get(
+        `/applications/resumes/${resumeId}/images`,
+      );
+      setExistingImages(imagesRes.data || []);
+
+      const foundResume = resumes.find(
+        (r) => String(r.pk_id) === String(resumeId),
+      );
+
+      if (foundResume) {
+        setPreviousCoverLetterName(foundResume.cover_letter_file || null);
+      } else {
+        console.warn(`Resume ${resumeId} not found in loaded resumes list`);
+        setPreviousCoverLetterName(null);
+      }
+    } catch (err) {
+      console.error("Failed to load resume extras:", err);
+      setSnackbar({
+        open: true,
+        message: "Could not load some resume attachments",
+        severity: "warning",
+      });
+
+      setExistingImages([]);
+      setPreviousCoverLetterName(null);
+    }
+  };
+
+  const handleOpenApplyDialog = async () => {
+    if (!selectedJob) return;
+
+    setJobToApply(selectedJob);
+    setApplyDialogOpen(true);
+
+    setImagesToDelete([]);
+    setImageFiles([]);
+    setCoverLetterFile(null);
+
+    try {
+      const res = await api.get(
+        `/applications/job/${selectedJob.pk_id}/my-status`,
+      );
+      const data = res.data;
+
+      let initialResumeId = null;
+
+      if (data.applied && data.resume_id) {
+        initialResumeId = String(data.resume_id);
+        setOriginalResumeId(initialResumeId);
+        setPreviousCoverLetterName(data.cover_letter_filename || null);
+      } else {
+        const primary = resumes.find((r) => r.is_primary);
+        if (primary) {
+          initialResumeId = String(primary.pk_id);
+        }
+      }
+
+      if (initialResumeId) {
+        setSelectedResumeId(initialResumeId);
+        await loadResumeExtras(initialResumeId);
+      } else {
+        setOriginalResumeId(null);
+        setPreviousCoverLetterName(null);
+        setExistingImages([]);
+      }
+    } catch (err) {
+      const primary = resumes.find((r) => r.is_primary);
+      if (primary) {
+        const pid = String(primary.pk_id);
+        setSelectedResumeId(pid);
+        await loadResumeExtras(pid);
+      }
+    }
+  };
 
   const [skip, setSkip] = useState(0);
   const [limit] = useState(20);
@@ -302,12 +407,9 @@ export default function Dashboard() {
         params.search = searchTerm.trim();
       }
 
-      // if (typeFilter !== "All" && typeFilter.length > 0) {
-      //   params.job_types = typeFilter.join(",");
-      // }
       if (typeFilter !== "All" && typeFilter.length > 0) {
-        const validTypes = ["Full-time", "Part-time", "Internship"]; // ← match your DB enum!
-        const safeTypes = typeFilter.filter(t => validTypes.includes(t));
+        const validTypes = ["Full-time", "Part-time", "Internship"];
+        const safeTypes = typeFilter.filter((t) => validTypes.includes(t));
         if (safeTypes.length > 0) {
           params.job_types = safeTypes.join(",");
         }
@@ -359,7 +461,6 @@ export default function Dashboard() {
       setHasMore(newJobs.length === limit);
       setSkip((prev) => (isLoadMore ? prev + limit : limit));
     } catch (err) {
-      console.error("Failed to load jobs:", err);
       setError("Failed to load jobs. Please try again.");
     } finally {
       setLoading(false);
@@ -451,10 +552,9 @@ export default function Dashboard() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // Success
       const newResume = res.data;
       setResumes((prev) => [...prev, newResume]);
-      setSelectedResumeId(newResume.pk_id.toString()); // auto-select it
+      setSelectedResumeId(newResume.pk_id.toString());
 
       setSnackbar({
         open: true,
@@ -479,42 +579,72 @@ export default function Dashboard() {
   };
 
   const handleApplyWithResume = async () => {
-    if (!jobToApply) return;
-
-    const formData = new FormData();
-    formData.append("job_id", jobToApply.pk_id.toString());
-
-    if (selectedResumeId) {
-      formData.append("candidate_resume_id", selectedResumeId);
-    }
-
-    if (coverLetterFile) {
-      formData.append("cover_letter_file", coverLetterFile);
-    }
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
+    if (!jobToApply || !selectedResumeId) return;
 
     try {
       setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: true }));
 
-      await api.post("/applications/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      if (imagesToDelete.length > 0) {
+        await Promise.all(
+          imagesToDelete.map((imageId) =>
+            api.delete(
+              `/applications/resumes/${selectedResumeId}/images/${imageId}`,
+            ),
+          ),
+        );
+      }
+
+      const formData = new FormData();
+      formData.append("job_id", jobToApply.pk_id.toString());
+      formData.append("candidate_resume_id", selectedResumeId);
+
+      if (coverLetterToDelete && !coverLetterFile) {
+        formData.append("delete_cover_letter", "true");
+      }
+      if (coverLetterFile) {
+        formData.append("cover_letter_file", coverLetterFile);
+      }
+
+      imageFiles.forEach((file) => {
+        formData.append("images", file);
       });
+
+      await api.post("/applications/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const resumesRes = await api.get("/candidate/resumes/");
+      setResumes(resumesRes.data || []);
+
+      const statusRes = await api.get(
+        `/applications/job/${jobToApply.pk_id}/my-status`,
+      );
+      const data = statusRes.data;
+
+      setHasAppliedToThisJob(data.applied);
+
+      if (data.applied && data.resume_id) {
+        const newResumeId = String(data.resume_id);
+        setSelectedResumeId(newResumeId);
+        await loadResumeExtras(newResumeId);
+      } else {
+        setPreviousCoverLetterName(null);
+        setExistingImages([]);
+      }
+
+      setCoverLetterFile(null);
+      setCoverLetterToDelete(false);
+      setImagesToDelete([]);
+      setImageFiles([]);
 
       setSnackbar({
         open: true,
         message: hasAppliedToThisJob
-          ? "Application updated successfully!"
+          ? "Application updated!"
           : "Application submitted!",
         severity: "success",
       });
 
-      setCoverLetterFile(null);
-      setImageFile(null);
       setApplyDialogOpen(false);
       setHasAppliedToThisJob(true);
       setAppliedJobIds((prev) => new Set([...prev, jobToApply.pk_id]));
@@ -609,397 +739,446 @@ export default function Dashboard() {
             ),
           }}
         />
-          {/* Single MoreVert button */}
-          <Tooltip title="Filters & Sorting" arrow placement="bottom">
-            <IconButton
-              size="small"
-              onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
-              sx={{
-                p: 0.5,
-                width: 34,
-                height: 34,
-                borderRadius: 1,
-                bgcolor: "teal",
-                color: "#fff",
-                "&:hover": { bgcolor: "teal" },
-              }}
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          <Menu
-            anchorEl={filterMenuAnchor}
-            open={openFilterMenu}
-            onClose={() => setFilterMenuAnchor(null)}
-            PaperProps={{
-              sx: {
-                width: 220,
-                maxHeight: 480,
-                mt: 1,
-                borderRadius: 2,
-                boxShadow: 4,
-                border: "1px solid",
-                borderColor: "teal"
-              },
-            }}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
+        {/* Single MoreVert button */}
+        <Tooltip title="Filters & Sorting" arrow placement="bottom">
+          <IconButton
+            size="small"
+            onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
+            sx={{
+              p: 0.5,
+              width: 34,
+              height: 34,
+              borderRadius: 1,
+              bgcolor: "teal",
+              color: "#fff",
+              "&:hover": { bgcolor: "teal" },
             }}
           >
-            {/* Header */}
-            <Box p={1}>
-              <Typography variant="subtitle2" fontWeight={600} color="text.primary">
-                Filter & Sort Jobs
-              </Typography>
-            </Box>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
 
-            <Divider />
-
-            {/* FILTERS GROUP */}
-            <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                Filters
-              </Typography>
-            </Box>
-
-            {/* Categories */}
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setCategoryAnchor(e.currentTarget);
-              }}
-              sx={{ py: 1.1 }}
+        <Menu
+          anchorEl={filterMenuAnchor}
+          open={openFilterMenu}
+          onClose={() => setFilterMenuAnchor(null)}
+          PaperProps={{
+            sx: {
+              width: 220,
+              maxHeight: 480,
+              mt: 1,
+              borderRadius: 2,
+              boxShadow: 4,
+              border: "1px solid",
+              borderColor: "teal",
+            },
+          }}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "right",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "right",
+          }}
+        >
+          {/* Header */}
+          <Box p={1}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              color="text.primary"
             >
-              <ListItemIcon>
-                <CategoryRoundedIcon fontSize="small" color="action" />
-              </ListItemIcon>
-              <ListItemText primary="Categories" primaryTypographyProps={{fontSize: "15px"}}/>
-              {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
-                <Chip
-                  size="small"
-                  label={categoryFilter.length}
-                  color="primary"
-                  sx={{ ml: 'auto', minWidth: 32, height: 20, fontSize: '0.75rem' }}
-                />
-              )}
-            </MenuItem>
+              Filter & Sort Jobs
+            </Typography>
+          </Box>
 
-            {/* Job Type */}
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setTypeAnchor(e.currentTarget);
-              }}
-              sx={{ py: 1.1 }}
+          <Divider />
+
+          {/* FILTERS GROUP */}
+          <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={500}
             >
-              <ListItemIcon>
-                <WorkOutlineIcon fontSize="small" color="action" />
-              </ListItemIcon>
-              <ListItemText primary="Job Type" primaryTypographyProps={{fontSize: "15px"}}/>
-              {Array.isArray(typeFilter) && typeFilter.length > 0 && typeFilter[0] !== "All" && (
+              Filters
+            </Typography>
+          </Box>
+
+          {/* Categories */}
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setCategoryAnchor(e.currentTarget);
+            }}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <CategoryRoundedIcon fontSize="small" color="action" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Categories"
+              primaryTypographyProps={{ fontSize: "15px" }}
+            />
+            {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
+              <Chip
+                size="small"
+                label={categoryFilter.length}
+                color="primary"
+                sx={{
+                  ml: "auto",
+                  minWidth: 32,
+                  height: 20,
+                  fontSize: "0.75rem",
+                }}
+              />
+            )}
+          </MenuItem>
+
+          {/* Job Type */}
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setTypeAnchor(e.currentTarget);
+            }}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <WorkOutlineIcon fontSize="small" color="action" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Job Type"
+              primaryTypographyProps={{ fontSize: "15px" }}
+            />
+            {Array.isArray(typeFilter) &&
+              typeFilter.length > 0 &&
+              typeFilter[0] !== "All" && (
                 <Chip
                   size="small"
                   label={typeFilter.length}
                   color="primary"
-                  sx={{ ml: 'auto', minWidth: 32, height: 20, fontSize: '0.75rem' }}
+                  sx={{
+                    ml: "auto",
+                    minWidth: 32,
+                    height: 20,
+                    fontSize: "0.75rem",
+                  }}
                 />
               )}
-            </MenuItem>
+          </MenuItem>
 
-            {/* Posted Date Filter */}
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setDateFilterAnchor(e.currentTarget);
-              }}
-              sx={{ py: 1.1 }}
-            >
-              <ListItemIcon>
-                <EventIcon fontSize="small" color="action" />
-              </ListItemIcon>
-              <ListItemText primary="Posted Date" primaryTypographyProps={{fontSize: "15px"}}/>
-              {dateFilterMode !== "all" && (
-                <Chip
-                  size="small"
-                  label={dateFilterMode === "today" ? "Today" : dateFilterMode === "last7" ? "7 days" : "Custom"}
-                  variant="outlined"
-                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
-                />
-              )}
-            </MenuItem>
-             {/* RESET OPTIONS */}
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <Button
-                variant="outlined"
-                color="error"
+          {/* Posted Date Filter */}
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setDateFilterAnchor(e.currentTarget);
+            }}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <EventIcon fontSize="small" color="action" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Posted Date"
+              primaryTypographyProps={{ fontSize: "15px" }}
+            />
+            {dateFilterMode !== "all" && (
+              <Chip
                 size="small"
-                startIcon={<Cancel />}
+                label={
+                  dateFilterMode === "today"
+                    ? "Today"
+                    : dateFilterMode === "last7"
+                      ? "7 days"
+                      : "Custom"
+                }
+                variant="outlined"
                 sx={{
-                  textTransform: "none",
+                  ml: "auto",
+                  minWidth: 60,
+                  height: 20,
                   fontSize: "0.75rem",
-                  py: 0.25,
-                  px: 0.50,
-                  mt: 0.5,
                 }}
-                onClick={() => {
-                  setSearchTerm("");
-                  setTypeFilter("All");
-                  setLevelFilter("All");
-                  setCategoryFilter(["All"]);
-                  setDateFilterMode("all");
-                  setDateFrom(null);
-                  setDateTo(null);
-                  setFilterMenuAnchor(null);
-                }}
-              >
-                Reset
-              </Button>
-            </Box>
-
-
-            <Divider variant="middle" sx={{ my: 1 }} />
-
-            {/* SORT GROUP */}
-            <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                Sort by
-              </Typography>
-            </Box>
-
-            {/* Sort by Date */}
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setDateSortAnchor(e.currentTarget);
+              />
+            )}
+          </MenuItem>
+          {/* RESET OPTIONS */}
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={<Cancel />}
+              sx={{
+                textTransform: "none",
+                fontSize: "0.75rem",
+                py: 0.25,
+                px: 0.5,
+                mt: 0.5,
               }}
-              sx={{ py: 1.1 }}
-            >
-              <ListItemIcon>
-                <EventIcon fontSize="small" color="action" />
-              </ListItemIcon>
-              <ListItemText primary="Date Posted" primaryTypographyProps={{fontSize: "15px"}}/>
-              {sortBy.startsWith("date-") && (
-                <Chip
-                  size="small"
-                  label={sortBy === "date-desc" ? "Newest" : "Oldest"}
-                  variant="outlined"
-                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
-                />
-              )}
-            </MenuItem>
-
-            {/* Sort by Title */}
-            <MenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                setTitleSortAnchor(e.currentTarget);
+              onClick={() => {
+                setSearchTerm("");
+                setTypeFilter("All");
+                setLevelFilter("All");
+                setCategoryFilter(["All"]);
+                setDateFilterMode("all");
+                setDateFrom(null);
+                setDateTo(null);
+                setFilterMenuAnchor(null);
               }}
-              sx={{ py: 1.1 }}
             >
-              <ListItemIcon>
-                <BadgeIcon fontSize="small" color="action" />
-              </ListItemIcon>
-              <ListItemText primary="Job Title" primaryTypographyProps={{fontSize: "15px"}}/>
-              {sortBy.startsWith("title-") && (
-                <Chip
-                  size="small"
-                  label={sortBy === "title-asc" ? "A–Z" : "Z–A"}
-                  variant="outlined"
-                  sx={{ ml: 'auto', minWidth: 60, height: 20, fontSize: '0.75rem' }}
-                />
-              )}
-            </MenuItem>
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <Button
+              Reset
+            </Button>
+          </Box>
+
+          <Divider variant="middle" sx={{ my: 1 }} />
+
+          {/* SORT GROUP */}
+          <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={500}
+            >
+              Sort by
+            </Typography>
+          </Box>
+
+          {/* Sort by Date */}
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setDateSortAnchor(e.currentTarget);
+            }}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <EventIcon fontSize="small" color="action" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Date Posted"
+              primaryTypographyProps={{ fontSize: "15px" }}
+            />
+            {sortBy.startsWith("date-") && (
+              <Chip
+                size="small"
+                label={sortBy === "date-desc" ? "Newest" : "Oldest"}
                 variant="outlined"
-                color="warning"
-                size="small"
-                startIcon={<Cancel fontSize="small" />}
-                sx={{ 
-                  textTransform: "none",
+                sx={{
+                  ml: "auto",
+                  minWidth: 60,
+                  height: 20,
                   fontSize: "0.75rem",
-                  py: 0.25,
-                  px: 0.50,
-                  mt: 0.5, 
                 }}
-                onClick={() => {
-                  setSortBy("date-desc");
-                  setFilterMenuAnchor(null);
-                }}
-              >
-                Reset
-              </Button>
-            </Box>
+              />
+            )}
+          </MenuItem>
 
-            <Divider sx={{ my: 1 }} />
-
-            <Box sx={{ display: "flex", justifyContent: "end" }} p={1}>
-              <Button
-                variant="contained"
+          {/* Sort by Title */}
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setTitleSortAnchor(e.currentTarget);
+            }}
+            sx={{ py: 1.1 }}
+          >
+            <ListItemIcon>
+              <BadgeIcon fontSize="small" color="action" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Job Title"
+              primaryTypographyProps={{ fontSize: "15px" }}
+            />
+            {sortBy.startsWith("title-") && (
+              <Chip
                 size="small"
-                fullWidth
-                startIcon={<Cancel fontSize="small" />}
-                sx={{ textTransform: "none", fontWeight: 600 }}
-                onClick={() => {
-                  setSearchTerm("");
-                  setTypeFilter("All");
-                  setLevelFilter("All");
-                  setCategoryFilter(["All"]);
-                  setSortBy("date-desc");
-                  setDateFilterMode("all");
-                  setDateFrom(null);
-                  setDateTo(null);
-                  setFilterMenuAnchor(null);
+                label={sortBy === "title-asc" ? "A–Z" : "Z–A"}
+                variant="outlined"
+                sx={{
+                  ml: "auto",
+                  minWidth: 60,
+                  height: 20,
+                  fontSize: "0.75rem",
                 }}
-              >
-                Reset All
-              </Button>
-            </Box>
+              />
+            )}
+          </MenuItem>
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Button
+              variant="outlined"
+              color="warning"
+              size="small"
+              startIcon={<Cancel fontSize="small" />}
+              sx={{
+                textTransform: "none",
+                fontSize: "0.75rem",
+                py: 0.25,
+                px: 0.5,
+                mt: 0.5,
+              }}
+              onClick={() => {
+                setSortBy("date-desc");
+                setFilterMenuAnchor(null);
+              }}
+            >
+              Reset
+            </Button>
+          </Box>
 
-          </Menu>
+          <Divider sx={{ my: 1 }} />
 
-          <Popover
-            open={openCategory}
-            anchorEl={categoryAnchor}
-            onClose={() => setCategoryAnchor(null)}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "left",
-            }}
-            PaperProps={{
-              sx: {
-                width: 310,
-                maxHeight: 420,
-                borderRadius: 2,
-                p: 2.5,
-                overflowY: "auto",
-                border: "3px solid",
-                borderColor: "divider"
+          <Box sx={{ display: "flex", justifyContent: "end" }} p={1}>
+            <Button
+              variant="contained"
+              size="small"
+              fullWidth
+              startIcon={<Cancel fontSize="small" />}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+              onClick={() => {
+                setSearchTerm("");
+                setTypeFilter("All");
+                setLevelFilter("All");
+                setCategoryFilter(["All"]);
+                setSortBy("date-desc");
+                setDateFilterMode("all");
+                setDateFrom(null);
+                setDateTo(null);
+                setFilterMenuAnchor(null);
+              }}
+            >
+              Reset All
+            </Button>
+          </Box>
+        </Menu>
 
-              },
-            }}
-          >
-            <List dense disablePadding>
-              {/* ALL */}
-              <ListItemButton
-                selected={categoryFilter.includes("All")}
-                onClick={() => setCategoryFilter(["All"])}
-                sx={{ borderRadius: 1, py: 0.5 }}
-              >
-                <Checkbox
-                  size="small"
-                  checked={categoryFilter.includes("All")}
-                  icon={<CheckBoxOutlineBlank fontSize="small" />}
-                  checkedIcon={<CheckBox fontSize="small" />}
-                />
-                <ListItemText primary="All" />
-              </ListItemButton>
+        <Popover
+          open={openCategory}
+          anchorEl={categoryAnchor}
+          onClose={() => setCategoryAnchor(null)}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "left",
+          }}
+          PaperProps={{
+            sx: {
+              width: 310,
+              maxHeight: 420,
+              borderRadius: 2,
+              p: 2.5,
+              overflowY: "auto",
+              border: "3px solid",
+              borderColor: "divider",
+            },
+          }}
+        >
+          <List dense disablePadding>
+            {/* ALL */}
+            <ListItemButton
+              selected={categoryFilter.includes("All")}
+              onClick={() => setCategoryFilter(["All"])}
+              sx={{ borderRadius: 1, py: 0.5 }}
+            >
+              <Checkbox
+                size="small"
+                checked={categoryFilter.includes("All")}
+                icon={<CheckBoxOutlineBlank fontSize="small" />}
+                checkedIcon={<CheckBox fontSize="small" />}
+              />
+              <ListItemText primary="All" />
+            </ListItemButton>
 
-              {categories.map((cat) => {
-                const checked = categoryFilter.includes(cat.pk_id);
+            {categories.map((cat) => {
+              const checked = categoryFilter.includes(cat.pk_id);
 
-                return (
-                  <ListItemButton
-                    key={cat.pk_id}
-                    selected={checked}
-                    sx={{ borderRadius: 1, py: 0.5 }}
-                    onClick={() => {
-                      let updated = [...categoryFilter];
+              return (
+                <ListItemButton
+                  key={cat.pk_id}
+                  selected={checked}
+                  sx={{ borderRadius: 1, py: 0.5 }}
+                  onClick={() => {
+                    let updated = [...categoryFilter];
 
-                      if (checked) {
-                        updated = updated.filter((v) => v !== cat.pk_id);
+                    if (checked) {
+                      updated = updated.filter((v) => v !== cat.pk_id);
+                    } else {
+                      updated = updated.filter((v) => v !== "All");
+                      updated.push(cat.pk_id);
+                    }
+
+                    setCategoryFilter(updated.length === 0 ? ["All"] : updated);
+                  }}
+                >
+                  <Checkbox
+                    size="small"
+                    checked={checked}
+                    icon={<CheckBoxOutlineBlank fontSize="small" />}
+                    checkedIcon={<CheckBox fontSize="small" />}
+                  />
+                  <ListItemText primary={cat.name} />
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Popover>
+        <Popover
+          open={openType}
+          anchorEl={typeAnchor}
+          onClose={() => setTypeAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          PaperProps={{
+            sx: {
+              width: 300,
+              maxHeight: 320,
+              borderRadius: 2,
+              p: 2.5,
+              overflowY: "auto",
+              border: "3px solid",
+              borderColor: "divider",
+            },
+          }}
+        >
+          <List dense disablePadding>
+            {["All", "Full-time", "Part-time", "Internship"].map((type) => {
+              const checked = typeFilter.includes(type);
+
+              return (
+                <ListItemButton
+                  key={type}
+                  selected={checked}
+                  sx={{ borderRadius: 1 }}
+                  onClick={() => {
+                    let updated = [...typeFilter];
+
+                    if (type === "All") {
+                      updated = ["All"];
+                    } else {
+                      updated = updated.filter((v) => v !== "All");
+
+                      if (updated.includes(type)) {
+                        updated = updated.filter((v) => v !== type);
                       } else {
-                        updated = updated.filter((v) => v !== "All");
-                        updated.push(cat.pk_id);
+                        updated.push(type);
                       }
 
-                      setCategoryFilter(
-                        updated.length === 0 ? ["All"] : updated,
-                      );
-                    }}
-                  >
-                    <Checkbox
-                      size="small"
-                      checked={checked}
-                      icon={<CheckBoxOutlineBlank fontSize="small" />}
-                      checkedIcon={<CheckBox fontSize="small" />}
-                    />
-                    <ListItemText primary={cat.name} />
-                  </ListItemButton>
-                );
-              })}
-            </List>
-          </Popover>
-          <Popover
-            open={openType}
-            anchorEl={typeAnchor}
-            onClose={() => setTypeAnchor(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            transformOrigin={{ vertical: "top", horizontal: "left" }}
-            PaperProps={{
-              sx: {
-                width: 300,
-                maxHeight: 320,
-                borderRadius: 2,
-                p: 2.5,
-                overflowY: "auto",
-                border: "3px solid",
-                borderColor: "divider"
-              },
-            }}
-          >
-            <List dense disablePadding>
-              {["All", "Full-time", "Part-time", "Internship"].map((type) => {
-                const checked = typeFilter.includes(type);
+                      if (updated.length === 0) updated = ["All"];
+                    }
 
-                return (
-                  <ListItemButton
-                    key={type}
-                    selected={checked}
-                    sx={{ borderRadius: 1 }}
-                    onClick={() => {
-                      let updated = [...typeFilter];
-
-                      if (type === "All") {
-                        // clicking "All" selects only All
-                        updated = ["All"];
-                      } else {
-                        // Remove "All" if it exists
-                        updated = updated.filter((v) => v !== "All");
-
-                        if (updated.includes(type)) {
-                          // uncheck this type
-                          updated = updated.filter((v) => v !== type);
-                        } else {
-                          // check this type
-                          updated.push(type);
-                        }
-
-                        // fallback to All if nothing selected
-                        if (updated.length === 0) updated = ["All"];
-                      }
-
-                      setTypeFilter(updated);
-                    }}
-                  >
-                    <Checkbox checked={checked} />
-                    <ListItemText primary={type} />
-                  </ListItemButton>
-                );
-              })}
-            </List>
-          </Popover>
-
+                    setTypeFilter(updated);
+                  }}
+                >
+                  <Checkbox checked={checked} />
+                  <ListItemText primary={type} />
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Popover>
       </Stack>
 
       <Divider />
@@ -1213,13 +1392,13 @@ export default function Dashboard() {
       anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       transformOrigin={{ vertical: "top", horizontal: "left" }}
       PaperProps={{
-        sx: { 
-          width: 320, 
-          borderRadius: 2, 
-          p: 3, 
+        sx: {
+          width: 320,
+          borderRadius: 2,
+          p: 3,
           boxShadow: 4,
           border: "3px solid",
-          borderColor: "divider" 
+          borderColor: "divider",
         },
       }}
     >
@@ -1347,10 +1526,10 @@ export default function Dashboard() {
                     {companyName.charAt(0).toUpperCase()}
                   </Avatar>
                   <Stack direction="column" spacing={1} flexWrap="wrap">
-                      <Typography variant="h7" fontWeight={700} lineHeight={1.2}>
+                    <Typography variant="h7" fontWeight={700} lineHeight={1.2}>
                       {selectedJob.job_title}
                     </Typography>
-                      <Chip
+                    <Chip
                       icon={<BusinessRoundedIcon sx={{ fontSize: 16 }} />}
                       label={`Company: ${companyName}`}
                       size="small"
@@ -1376,7 +1555,6 @@ export default function Dashboard() {
                         },
                       })}
                     />
-                    
                   </Stack>
                 </Stack>
 
@@ -1387,11 +1565,8 @@ export default function Dashboard() {
                     color="primary"
                     size="small"
                     startIcon={<Send />}
-                    onClick={() => {
-                      setJobToApply(selectedJob);
-                      setApplyDialogOpen(true);
-                    }}
-                    disabled={applying[selectedJob.pk_id]}
+                    onClick={handleOpenApplyDialog}
+                    disabled={applying[selectedJob?.pk_id]}
                     sx={{
                       display: { xs: "none", sm: "inline-flex" },
                       whiteSpace: "nowrap",
@@ -1405,27 +1580,32 @@ export default function Dashboard() {
                 {isMobile && (
                   <Stack
                     direction="column"
-                    spacing={1}
-                    sx={{ mt: 2 }}
+                    spacing={0.5}
+                    sx={{ mt: 1 }}
                     justifyContent="flex-end"
                   >
                     {isCandidate && (
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={<Send />}
-                        onClick={() => {
-                          setJobToApply(selectedJob);
-                          setApplyDialogOpen(true);
-                        }}
-                        sx={{ textTransform: "none" }}
+                      <Tooltip
+                        title={hasAppliedToThisJob ? "Re-apply" : "Apply"}
+                        arrow
                       >
-                        {hasAppliedToThisJob ? "Re-apply" : "Apply"}
-                      </Button>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={handleOpenApplyDialog}
+                          sx={{
+                            minWidth: 36,
+                            px: 1,
+                          }}
+                        >
+                          <Send fontSize="small" />
+                        </Button>
+                      </Tooltip>
                     )}
                   </Stack>
                 )}
+
                 {/* Desktop */}
                 <Tooltip title="Company information" arrow>
                   <Button
@@ -1612,8 +1792,6 @@ export default function Dashboard() {
                   open={applyDialogOpen && isCandidate}
                   onClose={() => {
                     setApplyDialogOpen(false);
-                    setCoverLetterFile(null);
-                    setImageFile(null);
                   }}
                   fullWidth
                   maxWidth="sm"
@@ -1640,26 +1818,29 @@ export default function Dashboard() {
                   </DialogTitle>
 
                   <DialogContent sx={{ mt: 1 }}>
-                    {hasAppliedToThisJob && (
-                      <Alert
-                        severity="info"
-                        iconMapping={{
-                          info: <InfoOutlined sx={{ fontSize: 16 }} />,
-                        }}
-                        sx={{
-                          py: 0.4,
-                          px: 1,
-                          fontSize: 11,
-                          borderRadius: 1.5,
-                          alignItems: "center",
-                          "& .MuiAlert-message": {
-                            py: 0,
-                          },
-                        }}
-                      >
-                        You already applied. Updating will replace your previous
-                        submission.
-                      </Alert>
+                    {hasAppliedToThisJob && originalResumeId && (
+                      <>
+                        {selectedResumeId !== originalResumeId ? (
+                          <Alert
+                            severity="info"
+                            sx={{ mb: 2, fontSize: "0.9rem" }}
+                          >
+                            You changed the resume.
+                            <br />
+                            The cover letter and images currently shown are from
+                            the resume originally used for this application.
+                          </Alert>
+                        ) : (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: "block", mb: 1 }}
+                          >
+                            Using the same resume as in your previous
+                            application
+                          </Typography>
+                        )}
+                      </>
                     )}
 
                     {/* Resume Selection */}
@@ -1822,95 +2003,193 @@ export default function Dashboard() {
                       sx={{
                         position: "relative",
                         border: "2px solid",
-                        borderColor: "divider",
+                        borderColor: coverLetterToDelete
+                          ? "error.light"
+                          : "divider",
                         borderRadius: 2,
-                        p: 1.5,
-                        mt: 2,
+                        p: 2.5,
+                        mt: 3,
+                        transition: "all 0.2s",
                       }}
                     >
-                      {/* Floating Label */}
                       <Typography
                         sx={{
                           position: "absolute",
-                          top: -10,
-                          left: 14,
-                          px: 0.8,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          backgroundColor: "background.paper",
+                          top: -12,
+                          left: 16,
+                          px: 1,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          bgcolor: "background.paper",
+                          color: coverLetterToDelete
+                            ? "error.main"
+                            : "text.secondary",
                         }}
                       >
-                        Cover Letter (PDF)
+                        Cover Letter (PDF) – optional
                       </Typography>
 
-                      {/* Upload Button */}
-                      <Button
-                        component="label"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        startIcon={
-                          coverLetterFile ? <PictureAsPdf /> : <UploadFile />
-                        }
-                        sx={{
-                          borderRadius: 2,
-                          textTransform: "none",
-                          justifyContent: "flex-start",
-                          py: 0.8,
-                        }}
-                      >
-                        {coverLetterFile
-                          ? coverLetterFile.name
-                          : "Choose Cover Letter"}
+                      {/* Current cover letter display + remove button */}
+                      {hasAppliedToThisJob && previousCoverLetterName && (
+                        <Box sx={{ mb: 2 }}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                          >
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Current cover letter:
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 500,
+                                  color: coverLetterToDelete
+                                    ? "error.main"
+                                    : "primary.main",
+                                  textDecoration: coverLetterToDelete
+                                    ? "line-through"
+                                    : "none",
+                                  wordBreak: "break-all",
+                                }}
+                              >
+                                {previousCoverLetterName}
+                              </Typography>
+                            </Box>
 
-                        <input
-                          type="file"
-                          hidden
-                          accept=".pdf"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
+                            <Tooltip
+                              title={
+                                coverLetterToDelete
+                                  ? "Undo remove"
+                                  : "Remove this cover letter"
+                              }
+                            >
+                              <IconButton
+                                size="small"
+                                color={
+                                  coverLetterToDelete ? "success" : "error"
+                                }
+                                onClick={
+                                  coverLetterToDelete
+                                    ? handleUndoDeleteCoverLetter
+                                    : handleStageDeleteCoverLetter
+                                }
+                              >
+                                {coverLetterToDelete ? (
+                                  <CheckCircle fontSize="small" />
+                                ) : (
+                                  <Cancel fontSize="small" />
+                                )}
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
 
-                            if (file.size > 5 * 1024 * 1024) {
-                              alert("Max 5MB allowed.");
-                              return;
-                            }
-
-                            setCoverLetterFile(file);
-                          }}
-                        />
-                      </Button>
-
-                      {/* File Info */}
-                      {coverLetterFile && (
-                        <Box
-                          sx={{
-                            mt: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="caption" color="text.secondary">
-                            {(coverLetterFile.size / (1024 * 1024)).toFixed(2)}{" "}
-                            MB
-                          </Typography>
+                          {coverLetterToDelete && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ mt: 0.5, display: "block" }}
+                            >
+                              Marked for deletion – will be removed when you
+                              save
+                            </Typography>
+                          )}
                         </Box>
+                      )}
+
+                      {/* Upload button – now conditionally disabled */}
+                      <Tooltip
+                        title={
+                          !canUploadNewCoverLetter &&
+                          previousCoverLetterName &&
+                          !coverLetterToDelete
+                            ? "Remove the current cover letter first to upload a new one"
+                            : ""
+                        }
+                        arrow
+                      >
+                        <span>
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            color={coverLetterToDelete ? "primary" : "primary"}
+                            size="small"
+                            fullWidth
+                            startIcon={
+                              coverLetterFile ? (
+                                <PictureAsPdf />
+                              ) : (
+                                <UploadFile />
+                              )
+                            }
+                            disabled={!canUploadNewCoverLetter}
+                            sx={{
+                              justifyContent: "flex-start",
+                              textTransform: "none",
+                              py: 1,
+                              borderStyle: coverLetterToDelete
+                                ? "dashed"
+                                : "solid",
+                              opacity: !canUploadNewCoverLetter ? 0.6 : 1,
+                            }}
+                          >
+                            {coverLetterFile
+                              ? `New file selected: ${coverLetterFile.name}`
+                              : hasAppliedToThisJob &&
+                                  previousCoverLetterName &&
+                                  !coverLetterToDelete
+                                ? "Upload new cover letter (replaces current one)"
+                                : "Upload cover letter (optional)"}
+                            <input
+                              type="file"
+                              hidden
+                              accept=".pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setSnackbar({
+                                    open: true,
+                                    message: "File too large (max 5MB)",
+                                    severity: "error",
+                                  });
+                                  return;
+                                }
+                                setCoverLetterFile(file);
+                                if (coverLetterToDelete) {
+                                  setCoverLetterToDelete(false);
+                                }
+                              }}
+                            />
+                          </Button>
+                        </span>
+                      </Tooltip>
+
+                      {coverLetterFile && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 1, display: "block" }}
+                        >
+                          {(coverLetterFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </Typography>
                       )}
                     </Box>
 
                     {/* Image */}
                     <Box
                       sx={{
-                        position: "relative",
-                        border: "2px solid",
-                        borderColor: "divider",
+                        mt: 3,
+                        p: 2,
+                        border: "2px solid #ccc",
                         borderRadius: 2,
-                        p: 1.5,
-                        mt: 2,
+                        position: "relative",
                       }}
                     >
-                      {/* Floating Label */}
                       <Typography
                         sx={{
                           position: "absolute",
@@ -1922,88 +2201,149 @@ export default function Dashboard() {
                           backgroundColor: "background.paper",
                         }}
                       >
-                        Attach Image (JPG / PNG)
+                        Attached Images (JPG/PNG) – optional
                       </Typography>
 
-                      {/* Upload Button */}
+                      {/* Existing images (from DB) */}
+                      {existingImages.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Attached images ({existingImages.length}):
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1, flexWrap: "wrap" }}
+                          >
+                            {existingImages.map((img) => {
+                              const willBeDeleted = imagesToDelete.includes(
+                                img.id,
+                              );
+
+                              return (
+                                <Chip
+                                  key={img.id}
+                                  label={img.original_name || img.filename}
+                                  size="small"
+                                  onDelete={
+                                    willBeDeleted
+                                      ? () => handleUndoDeleteImage(img.id) // Undo
+                                      : () => handleStageDeleteImage(img.id) // Stage delete
+                                  }
+                                  color={willBeDeleted ? "error" : "default"}
+                                  variant={
+                                    willBeDeleted ? "filled" : "outlined"
+                                  }
+                                  deleteIcon={
+                                    willBeDeleted ? (
+                                      <CheckCircle fontSize="small" />
+                                    ) : undefined
+                                  }
+                                  sx={{
+                                    maxWidth: 220,
+                                    opacity: willBeDeleted ? 0.6 : 1,
+                                    textDecoration: willBeDeleted
+                                      ? "line-through"
+                                      : "none",
+                                    bgcolor: willBeDeleted
+                                      ? "error.light"
+                                      : undefined,
+                                  }}
+                                  icon={
+                                    willBeDeleted ? (
+                                      <Cancel fontSize="small" />
+                                    ) : undefined
+                                  }
+                                />
+                              );
+                            })}
+                          </Stack>
+                          {imagesToDelete.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              color="error"
+                              sx={{ mt: 1, display: "block" }}
+                            >
+                              {imagesToDelete.length} image(s) marked for
+                              removal (will be deleted when you save)
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+
+                      {/* New selected files (not yet uploaded) */}
                       <Button
                         component="label"
                         variant="outlined"
-                        size="small"
                         fullWidth
-                        startIcon={imageFile ? <Image /> : <UploadFile />}
+                        startIcon={<UploadFile />}
                         sx={{
-                          borderRadius: 2,
+                          mb: imageFiles.length > 0 ? 1.5 : 0,
                           textTransform: "none",
-                          justifyContent: "flex-start",
-                          py: 0.8,
                         }}
                       >
-                        {imageFile ? imageFile.name : "Choose Image"}
-
+                        Add more images...
                         <input
                           type="file"
                           hidden
                           accept="image/jpeg,image/png"
+                          multiple
                           onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-
-                            if (file.size > 5 * 1024 * 1024) {
-                              alert("Max 5MB allowed.");
-                              return;
-                            }
-
-                            setImageFile(file);
+                            const newFiles = Array.from(e.target.files || []);
+                            setImageFiles((prev) => [...prev, ...newFiles]);
                           }}
                         />
                       </Button>
 
-                      {/* File Info */}
-                      {imageFile && (
-                        <Box
-                          sx={{
-                            mt: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Typography variant="caption" color="text.secondary">
-                            {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
+                      {imageFiles.length > 0 && (
+                        <Box>
+                          <Typography variant="caption">
+                            New files to upload ({imageFiles.length}):
                           </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mt: 1, flexWrap: "wrap" }}
+                          >
+                            {imageFiles.map((f, i) => (
+                              <Chip
+                                key={i}
+                                label={f.name}
+                                size="small"
+                                onDelete={() =>
+                                  setImageFiles((prev) =>
+                                    prev.filter((_, idx) => idx !== i),
+                                  )
+                                }
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Stack>
                         </Box>
                       )}
                     </Box>
                   </DialogContent>
 
                   {/* Footer */}
-                  <DialogActions sx={{ px: 2, py: 1.5 }}>
+                  <DialogActions>
                     <Button
+                      onClick={() => setApplyDialogOpen(false)}
                       size="small"
                       variant="outlined"
                       color="error"
-                      onClick={() => setApplyDialogOpen(false)}
-                      sx={{ borderRadius: 2, textTransform: "none" }}
-                      startIcon={<Cancel />}
+                      sx={{
+                        textTransform: "none",
+                      }}
                     >
                       Cancel
                     </Button>
-
                     <Button
                       variant="contained"
-                      size="small"
-                      color="primary"
                       onClick={handleApplyWithResume}
-                      startIcon={<UpdateSharp />}
-                      disabled={
-                        applying[jobToApply?.pk_id] ||
-                        (!selectedResumeId && !coverLetterFile && !imageFile)
-                      }
+                      disabled={applying[jobToApply?.pk_id]}
+                      size="small"
                       sx={{
-                        borderRadius: 2,
-                        px: 2.5,
-                        background: "linear-gradient(135deg, #1976d2, #42a5f5)",
                         textTransform: "none",
                       }}
                     >
@@ -2011,7 +2351,7 @@ export default function Dashboard() {
                         ? "Submitting..."
                         : hasAppliedToThisJob
                           ? "Update"
-                          : "Submit"}
+                          : "Apply"}
                     </Button>
                   </DialogActions>
                 </Dialog>
@@ -2417,13 +2757,13 @@ export default function Dashboard() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           PaperProps={{
-            sx: { 
-              width: 240, 
-              borderRadius: 2, 
-              p: 2, 
+            sx: {
+              width: 240,
+              borderRadius: 2,
+              p: 2,
               boxShadow: 4,
               border: "3px solid",
-              borderColor: "divider" 
+              borderColor: "divider",
             },
           }}
         >
@@ -2455,13 +2795,13 @@ export default function Dashboard() {
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
           PaperProps={{
-            sx: { 
-              width: 220, 
-              borderRadius: 2, 
-              p: 2, 
+            sx: {
+              width: 220,
+              borderRadius: 2,
+              p: 2,
               boxShadow: 4,
               border: "3px solid",
-              borderColor: "divider" 
+              borderColor: "divider",
             },
           }}
         >
