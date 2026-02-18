@@ -703,6 +703,7 @@ export default function MyJobs() {
 
   useEffect(() => {
     fetchMyJobs();
+    getApprove();
   }, []);
 
   useEffect(() => {
@@ -716,6 +717,15 @@ export default function MyJobs() {
     };
     fetchCategories();
   }, []);
+
+  const getApprove = async () => {
+    try{
+      const res = await api.get("/jobs/approve/");
+      setApproved(res.data.approved)
+    }catch(e){
+      console.log(e)
+    }
+  }
 
   const fetchMyJobs = async () => {
     try {
@@ -761,9 +771,9 @@ export default function MyJobs() {
   };
 
   const openCreate = () => {
-    if (!approved) {
-      setOpenApprovalWarning(true);
-      return;
+    if (!approved){
+      setOpenApprovalWarning(true)
+      return
     }
     setEditingJob(null);
     setOpenFormDialog(true);

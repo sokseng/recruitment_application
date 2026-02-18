@@ -68,6 +68,8 @@ class JobOut(BaseModel):
     closing_date: Optional[date]
     status: JobStatus
     created_at: datetime
-    approved: Optional [bool]= None
 
     model_config = {"from_attributes": True}
+
+class Approved(BaseModel):
+    approved: bool

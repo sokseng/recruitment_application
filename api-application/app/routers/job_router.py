@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.dependencies.auth import verify_access_token, get_db
-from app.schemas.job_schema import JobCreate, JobUpdate, JobOut
+from app.models.user_model import User
+from app.schemas.job_schema import Approved, JobCreate, JobUpdate, JobOut
 from app.controllers.job_controller import (
     create_job, get_job, get_jobs_by_employer,
     update_job, delete_job, get_all_active_jobs
@@ -33,7 +34,16 @@ def get_my_jobs(
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer:
         return [] 
-    return get_jobs_by_employer(db, employer.pk_id, skip, limit, current_user_id)
+    return get_jobs_by_employer(db, employer.pk_id, skip, limit)
+
+@router.get("/approve", response_model=Approved)
+def get_approved(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+  approve = db.query(User.approved).filter(User.pk_id == current_user_id).scalar()  
+  
+  return {"approved": approve}
 
 
 @router.get("/{job_id}", response_model=JobOut)

@@ -61,8 +61,7 @@ def create_job(db: Session, job_data: JobCreate, user_id: int) -> JobOut:
 def get_job(db: Session, job_id: int) -> Job | None:
     return db.get(Job, job_id)
 
-def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: int = 20, user_id = int) -> list[Job]:
-    approved = (db.query(User.approved).filter(User.pk_id == user_id).scalar())
+def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: int = 20) -> list[Job]:
     ensure_jobs_not_expired(db, employer_id=employer_id)
 
     jobs = (
@@ -92,8 +91,7 @@ def get_jobs_by_employer(db: Session, employer_id: int, skip: int = 0, limit: in
         "posting_date": job.posting_date,
         "closing_date": job.closing_date,
         "status": job.status,
-        "created_at": job.created_at,
-        "approved": approved
+        "created_at": job.created_at
     } for job in jobs]
         
     

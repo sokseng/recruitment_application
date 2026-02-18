@@ -13,11 +13,14 @@ import {
   Alert,
   Switch,
   styled,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import AddIcon from "@mui/icons-material/Add";
 import api from "../services/api";
 import UserDialog from "./UserDialog";
+import { Edit } from "@mui/icons-material";
 
 /* ================= Role Meta ================= */
 const ROLE_META = {
@@ -50,7 +53,7 @@ const AdminUsers = () => {
       if (!selectedEmployer) return;
       const pk_id = selectedEmployer.pk_id;
       await api.put(`/user/approve/${pk_id}`);
-      
+
       setMessage("Employer approved successfully");
       setSeverity("success");
       setOpenSnackbar(true);
@@ -60,7 +63,6 @@ const AdminUsers = () => {
     } catch (err) {
       console.log(err);
     }
-
   };
 
   const confirmDisable = (row) => {
@@ -114,8 +116,8 @@ const AdminUsers = () => {
   };
 
   const OnOffSwitch = styled(Switch)(({ theme }) => ({
-    width: 42,          // ⬅ smaller width
-    height: 20,         // ⬅ smaller height
+    width: 42, // ⬅ smaller width
+    height: 20, // ⬅ smaller height
     padding: 0,
     display: "flex",
 
@@ -133,7 +135,7 @@ const AdminUsers = () => {
     },
 
     "& .MuiSwitch-thumb": {
-      width: 16,        // ⬅ smaller thumb
+      width: 16, // ⬅ smaller thumb
       height: 16,
       backgroundColor: "#fff",
     },
@@ -144,7 +146,6 @@ const AdminUsers = () => {
       opacity: 1,
     },
   }));
-
 
   /* ================= Columns ================= */
   const columns = [
@@ -158,14 +159,14 @@ const AdminUsers = () => {
     {
       field: "email",
       headerName: "Email",
-      flex: 2,
+      flex: 1.5,
       minWidth: 200,
       sortable: true,
     },
     {
       field: "phone",
       headerName: "Phone",
-      flex: 1,
+      flex: 1.5,
       minWidth: 100,
       sortable: true,
     },
@@ -200,31 +201,55 @@ const AdminUsers = () => {
         );
       },
     },
+
     {
       field: "status",
-      headerName: "Status",
-      flex: 0.8,
+      headerName: "Active Status",
+      flex: 1,
       minWidth: 120,
-      renderCell: ({ row }) => (
-        <Chip
-          size="small"
-          label={row.is_active ? "Active" : "Inactive"}
-          sx={{
-            fontWeight: 600,
-            fontSize: 12,
-            borderRadius: 1.5,
-            px: 1.2,
-            py: 0.3,
-            bgcolor: row.is_active ? "#e8f5e9" : "#f5f5f5",
-            color: row.is_active ? "#2e7d32" : "#616161",
-          }}
-        />
-      ),
+      renderCell: ({ row }) => {
+        const isActive = row.is_active;
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center", // vertical center
+              justifyContent: "center", // horizontal center
+              gap: 1,
+              width: "100%", // IMPORTANT
+              height: "100%", // ensure full cell height
+            }}
+          >
+            <Chip
+              size="small"
+              label={isActive ? "Active" : "Inactive"}
+              sx={{
+                fontWeight: 600,
+                fontSize: 12,
+                borderRadius: 1.5,
+                px: 1.2,
+                py: 0.3,
+                bgcolor: isActive ? "#e8f5e9" : "#f5f5f5",
+                color: isActive ? "#2e7d32" : "#616161",
+              }}
+            />
+
+            <OnOffSwitch
+              checked={isActive}
+              onChange={() =>
+                isActive ? confirmDisable(row) : confirmEnable(row)
+              }
+            />
+          </Box>
+        );
+      },
     },
+
     {
       field: "approved",
       headerName: "Approval",
-      flex: 1.2,
+      flex: 1,
       minWidth: 160,
       sortable: false,
       renderCell: ({ row }) => {
@@ -274,67 +299,37 @@ const AdminUsers = () => {
     {
       field: "actions",
       headerName: "Actions",
-      flex: 1.4,
-      minWidth: 180,
       sortable: false,
-      renderCell: ({ row }) => {
-        const isActive = row.is_active;
-
-        return (
-          <Box
-            sx={{
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5, // slightly smaller spacing
-              py: 0,
-            }}
-          >
-            {/* Edit Button */}
-            <Button
+      align: "center",
+      headerAlign: "center",
+      renderCell: ({ row }) => (
+        <Box
+          sx={{
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Tooltip title="Edit">
+            <IconButton
               size="small"
-              variant="outlined"
-              sx={{
-                fontSize: 10,
-                px: 1,
-                py: 0.4,
-                borderRadius: 2,
-                textTransform: "none",
-                color: "#1976d2",
-                borderColor: "rgba(25,118,210,0.5)",
-                "&:hover": {
-                  bgcolor: "rgba(25,118,210,0.08)",
-                  borderColor: "rgba(25,118,210,0.7)",
-                },
-              }}
               onClick={() => {
                 setEditingUser(row);
                 setOpen(true);
               }}
-            >
-              Edit
-            </Button>
-
-            {/* Disable Button */}
-            <Box
               sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                borderRadius: 2,
+                color: "#1976d2",
+                "&:hover": {
+                  bgcolor: "rgba(25,118,210,0.08)",
+                },
               }}
             >
-              {/* SWITCH */}
-              <OnOffSwitch
-                checked={isActive}
-                onChange={() =>
-                  isActive ? confirmDisable(row) : confirmEnable(row)
-                }
-              />
-            </Box>
-          </Box>
-        );
-      },
+              <Edit fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
     },
   ];
 
