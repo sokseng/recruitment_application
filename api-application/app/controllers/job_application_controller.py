@@ -45,7 +45,7 @@ def apply_to_job(
     
     elif delete_cover_letter:
         if resume.cover_letter_file:
-            file_path = os.path.join(job_application_router.UPLOAD_FOLDER_ATTACHMENTS, resume.cover_letter_file)
+            file_path = os.path.join(job_application_router.UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
             try:
                 if os.path.exists(file_path):
                     os.remove(file_path)

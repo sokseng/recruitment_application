@@ -1583,7 +1583,7 @@ export default function Dashboard() {
                     onClick={handleOpenApplyDialog}
                     disabled={applying[selectedJob?.pk_id]}
                     sx={{
-                      display: { xs: "none", sm: "inline-flex" },
+                      display: {  xs: "none", sm: "none", md: "none", lg: "inline-flex",},
                       whiteSpace: "nowrap",
                       textTransform: "none",
                     }}

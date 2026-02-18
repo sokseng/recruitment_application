@@ -1617,19 +1617,12 @@ export default function MyJobs() {
               Need help or want to check status?
               <br />
               Contact us at:{" "}
-              <Typography
-                component="a"
-                href="tel:+85512345678"
-                sx={{
-                  ml: 1,
-                  color: "primary.main",
-                  fontWeight: 600,
-                  textDecoration: "underline",
-                  "&:hover": { color: "primary.dark" },
-                }}
-              >
-                +855 12 345 678
-              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <Box>📞 Phone: <strong>+855 12 345 678</strong></Box>
+                <Box sx={{ mt: 0.5 }}>
+                  ✉️ Email: <strong>truematch360@gmail.com</strong>
+                </Box>
+              </Box>
             </Box>
           </Box>
 

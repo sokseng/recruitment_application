@@ -53,9 +53,11 @@ class ResumeImageOut(BaseModel):
 router = APIRouter(prefix="/applications", tags=["Applications"])
 UPLOAD_FOLDER = "uploads/resumes"
 UPLOAD_FOLDER_ATTACHMENTS  = "uploads/attachments"
+UPLOAD_FOLDER_COVER_LETTER  = "uploads/cover_letter"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER_ATTACHMENTS, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER_COVER_LETTER, exist_ok=True)
 
 @router.get("/resumes/{resume_id}/images", response_model=List[ResumeImageOut])
 def get_resume_images(
@@ -215,7 +217,7 @@ async def apply_to_job_endpoint(
                 status_code=400,
                 detail=f"Cover letter must be PDF or DOCX. Got: {ext}"
             )
-        cover_filename = await save_uploaded_file(cover_letter_file, UPLOAD_FOLDER_ATTACHMENTS)
+        cover_filename = await save_uploaded_file(cover_letter_file, UPLOAD_FOLDER_COVER_LETTER)
     delete_cover = delete_cover_letter == "true"
 
     if delete_cover and cover_letter_file:
@@ -394,7 +396,7 @@ async def get_combined_application_pdf(
                 buffers.append((BytesIO(f.read()), True))
 
     if resume and resume.cover_letter_file:
-        cl_path = os.path.join(UPLOAD_FOLDER_ATTACHMENTS, resume.cover_letter_file)
+        cl_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
         if os.path.exists(cl_path) and cl_path.lower().endswith(".pdf"):
             with open(cl_path, "rb") as f:
                 buffers.append((BytesIO(f.read()), True))
@@ -498,7 +500,7 @@ def delete_cover_letter(
     if not resume.cover_letter_file:
         raise HTTPException(status_code=400, detail="No cover letter to delete")
 
-    file_path = os.path.join(UPLOAD_FOLDER_ATTACHMENTS, resume.cover_letter_file)
+    file_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
     if os.path.exists(file_path):
         try:
             os.remove(file_path)
