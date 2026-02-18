@@ -64,7 +64,7 @@ const AdminEmployers = () => {
   const counts = {
     Pending: employers.filter((e) => e.status === "Pending").length,
     Approved: employers.filter((e) => e.status === "Approved").length,
-    Disabled: employers.filter((e) => e.status === "Disabled").length,
+    Inactive: employers.filter((e) => e.status === "Inactive").length,
   };
 
   // Filter by tab + search
@@ -76,7 +76,7 @@ const AdminEmployers = () => {
     } else if (tabValue === 1) {
       statusFiltered = employers.filter((emp) => emp.status === "Approved");
     } else if (tabValue === 2) {
-      statusFiltered = employers.filter((emp) => emp.status === "Disabled");
+      statusFiltered = employers.filter((emp) => emp.status === "Inactive");
     }
 
     const term = searchTerm.toLowerCase().trim();
@@ -162,8 +162,8 @@ const AdminEmployers = () => {
           />
           <Tab
             label={
-              <Badge badgeContent={counts.Disabled} color="error" sx={{ px: 1 }}>
-                Disabled
+              <Badge badgeContent={counts.Inactive} color="error" sx={{ px: 1 }}>
+                Inactive
               </Badge>
             }
           />
@@ -290,7 +290,7 @@ const AdminEmployers = () => {
                     bgcolor: "rgba(245,158,11,0.08)",
                     "&:hover": { bgcolor: "rgba(245,158,11,0.14)" },
                   }),
-                  ...(emp.status === "Disabled" && {
+                  ...(emp.status === "Inactive" && {
                     borderColor: "#ef4444",
                     color: "#ef4444",
                     bgcolor: "rgba(239,68,68,0.08)",
@@ -376,7 +376,7 @@ const AdminEmployers = () => {
       >
         {selectedEmployer && (
           <>
-            <DialogTitle sx={{ pb: 1, pr: 8 }}>
+            <DialogTitle sx={{ pb: 1, pr: 8, position: "relative" }}>
               Company Profile
               <IconButton
                 onClick={handleCloseDetail}
@@ -387,7 +387,7 @@ const AdminEmployers = () => {
             </DialogTitle>
 
             <DialogContent dividers sx={{ pt: 2 }}>
-              {/* ... your dialog content remains exactly the same ... */}
+              {/* Top Header with Avatar + Company Name + Status */}
               <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
                 <Avatar
                   src={
@@ -395,18 +395,60 @@ const AdminEmployers = () => {
                       ? `${import.meta.env.VITE_API_BASE_URL}/uploads/employers/${selectedEmployer.company_logo}`
                       : "/default-company.png"
                   }
-                  sx={{ width: 80, height: 80, boxShadow: 2 }}
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    boxShadow: 3,
+                    border: "2px solid #f0f0f0",
+                  }}
                 />
-                <Box>
-                  <Typography variant="h5" fontWeight={700}>
-                    {selectedEmployer.company_name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+
+                <Box sx={{ flex: 1 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="h5" fontWeight={700}>
+                      {selectedEmployer.company_name}
+                    </Typography>
+
+                    {/* Status Chip */}
+                    <Chip
+                      label={selectedEmployer.status || "Pending"}
+                      size="small"
+                      sx={{
+                        background: selectedEmployer.status === "Approved"
+                          ? "linear-gradient(135deg, #43a047 0%, #66bb6a 100%)"
+                          : selectedEmployer.status === "Pending"
+                            ? "linear-gradient(135deg, #fb8c00 0%, #ffa726 100%)"
+                            : "linear-gradient(135deg, #e53935 0%, #ef5350 100%)",
+                        color: "white",
+                        fontWeight: 600,
+                        fontSize: 11,
+                        height: 26,
+                        borderRadius: 14,
+                        px: 1.5,
+                        boxShadow:
+                          selectedEmployer.status === "Approved"
+                            ? "0 3px 6px rgba(76,175,80,0.4)"
+                            : selectedEmployer.status === "Pending"
+                              ? "0 3px 6px rgba(251,140,0,0.4)"
+                              : "0 3px 6px rgba(229,57,53,0.4)",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    />
+                  </Stack>
+
+                  {/* Email */}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}
+                  >
                     <EmailIcon fontSize="inherit" /> {selectedEmployer.company_email || "—"}
                   </Typography>
                 </Box>
               </Stack>
 
+              {/* Contact, Address, Website */}
               <Stack spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <PhoneIcon fontSize="small" color="action" />
@@ -440,38 +482,41 @@ const AdminEmployers = () => {
                     )}
                   </Typography>
                 </Stack>
+              </Stack>
 
-                <Divider sx={{ my: 1 }} />
+              <Divider sx={{ my: 2 }} />
 
-                <Stack direction="row" spacing={4}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      <strong>Jobs Posted</strong>
-                    </Typography>
-                    <Typography variant="h6">{selectedEmployer.job_count || 0}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      <strong>Categories</strong>
-                    </Typography>
-                    <Typography variant="body2">
-                      {selectedEmployer.categories?.map((c) => c.name).join(", ") || "—"}
-                    </Typography>
-                  </Box>
-                </Stack>
-
-                <Divider sx={{ my: 2 }} />
-
+              {/* Jobs Posted + Categories */}
+              <Stack direction="row" spacing={4} sx={{ mb: 2 }}>
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    About the Company
+                  <Typography variant="subtitle2" color="text.secondary">
+                    <strong>Jobs Posted</strong>
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
-                    {selectedEmployer.company_description || "No description provided."}
+                  <Typography variant="h6">{selectedEmployer.job_count || 0}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    <strong>Categories</strong>
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedEmployer.categories?.map((c) => c.name).join(", ") || "—"}
                   </Typography>
                 </Box>
               </Stack>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* About */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  About the Company
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
+                  {selectedEmployer.company_description || "No description provided."}
+                </Typography>
+              </Box>
             </DialogContent>
+
           </>
         )}
       </Dialog>

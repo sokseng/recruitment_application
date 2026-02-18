@@ -62,7 +62,7 @@ def get_employers(db: Session):
 
         # ✅ STATUS LOGIC
         if r.is_active is False:
-            status = "Disabled"
+            status = "Inactive"
         elif r.approved is False:
             status = "Pending"
         else:
