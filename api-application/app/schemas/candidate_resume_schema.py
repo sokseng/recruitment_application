@@ -25,6 +25,7 @@ class ResumeOut(BaseModel):
     resume_file: Optional[str] = None
     resume_content: Optional[str] = None
     recommendation_letter: Optional[str] = None
+    cover_letter_file: Optional[str] = None
     is_primary: bool
     created_date: datetime
     updated_date: Optional[datetime] = None
