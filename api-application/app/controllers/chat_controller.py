@@ -99,6 +99,7 @@ async def send_text_message(
     room: ChatRoom,
     content: str,
     reply_to_id: Optional[int] = None,
+    message_type: MessageType = MessageType.TEXT,
 ):
     reply_to = None
     if reply_to_id:
@@ -113,7 +114,7 @@ async def send_text_message(
     msg = ChatMessage(
         room_id=room.id,
         sender_id=current_user.pk_id,
-        type=MessageType.TEXT,
+        type=message_type,
         content=content,
         reply_to_id=reply_to.id if reply_to else None,
     )
