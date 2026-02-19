@@ -15,6 +15,7 @@ import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
+import CallRoom from '../components/chat/CallRoom';
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -71,6 +72,9 @@ function ChatPage() {
     const [chatSearch, setChatSearch] = useState("");
     const [foundUsers, setFoundUsers] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    const [activeCallRoom, setActiveCallRoom] = useState(null);
+    const [incomingCall, setIncomingCall] = useState(null);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -444,7 +448,7 @@ function ChatPage() {
         if (!connected && !selectedChatRef.current) return;
     }, [connected]);
 
-    useGlobalWebSocket((data) => {
+    const { send: sendGlobal, connect } = useGlobalWebSocket((data) => {
         switch (data.type) {
             case "chat_list_update":
                 setChats(prev => {
@@ -480,6 +484,27 @@ function ChatPage() {
                 break;
         }
     });
+
+    const startCall = (roomId) => {
+        if (!connect) {
+            console.warn("WS not connected yet");
+            return;
+        }
+        sendGlobal({
+            type: "call.initiate",
+            payload: { room_id: roomId }
+        });
+        setActiveCallRoom(roomId);
+    };
+
+    const endCall = (roomId) => {
+        sendGlobal({
+            type: "call.end",
+            payload: { room_id: roomId }
+        });
+        setActiveCallRoom(null);
+        setIncomingCall(null);
+    };
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
@@ -694,6 +719,7 @@ function ChatPage() {
                         pinMessage={pinMessage}
                         reactionsData={reactionsData}
                         setReactionsData={setReactionsData}
+                        onStartCall={startCall}
                     />
                 </Box>
             )}

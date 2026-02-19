@@ -52,18 +52,77 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
             data = await ws.receive_json()
             event_type = data["type"]
             payload = data.get("payload", {})
+            
+            if event_type in ("ping", "pong"):
+                continue
 
-            if event_type == "chat.join":
+            elif event_type == "call.join":
                 manager.join_room(user_id, payload["room_id"])
-
-            elif event_type == "chat.leave":
+            elif event_type == "call.leave":
                 manager.leave_room(user_id, payload["room_id"])
                 
+            elif event_type == "call.initiate":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+                
+                receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+                
+                await manager.broadcast_call_event(
+                    [receiver_id],
+                    "call.incoming",
+                    {"fromUserId": user_id, "roomId": room_id}
+                )
+            
+            elif event_type == "call.accept":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+
+                receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+
+                await manager.broadcast_call_event(
+                    [receiver_id],
+                    "call.accepted",
+                    {"fromUserId": user_id, "roomId": room_id}
+                )
+
+            elif event_type == "call.decline":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+
+                receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+
+                await manager.broadcast_call_event(
+                    [receiver_id],
+                    "call.declined",
+                    {"fromUserId": user_id, "roomId": room_id}
+                )
+
+            elif event_type == "call.end":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+                
+                await manager.broadcast_call_event(
+                    [room.candidate_user_id, room.employer_user_id],
+                    "call.ended",
+                    {"roomId": room_id}
+                )
+                
             else:
-                await ws.send_json({
+                
+                if not event_type.startswith("chat.") and not event_type.startswith("call."):
+                    await ws.send_json({
                         "type": "error",
                         "message": "Invalid event type"
                     })
+
 
     except WebSocketDisconnect:
         manager.disconnect(ws, user_id)

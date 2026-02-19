@@ -12,6 +12,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@livekit/components-react": "^2.9.19",
+    "@livekit/components-styles": "^1.2.0",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@mui/x-data-grid": "^8.25.0",
@@ -22,6 +24,7 @@
     "emoji-picker-react": "^4.17.3",
     "html-react-parser": "^5.2.11",
     "html2pdf.js": "^0.14.0",
+    "livekit-client": "^2.17.1",
     "quill": "^2.0.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

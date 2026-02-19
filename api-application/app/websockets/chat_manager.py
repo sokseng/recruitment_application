@@ -143,5 +143,21 @@ class ConnectionManager:
     def get_user_rooms(self, user_id: int) -> set[int]:
         """Return all rooms a user is currently connected to"""
         return self.user_rooms.get(user_id, set())
+    
+    async def broadcast_call_event(
+        self,
+        user_ids: list[int],
+        event: str,
+        payload: dict
+    ):
+        """
+        Example events: "call.incoming", "call.ended"
+        """
+        coros = []
+        for uid in user_ids:
+            coros.extend([self._safe_send(ws, {"type": event, **payload}) 
+                        for ws in self.user_connections.get(uid, [])])
+        if coros:
+            await asyncio.gather(*coros)
 
 manager = ConnectionManager()
