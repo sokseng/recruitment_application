@@ -15,6 +15,7 @@ import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
+import CallRequestDialog from '../components/chat/dialog/CallRequestDialog';
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -71,6 +72,9 @@ function ChatPage() {
     const [chatSearch, setChatSearch] = useState("");
     const [foundUsers, setFoundUsers] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    const [activeCallRoom, setActiveCallRoom] = useState(null);
+    const [callRequest, setCallRequest] = useState(null);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -444,7 +448,7 @@ function ChatPage() {
         if (!connected && !selectedChatRef.current) return;
     }, [connected]);
 
-    useGlobalWebSocket((data) => {
+    const { send: sendGlobal, connect } = useGlobalWebSocket((data) => {
         switch (data.type) {
             case "chat_list_update":
                 setChats(prev => {
@@ -475,11 +479,40 @@ function ChatPage() {
                     return updated.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
                 });
                 break;
+            case "call.accepted":
+                setCallRequest(null);
+                break;
+
+            case "call.declined":
+                setCallRequest(null);
+                break;
 
             default:
                 break;
         }
     });
+
+    const startCall = (roomId, mode='video') => {
+        if (!connect && selectedChat) {
+            console.warn("WS not connected yet");
+            return;
+        }
+        sendGlobal({
+            type: "call.initiate",
+            payload: { room_id: roomId, mode: mode }
+        });
+        setActiveCallRoom(roomId, mode);
+        setCallRequest(selectedChat);
+    };
+
+    const declinedCall = (roomId) => {
+        sendGlobal({
+            type: "call.decline",
+            payload: { room_id: roomId }
+        });
+        setActiveCallRoom(null);
+        setCallRequest(null);
+    };
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
@@ -693,7 +726,7 @@ function ChatPage() {
                         messagesEndRef={messagesEndRef}
                         pinMessage={pinMessage}
                         reactionsData={reactionsData}
-                        setReactionsData={setReactionsData}
+                        onStartCall={startCall}
                     />
                 </Box>
             )}
@@ -703,6 +736,13 @@ function ChatPage() {
                 onClose={() => setOpen(false)}
                 onSelectUser={handleSelectChat}
             />
+
+            {callRequest && (
+                <CallRequestDialog
+                    callRequest={callRequest}
+                    onDeclinedCall={declinedCall}
+                />
+            )}
 
         </Box>
     );

@@ -17,7 +17,8 @@ from app.routers import (
     websocket_router,
     global_setting_router,
     dashboard_router,
-    forgot_password_router
+    forgot_password_router,
+    call_router
 )
 
 from app.database.session import Base, engine
@@ -90,3 +91,4 @@ app.include_router(websocket_router.router)
 app.include_router(global_setting_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(forgot_password_router.router)
+app.include_router(call_router.router)

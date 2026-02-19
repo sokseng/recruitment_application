@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str
     DATABASE_URL: str
     ALLOWED_ORIGINS: List[str]
+    LIVEKIT_API_KEY: str
+    LIVEKIT_API_SECRET: str
+    LIVEKIT_URL: str
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
