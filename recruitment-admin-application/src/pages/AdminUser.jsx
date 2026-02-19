@@ -147,6 +147,39 @@ const AdminUsers = () => {
     },
   }));
 
+  const ApproveSwitch = styled(Switch)(({ theme }) => ({
+    width: 42,
+    height: 20,
+    padding: 0,
+    display: "flex",
+
+    "& .MuiSwitch-switchBase": {
+      padding: 2,
+      marginLeft: -1,
+      "&.Mui-checked": {
+        transform: "translateX(22px)",
+        color: "#2e7d32", // ✅ green thumb when checked
+        "& + .MuiSwitch-track": {
+          backgroundColor: "#2e7d32", // ✅ green track
+          opacity: 1,
+        },
+      },
+    },
+
+    "& .MuiSwitch-thumb": {
+      width: 16,
+      height: 16,
+      backgroundColor: "#fff",
+    },
+
+    "& .MuiSwitch-track": {
+      borderRadius: 10,
+      backgroundColor: "#ef6c00", // 🟠 orange for pending
+      opacity: 0.5,
+    },
+  }));
+
+
   /* ================= Columns ================= */
   const columns = [
     {
@@ -286,10 +319,10 @@ const AdminUsers = () => {
             />
 
             {/* Switch */}
-            <Switch
+            <ApproveSwitch
               checked={isApproved}
               onChange={handleToggle}
-              color="success"
+              disabled={isApproved}
             />
           </Box>
         );
