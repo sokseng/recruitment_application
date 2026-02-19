@@ -433,12 +433,13 @@ async def delete_message(
     message_id: int,
     requester_id: int
 ):
-    msg: ChatMessage | None =(
+    msg: ChatMessage | None = (
         db.query(ChatMessage)
         .filter(
             ChatMessage.id == message_id,
             ChatMessage.room_id == room.id
-        ).first()
+        )
+        .first()
     )
     
     if not msg:
@@ -446,14 +447,15 @@ async def delete_message(
     
     if msg.sender_id != requester_id:
         raise HTTPException(403, "Only sender can delete this message")
+
+    db.query(MessageReaction).filter(
+        MessageReaction.message_id == message_id
+    ).delete(synchronize_session=False)
     
-    if msg.file_url:
-        file_path = msg.file_url.lstrip("/")
-        asyncio.create_task(remove_file_async(file_path))
-        
     db.delete(msg)
+
     db.commit()
-            
+    
     last_msg = (
         db.query(ChatMessage)
         .options(joinedload(ChatMessage.reply_to))
@@ -476,9 +478,7 @@ async def delete_message(
         }
     )
     
-    last_message_payload = None
-    if last_msg:
-        last_message_payload = serialize_message(ChatMessageOut.from_orm(last_msg))
+    last_message_payload = serialize_message(ChatMessageOut.from_orm(last_msg)) if last_msg else None
     
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(

@@ -37,6 +37,7 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
         return
 
     user_id = user.pk_id
+    username = user.user_name
     
     await manager.connect(ws, user_id, room_id=None)
     
@@ -63,6 +64,8 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                 
             elif event_type == "call.initiate":
                 room_id = payload["room_id"]
+                mode = payload.get("mode", "video")
+                 
                 room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
                 if not room:
                     continue
@@ -72,21 +75,34 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                 await manager.broadcast_call_event(
                     [receiver_id],
                     "call.incoming",
-                    {"fromUserId": user_id, "roomId": room_id}
+                    {"fromUserId": user_id, "fromUsername": username, "roomId": room_id, "mode": mode}
                 )
+                
+                # Prevent calling if either user already in active call
+                for call in manager.active_calls.values():
+                    if user_id in call["participants"]:
+                        continue  # or send error
             
             elif event_type == "call.accept":
                 room_id = payload["room_id"]
+                mode = payload.get("mode", "video")
+                
                 room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
                 if not room:
                     continue
 
                 receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
 
+                manager.active_calls[room_id] = {
+                    "mode": mode,
+                    "participants": [user_id, receiver_id],
+                    "started_at": datetime.utcnow()
+                }
+
                 await manager.broadcast_call_event(
                     [receiver_id],
                     "call.accepted",
-                    {"fromUserId": user_id, "roomId": room_id}
+                    {"fromUserId": user_id, "fromUsername": username, "roomId": room_id, "mode": mode}
                 )
 
             elif event_type == "call.decline":
@@ -114,6 +130,8 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                     "call.ended",
                     {"roomId": room_id}
                 )
+                
+                manager.active_calls.pop(room_id, None)
                 
             else:
                 

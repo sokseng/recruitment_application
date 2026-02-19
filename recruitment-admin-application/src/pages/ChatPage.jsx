@@ -15,7 +15,7 @@ import { useUnreadStore } from '../store/unreadStore';
 import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
-import CallRoom from '../components/chat/CallRoom';
+import CallRequestDialog from '../components/chat/dialog/CallRequestDialog';
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -74,7 +74,7 @@ function ChatPage() {
     const [searchLoading, setSearchLoading] = useState(false);
 
     const [activeCallRoom, setActiveCallRoom] = useState(null);
-    const [incomingCall, setIncomingCall] = useState(null);
+    const [callRequest, setCallRequest] = useState(null);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -479,31 +479,39 @@ function ChatPage() {
                     return updated.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
                 });
                 break;
+            case "call.accepted":
+                setCallRequest(null);
+                break;
+
+            case "call.declined":
+                setCallRequest(null);
+                break;
 
             default:
                 break;
         }
     });
 
-    const startCall = (roomId) => {
-        if (!connect) {
+    const startCall = (roomId, mode='video') => {
+        if (!connect && selectedChat) {
             console.warn("WS not connected yet");
             return;
         }
         sendGlobal({
             type: "call.initiate",
-            payload: { room_id: roomId }
+            payload: { room_id: roomId, mode: mode }
         });
-        setActiveCallRoom(roomId);
+        setActiveCallRoom(roomId, mode);
+        setCallRequest(selectedChat);
     };
 
-    const endCall = (roomId) => {
+    const declinedCall = (roomId) => {
         sendGlobal({
-            type: "call.end",
+            type: "call.decline",
             payload: { room_id: roomId }
         });
         setActiveCallRoom(null);
-        setIncomingCall(null);
+        setCallRequest(null);
     };
 
     return (
@@ -718,7 +726,6 @@ function ChatPage() {
                         messagesEndRef={messagesEndRef}
                         pinMessage={pinMessage}
                         reactionsData={reactionsData}
-                        setReactionsData={setReactionsData}
                         onStartCall={startCall}
                     />
                 </Box>
@@ -729,6 +736,13 @@ function ChatPage() {
                 onClose={() => setOpen(false)}
                 onSelectUser={handleSelectChat}
             />
+
+            {callRequest && (
+                <CallRequestDialog
+                    callRequest={callRequest}
+                    onDeclinedCall={declinedCall}
+                />
+            )}
 
         </Box>
     );

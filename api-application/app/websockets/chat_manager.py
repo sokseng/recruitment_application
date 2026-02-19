@@ -9,6 +9,7 @@ class ConnectionManager:
         self.user_rooms: Dict[int, Set[int]] = {}
         self.user_connections: Dict[int, Set[WebSocket]] = {}
         self.heartbeats: Dict[WebSocket, asyncio.Task] = {}
+        self.active_calls: Dict[int, dict] = {}
 
     async def start_heartbeat(self, websocket: WebSocket, interval: int = 20):
         try:
@@ -76,6 +77,18 @@ class ConnectionManager:
 
         # Always remove websocket from everywhere to be safe
         self.remove_socket_everywhere(websocket)
+        
+        for room_id, call_data in list(self.active_calls.items()):
+            if user_id in call_data["participants"]:
+                # Notify other participant(s)
+                asyncio.create_task(
+                    self.broadcast_call_event(
+                        call_data["participants"],
+                        "call.ended",
+                        {"roomId": room_id, "reason": "disconnect"}
+                    )
+                )
+                self.active_calls.pop(room_id, None)
 
     async def broadcast_to_room(self, room_id: int, message: dict, exclude_user_id: int | None = None):
         """Broadcast message to all users in a room safely"""

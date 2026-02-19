@@ -31,7 +31,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, setReactionsData, onStartCall }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -665,7 +665,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        onStartCall(chat.room_id);
+                                        onStartCall(chat.room_id, 'voice');
                                     }}
                                 />
                                 <VideocamIcon
@@ -679,7 +679,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onStartCall(chat.room_id);
+                                        onStartCall(chat.room_id, 'video');
                                     }}
                                 />
                             </Box>
