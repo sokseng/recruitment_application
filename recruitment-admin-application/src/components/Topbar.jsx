@@ -1,3 +1,4 @@
+//Topbar.jsx
 import {
   AppBar,
   Toolbar,
@@ -59,8 +60,11 @@ import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
 import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
 import { useUnreadStore } from "../store/unreadStore";
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next'; // Import useTranslation hook
 
 export default function Topbar() {
+  const { t } = useTranslation(); // Initialize translation hook
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -149,29 +153,29 @@ export default function Topbar() {
   };
   const MENU_BY_ROLE = {
     guest: [
-      { label: "Home", path: "/", icon: <HomeIcon /> },
+      { label: t('home'), path: "/", icon: <HomeIcon /> },
     ],
     1: [
-      { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Dashboard", path: "/admin/dashboard", icon: <DashboardIcon /> },
-      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
-      { label: "Users", path: "/admin/user", icon: <PeopleIcon /> },
-      { label: "Jobs", path: "/admin/jobs", icon: <PersonIcon /> },
-      { label: "Companies", path: "/admin/employer", icon: <BusinessIcon /> },
-      { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon /> },
+      { label: t('home'), path: "/", icon: <HomeIcon /> },
+      { label: t('dashboard'), path: "/admin/dashboard", icon: <DashboardIcon /> },
+      { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
+      { label: t('users'), path: "/admin/user", icon: <PeopleIcon /> },
+      { label: t('jobs'), path: "/admin/jobs", icon: <PersonIcon /> },
+      { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon /> },
+      { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon /> },
     ],
     2: [
-      { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
-      { label: "Applied candidates", path: "/applied_candidates", icon: <PersonIcon /> },
-      { label: "Job posts", path: "/employer", icon: <BusinessIcon /> },
+      { label: t('home'), path: "/", icon: <HomeIcon /> },
+      { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
+      { label: t('applied_candidates'), path: "/applied_candidates", icon: <PersonIcon /> },
+      { label: t('job_posts'), path: "/employer", icon: <BusinessIcon /> },
     ],
     3: [
-      { label: "Home", path: "/", icon: <HomeIcon /> },
-      { label: "Chat", path: "/chat", icon: <ChatBubbleIcon /> },
-      { label: "Profile", path: "/update_profile", icon: <PersonIcon /> },
-      // { label: "Dashboard", path: "/candidate", icon: <DashboardIcon /> },
-      { label: "Candidate Apply", path: "/candidate_apply", icon: <BusinessIcon /> },
+      { label: t('home'), path: "/", icon: <HomeIcon /> },
+      { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
+      { label: t('update_profile'), path: "/update_profile", icon: <PersonIcon /> },
+      // { label: t('dashboard'), path: "/candidate", icon: <DashboardIcon /> },
+      { label: t('candidate_apply'), path: "/candidate_apply", icon: <BusinessIcon /> },
     ],
   };
 
@@ -179,9 +183,9 @@ export default function Topbar() {
 
   const toggleCv = () => setOpenCv((prev) => !prev);
   const cvTemplates = [
-    { name: "Blue Sidebar Modern", id: "blue-sidebar-modern" },
-    { name: "Sidebar Tech Template", id: "sidebar-tech-template" },
-    { name: "Classic Software CV", id: "classic-software" },
+    { name: t('blue_sidebar_modern'), id: "blue-sidebar-modern" },
+    { name: t('sidebar_tech_template'), id: "sidebar-tech-template" },
+    { name: t('classic_software_cv'), id: "classic-software" },
   ];
   const cvTemplateMap = {
     "blue-sidebar-modern": BlueSidebarModern,
@@ -234,7 +238,7 @@ export default function Topbar() {
     
     // block if robot check not done
     if (showRobotCheck && !isHuman) {
-      setMessage("Please complete the security check");
+      setMessage(t('complete_security_check'));
       setSeverity("warning");
       setOpenSnackbar(true);
       return;
@@ -290,7 +294,7 @@ export default function Topbar() {
         err.response?.data?.detail === "Invalid password"
       ) {
         setSeverity("error");
-        setMessage("Invalid password");
+        setMessage(t('invalid_password'));
         setOpenSnackbar(true);
         return;
       }
@@ -300,12 +304,12 @@ export default function Topbar() {
         err.response?.data?.detail === "Email not found"
       ) {
         setSeverity("error");
-        setMessage("Email not found");
+        setMessage(t('email_not_found'));
         setOpenSnackbar(true);
         return;
       }
 
-      setMessage(err.response?.data?.detail || "Login failed");
+      setMessage(err.response?.data?.detail || t('login_failed'));
       setOpenSnackbar(true);
     }
   };
@@ -354,7 +358,7 @@ export default function Topbar() {
       if (res.status == 200) {
         setOpenSnackbar(true);
         setSeverity("success");
-        setMessage("Register Successfully!");
+        setMessage(t('register_success'));
       }
       handleCloseRegisterForm();
     } catch (err) {
@@ -367,7 +371,7 @@ export default function Topbar() {
         setOpenSnackbar(true)
       } else {
         setSeverity('error')
-        setMessage('Failed to create or update user')
+        setMessage(t('register_failed'))
         setOpenSnackbar(true)
         console.error(err)
       }
@@ -386,14 +390,14 @@ export default function Topbar() {
     // Basic validation
     if (!old_password || !new_password || !confirm_password) {
       setSeverity("error");
-      setMessage("All fields are required");
+      setMessage(t('all_fields_required'));
       setOpenSnackbar(true);
       return;
     }
 
     if (new_password !== confirm_password) {
       setSeverity("error");
-      setMessage("New passwords do not match");
+      setMessage(t('passwords_do_not_match'));
       setOpenSnackbar(true);
       return;
     }
@@ -405,12 +409,12 @@ export default function Topbar() {
       });
 
       setSeverity("success");
-      setMessage("Password changed successfully");
+      setMessage(t('password_changed_success'));
       setOpenSnackbar(true);
       setOpenChangePassword(false);
     } catch (err) {
       setSeverity("error");
-      setMessage(err.response?.data?.detail || "Failed to change password");
+      setMessage(err.response?.data?.detail || t('password_change_failed'));
       setOpenSnackbar(true);
     }
   };
@@ -438,7 +442,7 @@ export default function Topbar() {
     } catch (error) {
       console.error("Error downloading CV template:", error);
       setSeverity("error");
-      setMessage("Failed to download cv");
+      setMessage(t('download_cv_failed'));
       setOpenSnackbar(true);
     }
   };
@@ -550,7 +554,7 @@ export default function Topbar() {
                   color: 'text.primary',
                 }}
               >
-                {user_data?.user_data?.user_name || 'User'}
+                {user_data?.user_data?.user_name || t('user')}
               </Typography>
 
               <Typography
@@ -659,7 +663,7 @@ export default function Topbar() {
                 </ListItemIcon>
 
                 <ListItemText
-                  primary="Settings"
+                  primary={t('settings')}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
 
@@ -693,7 +697,7 @@ export default function Topbar() {
                       <Settings fontSize="small" />
                     </ListItemIcon>
 
-                    <ListItemText primary="System Parameter" />
+                    <ListItemText primary={t('system_parameter')} />
                   </ListItemButton>
                 </Box>
               </Collapse>
@@ -719,7 +723,7 @@ export default function Topbar() {
                   <DownloadIcon />
                 </ListItemIcon>
                 <ListItemText
-                  primary="CV Templates"
+                  primary={t('cv_templates')}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
                 {openCv ? <ExpandLess /> : <ExpandMore />}
@@ -771,7 +775,7 @@ export default function Topbar() {
                 <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="Sign Up" />
+                <ListItemText primary={t('register')} />
               </ListItemButton>
 
               <ListItemButton
@@ -790,11 +794,19 @@ export default function Topbar() {
                 <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="Login" />
+                <ListItemText primary={t('login')} />
               </ListItemButton>
             </Box>
           )}
         </List>
+      </Box>
+
+      {/* 🌐 Language Switcher in Drawer */}
+      <Box sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "divider" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+          {t('language')}
+        </Typography>
+        <LanguageSwitcher />
       </Box>
 
       {/* ── Logout at bottom ── */}
@@ -815,7 +827,7 @@ export default function Topbar() {
             <ListItemIcon sx={{ color: "error.main", minWidth: 44 }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Log out" primaryTypographyProps={{ fontWeight: 500 }} />
+            <ListItemText primary={t('logout')} primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </Box>
       )}
@@ -836,12 +848,12 @@ export default function Topbar() {
       >
 
         <DialogTitle sx={{ fontWeight: 600 }}>
-          🤖 Security Check
+          🤖 {t('security_check')}
         </DialogTitle>
 
         <DialogContent>
           <Typography mb={2}>
-            Please select <b>all fruits</b> to continue
+            {t('select_fruits')}
           </Typography>
 
           <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -871,17 +883,17 @@ export default function Topbar() {
 
           {robotError && (
             <Alert severity="error" sx={{ mt: 2 }}>
-              Incorrect selection. Please try again.
+              {t('incorrect_selection')}
             </Alert>
           )}
         </DialogContent>
 
         <DialogActions>
           <Button sx={{ textTransform: "none" }} size="small" variant="outlined" onClick={() => setShowRobotCheck(false)}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button sx={{ textTransform: "none" }} variant="contained" size="small" onClick={handleRobotConfirm}>
-            Verify
+            {t('verify')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -972,6 +984,10 @@ export default function Topbar() {
                   </Box>
                 )}
               </Box>
+              
+              {/* 🌐 Mobile Language Switcher - Compact version */}
+              <LanguageSwitcher />
+              
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
                 <Avatar>
                   {user_data?.user_data?.user_name
@@ -1039,7 +1055,7 @@ export default function Topbar() {
                         sx={{ lineHeight: 1.2 }}
                         noWrap
                       >
-                        {user_data?.user_data?.user_name || "User"}
+                        {user_data?.user_data?.user_name || t('user')}
                       </Typography>
                       <Typography
                         variant="body2"
@@ -1073,7 +1089,7 @@ export default function Topbar() {
                     <ListItemIcon sx={{ color: "inherit" }}>
                       <Settings fontSize="medium" />
                     </ListItemIcon>
-                    Update Profile
+                    {t('update_profile')}
                   </MenuItem>
 
                   {user_data.user_data?.user_type === 3 && (
@@ -1094,7 +1110,7 @@ export default function Topbar() {
                         <ListItemIcon sx={{ color: "inherit" }}>
                           <Download fontSize="medium" />
                         </ListItemIcon>
-                        Download CV Templates
+                        {t('cv_templates')}
                         <Box sx={{ ml: "auto", opacity: 0.7 }}>
                           {openCv ? <ExpandLess /> : <ExpandMore />}
                         </Box>
@@ -1144,7 +1160,7 @@ export default function Topbar() {
                     <ListItemIcon sx={{ color: "inherit" }}>
                       <VpnKey fontSize="medium" />
                     </ListItemIcon>
-                    Change Password
+                    {t('change_password')}
                   </MenuItem>
                 </Box>
 
@@ -1167,7 +1183,7 @@ export default function Topbar() {
                   <ListItemIcon sx={{ color: "inherit" }}>
                     <Logout fontSize="medium" />
                   </ListItemIcon>
-                  Log out
+                  {t('logout')}
                 </MenuItem>
               </Menu>
             </>
@@ -1254,11 +1270,14 @@ export default function Topbar() {
                     },
                   }}
                 >
-                  Settings
+                  {t('settings')}
                 </Button>
               )}
 
-
+              {/* 🌐 Language Switcher for Desktop */}
+              <Box sx={{ ml: 1 }}>
+                <LanguageSwitcher />
+              </Box>
 
               {access_token ? (
                 <>
@@ -1339,7 +1358,7 @@ export default function Topbar() {
                             sx={{ lineHeight: 1.2, letterSpacing: "-0.01em" }}
                             noWrap
                           >
-                            {user_data?.user_data?.user_name || "User"}
+                            {user_data?.user_data?.user_name || t('user')}
                           </Typography>
                           <Typography
                             variant="body2"
@@ -1370,7 +1389,7 @@ export default function Topbar() {
                         <ListItemIcon sx={{ color: "inherit" }}>
                           <Settings fontSize="medium" />
                         </ListItemIcon>
-                        Update Profile
+                        {t('update_profile')}
                       </MenuItem>
 
                       {user_data.user_data?.user_type === 3 && (
@@ -1391,7 +1410,7 @@ export default function Topbar() {
                             <ListItemIcon sx={{ color: "inherit" }}>
                               <Download fontSize="medium" />
                             </ListItemIcon>
-                            Download CV Templates
+                            {t('cv_templates')}
                             <Box component="span" sx={{ ml: "auto", opacity: 0.7 }}>
                               {openCv ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
                             </Box>
@@ -1438,7 +1457,7 @@ export default function Topbar() {
                         <ListItemIcon sx={{ color: "inherit" }}>
                           <VpnKey fontSize="medium" />
                         </ListItemIcon>
-                        Change Password
+                        {t('change_password')}
                       </MenuItem>
                     </Box>
 
@@ -1461,7 +1480,7 @@ export default function Topbar() {
                       <ListItemIcon>
                         <Logout fontSize="medium" sx={{ color: "red" }} />
                       </ListItemIcon>
-                      Log out
+                      {t('logout')}
                     </MenuItem>
                   </Menu>
                 </>
@@ -1473,7 +1492,7 @@ export default function Topbar() {
                     onClick={() => setOpenLogin(true)}
                     sx={{ textTransform: "none" }}
                   >
-                    Login
+                    {t('login')}
                   </Button>
 
                   <Button
@@ -1482,7 +1501,7 @@ export default function Topbar() {
                     onClick={() => setopenRegisterForm(true)}
                     sx={{ textTransform: "none" }}
                   >
-                    Sign Up
+                    {t('register')}
                   </Button>
                 </Stack>
               )}
@@ -1505,7 +1524,7 @@ export default function Topbar() {
           }}
         >
           <MenuItem disabled sx={{ fontWeight: 600 }}>
-            Settings
+            {t('settings')}
           </MenuItem>
 
           <Divider />
@@ -1519,7 +1538,7 @@ export default function Topbar() {
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
-            System Parameter
+            {t('system_parameter')}
           </MenuItem>
         </Menu>
 
@@ -1583,10 +1602,10 @@ export default function Topbar() {
             {/* Header */}
             <Box textAlign="start">
               <Typography variant="h7" fontWeight={700}>
-                Login Account 🚀
+                {t('login_account')} 🚀
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Join us and get started today
+                {t('join_us')}
               </Typography>
             </Box>
 
@@ -1594,7 +1613,7 @@ export default function Topbar() {
             <TextField
               fullWidth
               size="small"
-              label="Email"
+              label={t('email')}
               name="email"
               type="email"
               required
@@ -1608,7 +1627,7 @@ export default function Topbar() {
             <TextField
               fullWidth
               size="small"
-              label="Password"
+              label={t('password')}
               name="password"
               required
               type={showPassword ? "text" : "password"}
@@ -1648,7 +1667,7 @@ export default function Topbar() {
                   textTransform: "none",
                 }}
               >
-                Cancel
+                {t('cancel')}
               </Button>
               <Button
                 size="small"
@@ -1661,7 +1680,7 @@ export default function Topbar() {
                   textTransform: "none",
                 }}
               >
-                Login
+                {t('login')}
               </Button>
 
             </Stack>
@@ -1680,7 +1699,7 @@ export default function Topbar() {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Forgot Password
+                {t('forgot_password')}
               </Link>
             </Box>
           </Stack>
@@ -1745,10 +1764,10 @@ export default function Topbar() {
               {/* Form Header */}
               <Box textAlign="start">
                 <Typography variant="h7" fontWeight={700}>
-                  Create Account 🚀
+                  {t('create_account')} 🚀
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Join us and get started today
+                  {t('join_us')}
                 </Typography>
               </Box>
 
@@ -1757,23 +1776,23 @@ export default function Topbar() {
                 <TextField
                   size="small"
                   name="user_type"
-                  label="User Type"
+                  label={t('user_type')}
                   select
                   required
                   defaultValue=""
                   fullWidth
                 >
                   <MenuItem value="" disabled>
-                    Select User Type
+                    {t('select_user_type')}
                   </MenuItem>
-                  <MenuItem value={2}>Employer</MenuItem>
-                  <MenuItem value={3}>Candidate</MenuItem>
+                  <MenuItem value={2}>{t('employer')}</MenuItem>
+                  <MenuItem value={3}>{t('candidate')}</MenuItem>
                 </TextField>
 
                 <TextField
                   size="small"
                   name="user_name"
-                  label="Username"
+                  label={t('username')}
                   required
                   fullWidth
                 />
@@ -1784,7 +1803,7 @@ export default function Topbar() {
                 <TextField
                   size="small"
                   name="email"
-                  label="Email"
+                  label={t('email')}
                   type="email"
                   required
                   fullWidth
@@ -1793,7 +1812,7 @@ export default function Topbar() {
                 <TextField
                   size="small"
                   name="password"
-                  label="Password"
+                  label={t('password')}
                   type={showPassword ? "text" : "password"}
                   required
                   fullWidth
@@ -1817,20 +1836,20 @@ export default function Topbar() {
                 <TextField
                   size="small"
                   name="gender"
-                  label="Gender"
+                  label={t('gender')}
                   select
                   fullWidth
                 >
-                  <MenuItem value="Male">Male</MenuItem>
-                  <MenuItem value="Female">Female</MenuItem>
+                  <MenuItem value="Male">{t('male')}</MenuItem>
+                  <MenuItem value="Female">{t('female')}</MenuItem>
                 </TextField>
 
-                <TextField size="small" name="phone" label="Phone" fullWidth />
+                <TextField size="small" name="phone" label={t('phone')} fullWidth />
               </Stack>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 {/* -------------------- Date of Birth -------------------- */}
                 <DatePicker
-                  label="Date of Birth"
+                  label={t('date_of_birth')}
                   format="YYYY-MM-DD"
                   name="date_of_birth"
                   slotProps={{
@@ -1842,7 +1861,7 @@ export default function Topbar() {
                 <TextField
                   size="small"
                   name="address"
-                  label="Address"
+                  label={t('address')}
                   multiline
                   fullWidth
                 />
@@ -1861,7 +1880,7 @@ export default function Topbar() {
                     textTransform: "none",
                   }}
                 >
-                  Cancel
+                  {t('cancel')}
                 </Button>
 
                 <Button
@@ -1875,7 +1894,7 @@ export default function Topbar() {
                     background: "linear-gradient(135deg, #023F6B, #0A6BA8)",
                   }}
                 >
-                  Register
+                  {t('register')}
                 </Button>
               </DialogActions>
             </Stack>
@@ -1891,7 +1910,7 @@ export default function Topbar() {
         fullScreen={isMobile}
         scroll="paper"
       >
-        <DialogTitle>Change Password</DialogTitle>
+        <DialogTitle>{t('change_password')}</DialogTitle>
 
         <DialogContent dividers>
           <Stack
@@ -1902,7 +1921,7 @@ export default function Topbar() {
           >
             <TextField
               size="small"
-              label="Old Password"
+              label={t('old_password')}
               name="old_password"
               type={showPass.old ? "text" : "password"}
               required
@@ -1924,7 +1943,7 @@ export default function Topbar() {
 
             <TextField
               size="small"
-              label="New Password"
+              label={t('new_password')}
               name="new_password"
               type={showPass.new ? "text" : "password"}
               required
@@ -1946,7 +1965,7 @@ export default function Topbar() {
 
             <TextField
               size="small"
-              label="Confirm New Password"
+              label={t('confirm_password')}
               name="confirm_password"
               type={showPass.confirm ? "text" : "password"}
               required
@@ -1969,14 +1988,14 @@ export default function Topbar() {
         </DialogContent>
 
         <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
-          <Button onClick={() => setOpenChangePassword(false)}>Cancel</Button>
+          <Button onClick={() => setOpenChangePassword(false)}>{t('cancel')}</Button>
           <Button
             type="submit"
             variant="contained"
             disableElevation
             form="change-password-form"
           >
-            Update
+            {t('submit')}
           </Button>
         </DialogActions>
       </Dialog>
