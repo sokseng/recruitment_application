@@ -300,8 +300,11 @@ const AdminUsers = () => {
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
+              alignItems: "center", // vertical center
+              justifyContent: "center",
               gap: 1,
+              width: "100%", // IMPORTANT
+              height: "100%",
             }}
           >
             {/* Status Chip */}
