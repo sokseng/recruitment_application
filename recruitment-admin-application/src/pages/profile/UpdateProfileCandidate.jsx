@@ -1132,7 +1132,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
           </Stack>
           <Stack direction="row" spacing={2}>
             <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
-            <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+            <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone || ""} onChange={handleChange} />
           </Stack>
           <Stack direction="row" spacing={2}>
             <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
@@ -1149,7 +1149,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
               <MenuItem value="Female">Female</MenuItem>
             </TextField>
           </Stack>
-          <TextField size="small" fullWidth label="Address" name="address" value={form.address} onChange={handleChange} multiline rows={2} />
+          <TextField size="small" fullWidth label="Address" name="address" value={form.address || ""} onChange={handleChange} multiline rows={2} />
           <Stack direction="row" spacing={2}>
             <FormControl fullWidth size="small">
               <InputLabel id="job-category-label">
