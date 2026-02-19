@@ -1571,11 +1571,9 @@ export default function Topbar() {
                 alt="Logo"
                 sx={{
                   height: 50,
-                  width: { xs: 120, sm: 140 },
+                  width: { xs: 120, sm: 170 },
                   objectFit: "contain",
-                  border: "2px solid #1976d2",
                   borderRadius: "0.6rem",
-                  boxShadow: 2,
                   cursor: "pointer",
                   p: 0.5
                 }}
@@ -1643,6 +1641,7 @@ export default function Topbar() {
                 variant="outlined"
                 size="small"
                 fullWidth
+                color="error"
                 sx={{
                   borderRadius: 2,
                   fontWeight: 600,
@@ -1734,11 +1733,9 @@ export default function Topbar() {
                   alignItems="center"
                   sx={{
                     height: 50,
-                    width: { xs: 120, sm: 140 },
+                    width: { xs: 120, sm: 170 },
                     objectFit: "contain",
-                    border: "2px solid #1976d2",
                     borderRadius: "0.6rem",
-                    boxShadow: 2,
                     cursor: "pointer",
                     p: 0.5
                   }}
@@ -1856,6 +1853,7 @@ export default function Topbar() {
                 <Button
                   onClick={handleCloseRegisterForm}
                   variant="outlined"
+                  color="error"
                   fullWidth
                   sx={{
                     borderRadius: 2,
