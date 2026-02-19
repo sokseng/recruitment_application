@@ -364,6 +364,44 @@ def download_resume(resume_id: int, db: Session = Depends(get_db)):
         media_type=mime_type
     )
 
+@router.get("/{application_id}/cover-letter")
+def download_cover_letter(
+    application_id: int,
+    db: Session = Depends(get_db)
+):
+    application = (
+        db.query(JobApplication)
+        .filter(JobApplication.pk_id == application_id)
+        .first()
+    )
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    resume = db.query(CandidateResume).filter(
+        CandidateResume.pk_id == application.candidate_resume_id
+    ).first()
+
+    if not resume or not resume.cover_letter_file:
+        raise HTTPException(status_code=404, detail="No cover letter available for this application")
+
+    file_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Cover letter file {resume.cover_letter_file} not found on server"
+        )
+
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+    return FileResponse(
+        path=file_path,
+        filename=resume.cover_letter_file,
+        media_type=mime_type
+    )
+
 @router.get("/{application_id}/combined-pdf")
 async def get_combined_application_pdf(
     application_id: int,
@@ -513,3 +551,5 @@ def delete_cover_letter(
     db.commit()
 
     return {"message": "Cover letter deleted successfully"}
+
+

@@ -79,6 +79,7 @@ export default function AppliedCandidates() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
+  
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -98,6 +99,7 @@ export default function AppliedCandidates() {
 
   const [candidateDetailOpen, setCandidateDetailOpen] = useState(false);
   const [selectedCandidateApp, setSelectedCandidateApp] = useState(null);
+
 
   useEffect(() => {
     loadMyJobsWithApplicationCounts();
@@ -203,6 +205,130 @@ export default function AppliedCandidates() {
       setSnackbar({
         open: true,
         message: err?.response?.data?.detail || "Failed to update status",
+        severity: "error",
+      });
+    }
+  };
+
+   // ────────────────────────────────────────────────
+  // one by one PDF – View & Download
+  // ────────────────────────────────────────────────
+  const handleDownload = async (resumeId, fileName) => {
+      if (!resumeId) return;
+
+      try {
+          const res = await api.get(
+            `/applications/resumes/${resumeId}/file`,
+            {
+              responseType: "blob",
+            }
+          );
+
+          const blob = new Blob([res.data], {
+            type: res.headers["content-type"],
+          });
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", fileName || "resume");
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(url);
+      } catch (err) {
+        setSnackbar({
+          open: true,
+          message: "Failed to download resume",
+          severity: "error",
+        });
+      }
+  };
+  const handleDownloadCoverLetter = async (applicationId, candidateName) => {
+    try {
+      const res = await api.get(`/applications/${applicationId}/cover-letter`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: res.headers["content-type"] });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Cover_Letter_${candidateName.replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      setSnackbar({
+        open: true,
+        message: "Cover letter downloaded",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Failed to download cover letter",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleViewFile = async (resumeId, fileName) => {
+    if (!resumeId) return;
+
+    try {
+      const res = await api.get(
+        `/applications/resumes/${resumeId}/file`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"],
+      });
+
+      const url = URL.createObjectURL(blob);
+
+      setFileUrl(url);
+      setFileName(fileName);
+      setFileType(blob.type);
+      setViewFileOpen(true);
+
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Unable to view file",
+        severity: "error",
+      });
+    }
+  };
+  const handleViewCoverLetter = async (applicationId, candidateName) => {
+    if (!applicationId) return;
+
+    try {
+      const res = await api.get(
+        `/applications/${applicationId}/cover-letter`,
+        { responseType: "blob" }
+      );
+
+      const blob = new Blob([res.data], { type: res.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
+
+      setFileUrl(url);
+      setFileName(`Cover_Letter_${candidateName.replace(/\s+/g, "_")}${blob.type.includes("pdf") ? ".pdf" : ""}`);
+      setFileType(blob.type);
+      setViewFileOpen(true);
+
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: err?.response?.status === 404 
+          ? "No cover letter found" 
+          : "Unable to view cover letter",
         severity: "error",
       });
     }
@@ -953,12 +1079,16 @@ export default function AppliedCandidates() {
                           }}
                           color="primary"
                           size="small"
+                          onClick={() => handleViewFile(
+                            selectedCandidateApp.candidate_resume_id,
+                            candidateName
+                          )}
                         >
                           <InsertDriveFileSharp fontSize="small" />
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title="View CV" arrow>
+                      <Tooltip title="View Cover Letter" arrow>
                         <IconButton
                           sx={{
                             border: 1,
@@ -967,6 +1097,10 @@ export default function AppliedCandidates() {
                           }}
                           color="primary"
                           size="small"
+                          onClick={() => handleViewCoverLetter(
+                            selectedCandidateApp.pk_id,           
+                            candidateName
+                          )}
                         >
                           <BadgeSharp fontSize="small" />
                         </IconButton>
@@ -996,12 +1130,16 @@ export default function AppliedCandidates() {
                             }}
                             color="warning"
                             size="small"
+                            onClick={() => handleDownload(
+                              selectedCandidateApp.candidate_resume_id,
+                              candidateName
+                            )}
                           >
                             <FileDownloadIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
 
-                        <Tooltip title="Download CV" arrow>
+                        <Tooltip title="Download Cover Letter" arrow>
                           <IconButton
                             sx={{
                               border: 1,
@@ -1010,6 +1148,10 @@ export default function AppliedCandidates() {
                             }}
                             color="warning"
                             size="small"
+                            onClick={() => handleDownloadCoverLetter(
+                              selectedCandidateApp.pk_id,
+                              candidateName
+                            )}
                           >
                             <FileDownloadIcon fontSize="small" />
                           </IconButton>
