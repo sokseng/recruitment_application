@@ -21,6 +21,9 @@ import {
   Tabs,
   Tab,
   Badge,
+  Switch,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -39,9 +42,14 @@ const AdminEmployers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [tabValue, setTabValue] = useState(0); // 0=Pending, 1=Approved, 2=Inactive
+  const [tabValue, setTabValue] = useState(0); // 0=Pending, 1=Approved
   const [selectedEmployer, setSelectedEmployer] = useState(null);
   const [openDetail, setOpenDetail] = useState(false);
+  const [openConfirm, setOpenConfirm] = useState(false);
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   const fetchEmployers = async () => {
     try {
@@ -60,14 +68,11 @@ const AdminEmployers = () => {
     fetchEmployers();
   }, []);
 
-  // Compute counts for badges
   const counts = {
     Pending: employers.filter((e) => e.status === "Pending").length,
     Approved: employers.filter((e) => e.status === "Approved").length,
-    Inactive: employers.filter((e) => e.status === "Inactive").length,
   };
 
-  // Filter by tab + search
   const getFilteredEmployers = () => {
     let statusFiltered = employers;
 
@@ -75,8 +80,6 @@ const AdminEmployers = () => {
       statusFiltered = employers.filter((emp) => emp.status === "Pending");
     } else if (tabValue === 1) {
       statusFiltered = employers.filter((emp) => emp.status === "Approved");
-    } else if (tabValue === 2) {
-      statusFiltered = employers.filter((emp) => emp.status === "Inactive");
     }
 
     const term = searchTerm.toLowerCase().trim();
@@ -94,7 +97,6 @@ const AdminEmployers = () => {
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const paginatedEmployers = filteredEmployers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Reset page when tab or search changes
   useEffect(() => {
     setPage(1);
   }, [tabValue, searchTerm]);
@@ -112,64 +114,117 @@ const AdminEmployers = () => {
     setOpenDetail(false);
   };
 
-  return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1600, mx: "auto" }}>
+  const handleApprove = async () => {
+    if (!selectedEmployer) return;
+    try {
+      await api.put(`/user/approve/${selectedEmployer.user_id}`);
 
+      setSnackbarMessage("Employer approved successfully");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      fetchEmployers();
+
+      setOpenDetail(false);
+    } catch (err) {
+      console.error(err);
+      setSnackbarMessage("Failed to approve employer");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  return (
+    <Box sx={{ maxWidth: 1600, mx: "auto" }}>
       <Box sx={{ mb: 3 }}>
-        {/* Tabs – nice modern style */}
+        {/* ← Replace only this Tabs part */}
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           variant="fullWidth"
           allowScrollButtonsMobile
           sx={{
-            mb: 2.5,
+            mb: 3,
             borderRadius: 3,
             overflow: "hidden",
-            bgcolor: alpha("#f8f9fa", 0.7),
-            boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+            background: "linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
+            border: "1px solid",
+            borderColor: "divider",
+            "& .MuiTabs-flexContainer": {
+              padding: "4px 8px",
+            },
             "& .MuiTabs-indicator": {
               height: 4,
-              borderRadius: "4px 4px 0 0",
+              borderRadius: 4,
+              background: "linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)",
+              bottom: 0,
             },
             "& .MuiTab-root": {
               textTransform: "none",
               fontWeight: 600,
-              fontSize: "1rem",
-              py: 1.8,
+              fontSize: { xs: "0.95rem", sm: "1.05rem" },
               minHeight: 56,
               color: "text.primary",
+              opacity: 0.75,
+              transition: "all 0.25s ease",
+              borderRadius: 2,
+              margin: "0 4px",
+              padding: "0 20px",
+
+              "&:hover": {
+                opacity: 1,
+                backgroundColor: alpha("#e2e8f0", 0.4),
+              },
+
               "&.Mui-selected": {
-                color: "primary.main",
+                color: "#1e40af",
                 fontWeight: 700,
+                opacity: 1,
+                backgroundColor: alpha("#eff6ff", 0.6),
               },
             },
           }}
         >
           <Tab
             label={
-              <Badge badgeContent={counts.Pending} color="warning" sx={{ px: 1 }}>
+              <Badge
+                badgeContent={counts.Pending}
+                color="warning"
+                sx={{
+                  "& .MuiBadge-badge": {
+                    fontSize: "0.75rem",
+                    minWidth: 20,
+                    height: 20,
+                    borderRadius: "10px",
+                  },
+                }}
+              >
                 Pending
               </Badge>
             }
           />
           <Tab
             label={
-              <Badge badgeContent={counts.Approved} color="success" sx={{ px: 1 }}>
+              <Badge
+                badgeContent={counts.Approved}
+                color="success"
+                sx={{
+                  "& .MuiBadge-badge": {
+                    fontSize: "0.75rem",
+                    minWidth: 20,
+                    height: 20,
+                    borderRadius: "10px",
+                  },
+                }}
+              >
                 Approved
-              </Badge>
-            }
-          />
-          <Tab
-            label={
-              <Badge badgeContent={counts.Inactive} color="error" sx={{ px: 1 }}>
-                Inactive
               </Badge>
             }
           />
         </Tabs>
 
-        {/* Search */}
+        {/* Search field + showing text remain unchanged */}
         <TextField
           size="small"
           placeholder="Search companies..."
@@ -194,7 +249,6 @@ const AdminEmployers = () => {
           }}
         />
 
-        {/* Results count */}
         {!loading && totalItems > 0 && (
           <Typography
             variant="body2"
@@ -206,7 +260,7 @@ const AdminEmployers = () => {
         )}
       </Box>
 
-      {/* Grid */}
+      {/* Grid - unchanged */}
       <Box
         sx={{
           display: "grid",
@@ -262,7 +316,6 @@ const AdminEmployers = () => {
                 />
               </Box>
 
-              {/* Status Chip – keeping your last version (outlined + subtle bg) */}
               <Chip
                 label={emp.status}
                 size="small"
@@ -282,19 +335,11 @@ const AdminEmployers = () => {
                     borderColor: "#10b981",
                     color: "#10b981",
                     bgcolor: "rgba(16,185,129,0.08)",
-                    "&:hover": { bgcolor: "rgba(16,185,129,0.14)" },
                   }),
                   ...(emp.status === "Pending" && {
                     borderColor: "#f59e0b",
                     color: "#f59e0b",
                     bgcolor: "rgba(245,158,11,0.08)",
-                    "&:hover": { bgcolor: "rgba(245,158,11,0.14)" },
-                  }),
-                  ...(emp.status === "Inactive" && {
-                    borderColor: "#ef4444",
-                    color: "#ef4444",
-                    bgcolor: "rgba(239,68,68,0.08)",
-                    "&:hover": { bgcolor: "rgba(239,68,68,0.14)" },
                   }),
                 }}
               />
@@ -343,7 +388,7 @@ const AdminEmployers = () => {
           ))}
       </Box>
 
-      {/* Pagination */}
+      {/* Pagination - unchanged */}
       {!loading && totalPages > 1 && (
         <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
           <Pagination
@@ -361,7 +406,7 @@ const AdminEmployers = () => {
         </Box>
       )}
 
-      {/* Detail Dialog – unchanged */}
+      {/* Detail Dialog with Switch added */}
       <Dialog
         open={openDetail}
         onClose={handleCloseDetail}
@@ -376,18 +421,47 @@ const AdminEmployers = () => {
       >
         {selectedEmployer && (
           <>
-            <DialogTitle sx={{ pb: 1, pr: 8, position: "relative" }}>
-              Company Profile
-              <IconButton
-                onClick={handleCloseDetail}
-                sx={{ position: "absolute", right: 12, top: 12 }}
-              >
-                <CloseIcon />
-              </IconButton>
+            <DialogTitle
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                pr: 2,
+              }}
+            >
+              <Typography fontWeight={700}>Company Details</Typography>
+
+              <Stack direction="row" spacing={1} alignItems="center">
+                {selectedEmployer?.status === "Pending" && (
+                  <Button
+                    title="Approve"
+                    variant="contained"
+                    size="small"
+                    onClick={() => setOpenConfirm(true)}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      borderRadius: 20,
+                      px: 2.5,
+                      background: "linear-gradient(135deg, #10b981 0%, #34d399 100%)",
+                      boxShadow: "0 4px 12px rgba(16,185,129,0.4)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                      },
+                    }}
+                  >
+                    Approve Now
+                  </Button>
+                )}
+
+                <IconButton onClick={handleCloseDetail}>
+                  <CloseIcon />
+                </IconButton>
+              </Stack>
             </DialogTitle>
 
+
             <DialogContent dividers sx={{ pt: 2 }}>
-              {/* Top Header with Avatar + Company Name + Status */}
               <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
                 <Avatar
                   src={
@@ -404,12 +478,11 @@ const AdminEmployers = () => {
                 />
 
                 <Box sx={{ flex: 1 }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: "wrap", gap: 1 }}>
                     <Typography variant="h5" fontWeight={700}>
                       {selectedEmployer.company_name}
                     </Typography>
 
-                    {/* Status Chip */}
                     <Chip
                       label={selectedEmployer.status || "Pending"}
                       size="small"
@@ -435,9 +508,9 @@ const AdminEmployers = () => {
                         letterSpacing: 0.5,
                       }}
                     />
+
                   </Stack>
 
-                  {/* Email */}
                   <Typography
                     variant="body2"
                     color="text.secondary"
@@ -448,7 +521,7 @@ const AdminEmployers = () => {
                 </Box>
               </Stack>
 
-              {/* Contact, Address, Website */}
+              {/* The rest remains 100% unchanged */}
               <Stack spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <PhoneIcon fontSize="small" color="action" />
@@ -486,7 +559,6 @@ const AdminEmployers = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              {/* Jobs Posted + Categories */}
               <Stack direction="row" spacing={4} sx={{ mb: 2 }}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
@@ -506,7 +578,6 @@ const AdminEmployers = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              {/* About */}
               <Box>
                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   About the Company
@@ -516,10 +587,62 @@ const AdminEmployers = () => {
                 </Typography>
               </Box>
             </DialogContent>
-
           </>
         )}
       </Dialog>
+
+      {/* Confirm Approve Dialog */}
+      <Dialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Confirm Approval</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 3 }}>
+            Are you sure you want to approve{" "}
+            <strong>{selectedEmployer?.company_name}</strong>?
+          </Typography>
+
+          <Stack direction="row" justifyContent="flex-end" spacing={2}>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{ textTransform: "none" }}
+              onClick={() => setOpenConfirm(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              sx={{ textTransform: "none" }}
+              onClick={async () => {
+                setOpenConfirm(false);
+                await handleApprove();
+              }}
+            >
+              Yes, Approve
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Snackbar feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity={snackbarSeverity} variant="filled" sx={{ width: "100%" }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

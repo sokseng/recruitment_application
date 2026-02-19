@@ -39,6 +39,7 @@ class EmployerOut(BaseModel):
     created_date: datetime
     job_count: int
     categories: list[CategoryOut] = []
+    user_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

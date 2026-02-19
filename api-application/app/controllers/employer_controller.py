@@ -31,6 +31,7 @@ def get_employers(db: Session):
             func.count(Job.pk_id).label("job_count"),
             User.approved.label("approved"),
             User.is_active.label("is_active"),
+            User.pk_id.label("user_id"),
         )
         .outerjoin(Job, Job.employer_id == Employer.pk_id)
         .join(User, Employer.user_id == User.pk_id)
@@ -45,7 +46,8 @@ def get_employers(db: Session):
             Employer.company_website,
             Employer.created_date,
             User.approved,
-            User.is_active
+            User.is_active,
+            User.pk_id
         )
         .order_by(Employer.created_date.desc())
         .all()
@@ -60,10 +62,7 @@ def get_employers(db: Session):
             for c in employer_obj.categories
         ]
 
-        # ✅ STATUS LOGIC
-        if r.is_active is False:
-            status = "Inactive"
-        elif r.approved is False:
+        if r.approved is False:
             status = "Pending"
         else:
             status = "Approved"
@@ -80,7 +79,8 @@ def get_employers(db: Session):
             "created_date": r.created_date,
             "job_count": r.job_count,
             "categories": categories,  # <-- added categories
-            "status": status
+            "status": status,
+            "user_id": r.user_id
         })
 
     return result
