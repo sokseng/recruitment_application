@@ -760,6 +760,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 messages.map((message) => (
                                     <MessageBubble
                                         key={message.id}
+                                        roomId={chat.id}
                                         message={message}
                                         isOwn={message.sender_id === currentUserId}
                                         isForward={message?.forward_from?.sender?.pk_id === currentUserId}
@@ -775,7 +776,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onReact={toggleReactMessage}
                                         reactionsData={reactionsData}
                                         onRemoveReact={handleRemoveReact}
-                                        currentUserId={currentUserId}
+                                        onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
                                     />
                                 )))}
 

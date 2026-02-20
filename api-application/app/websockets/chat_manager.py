@@ -2,6 +2,7 @@ import asyncio
 import time
 from typing import Dict, List, Tuple, Set
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from app.models.chat_room import ChatRoom
 
 class ConnectionManager:
     def __init__(self):
@@ -10,6 +11,8 @@ class ConnectionManager:
         self.user_connections: Dict[int, Set[WebSocket]] = {}
         self.heartbeats: Dict[WebSocket, asyncio.Task] = {}
         self.active_calls: Dict[int, dict] = {}
+        self.call_timeouts: Dict[int, asyncio.Task] = {}
+        self.call_lock = asyncio.Lock()
 
     async def start_heartbeat(self, websocket: WebSocket, interval: int = 20):
         try:

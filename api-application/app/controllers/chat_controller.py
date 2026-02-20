@@ -847,3 +847,37 @@ def get_unread_counts_for_user(db: Session, user_id: int) -> dict[int, int]:
     )
 
     return {room_id: count for room_id, count in rows}
+
+async def handle_call_timeout(db, room_id: int, caller_id: int, timeout: int = 30):
+    try:
+        await asyncio.sleep(timeout)
+
+        call_data = manager.active_calls.get(room_id)
+        if not call_data or call_data.get("status") != "ringing":
+            return  # call already accepted or declined
+
+        participants = call_data["participants"]
+
+        # Broadcast missed call
+        await manager.broadcast_call_event(participants, "call.missed", {"roomId": room_id})
+
+        room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+        if room:
+            system_user = db.query(User).filter(User.pk_id == caller_id).first()
+            await send_text_message(
+                db=db,
+                current_user=system_user,
+                room=room,
+                content="📵 Call missed",
+                message_type=MessageType.CALL
+            )
+
+        # Cleanup
+        manager.active_calls.pop(room_id, None)
+
+    except asyncio.CancelledError:
+        pass  # call accepted or declined, timeout canceled
+
+    finally:
+        # Remove the task reference safely
+        manager.call_timeouts.pop(room_id, None)

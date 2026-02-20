@@ -9,7 +9,7 @@ import {
 import "@livekit/components-styles";
 import api from '../../services/api';
 import { createLocalVideoTrack, createLocalAudioTrack } from "livekit-client";
-import { Avatar, Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Avatar, Box, IconButton, Stack, Typography } from "@mui/material";
 import { useConnectionState } from "@livekit/components-react";
 import { ConnectionState } from "livekit-client";
 import MicOffIcon from '@mui/icons-material/MicOff';
@@ -171,7 +171,17 @@ function CallControls({ onEndCall }) {
   );
 }
 
-function CallParticipants({ userData, isVideoCall }) {
+function CallParticipants({ userData }) {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSeconds(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const tracks = useTracks(
     [
       { source: "camera", withPlaceholder: true },
@@ -210,8 +220,8 @@ function CallParticipants({ userData, isVideoCall }) {
       {remoteVideos.map((trackRef) => {
         const isMuted = trackRef.publication?.isMuted;
         return (
-          <div key={trackRef.trackSid} style={{ width: "100%", height: "100%", position: "relative" }}>
-            {!isMuted && isVideoCall ? (
+          <div key={trackRef.trackSid ?? `${trackRef.participant?.identity}-${trackRef.source}`} style={{ width: "100%", height: "100%", position: "relative" }}>
+            {!isMuted ? (
               <VideoTrack
                 trackRef={trackRef}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
@@ -266,22 +276,29 @@ function CallParticipants({ userData, isVideoCall }) {
                 </div>
               )}
 
-            {!isMuted && (
-              <Typography
-                style={{
-                  position: 'fixed',
-                  top: 6,
-                  backgroundColor: 'transparent',
-                  padding: 2,
-                  borderRadius: 2,
-                  color: 'white',
-                  textAlign: 'center',
-                  width: '100%'
-                }}
-              >
-                {userData.username}
+            <Box
+              style={{
+                position: 'fixed',
+                top: 10,
+                backgroundColor: 'transparent',
+                padding: 2,
+                borderRadius: 2,
+                color: 'white',
+                textAlign: 'center',
+                width: '100%',
+                zIndex: 1600
+              }}
+            >
+              {!isMuted && (
+                <Typography variant="h6">
+                  {userData.username}
+                </Typography>
+              )}
+              <Typography>
+                {Math.floor(seconds / 60)}:
+                {String(seconds % 60).padStart(2, '0')}
               </Typography>
-            )}
+            </Box>
           </div>
         );
       })}
@@ -323,7 +340,7 @@ function CallParticipants({ userData, isVideoCall }) {
 
       {audioTracks.map((trackRef) => (
         <AudioTrack
-          key={`${trackRef.participant?.identity}-${trackRef.trackSid}`}
+          key={trackRef.trackSid ?? `${trackRef.participant?.identity}-audio`}
           trackRef={trackRef}
           autoPlay
         />
@@ -360,8 +377,8 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData }) 
         onDisconnected={() => console.log("LiveKit disconnected")}
       >
         <LocalTracksPublisher startWithVideo={isVideoCall} />
-        <CallParticipants userData={userData} isVideoCall={isVideoCall}/>
-        <CallControls onEndCall={onEndCall} />
+        <CallParticipants userData={userData}/>
+        <CallControls onEndCall={onEndCall}/>
       </LiveKitRoom>
     </Box>
   );

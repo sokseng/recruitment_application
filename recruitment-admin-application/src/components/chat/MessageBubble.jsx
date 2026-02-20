@@ -26,7 +26,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, currentUserId }) {
+function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -279,6 +279,10 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     transition: 'all 0.2s',
                                     my: 1,
                                     textTransform: "none"
+                                }}
+                                onClick={(e)=>{
+                                    e.stopPropagation();
+                                    onStartCall();
                                 }}
                             >
                                 Call back

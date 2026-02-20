@@ -75,6 +75,7 @@ function ChatPage() {
 
     const [activeCallRoom, setActiveCallRoom] = useState(null);
     const [callRequest, setCallRequest] = useState(null);
+    const [isCallBusy, setIsCallBusy] = useState(false);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -483,6 +484,18 @@ function ChatPage() {
                 setCallRequest(null);
                 break;
 
+            case "call.missed":
+                setCallRequest(null);
+                break;
+
+            case "call.busy":
+                setIsCallBusy(true);
+                setTimeout(() => {
+                    setCallRequest(null);
+                    setIsCallBusy(false);
+                }, 2000);
+                break;
+
             case "call.declined":
                 setCallRequest(null);
                 break;
@@ -492,7 +505,7 @@ function ChatPage() {
         }
     });
 
-    const startCall = (roomId, mode='video') => {
+    const startCall = (roomId, mode = 'video') => {
         if (!connect && selectedChat) {
             console.warn("WS not connected yet");
             return;
@@ -741,6 +754,7 @@ function ChatPage() {
                 <CallRequestDialog
                     callRequest={callRequest}
                     onDeclinedCall={declinedCall}
+                    isCallBusy={isCallBusy}
                 />
             )}
 
