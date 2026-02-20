@@ -74,12 +74,47 @@ export default function Topbar() {
   const [isHuman, setIsHuman] = useState(false);
   const [robotAnswer, setRobotAnswer] = useState([]);
   const [robotError, setRobotError] = useState(false);
+  const [robotOptions, setRobotOptions] = useState([]);
+  const [robotType, setRobotType] = useState("");
 
-  const robotOptions = [
-    { id: 1, label: "🍎 Apple", isCorrect: true },
-    { id: 2, label: "🚗 Car", isCorrect: false },
-    { id: 3, label: "🍌 Banana", isCorrect: true },
-    { id: 4, label: "🐶 Dog", isCorrect: false },
+  const ROBOT_POOL = [
+    // 🍎 Fruits
+    { label: "🍎 Apple", type: "fruit" },
+    { label: "🍌 Banana", type: "fruit" },
+    { label: "🍇 Grape", type: "fruit" },
+    { label: "🍊 Orange", type: "fruit" },
+    { label: "🍓 Strawberry", type: "fruit" },
+    { label: "🍍 Pineapple", type: "fruit" },
+    { label: "🥭 Mango", type: "fruit" },
+    { label: "🍉 Watermelon", type: "fruit" },
+    { label: "🍒 Cherry", type: "fruit" },
+    { label: "🥝 Kiwi", type: "fruit" },
+
+    // 🐶 Animals
+    { label: "🐶 Dog", type: "animal" },
+    { label: "🐱 Cat", type: "animal" },
+    { label: "🐭 Mouse", type: "animal" },
+    { label: "🐰 Rabbit", type: "animal" },
+    { label: "🐼 Panda", type: "animal" },
+    { label: "🦁 Lion", type: "animal" },
+    { label: "🐯 Tiger", type: "animal" },
+    { label: "🐵 Monkey", type: "animal" },
+
+    // 🚗 Vehicles
+    { label: "🚗 Car", type: "vehicle" },
+    { label: "🚕 Taxi", type: "vehicle" },
+    { label: "🚙 SUV", type: "vehicle" },
+    { label: "🚌 Bus", type: "vehicle" },
+    { label: "🏍️ Motorcycle", type: "vehicle" },
+    { label: "🚲 Bicycle", type: "vehicle" },
+    { label: "✈️ Plane", type: "vehicle" },
+    { label: "🚀 Rocket", type: "vehicle" },
+
+    // 📱 Electronics
+    { label: "📱 Phone", type: "electronics" },
+    { label: "💻 Laptop", type: "electronics" },
+    { label: "⌚ Watch", type: "electronics" },
+    { label: "📺 TV", type: "electronics" },
   ];
 
   const handleForgotPassword = (e) => {
@@ -196,13 +231,50 @@ export default function Topbar() {
     setDrawerOpen(false);
   };
 
-  const handleCloseLogin = () => {
-    setOpenLogin(false);
-    setFormData({ email: "", password: "" });
-    setShowRobotCheck(false);
-    setIsHuman(false);
-    setRobotAnswer([]);
-    setRobotError(false);
+  // Map readable names to your ROBOT_POOL types
+  const TYPE_MAP = {
+    Fruits: "fruit",
+    Animals: "animal",
+    Vehicles: "vehicle",
+    Electronics: "electronics",
+  };
+
+  const generateRobotOptions = () => {
+    const readableTypes = Object.keys(TYPE_MAP); // ["Fruits","Animals","Vehicles","Electronics"]
+
+    // Pick a random readable type
+    const randomReadableType =
+      readableTypes[Math.floor(Math.random() * readableTypes.length)];
+
+    // Get the actual type in ROBOT_POOL
+    const poolType = TYPE_MAP[randomReadableType];
+
+    setRobotType(randomReadableType); // For UI: "Select Fruits", "Select Animals", etc.
+
+    // Filter correct and wrong items
+    const correctItems = ROBOT_POOL.filter((item) => item.type === poolType);
+    const wrongItems = ROBOT_POOL.filter((item) => item.type !== poolType);
+
+    // Pick 2 correct randomly
+    const selectedCorrect = correctItems
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 2);
+
+    // Pick 2 wrong randomly
+    const selectedWrong = wrongItems
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 2);
+
+    // Mix and shuffle
+    const mixedOptions = [...selectedCorrect, ...selectedWrong]
+      .sort(() => 0.5 - Math.random())
+      .map((item, index) => ({
+        id: index + 1,
+        label: item.label,
+        isCorrect: item.type === poolType,
+      }));
+
+    setRobotOptions(mixedOptions);
   };
 
   const toggleRobotOption = (id) => {
@@ -213,7 +285,11 @@ export default function Topbar() {
   };
 
   const verifyHuman = () => {
-    const correct = robotOptions.filter((o) => o.isCorrect).map((o) => o.id).sort();
+    const correct = robotOptions
+      .filter(o => o.isCorrect)
+      .map(o => o.id)
+      .sort();
+
     const selected = [...robotAnswer].sort();
 
     if (JSON.stringify(correct) !== JSON.stringify(selected)) {
@@ -287,6 +363,7 @@ export default function Topbar() {
       // BACKEND says: robot check required
       if (err.response?.status === 429) {
         setShowRobotCheck(true);
+        generateRobotOptions();
         setIsHuman(false);
         setMessage(err.response.data.detail);
         setSeverity("warning");
@@ -1609,12 +1686,8 @@ export default function Topbar() {
                   {t("security_check")}
                 </Typography>
 
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 2 }}
-                >
-                  {t("select_fruits")}
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Select {robotType}
                 </Typography>
 
                 <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
