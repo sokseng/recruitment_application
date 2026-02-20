@@ -15,14 +15,13 @@ import {
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import api from "../../services/api";
-
 import { useRef } from "react";
 import { Autocomplete, Chip, InputAdornment } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-
+import { useTranslation } from 'react-i18next';
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -44,6 +43,8 @@ const SectionBox = ({ title, children }) => (
 );
 
 const UpdateProfileEmployer = () => {
+    const { t } = useTranslation();
+    
     const initialFormData = {
         user_name: "",
         email: "",
@@ -206,12 +207,12 @@ const UpdateProfileEmployer = () => {
             if (response.status == 200) {
                 setOpenSnackbar(true)
                 setSeverity("success")
-                setMessage('Update Successfully!')
+                setMessage(t('update_success'))
             }
         } catch (error) {
             setOpenSnackbar(true)
             setSeverity("error")
-            setMessage(error.response?.data?.detail || 'Update failed')
+            setMessage(error.response?.data?.detail || t('update_failed'))
         }
     };
 
@@ -251,7 +252,7 @@ const UpdateProfileEmployer = () => {
                                 }}
                             >
                                 {/* Company Info */}
-                                <SectionBox title="Company Information">
+                                <SectionBox title={t('company_information')}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
                                         {/* Hidden file input */}
                                         <input
@@ -264,7 +265,7 @@ const UpdateProfileEmployer = () => {
 
                                         {/* Avatar clickable */}
                                         <Box sx={{ position: "relative" }}>
-                                            <Tooltip title="Click to change logo">
+                                            <Tooltip title={t('click_to_change_logo')}>
                                                 <Avatar
                                                     src={logoPreview}
                                                     onClick={() => document.getElementById("company-logo-input").click()}
@@ -280,7 +281,7 @@ const UpdateProfileEmployer = () => {
                                             </Tooltip>
 
                                             {/* Upload icon */}
-                                            <Tooltip title="Upload logo">
+                                            <Tooltip title={t('upload_logo')}>
                                                 <IconButton
                                                     size="small"
                                                     color="primary"
@@ -299,7 +300,7 @@ const UpdateProfileEmployer = () => {
 
                                             {/* Remove icon */}
                                             {logoPreview && (
-                                                <Tooltip title="Remove logo">
+                                                <Tooltip title={t('remove_logo')}>
                                                     <IconButton
                                                         size="small"
                                                         color="error"
@@ -323,7 +324,7 @@ const UpdateProfileEmployer = () => {
 
                                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                                         <TextField
-                                            label="Company Name"
+                                            label={t('company_name')}
                                             name="company_name"
                                             required
                                             value={formData.company_name}
@@ -332,7 +333,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Company Email"
+                                            label={t('company_email')}
                                             type="email"
                                             name="company_email"
                                             value={formData.company_email}
@@ -341,7 +342,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Company Phone"
+                                            label={t('company_phone')}
                                             name="company_contact"
                                             value={formData.company_contact}
                                             onChange={handleChange}
@@ -349,7 +350,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Company Website"
+                                            label={t('company_website')}
                                             name="company_website"
                                             value={formData.company_website}
                                             onChange={handleChange}
@@ -375,8 +376,8 @@ const UpdateProfileEmployer = () => {
                                                 renderInput={(params) => (
                                                     <TextField
                                                         {...params}
-                                                        label="Company Categories"
-                                                        placeholder="Select categories"
+                                                        label={t('company_categories')}
+                                                        placeholder={t('select_categories')}
                                                         size="small"
                                                         fullWidth
                                                     />
@@ -399,7 +400,7 @@ const UpdateProfileEmployer = () => {
 
                                         <Box sx={{ gridColumn: "1 / -1" }}>
                                             <TextField
-                                                label="Company Address"
+                                                label={t('company_address')}
                                                 name="company_address"
                                                 value={formData.company_address}
                                                 onChange={handleChange}
@@ -411,7 +412,7 @@ const UpdateProfileEmployer = () => {
                                         </Box>
                                         <Box sx={{ gridColumn: "1 / -1" }}>
                                             <TextField
-                                                label="Company Description"
+                                                label={t('company_description')}
                                                 name="company_description"
                                                 value={formData.company_description}
                                                 onChange={handleChange}
@@ -425,10 +426,10 @@ const UpdateProfileEmployer = () => {
                                 </SectionBox>
 
                                 {/* User Info */}
-                                <SectionBox title="User Information">
+                                <SectionBox title={t('user_information')}>
                                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                                         <TextField
-                                            label="User Name"
+                                            label={t('user_name')}
                                             required
                                             name="user_name"
                                             value={formData.user_name}
@@ -437,7 +438,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Email"
+                                            label={t('email')}
                                             name="email"
                                             required
                                             disabled
@@ -448,7 +449,7 @@ const UpdateProfileEmployer = () => {
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Phone"
+                                            label={t('phone')}
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleChange}
@@ -457,18 +458,18 @@ const UpdateProfileEmployer = () => {
                                         />
                                         <TextField
                                             select
-                                            label="Gender"
+                                            label={t('gender')}
                                             name="gender"
                                             value={formData.gender}
                                             onChange={handleChange}
                                             size="small"
                                             fullWidth
                                         >
-                                            <MenuItem value="Male">Male</MenuItem>
-                                            <MenuItem value="Female">Female</MenuItem>
+                                            <MenuItem value="Male">{t('male')}</MenuItem>
+                                            <MenuItem value="Female">{t('female')}</MenuItem>
                                         </TextField>
                                         <TextField
-                                            label="Date of Birth"
+                                            label={t('date_of_birth')}
                                             name="date_of_birth"
                                             type="date"
                                             InputLabelProps={{ shrink: true }}
@@ -479,7 +480,7 @@ const UpdateProfileEmployer = () => {
                                         />
                                         <Box sx={{ gridColumn: "1 / -1" }}>
                                             <TextField
-                                                label="Address"
+                                                label={t('address')}
                                                 name="address"
                                                 value={formData.address}
                                                 onChange={handleChange}
@@ -496,10 +497,10 @@ const UpdateProfileEmployer = () => {
                             {/* Action Buttons */}
                             <Stack direction="row" justifyContent="flex-end" mt={2} spacing={1}>
                                 <Button variant="contained" size="small" type="submit">
-                                    Save Changes
+                                    {t('save_changes')}
                                 </Button>
                                 <Button variant="outlined" size="small" color="secondary" type="button" onClick={handleResetForm}>
-                                    Reset Form
+                                    {t('reset_form')}
                                 </Button>
                             </Stack>
                         </form>
