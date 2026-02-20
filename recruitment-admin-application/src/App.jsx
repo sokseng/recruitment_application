@@ -15,6 +15,7 @@ export default function App() {
   const [activeCallRoom, setActiveCallRoom] = useState(null);
   const [userData, setUserData] = useState(null);
   const ringtoneRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { send } = useGlobalWebSocket((data) => {
     switch (data.type) {
@@ -24,6 +25,7 @@ export default function App() {
         break
 
       case "call.accepted":
+        setIncomingCall(null);
         setActiveCallRoom({
           roomId: data.roomId,
           mode: data.mode,
@@ -35,6 +37,12 @@ export default function App() {
 
       case "call.declined":
         setIncomingCall(null);
+        setActiveCallRoom(null);
+        break;
+
+      case "call.missed":
+        setIncomingCall(null);
+        setActiveCallRoom(null);
         break;
 
       case "call.ended":
@@ -48,25 +56,32 @@ export default function App() {
   });
 
   const acceptCall = () => {
-    if (incomingCall) {
-      setActiveCallRoom(incomingCall);
-      setIncomingCall(null);
+    if (!incomingCall || isProcessing) return;
 
-      send({
-        type: "call.accept",
-        payload: { room_id: incomingCall.roomId, mode: incomingCall.mode }
-      });
-    }
+    setIsProcessing(true);
+
+    send({
+      type: "call.accept",
+      payload: { room_id: incomingCall.roomId, mode: incomingCall.mode }
+    });
+
+    setActiveCallRoom(incomingCall);
+    setIncomingCall(null);
+    setIsProcessing(false);
   }
 
   const declineCall = () => {
-    if (incomingCall) {
-      send({
-        type: "call.decline",
-        payload: { room_id: incomingCall.roomId }
-      });
-      setIncomingCall(null);
-    }
+    if (!incomingCall || isProcessing) return;
+
+    setIsProcessing(true);
+    send({
+      type: "call.decline",
+      payload: { room_id: incomingCall.roomId }
+    });
+
+    setIncomingCall(null);
+    setIncomingCall(null);
+    setIsProcessing(false);
   }
 
   const endCall = () => {
@@ -85,37 +100,35 @@ export default function App() {
     hydrate()
   }, [hydrate])
 
-  useEffect(() => {
-    ringtoneRef.current = new Audio(ringtone);
-    ringtoneRef.current.loop = true; // keep ringing
-  }, []);
+  // useEffect(() => {
+  //   ringtoneRef.current = new Audio(ringtone);
+  //   ringtoneRef.current.loop = true; // keep ringing
+  // }, []);
 
-  useEffect(() => {
-    if (incomingCall && !activeCallRoom) {
-      ringtoneRef.current?.play().catch((err) => {
-        console.log("Autoplay blocked:", err);
-      });
-    } else {
-      ringtoneRef.current?.pause();
-      if (ringtoneRef.current) {
-        ringtoneRef.current.currentTime = 0;
-      }
-    }
-  }, [incomingCall, activeCallRoom]);
+  // useEffect(() => {
+  //   const unlockAudio = () => {
+  //     if (ringtoneRef.current) {
+  //       ringtoneRef.current.play().then(() => {
+  //         ringtoneRef.current.pause();
+  //         ringtoneRef.current.currentTime = 0;
+  //       });
+  //     }
+  //     window.removeEventListener("click", unlockAudio);
+  //   };
 
-  useEffect(() => {
-    const unlockAudio = () => {
-      if (ringtoneRef.current) {
-        ringtoneRef.current.play().then(() => {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.currentTime = 0;
-        });
-      }
-      window.removeEventListener("click", unlockAudio);
-    };
+  //   window.addEventListener("click", unlockAudio);
+  // }, []);
 
-    window.addEventListener("click", unlockAudio);
-  }, []);
+  // useEffect(() => {
+  //   if (!ringtoneRef.current) return;
+
+  //   if (incomingCall && !activeCallRoom) {
+  //     ringtoneRef.current.play().catch(() => { });
+  //   } else {
+  //     ringtoneRef.current.pause();
+  //     ringtoneRef.current.currentTime = 0;
+  //   }
+  // }, [incomingCall, activeCallRoom]);
 
   return (
     <BrowserRouter>
@@ -192,13 +205,14 @@ export default function App() {
               {incomingCall.fromUsername}
             </Typography>
             <Typography variant="body1" >
-              Incoming Call
+              {incomingCall.mode === "video" ? "Incoming Video Call" : "Incoming Audio Call"}
             </Typography>
           </Box>
 
           <Stack direction="row" spacing={2}>
             <IconButton
               onClick={acceptCall}
+              disabled={isProcessing}
               sx={{
                 backgroundColor: 'green',
                 color: 'white',
@@ -212,6 +226,7 @@ export default function App() {
 
             <IconButton
               onClick={declineCall}
+              disabled={isProcessing}
               sx={{
                 backgroundColor: 'red',
                 color: 'white',
