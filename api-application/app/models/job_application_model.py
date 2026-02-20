@@ -1,5 +1,5 @@
 # job_application_model.py
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum as SQLEnum, func, Boolean
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Enum as SQLEnum, String, func, Boolean
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 import enum
@@ -19,6 +19,7 @@ class JobApplication(Base):
     applied_date = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     application_status = Column(SQLEnum(ApplicationStatus), default=ApplicationStatus.PENDING, nullable=False)
     cancelled = Column(Boolean, default=False, nullable=False)
+    reason = Column(String(255), nullable=True)  
 
     # Relationships
     job = relationship("Job", back_populates="applications")
