@@ -1670,7 +1670,7 @@ export default function MyJobs() {
               minWidth: 140,
             }}
           >
-            I Understand
+            Close
           </Button>
         </DialogActions>
       </Dialog>

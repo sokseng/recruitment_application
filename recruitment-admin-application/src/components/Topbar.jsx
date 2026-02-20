@@ -1680,8 +1680,8 @@ export default function Topbar() {
             />
 
             {/* Robot Section with Smooth Collapse */}
-            <Collapse in={showRobotCheck}>
-              <Box sx={{ mt: 1, p: 2, bgcolor: "grey.50", borderRadius: 2 }}>
+            <Collapse in={showRobotCheck} sx={{border: "2px solid rgba(0,0,0,0.1)", borderRadius: 2}}>
+              <Box sx={{ p:1,  bgcolor: "grey.50", borderRadius: 2 }}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   {t("security_check")}
                 </Typography>
