@@ -1,24 +1,25 @@
-// Footer.jsx  (compact version)
-import React from 'react';
+// Footer.jsx (compact version)
+import {
+  Copyright,
+  Facebook,
+  Instagram,
+  LinkedIn,
+  Twitter,
+} from '@mui/icons-material';
 import {
   Box,
   Container,
-  Typography,
-  Link,
   IconButton,
+  Link,
   Stack,
+  Typography,
 } from '@mui/material';
-import {
-  Facebook,
-  Twitter,
-  LinkedIn,
-  Instagram,
-  Copyright,
-} from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-export default function Footer() {
-  const navigate = useNavigate();
 
+export default function Footer() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const currentYear = new Date().getFullYear();
 
@@ -71,10 +72,10 @@ export default function Footer() {
               color: 'grey.600',
             }}
           >
-            <Copyright fontSize="inherit" /> {currentYear} True Match 360. All rights reserved.
+            <Copyright fontSize="inherit" /> {t('copyright', { year: currentYear })}
           </Typography>
 
-          {/* Center – Quick important links (optional) */}
+          {/* Center – Quick important links */}
           <Stack 
             direction="row" 
             spacing={3} 
@@ -89,7 +90,7 @@ export default function Footer() {
               underline="hover"
               sx={{ color: 'primary.light', '&:hover': { color: 'primary.light' } }}
             >
-              About Us
+              {t('about_us')}
             </Link>
             <Link 
               component="button"
@@ -98,7 +99,7 @@ export default function Footer() {
               underline="hover"
               sx={{ color: 'primary.light', '&:hover': { color: 'primary.light' } }}
             >
-              Privacy Policy
+              {t('privacy_policy')}
             </Link>
             <Link 
               component="button"
@@ -107,7 +108,7 @@ export default function Footer() {
               underline="hover"
               sx={{ color: 'primary.light', '&:hover': { color: 'primary.light' } }}
             >
-              Term of Use
+              {t('terms_of_use')}
             </Link>
           </Stack>
 
@@ -133,7 +134,6 @@ export default function Footer() {
                 {item.icon}
               </IconButton>
             ))}
-
           </Stack>
         </Stack>
       </Container>

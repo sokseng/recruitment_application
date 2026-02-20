@@ -1,22 +1,25 @@
 // src/pages/About.jsx
-import React from "react";
+import {
+  Email,
+  InfoOutlineRounded,
+  LocationOn,
+  Phone,
+} from "@mui/icons-material";
 import {
   Box,
   Container,
-  Typography,
   Divider,
-  Stack,
-  Paper,
   Link as MuiLink,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
-import {
-  LocationOn,
-  Phone,
-  Email,
-  InfoOutlineRounded,
-} from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
+
 
 export default function About() {
+  const { t, i18n } = useTranslation();
+
   return (
     <Box 
       sx={{ 
@@ -52,7 +55,7 @@ export default function About() {
             </Box>
 
             <Typography variant="h6" fontWeight={700}>
-              True Match 360
+              {t('true_match_360')}
             </Typography>
 
             <Typography
@@ -61,7 +64,7 @@ export default function About() {
               align="center"
               maxWidth={320}
             >
-              Connecting top talent with leading companies across Cambodia
+              {t('about_tagline')}
             </Typography>
           </Stack>
 
@@ -74,9 +77,7 @@ export default function About() {
               color="text.secondary"
               lineHeight={1.8}
             >
-              Founded in 2026, <strong>True Match 360</strong> is a
-              Cambodia-based recruitment agency specializing in executive,
-              management, and senior-level talent acquisition.
+              {t('about_founded')}
             </Typography>
 
             <Typography
@@ -84,9 +85,7 @@ export default function About() {
               color="text.secondary"
               lineHeight={1.8}
             >
-              Our mission is simple — to connect skilled professionals with
-              forward-thinking companies where both can grow, perform, and
-              succeed together.
+              {t('about_mission')}
             </Typography>
 
             {/* Contact Section */}
@@ -104,7 +103,7 @@ export default function About() {
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <LocationOn fontSize="small" color="primary" />
                   <Typography variant="body2">
-                    Mean Chey, Phnom Penh, Cambodia
+                    {t('about_address')}
                   </Typography>
                 </Stack>
 
@@ -116,7 +115,7 @@ export default function About() {
                     color="primary"
                     variant="body2"
                   >
-                    012 345 678
+                    {t('about_phone')}
                   </MuiLink>
                 </Stack>
 
@@ -128,7 +127,7 @@ export default function About() {
                     color="primary"
                     variant="body2"
                   >
-                    truematch360@gmail.com
+                    {t('about_email')}
                   </MuiLink>
                 </Stack>
               </Stack>
