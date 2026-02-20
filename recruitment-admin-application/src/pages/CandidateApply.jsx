@@ -1,50 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Grid,
     Card,
     CardContent,
-    CardActions,
     Typography,
     Button,
     Avatar,
     Stack,
     Divider,
-    Alert,
-    alpha,
-    CircularProgress,
     Chip,
+    Tabs,
+    Tab,
+    Alert,
+    CircularProgress,
+    Snackbar,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogContentText,
     DialogActions,
     IconButton,
-    Snackbar,
+    alpha,
+    TextField,
+    InputAdornment,
+    useTheme,
+    useMediaQuery,
 } from '@mui/material';
 import {
     WorkOutline as WorkIcon,
     CalendarToday,
-    Description,
+    LocationOn,
     Visibility,
     Cancel,
-    ArrowForward as ArrowIcon,
-    LocationOn,
-    WarningAmber as WarningAmberIcon,
+    CheckCircle,
+    StarBorder,
+    HourglassEmpty,
     Close as CloseIcon,
+    WarningAmber as WarningAmberIcon,
+    Search as SearchIcon,
+    ArrowForward as ArrowIcon,
 } from '@mui/icons-material';
 import api from "../services/api";
-import { useTheme, useMediaQuery } from "@mui/material";
+
+// Reusable InfoRow
+function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
+    return (
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box sx={{ color: 'text.secondary', lineHeight: 0 }}>{icon}</Box>
+            <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                {label}:
+            </Typography>
+            <Box flexGrow={1} />
+            <Typography component="span" variant="body2" color={color} fontWeight={fontWeight}>
+                {value}
+            </Typography>
+        </Stack>
+    );
+}
 
 export default function MyApplicationsToCompanies() {
     const navigate = useNavigate();
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [tabValue, setTabValue] = useState(0);
+    const [searchText, setSearchText] = useState('');
     const [cancelDialog, setCancelDialog] = useState({
         open: false,
         applicationId: null,
@@ -56,46 +81,145 @@ export default function MyApplicationsToCompanies() {
         severity: 'success',
     });
 
+    const statusTabs = [
+        { label: 'All', value: 'all', color: 'grey' },
+        { label: 'Pending', value: 'pending', color: 'warning' },
+        { label: 'Shortlisted', value: 'shortlisted', color: 'info' },
+        { label: 'Accepted', value: 'accepted', color: 'success' },
+        { label: 'Rejected', value: 'rejected', color: 'error' },
+        { label: 'Cancelled', value: 'cancelled', color: 'grey' },
+        { label: 'Closed', value: 'closed', color: 'error' }, // ← new tab
+    ];
+
+    const getStatusConfig = (status, isClosed = false) => {
+        const s = (status || '').toLowerCase();
+        const map = {
+            accepted: { color: 'success', icon: <CheckCircle fontSize="small" />, label: 'Accepted' },
+            rejected: { color: 'error', icon: <Cancel fontSize="small" />, label: 'Rejected' },
+            shortlisted: { color: 'info', icon: <StarBorder fontSize="small" />, label: 'Shortlisted' },
+            pending: { color: 'warning', icon: <HourglassEmpty fontSize="small" />, label: 'Pending' },
+            cancelled: { color: 'default', icon: <CloseIcon fontSize="small" />, label: 'Cancelled' },
+        };
+
+        if (isClosed && !['accepted', 'rejected', 'cancelled'].includes(s)) {
+            return { color: 'error', icon: <CloseIcon fontSize="small" />, label: 'Closed' };
+        }
+
+        return map[s] || { color: 'default', icon: null, label: status || 'Unknown' };
+    };
+
     useEffect(() => {
-        const fetchApplications = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                setError(null);
-
                 const { data } = await api.get('/candidate/me/applications');
-
-                setApplications(data);
+                setApplications(data || []);
             } catch (err) {
-                console.error('Fetch applications error:', err);
-                if (err.response?.status === 404) {
-                    setError('Candidate profile not found. Please complete your profile first.');
-                } else {
-                    setError('Unable to load applications. Please try again later.');
-                }
+                console.error(err);
+                setError(
+                    err.response?.status === 404
+                        ? 'Please complete your profile first.'
+                        : 'Failed to load applications.'
+                );
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchApplications();
+        fetchData();
     }, []);
 
-    const handleViewDetails = (app) => {
-        const jobId = app.job?.pk_id || app.job?.id;
-        if (jobId) {
-            navigate(`/job/${jobId}`);
-        } else {
-            setSnackbar({
-                open: true,
-                message: 'Job details are unavailable for this application.',
-                severity: 'warning',
+    const counts = useMemo(() => {
+        const c = {
+            all: applications.length,
+            pending: 0,
+            shortlisted: 0,
+            accepted: 0,
+            rejected: 0,
+            cancelled: 0,
+            closed: 0
+        };
+
+        applications.forEach((app) => {
+            const job = app.job || {};
+            const today = new Date();
+            const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
+
+            if (app.cancelled) {
+                c.cancelled += 1;
+            } else if (isClosed) {
+                c.closed += 1;
+            } else {
+                const s = (app.application_status || '').toLowerCase();
+                if (s in c) c[s] += 1;
+            }
+        });
+
+        return c;
+    }, [applications]);
+
+    const filteredApplications = useMemo(() => {
+        let list = applications;
+
+        if (tabValue !== 0) {
+            const target = statusTabs[tabValue].value.toLowerCase();
+            if (target === 'closed') {
+                list = list.filter((app) => {
+                    const job = app.job || {};
+                    const today = new Date();
+                    return job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
+                });
+            } else if (target === 'cancelled') {
+                list = list.filter((app) => app.cancelled === true);
+            } else {
+                list = list.filter((app) => (app.application_status || '').toLowerCase() === target);
+            }
+        }
+
+        if (searchText.trim()) {
+            const term = searchText.toLowerCase().trim();
+
+            list = list.filter((app) => {
+                const job = app.job || {};
+
+                const searchableTexts = [
+                    job.job_title || '',
+                    job.employer?.company_name || '',
+                    job.location || '',
+                    job.job_type || '',
+                    job.level || '',
+                    job.salary_range || '',
+                    job.status || '',             
+
+                    app.application_status || '',
+                    app.cancelled ? 'cancelled' : '',
+
+                    app.applied_date ? new Date(app.applied_date).toLocaleDateString() : '',
+                    job.closing_date ? new Date(job.closing_date).toLocaleDateString() : '',
+                ];
+
+                const combinedText = searchableTexts.join(' ').toLowerCase();
+                return combinedText.includes(term);
             });
         }
-    };
 
-    const handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') return;
-        setSnackbar((prev) => ({ ...prev, open: false }));
+        return list;
+    }, [applications, tabValue, searchText]);
+
+    const handleChangeTab = (_, newValue) => setTabValue(newValue);
+
+    const getAccentColor = (app) => {
+        const today = new Date();
+        const job = app.job || {};
+        const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
+
+        if (app.cancelled) return theme.palette.grey[600];
+        if (isClosed) return theme.palette.error.main;
+        const status = (app.application_status || '').toLowerCase();
+        if (status === 'accepted') return theme.palette.success.main;
+        if (status === 'rejected') return theme.palette.error.main;
+        if (status === 'shortlisted') return theme.palette.info.main;
+        if (status === 'pending') return theme.palette.warning.main;
+        return theme.palette.primary.main;
     };
 
     const handleOpenCancelDialog = (id) => {
@@ -116,7 +240,9 @@ export default function MyApplicationsToCompanies() {
         try {
             await api.put(`/candidate/me/applications/${id}/cancel`);
 
-            setApplications((prev) => prev.map((app) => app.pk_id === id ? { ...app, cancelled: true } : app));
+            setApplications((prev) => prev.map((app) =>
+                (app.pk_id || app.id) === id ? { ...app, cancelled: true } : app
+            ));
 
             setSnackbar({
                 open: true,
@@ -137,9 +263,9 @@ export default function MyApplicationsToCompanies() {
 
     if (loading) {
         return (
-            <Box sx={{ py: 12, textAlign: 'center' }}>
-                <CircularProgress size={56} thickness={4} />
-                <Typography mt={4} variant="h6" color="text.secondary">
+            <Box sx={{ py: 10, textAlign: 'center' }}>
+                <CircularProgress size={60} thickness={4} />
+                <Typography mt={3} variant="h6" color="text.secondary">
                     Loading your applications...
                 </Typography>
             </Box>
@@ -359,279 +485,273 @@ export default function MyApplicationsToCompanies() {
     }
 
     return (
-        <Box sx={{ py: { xs: 2, md: 4 } }}>
-            <Box sx={{ mb: 5, textAlign: 'center' }}>
-                <Box
+        <Box sx={{ px: { xs: 1.5 } }}>
+            <Stack spacing={1} sx={{ mb: 2 }}>
+                <TextField
+                    fullWidth
+                    size='small'
+                    variant="outlined"
+                    placeholder="Search"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon color="action" />
+                            </InputAdornment>
+                        ),
+                        sx: { borderRadius: 3 },
+                    }}
+                    sx={{ maxWidth: 500 }}
+                />
+
+                {/* Tabs */}
+                <Tabs
+                    value={tabValue}
+                    onChange={handleChangeTab}
+                    variant={isMobile ? "scrollable" : "fullWidth"}
+                    scrollButtons={isMobile ? "auto" : false}
+                    allowScrollButtonsMobile
+                    TabIndicatorProps={{ style: { display: 'none' } }}
                     sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        px: 4,
-                        py: 1,
-                        borderRadius: 50,
-                        bgcolor: alpha(theme.palette.primary.main, 0.08),
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                        backdropFilter: 'blur(10px)',
+                        minHeight: 0,
+                        borderRadius: '16px',
+                        backgroundColor: alpha(theme.palette.background.paper, 0.6),
+                        backdropFilter: 'blur(12px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                        boxShadow: `0 6px 20px ${alpha(theme.palette.common.black, 0.08)}`,
+                        overflow: 'hidden',
+                        p: 0.75,
+                        '& .MuiTabs-flexContainer': { gap: { xs: 0.5, sm: 1 } },
+                        '& .MuiTab-root': {
+                            minHeight: 42,
+                            minWidth: { xs: 90, sm: 110 },
+                            px: { xs: 2, sm: 3 },
+                            py: 1,
+                            mx: 0.25,
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontSize: { xs: '0.875rem', sm: '0.95rem' },
+                            fontWeight: 600,
+                            color: 'text.secondary',
+                            transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
+                            '&:hover': {
+                                backgroundColor: alpha(theme.palette.primary.main, 0.07),
+                                color: theme.palette.primary.main,
+                            },
+                            '&.Mui-selected': {
+                                background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+                                color: '#ffffff !important',
+                                fontWeight: 700,
+                                boxShadow: '0 4px 14px rgba(13, 148, 136, 0.35)',
+                                transform: 'translateY(-1px)',
+                            },
+                        },
+                        '& .MuiTabs-scrollButtons': {
+                            color: theme.palette.primary.main,
+                            opacity: 0.7,
+                            '&:hover': { opacity: 1 },
+                        },
                     }}
                 >
-                    <Typography
-                        variant="h6"
-                        fontWeight={700}
-                        sx={{
-                            background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                        }}
-                    >
-                        My Applications
-                    </Typography>
+                    {statusTabs.map((tab) => {
+                        const count = counts[tab.value] || 0;
+                        const isSelected = tabValue === statusTabs.findIndex(t => t.value === tab.value);
 
-                    <Chip
-                        label={applications.length}
-                        size="small"
-                        color="primary"
-                        sx={{
-                            fontWeight: 700,
-                            minWidth: 32,
-                            height: 24,
-                            borderRadius: '12px',
-                        }}
-                    />
-                </Box>
-            </Box>
+                        return (
+                            <Tab
+                                key={tab.value}
+                                disableRipple
+                                label={
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                background: isSelected ? 'linear-gradient(90deg, #ffffff, #f0f0ff)' : 'none',
+                                                WebkitBackgroundClip: isSelected ? 'text' : 'none',
+                                                WebkitTextFillColor: isSelected ? 'transparent' : 'inherit',
+                                            }}
+                                        >
+                                            {tab.label}
+                                        </Box>
+                                        {count > 0 && (
+                                            <Chip
+                                                label={count}
+                                                size="small"
+                                                sx={{
+                                                    height: 20,
+                                                    minWidth: 20,
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    borderRadius: '10px',
+                                                    px: 1,
+                                                    backgroundColor: isSelected
+                                                        ? 'rgba(255,255,255,0.28)'
+                                                        : alpha(
+                                                            theme.palette[tab.color === 'grey' ? 'primary' : tab.color].main,
+                                                            isSelected ? 0.25 : 0.12
+                                                        ),
+                                                    color: isSelected ? '#fff' : theme.palette[tab.color === 'grey' ? 'primary' : tab.color].main,
+                                                    boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.18)' : 'none',
+                                                    transition: 'all 0.25s ease',
+                                                    border: isSelected ? '1px solid rgba(255,255,255,0.4)' : 'none',
+                                                }}
+                                            />
+                                        )}
+                                    </Stack>
+                                }
+                            />
+                        );
+                    })}
+                </Tabs>
+            </Stack>
 
             <Grid container spacing={3}>
-                {applications.map((app) => {
+                {filteredApplications.map((app) => {
                     const job = app.job || {};
                     const today = new Date();
                     const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
-                    const isCancelled = app.cancelled === true;
-
-                    const accentColor = isCancelled ? theme.palette.grey[500] : (isClosed ? '#ef4444' : theme.palette.primary.main);
+                    const accent = getAccentColor(app);
+                    const statusCfg = getStatusConfig(app.application_status, isClosed);
 
                     return (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={app.pk_id} sx={{ width: isMobile ? '100%' : 'auto', px: 1 }}>
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={app.pk_id || app.id} sx={{ minWidth: isMobile ? '100%' : 320 }}>
                             <Card
                                 elevation={0}
                                 sx={{
                                     height: '100%',
-                                    minWidth: 280,
-                                    borderRadius: { xs: 3, sm: 4 },
+                                    minWidth: isMobile ? '100%' : 320,
+                                    maxWidth: 400,
+                                    borderRadius: 3,
                                     overflow: 'hidden',
-                                    position: 'relative',
-                                    bgcolor: alpha(theme.palette.background.paper, 0.65),
-                                    backdropFilter: 'blur(16px)',
-                                    border: `1px solid ${alpha(accentColor, 0.18)}`,
-                                    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-                                    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                    bgcolor: alpha(theme.palette.background.paper, 0.7),
+                                    backdropFilter: 'blur(12px)',
+                                    border: `1px solid ${alpha(accent, 0.2)}`,
+                                    transition: 'all 0.36s cubic-bezier(0.34, 1.56, 0.64, 1)',
                                     '&:hover': {
-                                        transform: 'translateY(-12px) scale(1.03)',
-                                        boxShadow: `0 24px 48px ${alpha(accentColor, 0.22)}`,
-                                        borderColor: alpha(accentColor, 0.5),
+                                        transform: 'translateY(-10px)',
+                                        boxShadow: `0 20px 40px ${alpha(accent, 0.18)}`,
+                                        borderColor: alpha(accent, 0.45),
                                     },
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        height: 5,
-                                        background: `linear-gradient(90deg, ${accentColor}, ${alpha(accentColor, 0.4)})`,
-                                    }}
-                                />
-                                {/* Cancelled badge */}
-                                {isCancelled && (
-                                    <Chip
-                                        label="Cancelled"
-                                        size="small"
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 8,
-                                            right: 16,
-                                            bgcolor: accentColor,
-                                            color: '#fff',
-                                            fontWeight: 400,
-                                            fontSize: '0.8rem',
-                                            zIndex: 10,
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                                        }}
-                                    />
-                                )}
+                                <Box sx={{ height: 6, background: `linear-gradient(90deg, ${accent}, ${alpha(accent, 0.4)})` }} />
 
                                 <CardContent sx={{ p: 3 }}>
-                                    <Stack direction="row" spacing={2.5} alignItems="center" mb={2}>
+                                    <Stack direction="row" spacing={2} alignItems="center" mb={2}>
                                         <Avatar
                                             sx={{
-                                                width: 56,
-                                                height: 56,
-                                                bgcolor: alpha(accentColor, 0.15),
-                                                color: accentColor,
-                                                boxShadow: `0 4px 12px ${alpha(accentColor, 0.2)}`,
-                                                border: `2px solid ${alpha(accentColor, 0.3)}`,
+                                                width: 54,
+                                                height: 54,
+                                                bgcolor: alpha(accent, 0.12),
+                                                color: accent,
+                                                border: `2px solid ${alpha(accent, 0.3)}`,
                                             }}
                                         >
-                                            <WorkIcon fontSize="medium" />
+                                            <WorkIcon />
                                         </Avatar>
 
                                         <Box flexGrow={1}>
-                                            <Typography
-                                                variant="h6"
-                                                fontWeight={700}
-                                                lineHeight={1.18}
-                                                sx={{
-                                                    color: isClosed ? 'error.main' : 'text.primary',
-                                                    letterSpacing: '-0.015em',
-                                                    mb: 0.5,
-                                                    transition: 'color 0.2s ease',
-                                                    '&:hover': {
-                                                        color: isClosed ? 'error.dark' : 'primary.main',
-                                                    },
-                                                }}
-                                            >
-                                                {job.job_title || 'Job Title'}
+                                            <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
+                                                {job.job_title || '—'}
                                             </Typography>
-
-                                            <Chip
-                                                label={job.employer?.company_name || 'Unknown Company'}
-                                                size="small"
-                                                color="primary"
-                                                variant="filled"
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: '0.8rem',
-                                                    height: 28,
-                                                    borderRadius: '14px',
-                                                    backgroundColor: (theme) =>
-                                                        alpha(theme.palette.primary.main, 0.08),
-                                                    color: 'primary.main',
-                                                    '&:hover': {
-                                                        backgroundColor: (theme) =>
-                                                            alpha(theme.palette.primary.main, 0.16),
-                                                        transform: 'translateY(-1px)',
-                                                        boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`,
-                                                    },
-                                                    '& .MuiChip-label': {
-                                                        px: 1.5,
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        maxWidth: '240px',
-                                                    },
-                                                    transition: 'all 0.22s ease',
-                                                }}
-                                            />
+                                            <Typography variant="body2" color="text.secondary" noWrap>
+                                                {job.employer?.company_name || '—'}
+                                            </Typography>
                                         </Box>
 
-                                        <Box
-                                            sx={{
-                                                width: 12,
-                                                height: 12,
-                                                borderRadius: '50%',
-                                                bgcolor: accentColor,
-                                                boxShadow: `0 0 0 4px ${alpha(accentColor, 0.2)}`,
-                                                transition: 'all 0.3s ease',
-                                            }}
-                                        />
+                                        {app.cancelled && <Chip label="Cancelled" size="small" color="default" />}
                                     </Stack>
 
-                                    <Divider sx={{ my: 2, opacity: 0.4 }} />
+                                    <Divider sx={{ my: 2, opacity: 0.5 }} />
 
-                                    <Stack spacing={1.5} sx={{ fontSize: '0.875rem' }}>
-                                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                                            <CalendarToday fontSize="small" sx={{ color: 'text.secondary' }} />
-                                            <Typography color="text.secondary" fontWeight={500}>
-                                                Applied: {new Date(app.applied_date).toLocaleDateString()}
-                                            </Typography>
-                                        </Stack>
-
-                                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                                            <Description fontSize="small" sx={{ color: 'text.secondary' }} />
-                                            <Typography fontWeight={600}>
-                                                {job.salary_range || 'N/A'}$
-                                            </Typography>
-                                        </Stack>
-
-                                        {/* Job type & level */}
-                                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                                            <WorkIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                                            <Typography color="text.secondary">
-                                                {job.job_type || 'N/A'} • {job.level || 'N/A'}
-                                            </Typography>
-                                        </Stack>
-
-                                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                                            <LocationOn fontSize="small" sx={{ color: 'text.secondary' }} />
-                                            <Typography color="text.secondary">
-                                                {job.location || 'N/A'}
-                                            </Typography>
-                                        </Stack>
-
-                                        {/* Closing date with red if job is Closed */}
-                                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                                            <CalendarToday fontSize="small" sx={{ color: isClosed ? 'error.main' : 'text.secondary' }} />
-                                            <Typography color={isClosed ? 'error.main' : 'text.secondary'} fontWeight={isClosed ? 600 : 500}>
-                                                Closes: {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : 'No deadline'}
-                                            </Typography>
-                                        </Stack>
+                                    <Stack spacing={1.4} sx={{ fontSize: '0.9rem' }}>
+                                        <InfoRow
+                                            icon={<CalendarToday fontSize="small" />}
+                                            label="Applied"
+                                            value={new Date(app.applied_date).toLocaleDateString()}
+                                        />
+                                        <InfoRow
+                                            icon={<LocationOn fontSize="small" />}
+                                            label="Location"
+                                            value={job.location || '—'}
+                                        />
+                                        <InfoRow
+                                            icon={<WorkIcon fontSize="small" />}
+                                            label="Type / Level"
+                                            value={`${job.job_type || '—'} • ${job.level || '—'}`}
+                                        />
+                                        <InfoRow
+                                            icon={statusCfg.icon}
+                                            label="Status"
+                                            value={
+                                                <Chip
+                                                    label={statusCfg.label}
+                                                    color={statusCfg.color}
+                                                    size="small"
+                                                    sx={{ fontWeight: 600, minWidth: 90 }}
+                                                />
+                                            }
+                                        />
+                                        {job.closing_date && (
+                                            <InfoRow
+                                                icon={<CalendarToday fontSize="small" />}
+                                                label="Closes"
+                                                value={new Date(job.closing_date).toLocaleDateString()}
+                                                color={isClosed ? 'error.main' : 'inherit'}
+                                                fontWeight={isClosed ? 700 : 600}
+                                            />
+                                        )}
                                     </Stack>
                                 </CardContent>
 
-                                <CardActions sx={{ px: 3, pb: 3, justifyContent: 'space-between' }}>
+                                <Stack direction="row" spacing={1.5} sx={{ px: 3, pb: 3, justifyContent: 'space-between' }}>
                                     <Button
                                         variant="outlined"
                                         size="small"
                                         startIcon={<Visibility fontSize="small" />}
-                                        onClick={() => handleViewDetails(app)}
+                                        onClick={() => job.pk_id && navigate(`/job/${job.pk_id}`)}
                                         sx={{
-                                            borderRadius: 50,
-                                            px: 3,
-                                            py: 0.6,
-                                            fontSize: '0.8125rem',
-                                            fontWeight: 600,
-                                            textTransform: 'none',
-                                            borderColor: alpha(accentColor, 0.4),
-                                            color: accentColor,
-                                            '&:hover': {
-                                                borderColor: accentColor,
-                                                bgcolor: alpha(accentColor, 0.08),
-                                            },
+                                            borderRadius: 20,
+                                            borderColor: alpha(accent, 0.5),
+                                            color: accent,
+                                            '&:hover': { bgcolor: alpha(accent, 0.08) },
                                         }}
                                     >
-                                        View
+                                        View Job
                                     </Button>
 
-                                    <Button
-                                        variant="text"
-                                        color="error"
-                                        size="small"
-                                        startIcon={<Cancel fontSize="small" />}
-                                        onClick={() => handleOpenCancelDialog(app.pk_id || app.id)}
-                                        sx={{
-                                            fontSize: '0.8125rem',
-                                            textTransform: 'none',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </CardActions>
+                                    {/* Cancel button only if allowed */}
+                                    {!app.cancelled &&
+                                        (app.application_status || '').toLowerCase() !== 'rejected' &&
+                                        !isClosed && (
+                                            <Button
+                                                variant="text"
+                                                color="error"
+                                                size="small"
+                                                startIcon={<Cancel fontSize="small" />}
+                                                onClick={() => handleOpenCancelDialog(app.pk_id || app.id)}
+                                                sx={{ fontWeight: 600 }}
+                                            >
+                                                Cancel
+                                            </Button>
+                                        )}
+                                </Stack>
                             </Card>
                         </Grid>
                     );
                 })}
             </Grid>
 
-            {/* ── Beautiful Confirmation Dialog ── */}
+            {/* Dialog */}
             <Dialog
                 open={cancelDialog.open}
                 onClose={handleCloseCancelDialog}
                 fullScreen={isMobile}
                 maxWidth="xs"
                 fullWidth={!isMobile}
-                TransitionProps={{
-                    // Optional: smoother appear animation
-                    timeout: { enter: 320, exit: 240 },
-                }}
+                TransitionProps={{ timeout: { enter: 320, exit: 240 } }}
                 sx={{
-                    // Slight modern backdrop tint
                     '& .MuiBackdrop-root': {
                         backgroundColor: alpha('#000', isMobile ? 0.72 : 0.68),
                         backdropFilter: 'blur(6px)',
@@ -645,7 +765,6 @@ export default function MyApplicationsToCompanies() {
                     },
                 }}
             >
-                {/* Header with accent color */}
                 <Box
                     sx={{
                         bgcolor: alpha(theme.palette.error.main, 0.08),
@@ -680,7 +799,6 @@ export default function MyApplicationsToCompanies() {
                         Cancel Application
                     </DialogTitle>
 
-                    {/* Close button – visible on both, more prominent on mobile */}
                     <IconButton
                         aria-label="close"
                         onClick={handleCloseCancelDialog}
@@ -697,18 +815,8 @@ export default function MyApplicationsToCompanies() {
                     </IconButton>
                 </Box>
 
-                <DialogContent sx={{
-                    px: { xs: 3, sm: 4 },
-                    py: 3.5,
-                    pb: isMobile ? 4 : 3,
-                }}>
-                    <DialogContentText
-                        sx={{
-                            color: 'text.primary',
-                            fontSize: '1.03rem',
-                            lineHeight: 1.65,
-                        }}
-                    >
+                <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 3.5, pb: isMobile ? 4 : 3 }}>
+                    <DialogContentText sx={{ color: 'text.primary', fontSize: '1.03rem', lineHeight: 1.65 }}>
                         Are you sure you want to <strong>cancel</strong> this application?
                     </DialogContentText>
                 </DialogContent>
@@ -725,18 +833,17 @@ export default function MyApplicationsToCompanies() {
                         bgcolor: alpha(theme.palette.background.paper, isMobile ? 0.5 : 0.3),
                     }}
                 >
-                    {/* Secondary button (No, keep it) */}
                     <Button
                         fullWidth={isMobile}
                         onClick={handleCloseCancelDialog}
                         disabled={cancelDialog.loading}
                         variant={isMobile ? "outlined" : "text"}
                         color="inherit"
-                        size={isMobile ? "medium" : "small"}           // medium on mobile → still tappable
+                        size={isMobile ? "medium" : "small"}
                         sx={{
-                            borderRadius: isMobile ? 28 : 2,             // softer pill on mobile
+                            borderRadius: isMobile ? 28 : 2,
                             px: isMobile ? 4 : 2.5,
-                            py: isMobile ? 1.1 : 0.5,                    // ← smaller height on mobile
+                            py: isMobile ? 1.1 : 0.5,
                             fontWeight: isMobile ? 600 : 500,
                             textTransform: 'none',
                             minWidth: 'auto',
@@ -745,27 +852,20 @@ export default function MyApplicationsToCompanies() {
                         No, keep it
                     </Button>
 
-                    {/* Main destructive button */}
                     <Button
                         fullWidth={isMobile}
                         variant="contained"
                         color="error"
                         size={isMobile ? "medium" : "small"}
                         loading={cancelDialog.loading}
-                        loadingIndicator={
-                            <CircularProgress
-                                color="inherit"
-                                size={isMobile ? 20 : 16}
-                                thickness={5}
-                            />
-                        }
+                        loadingIndicator={<CircularProgress color="inherit" size={isMobile ? 20 : 16} thickness={5} />}
                         onClick={handleConfirmCancel}
                         disabled={cancelDialog.loading}
                         autoFocus
                         sx={{
                             borderRadius: isMobile ? 28 : 2,
                             px: isMobile ? 4 : 3,
-                            py: isMobile ? 1.1 : 0.6,                    // ← reduced vertical padding on mobile
+                            py: isMobile ? 1.1 : 0.6,
                             fontWeight: 600,
                             textTransform: 'none',
                             minWidth: 'auto',
@@ -795,49 +895,15 @@ export default function MyApplicationsToCompanies() {
 
             <Snackbar
                 open={snackbar.open}
-                autoHideDuration={6000}           // disappears after 6 seconds
-                onClose={handleSnackbarClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center'            // or 'right' / 'left'
-                }}
-                // Optional: better mobile feel
-                sx={{
-                    maxWidth: { xs: '90%', sm: 400 },
-                    bottom: { xs: 16, sm: 24 },
-                }}
+                autoHideDuration={5000}
+                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert
-                    onClose={handleSnackbarClose}
+                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                     severity={snackbar.severity}
-                    variant="filled"                  // filled looks modern & prominent
-                    sx={{
-                        width: '100%',
-                        borderRadius: 2,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                        '& .MuiAlert-action': {
-                            paddingRight: 1,
-                        },
-                    }}
-                    action={
-                        // Optional UNDO button – only show for success case
-                        snackbar.severity === 'success' ? (
-                            <Button
-                                color="inherit"
-                                size="small"
-                                onClick={() => {
-                                    handleUndoCancel();           // implement if you add undo logic
-                                    handleSnackbarClose();
-                                }}
-                                sx={{
-                                    fontWeight: 600,
-                                    textTransform: 'none',
-                                }}
-                            >
-                                UNDO
-                            </Button>
-                        ) : null
-                    }
+                    variant="filled"
+                    sx={{ width: '100%' }}
                 >
                     {snackbar.message}
                 </Alert>
