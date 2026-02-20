@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import useAuthStore from "../../store/useAuthStore";
 import { useRef } from "react";
+import { useTranslation } from 'react-i18next';
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -36,6 +37,7 @@ const SectionBox = ({ title, children }) => (
 );
 
 const UpdateProfileAdmin = () => {
+    const { t } = useTranslation();
     const initialFormData = {
         user_name: "",
         email: "",
@@ -110,14 +112,14 @@ const UpdateProfileAdmin = () => {
             if (response.status === 200) {
                 setOpenSnackbar(true)
                 setSeverity("success")
-                setMessage('Update Successfully!')
+                setMessage(t('update_success'))
                 setUserData(response.data)
             }
 
         } catch (error) {
             setOpenSnackbar(true)
             setSeverity("error")
-            setMessage(error.response?.data?.detail || 'Update failed')
+            setMessage(error.response?.data?.detail || t('update_failed'))
         }
     };
 
@@ -162,7 +164,7 @@ const UpdateProfileAdmin = () => {
                             bgcolor: "#fff",
                         }}
                     >
-                        <SectionBox title="Personal Information">
+                        <SectionBox title={t('personal_information')}>
                             <Box
                                 sx={{
                                     display: "grid",
@@ -171,7 +173,7 @@ const UpdateProfileAdmin = () => {
                                 }}
                             >
                                 <TextField
-                                    label="User Name"
+                                    label={t('user_name')}
                                     required
                                     name="user_name"
                                     value={formData.user_name}
@@ -180,7 +182,7 @@ const UpdateProfileAdmin = () => {
                                     fullWidth
                                 />
                                 <TextField
-                                    label="Email"
+                                    label={t('email')}
                                     name="email"
                                     disabled
                                     required
@@ -191,7 +193,7 @@ const UpdateProfileAdmin = () => {
                                     fullWidth
                                 />
                                 <TextField
-                                    label="Phone"
+                                    label={t('phone')}
                                     name="phone"
                                     value={formData.phone}
                                     onChange={handleChange}
@@ -200,7 +202,7 @@ const UpdateProfileAdmin = () => {
                                 />
                                 <TextField
                                     select
-                                    label="Gender"
+                                    label={t('gender')}
                                     required
                                     name="gender"
                                     value={formData.gender}
@@ -208,11 +210,11 @@ const UpdateProfileAdmin = () => {
                                     size="small"
                                     fullWidth
                                 >
-                                    <MenuItem value="Male">Male</MenuItem>
-                                    <MenuItem value="Female">Female</MenuItem>
+                                    <MenuItem value="Male">{t('male')}</MenuItem>
+                                    <MenuItem value="Female">{t('female')}</MenuItem>
                                 </TextField>
                                 <TextField
-                                    label="Date of Birth"
+                                    label={t('date_of_birth')}
                                     required
                                     name="date_of_birth"
                                     type="date"
@@ -224,7 +226,7 @@ const UpdateProfileAdmin = () => {
                                 />
                                 <Box sx={{ gridColumn: "1 / -1" }}>
                                     <TextField
-                                        label="Address"
+                                        label={t('address')}
                                         name="address"
                                         value={formData.address}
                                         onChange={handleChange}
@@ -249,7 +251,7 @@ const UpdateProfileAdmin = () => {
                                 type="submit"
                                 fullWidth={{ xs: true, sm: false }}
                             >
-                                Save Changes
+                                {t('save_changes')}
                             </Button>
                             <Button
                                 variant="outlined"
@@ -259,7 +261,7 @@ const UpdateProfileAdmin = () => {
                                 onClick={handleResetForm}
                                 fullWidth={{ xs: true, sm: false }}
                             >
-                                Reset Form
+                                {t('reset_form')}
                             </Button>
                         </Stack>
                     </Paper>

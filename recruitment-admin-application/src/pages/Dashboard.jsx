@@ -1,55 +1,4 @@
 // src/pages/Dashboard.jsx
-import { useEffect, useState } from "react";
-import {
-  Box,
-  Card,
-  Typography,
-  Avatar,
-  Stack,
-  Divider,
-  CircularProgress,
-  Alert,
-  Button,
-  TextField,
-  InputAdornment,
-  useMediaQuery,
-  useTheme,
-  AppBar,
-  Toolbar,
-  Chip,
-  alpha,
-  IconButton,
-  Tooltip,
-  Snackbar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  RadioGroup,
-  FormControlLabel,
-  DialogActions,
-  Radio,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import api from "../services/api";
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
-import EventIcon from "@mui/icons-material/Event";
-import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import PaymentsIcon from "@mui/icons-material/Payments";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
-import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
-import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
-import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
-import Popover from "@mui/material/Popover";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
-import Checkbox from "@mui/material/Checkbox";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import BadgeIcon from "@mui/icons-material/Badge";
 import {
   Cancel,
   CheckBox,
@@ -65,18 +14,71 @@ import {
   Send,
   UploadFile,
 } from "@mui/icons-material";
-import useAuthStore from "../store/useAuthStore";
+import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
+import BadgeIcon from "@mui/icons-material/Badge";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
+import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
+import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import EventIcon from "@mui/icons-material/Event";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PaymentsIcon from "@mui/icons-material/Payments";
+import SearchIcon from "@mui/icons-material/Search";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import {
+  Alert,
+  alpha,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  Radio,
+  RadioGroup,
+  Snackbar,
+  Stack,
+  TextField,
+  Toolbar,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import Checkbox from "@mui/material/Checkbox";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from "@mui/material/ListItemText";
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Popover from "@mui/material/Popover";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
+import "quill/dist/quill.snow.css";
+import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
+import ReactQuill from "react-quill-new";
 import { useParams } from 'react-router-dom';
+import api from "../services/api";
+import useAuthStore from "../store/useAuthStore";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { jobId } = useParams();
@@ -343,7 +345,7 @@ export default function Dashboard() {
       console.error("Failed to load resume extras:", err);
       setSnackbar({
         open: true,
-        message: "Could not load some resume attachments",
+        message: t('could_not_load_attachments'),
         severity: "warning",
       });
 
@@ -476,7 +478,7 @@ export default function Dashboard() {
       setHasMore(newJobs.length === limit);
       setSkip((prev) => (isLoadMore ? prev + limit : limit));
     } catch (err) {
-      setError("Failed to load jobs. Please try again.");
+      setError(t('failed_to_load_jobs'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -573,7 +575,7 @@ export default function Dashboard() {
 
       setSnackbar({
         open: true,
-        message: "Resume uploaded and selected!",
+        message: t('resume_uploaded'),
         severity: "success",
       });
     } catch (err) {
@@ -583,7 +585,7 @@ export default function Dashboard() {
         const firstError = errorDetail[0];
         setUploadError(`${firstError.loc?.join(".")}: ${firstError.msg}`);
       } else {
-        setUploadError(errorDetail || "Failed to upload resume");
+        setUploadError(errorDetail || t('upload_failed'));
       }
 
       console.error("Upload failed:", err);
@@ -655,8 +657,8 @@ export default function Dashboard() {
       setSnackbar({
         open: true,
         message: hasAppliedToThisJob
-          ? "Application updated!"
-          : "Application submitted!",
+          ? t('application_updated')
+          : t('application_submitted'),
         severity: "success",
       });
 
@@ -666,7 +668,7 @@ export default function Dashboard() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.response?.data?.detail || "Failed to submit application",
+        message: err.response?.data?.detail || t('application_failed'),
         severity: "error",
       });
     } finally {
@@ -726,7 +728,7 @@ export default function Dashboard() {
         {/* title */}
         <TextField
           size="small"
-          placeholder="Search jobs, companies, locations..."
+          placeholder={t('search_placeholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           fullWidth
@@ -755,7 +757,7 @@ export default function Dashboard() {
           }}
         />
         {/* Single MoreVert button */}
-        <Tooltip title="Filters & Sorting" arrow placement="bottom">
+        <Tooltip title={t('filters_sorting')} arrow placement="bottom">
           <IconButton
             size="small"
             onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
@@ -804,7 +806,7 @@ export default function Dashboard() {
               fontWeight={600}
               color="text.primary"
             >
-              Filter & Sort Jobs
+              {t('filter_sort_jobs')}
             </Typography>
           </Box>
 
@@ -817,7 +819,7 @@ export default function Dashboard() {
               color="text.secondary"
               fontWeight={500}
             >
-              Filters
+              {t('filters')}
             </Typography>
           </Box>
 
@@ -833,7 +835,7 @@ export default function Dashboard() {
               <CategoryRoundedIcon fontSize="small" color="action" />
             </ListItemIcon>
             <ListItemText
-              primary="Categories"
+              primary={t('categories')}
               primaryTypographyProps={{ fontSize: "15px" }}
             />
             {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
@@ -863,7 +865,7 @@ export default function Dashboard() {
               <WorkOutlineIcon fontSize="small" color="action" />
             </ListItemIcon>
             <ListItemText
-              primary="Job Type"
+              primary={t('job_type')}
               primaryTypographyProps={{ fontSize: "15px" }}
             />
             {Array.isArray(typeFilter) &&
@@ -895,7 +897,7 @@ export default function Dashboard() {
               <EventIcon fontSize="small" color="action" />
             </ListItemIcon>
             <ListItemText
-              primary="Posted Date"
+              primary={t('posted_date')}
               primaryTypographyProps={{ fontSize: "15px" }}
             />
             {dateFilterMode !== "all" && (
@@ -903,10 +905,10 @@ export default function Dashboard() {
                 size="small"
                 label={
                   dateFilterMode === "today"
-                    ? "Today"
+                    ? t('today')
                     : dateFilterMode === "last7"
-                      ? "7 days"
-                      : "Custom"
+                      ? t('last_7_days')
+                      : t('custom')
                 }
                 variant="outlined"
                 sx={{
@@ -943,7 +945,7 @@ export default function Dashboard() {
                 setFilterMenuAnchor(null);
               }}
             >
-              Reset
+              {t('reset')}
             </Button>
           </Box>
 
@@ -956,7 +958,7 @@ export default function Dashboard() {
               color="text.secondary"
               fontWeight={500}
             >
-              Sort by
+              {t('sort_by')}
             </Typography>
           </Box>
 
@@ -972,13 +974,13 @@ export default function Dashboard() {
               <EventIcon fontSize="small" color="action" />
             </ListItemIcon>
             <ListItemText
-              primary="Date Posted"
+              primary={t('date_posted')}
               primaryTypographyProps={{ fontSize: "15px" }}
             />
             {sortBy.startsWith("date-") && (
               <Chip
                 size="small"
-                label={sortBy === "date-desc" ? "Newest" : "Oldest"}
+                label={sortBy === "date-desc" ? t('newest') : t('oldest')}
                 variant="outlined"
                 sx={{
                   ml: "auto",
@@ -1002,13 +1004,13 @@ export default function Dashboard() {
               <BadgeIcon fontSize="small" color="action" />
             </ListItemIcon>
             <ListItemText
-              primary="Job Title"
+              primary={t('job_title')}
               primaryTypographyProps={{ fontSize: "15px" }}
             />
             {sortBy.startsWith("title-") && (
               <Chip
                 size="small"
-                label={sortBy === "title-asc" ? "A–Z" : "Z–A"}
+                label={sortBy === "title-asc" ? t('a_to_z') : t('z_to_a')}
                 variant="outlined"
                 sx={{
                   ml: "auto",
@@ -1037,7 +1039,7 @@ export default function Dashboard() {
                 setFilterMenuAnchor(null);
               }}
             >
-              Reset
+              {t('reset')}
             </Button>
           </Box>
 
@@ -1062,7 +1064,7 @@ export default function Dashboard() {
                 setFilterMenuAnchor(null);
               }}
             >
-              Reset All
+              {t('reset_all')}
             </Button>
           </Box>
         </Menu>
@@ -1104,7 +1106,7 @@ export default function Dashboard() {
                 icon={<CheckBoxOutlineBlank fontSize="small" />}
                 checkedIcon={<CheckBox fontSize="small" />}
               />
-              <ListItemText primary="All" />
+              <ListItemText primary={t('all')} />
             </ListItemButton>
 
             {categories.map((cat) => {
@@ -1159,7 +1161,7 @@ export default function Dashboard() {
           }}
         >
           <List dense disablePadding>
-            {["All", "Full-time", "Part-time", "Internship"].map((type) => {
+            {[t('all'), t('full_time'), t('part_time'), t('internship')].map((type) => {
               const checked = typeFilter.includes(type);
 
               return (
@@ -1170,10 +1172,10 @@ export default function Dashboard() {
                   onClick={() => {
                     let updated = [...typeFilter];
 
-                    if (type === "All") {
-                      updated = ["All"];
+                    if (type === t('all')) {
+                      updated = [t('all')];
                     } else {
-                      updated = updated.filter((v) => v !== "All");
+                      updated = updated.filter((v) => v !== t('all'));
 
                       if (updated.includes(type)) {
                         updated = updated.filter((v) => v !== type);
@@ -1181,7 +1183,7 @@ export default function Dashboard() {
                         updated.push(type);
                       }
 
-                      if (updated.length === 0) updated = ["All"];
+                      if (updated.length === 0) updated = [t('all')];
                     }
 
                     setTypeFilter(updated);
@@ -1210,7 +1212,7 @@ export default function Dashboard() {
               color: "text.secondary",
             }}
           >
-            <Box component="img" src="/No-Data.gif" alt="No data" />
+            <Box component="img" src="/No-Data.gif" alt={t('no_data')} />
           </Box>
         ) : (
           <>
@@ -1255,7 +1257,7 @@ export default function Dashboard() {
                         },
                       }}
                     >
-                      {companyName.charAt(0).toUpperCase()}
+                      {companyName?.charAt(0).toUpperCase()}
                     </Avatar>
                     <Box minWidth={0} flex={1}>
                       <Stack
@@ -1270,7 +1272,7 @@ export default function Dashboard() {
 
                         {alreadyApplied && (
                           <Chip
-                            label="Applied"
+                            label={t('applied')}
                             size="small"
                             color="success"
                             variant="filled"
@@ -1306,7 +1308,7 @@ export default function Dashboard() {
                             fontWeight={600}
                             color="text.secondary"
                           >
-                            Categories:
+                            {t('categories')}:
                           </Typography>
 
                           {job.categories.slice(0, 2).map((cat) => (
@@ -1350,7 +1352,7 @@ export default function Dashboard() {
                       <Stack direction="row" spacing={0.3} mt={0.5}>
                         <Chip
                           icon={<EventIcon />}
-                          label={`Posted: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
+                          label={`${t('posted')}: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
                           size="small"
                           variant="outlined"
                           color="primary"
@@ -1367,7 +1369,7 @@ export default function Dashboard() {
             {/* ─── Load More Button ─── */}
             {hasMore && (
               <Box sx={{ p: 1, textAlign: "end" }}>
-                <Tooltip title="show more" arrow placement="top">
+                <Tooltip title={t('show_more')} arrow placement="top">
                   <IconButton
                     size="small"
                     onClick={() => loadJobs(true)}
@@ -1390,7 +1392,7 @@ export default function Dashboard() {
 
             {!hasMore && filteredJobs.length > 0 && (
               <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                <Typography variant="body2">No more jobs to show</Typography>
+                <Typography variant="body2">{t('no_more_jobs')}</Typography>
               </Box>
             )}
           </>
@@ -1428,24 +1430,24 @@ export default function Dashboard() {
           }
         }}
       >
-        <FormControlLabel value="all" control={<Radio />} label="All dates" />
-        <FormControlLabel value="today" control={<Radio />} label="Today" />
+        <FormControlLabel value="all" control={<Radio />} label={t('all_dates')} />
+        <FormControlLabel value="today" control={<Radio />} label={t('today')} />
         <FormControlLabel
           value="last7"
           control={<Radio />}
-          label="Last 7 days"
+          label={t('last_7_days')}
         />
         <FormControlLabel
           value="custom"
           control={<Radio />}
-          label="Custom range"
+          label={t('custom_range')}
         />
       </RadioGroup>
 
       {dateFilterMode === "custom" && (
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <DatePicker
-            label="From"
+            label={t('from')}
             value={dateFrom}
             onChange={(newValue) => setDateFrom(newValue)}
             format="YYYY-MM-DD"
@@ -1456,7 +1458,7 @@ export default function Dashboard() {
           />
 
           <DatePicker
-            label="To"
+            label={t('to')}
             value={dateTo}
             onChange={(newValue) => setDateTo(newValue)}
             format="YYYY-MM-DD"
@@ -1483,7 +1485,7 @@ export default function Dashboard() {
             setDateFilterAnchor(null);
           }}
         >
-          Clear
+          {t('clear')}
         </Button>
       </Box>
     </Popover>
@@ -1538,7 +1540,7 @@ export default function Dashboard() {
                       },
                     }}
                   >
-                    {companyName.charAt(0).toUpperCase()}
+                    {companyName?.charAt(0).toUpperCase()}
                   </Avatar>
                   <Stack direction="column" spacing={1} flexWrap="wrap">
                     <Typography variant="h7" fontWeight={700} lineHeight={1.2}>
@@ -1546,7 +1548,7 @@ export default function Dashboard() {
                     </Typography>
                     <Chip
                       icon={<BusinessRoundedIcon sx={{ fontSize: 16 }} />}
-                      label={`Company: ${companyName}`}
+                      label={`${t('company')}: ${companyName}`}
                       size="small"
                       sx={(theme) => ({
                         height: 22,
@@ -1588,7 +1590,7 @@ export default function Dashboard() {
                       textTransform: "none",
                     }}
                   >
-                    {hasAppliedToThisJob ? "Re-apply" : "Apply Now"}
+                    {hasAppliedToThisJob ? t('reapply') : t('apply_now')}
                   </Button>
                 )}
                 {/* Mobile buttons */}
@@ -1601,7 +1603,7 @@ export default function Dashboard() {
                   >
                     {isCandidate && (
                       <Tooltip
-                        title={hasAppliedToThisJob ? "Re-apply" : "Apply"}
+                        title={hasAppliedToThisJob ? t('reapply') : t('apply')}
                         arrow
                       >
                         <Button
@@ -1622,7 +1624,7 @@ export default function Dashboard() {
                 )}
 
                 {/* Desktop */}
-                <Tooltip title="Company information" arrow>
+                <Tooltip title={t('company_information')} arrow>
                   <Button
                     variant="outlined"
                     onClick={(e) => setCompanyAnchor(e.currentTarget)}
@@ -1679,7 +1681,7 @@ export default function Dashboard() {
                         borderColor: "primary.main",
                       }}
                     >
-                      Company Information
+                      {t('company_information')}
                     </Typography>
                   </Stack>
 
@@ -1692,7 +1694,7 @@ export default function Dashboard() {
                           fontWeight={600}
                           color="text.secondary"
                         >
-                          Company Name:
+                          {t('company_name')}:
                         </Typography>
                         <Chip
                           variant="outlined"
@@ -1710,7 +1712,7 @@ export default function Dashboard() {
                           fontWeight={600}
                           color="text.secondary"
                         >
-                          Address:
+                          {t('address')}:
                         </Typography>
                         <Typography variant="subtitle2">
                           {selectedJob.employer?.company_address}
@@ -1726,7 +1728,7 @@ export default function Dashboard() {
                           fontWeight={600}
                           color="text.secondary"
                         >
-                          Email:
+                          {t('email')}:
                         </Typography>
                         <Typography variant="body1">
                           {selectedJob.employer?.company_email || ""}
@@ -1742,7 +1744,7 @@ export default function Dashboard() {
                           fontWeight={600}
                           color="text.secondary"
                         >
-                          Contact:
+                          {t('contact')}:
                         </Typography>
                         <Typography variant="body1">
                           {selectedJob.employer?.company_contact || ""}
@@ -1758,7 +1760,7 @@ export default function Dashboard() {
                           fontWeight={600}
                           color="text.secondary"
                         >
-                          Website:
+                          {t('website')}:
                         </Typography>
                         {selectedJob.employer?.company_website ? (
                           <a
@@ -1789,7 +1791,7 @@ export default function Dashboard() {
                           color="text.secondary"
                           mb={1}
                         >
-                          About the Company
+                          {t('about_company')}
                         </Typography>
                       </Stack>
 
@@ -1828,8 +1830,8 @@ export default function Dashboard() {
                     }}
                   >
                     {hasAppliedToThisJob
-                      ? "Update Application"
-                      : "Apply to Position"}
+                      ? t('update_application')
+                      : t('apply_to_position')}
                   </DialogTitle>
 
                   <DialogContent sx={{ mt: 1 }}>
@@ -1840,10 +1842,7 @@ export default function Dashboard() {
                             severity="info"
                             sx={{ mb: 2, fontSize: "0.9rem" }}
                           >
-                            You changed the resume.
-                            <br />
-                            The cover letter and images currently shown are from
-                            the resume originally used for this application.
+                            {t('changed_resume_notice')}
                           </Alert>
                         ) : (
                           <Typography
@@ -1851,8 +1850,7 @@ export default function Dashboard() {
                             color="text.secondary"
                             sx={{ display: "block", mb: 1 }}
                           >
-                            Using the same resume as in your previous
-                            application
+                            {t('using_same_resume')}
                           </Typography>
                         )}
                       </>
@@ -1884,7 +1882,7 @@ export default function Dashboard() {
                               backgroundColor: "background.paper",
                             }}
                           >
-                            Select Resume & Upload New Resume (PDF)
+                            {t('select_resume')}
                           </Typography>
 
                           {/* Scrollable Resume List */}
@@ -1947,7 +1945,7 @@ export default function Dashboard() {
                                               fontSize: 12,
                                             }}
                                           >
-                                            {r.resume_file || "Text Resume"}
+                                            {r.resume_file || t('text_resume')}
                                           </Typography>
 
                                           {r.is_primary && (
@@ -1959,7 +1957,7 @@ export default function Dashboard() {
                                                 display: "block",
                                               }}
                                             >
-                                              Primary
+                                              {t('primary')}
                                             </Typography>
                                           )}
                                         </Box>
@@ -1986,7 +1984,7 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
-                          No resume found. Please upload one.
+                          {t('no_resume_found')}
                         </Alert>
                       )}
 
@@ -2002,7 +2000,7 @@ export default function Dashboard() {
                           py: 0.7,
                         }}
                       >
-                        {uploadLoading ? "Uploading..." : "Choose New Resume"}
+                        {uploadLoading ? t('uploading') : t('choose_new_resume')}
                         <input
                           type="file"
                           hidden
@@ -2041,7 +2039,7 @@ export default function Dashboard() {
                             : "text.secondary",
                         }}
                       >
-                        Cover Letter (PDF) – optional
+                        {t('cover_letter_optional')}
                       </Typography>
 
                       {/* Current cover letter display + remove button */}
@@ -2057,7 +2055,7 @@ export default function Dashboard() {
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                Current cover letter:
+                                {t('current_cover_letter')}:
                               </Typography>
                               <Typography
                                 variant="body2"
@@ -2079,8 +2077,8 @@ export default function Dashboard() {
                             <Tooltip
                               title={
                                 coverLetterToDelete
-                                  ? "Undo remove"
-                                  : "Remove this cover letter"
+                                  ? t('undo_remove')
+                                  : t('remove_cover_letter')
                               }
                             >
                               <IconButton
@@ -2109,8 +2107,7 @@ export default function Dashboard() {
                               color="error"
                               sx={{ mt: 0.5, display: "block" }}
                             >
-                              Marked for deletion – will be removed when you
-                              save
+                              {t('marked_for_deletion')}
                             </Typography>
                           )}
                         </Box>
@@ -2122,7 +2119,7 @@ export default function Dashboard() {
                           !canUploadNewCoverLetter &&
                           previousCoverLetterName &&
                           !coverLetterToDelete
-                            ? "Remove the current cover letter first to upload a new one"
+                            ? t('remove_cover_letter_first')
                             : ""
                         }
                         arrow
@@ -2152,12 +2149,12 @@ export default function Dashboard() {
                             }}
                           >
                             {coverLetterFile
-                              ? `New file selected: ${coverLetterFile.name}`
+                              ? `${t('new_file_selected')}: ${coverLetterFile.name}`
                               : hasAppliedToThisJob &&
                                   previousCoverLetterName &&
                                   !coverLetterToDelete
-                                ? "Upload new cover letter (replaces current one)"
-                                : "Upload cover letter (optional)"}
+                                ? t('upload_new_cover_letter')
+                                : t('upload_cover_letter_optional')}
                             <input
                               type="file"
                               hidden
@@ -2168,7 +2165,7 @@ export default function Dashboard() {
                                 if (file.size > 5 * 1024 * 1024) {
                                   setSnackbar({
                                     open: true,
-                                    message: "File too large (max 5MB)",
+                                    message: t('file_too_large'),
                                     severity: "error",
                                   });
                                   return;
@@ -2216,13 +2213,14 @@ export default function Dashboard() {
                         }}
                       >
                         Supporting Documents (PDF, JPG, PNG) – optional
+                        {t('attached_images_optional')}
                       </Typography>
 
                       {/* Existing images (from DB) */}
                       {existingImages.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="caption" color="text.secondary">
-                            Attached images ({existingImages.length}):
+                            {t('attached_images_count', { count: existingImages.length })}:
                           </Typography>
                           <Stack
                             direction="row"
@@ -2278,8 +2276,7 @@ export default function Dashboard() {
                               color="error"
                               sx={{ mt: 1, display: "block" }}
                             >
-                              {imagesToDelete.length} image(s) marked for
-                              removal (will be deleted when you save)
+                              {t('images_marked_for_removal', { count: imagesToDelete.length })}
                             </Typography>
                           )}
                         </Box>
@@ -2297,6 +2294,7 @@ export default function Dashboard() {
                         }}
                       >
                         Add more attachments
+                        {t('add_more_images')}
                         <input
                           type="file"
                           hidden
@@ -2312,7 +2310,7 @@ export default function Dashboard() {
                       {imageFiles.length > 0 && (
                         <Box>
                           <Typography variant="caption">
-                            New files to upload ({imageFiles.length}):
+                            {t('new_files_to_upload', { count: imageFiles.length })}:
                           </Typography>
                           <Stack
                             direction="row"
@@ -2350,7 +2348,7 @@ export default function Dashboard() {
                         textTransform: "none",
                       }}
                     >
-                      Cancel
+                      {t('cancel')}
                     </Button>
                     <Button
                       variant="contained"
@@ -2362,10 +2360,10 @@ export default function Dashboard() {
                       }}
                     >
                       {applying[jobToApply?.pk_id]
-                        ? "Submitting..."
+                        ? t('submitting')
                         : hasAppliedToThisJob
-                          ? "Update"
-                          : "Apply"}
+                          ? t('update')
+                          : t('apply')}
                     </Button>
                   </DialogActions>
                 </Dialog>
@@ -2383,7 +2381,7 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Posting Date:
+                    {t('posting_date')}:
                   </Typography>
                   <Chip
                     label={
@@ -2407,7 +2405,7 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Closing Date:
+                    {t('closing_date')}:
                   </Typography>
                   <Chip
                     label={
@@ -2431,7 +2429,7 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Job Type:
+                    {t('job_type')}:
                   </Typography>
                   <Chip
                     label={selectedJob.job_type || "—"}
@@ -2449,7 +2447,7 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Level:
+                    {t('level')}:
                   </Typography>
                   <Chip
                     label={selectedJob.level || "—"}
@@ -2467,13 +2465,13 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Salary:
+                    {t('salary')}:
                   </Typography>
                   <Chip
                     label={
                       selectedJob.salary_range
                         ? `${selectedJob.salary_range}$`
-                        : "Negotiable"
+                        : t('negotiable')
                     }
                     size="small"
                     variant="outlined"
@@ -2490,7 +2488,7 @@ export default function Dashboard() {
                       minWidth={110}
                       color="text.secondary"
                     >
-                      Categories:
+                      {t('categories')}:
                     </Typography>
                     {selectedJob.categories.map((cat) => (
                       <Chip
@@ -2522,7 +2520,7 @@ export default function Dashboard() {
                     minWidth={110}
                     color="text.secondary"
                   >
-                    Location:
+                    {t('location')}:
                   </Typography>
                   <Typography variant="subtitle2" color="">
                     {selectedJob.location}
@@ -2544,7 +2542,7 @@ export default function Dashboard() {
                 <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                   <DescriptionOutlinedIcon color="action" fontSize="medium" />
                   <Typography variant="h7" fontWeight={700}>
-                    Job Description
+                    {t('job_description')}
                   </Typography>
                 </Stack>
                 <ReactQuill
@@ -2558,7 +2556,7 @@ export default function Dashboard() {
               <Stack direction="row" alignItems="center" spacing={1} mb={1}>
                 <ChecklistOutlinedIcon color="action" fontSize="medium" />
                 <Typography variant="h7" fontWeight={700}>
-                  Requirements
+                  {t('requirements')}
                 </Typography>
               </Stack>
               <ReactQuill
@@ -2580,7 +2578,7 @@ export default function Dashboard() {
             }}
           >
             <Typography color="text.secondary">
-              Select a job to view details
+              {t('select_job_to_view')}
             </Typography>
           </Box>
         )}
@@ -2612,7 +2610,7 @@ export default function Dashboard() {
                   textTransform: "none",
                 }}
               >
-                Home
+                {t('home')}
               </Button>
             </Stack>
           </Box>
@@ -2683,7 +2681,7 @@ export default function Dashboard() {
                 direction="row"
                 justifyContent={{ xs: "flex-end", sm: "flex-end" }}
               >
-                <Tooltip title="Clear all filter" arrow placement="top">
+                <Tooltip title={t('clear_all_filters')} arrow placement="top">
                   <IconButton
                     sx={{
                       p: 0.5, // 🔥 shrink padding
@@ -2783,8 +2781,8 @@ export default function Dashboard() {
         >
           <List dense disablePadding>
             {[
-              { label: "Newest first", value: "date-desc" },
-              { label: "Oldest first", value: "date-asc" },
+              { label: t('newest_first'), value: "date-desc" },
+              { label: t('oldest_first'), value: "date-asc" },
             ].map((item) => (
               <ListItemButton
                 key={item.value}
@@ -2821,8 +2819,8 @@ export default function Dashboard() {
         >
           <List dense disablePadding>
             {[
-              { label: "A → Z", value: "title-asc" },
-              { label: "Z → A", value: "title-desc" },
+              { label: t('a_to_z'), value: "title-asc" },
+              { label: t('z_to_a'), value: "title-desc" },
             ].map((item) => (
               <ListItemButton
                 key={item.value}

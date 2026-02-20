@@ -41,7 +41,7 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
 
 async def get_current_user_ws(websocket: WebSocket, db: Session) -> User:
     token = websocket.query_params.get("token")
-    print("Token received:", token)
+    # print("Token received:", token)
     if not token:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return None  # Do NOT raise HTTPException

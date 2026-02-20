@@ -31,7 +31,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, setReactionsData }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -665,6 +665,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation()
+                                        onStartCall(chat.room_id, 'voice');
                                     }}
                                 />
                                 <VideocamIcon
@@ -677,7 +678,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         }
                                     }}
                                     onClick={(e) => {
-                                        e.stopPropagation()
+                                        e.stopPropagation();
+                                        onStartCall(chat.room_id, 'video');
                                     }}
                                 />
                             </Box>
@@ -758,6 +760,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 messages.map((message) => (
                                     <MessageBubble
                                         key={message.id}
+                                        roomId={chat.id}
                                         message={message}
                                         isOwn={message.sender_id === currentUserId}
                                         isForward={message?.forward_from?.sender?.pk_id === currentUserId}
@@ -773,7 +776,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onReact={toggleReactMessage}
                                         reactionsData={reactionsData}
                                         onRemoveReact={handleRemoveReact}
-                                        currentUserId={currentUserId}
+                                        onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
                                     />
                                 )))}
 

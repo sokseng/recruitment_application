@@ -1,51 +1,54 @@
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  Divider,
-  IconButton,
-  Stack,
-  Avatar,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  TextField,
-  MenuItem,
-  Menu,
-  Switch,
-  SpeedDial,
-  SpeedDialAction,
-  Select,
-  FormControl,
-  InputLabel
-} from '@mui/material'
-import { useState, useEffect } from 'react'
-import {
-  Edit as EditIcon,
   Add as AddIcon,
-  LocationOn as LocationOnIcon,
-  Email as EmailIcon,
-  UploadFile as UploadFileIcon,
-  Delete as DeleteIcon,
   Close as CloseIcon,
+  Delete as DeleteIcon,
+  Description as DescriptionIcon,
+  Edit as EditIcon,
+  Email as EmailIcon,
+  FileDownload as FileDownloadIcon,
+  LocationOn as LocationOnIcon,
   MoreVert as MoreVertIcon,
   Star as StarIcon,
-  FileDownload as FileDownloadIcon,
-  Description as DescriptionIcon
+  UploadFile as UploadFileIcon
 } from '@mui/icons-material'
-import useAuthStore from '../../store/useAuthStore'
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  IconButton,
+  InputLabel,
+  Menu,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
+  SpeedDial,
+  SpeedDialAction,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from '@mui/material'
+import { styled } from '@mui/material/styles'
+import "quill/dist/quill.snow.css"
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import ReactQuill from "react-quill-new"
 import api from '../../services/api'
-import { useTheme, useMediaQuery } from "@mui/material";
-import { styled } from '@mui/material/styles';
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
+import useAuthStore from '../../store/useAuthStore'
 
 export default function CandidateProfileDashboard() {
+  const { t } = useTranslation();
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -61,7 +64,7 @@ export default function CandidateProfileDashboard() {
   const [severity, setSeverity] = useState('error')
   const [editOpen, setEditOpen] = useState(false)
   const [anchorEls, setAnchorEls] = useState({});
-  const [activeSection, setActiveSection] = useState('Overview');
+  const [activeSection, setActiveSection] = useState(t('overview'));
   const [sectionOpen, setSectionOpen] = useState(false);
   const [overviewText, setOverviewText] = useState('');
   const [careerText, setCareerText] = useState('');
@@ -96,13 +99,13 @@ export default function CandidateProfileDashboard() {
 
     const validFiles = files.filter((file) => {
       if (!allowedTypes.includes(file.type)) {
-        setMessage(file.name + ' is not allowed.')
+        setMessage(t('file_not_allowed', { filename: file.name }))
         setSeverity('error')
         setOpenSnackbar(true)
         return false
       }
       if (file.size > 5 * 1024 * 1024) {
-        setMessage(file.name + ' exceeds 5MB.')
+        setMessage(t('file_exceeds_limit', { filename: file.name }))
         setSeverity('error')
         setOpenSnackbar(true)
         return false
@@ -132,13 +135,13 @@ export default function CandidateProfileDashboard() {
       })
 
       setUploadedCvs((prev) => [...prev, data])
-      setMessage('CV uploaded successfully')
+      setMessage(t('cv_upload_success'))
       setSeverity('success')
 
       // Remove the uploaded file from staged list
       setCvFile((prev) => prev.filter((_, i) => i !== fileIndex))
     } catch (err) {
-      setMessage(err.response?.data?.detail || 'Upload failed')
+      setMessage(err.response?.data?.detail || t('upload_failed'))
       setSeverity('error')
     } finally {
       setOpenSnackbar(true)
@@ -153,10 +156,10 @@ export default function CandidateProfileDashboard() {
     try {
       await api.delete(`/candidate/resumes/${cvId}`)
       setUploadedCvs((prev) => prev.filter((cv) => cv.pk_id !== cvId))
-      setMessage('CV deleted successfully')
+      setMessage(t('cv_delete_success'))
       setSeverity('success')
     } catch (err) {
-      setMessage(err.response?.data?.detail || 'Failed to delete CV')
+      setMessage(err.response?.data?.detail || t('cv_delete_failed'))
       setSeverity('error')
     } finally {
       setOpenSnackbar(true)
@@ -186,7 +189,7 @@ export default function CandidateProfileDashboard() {
 
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      setMessage('Failed to download file');
+      setMessage(t('download_failed'));
       setSeverity('error');
       setOpenSnackbar(true);
     }
@@ -205,10 +208,10 @@ export default function CandidateProfileDashboard() {
         }))
       )
 
-      setMessage('Default CV updated successfully')
+      setMessage(t('default_cv_updated'))
       setSeverity('success')
     } catch (err) {
-      setMessage(err.response?.data?.detail || 'Failed to set default CV')
+      setMessage(err.response?.data?.detail || t('default_cv_failed'))
       setSeverity('error')
     } finally {
       setOpenSnackbar(true)
@@ -304,10 +307,10 @@ export default function CandidateProfileDashboard() {
         },
       }));
 
-      showSnackbar(`${activeSection} saved successfully`, "success");
+      showSnackbar(t('section_saved', { section: activeSection }), "success");
       handleCloseSection();
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || `Failed to save ${activeSection}`;
+      const errorMsg = err.response?.data?.detail || t('section_save_failed', { section: activeSection });
       showSnackbar(errorMsg, "error");
     }
   };
@@ -315,23 +318,23 @@ export default function CandidateProfileDashboard() {
   const profile = candidates?.profile;
 
   const summaryFields = {
-    Gender: user_data.user_data?.gender,
-    'Date of Birth': user_data.user_data?.date_of_birth,
-    Phone: user_data.user_data?.phone,
-    Status: user_data.user_data?.is_active ? 'Open To Work' : 'Not Open To Work',
-    'Experience Level': profile?.experience_level,
-    'Expected Salary': profile?.expected_salary,
-    'Job Category': jobCategories.find(cat => cat.pk_id === profile?.job_category_id)?.name || null,
+    [t('gender')]: user_data.user_data?.gender,
+    [t('date_of_birth')]: user_data.user_data?.date_of_birth,
+    [t('phone')]: user_data.user_data?.phone,
+    [t('status')]: user_data.user_data?.is_active ? t('open_to_work') : t('not_open_to_work'),
+    [t('experience_level')]: profile?.experience_level,
+    [t('expected_salary')]: profile?.expected_salary,
+    [t('job_category')]: jobCategories.find(cat => cat.pk_id === profile?.job_category_id)?.name || null,
   }
 
   const sectionDialogs = {
-    "Overview": () => (
+    [t('overview')]: () => (
       <Box>
         <Typography variant="subtitle1" fontWeight={600}>
-          Describe Yourself <span style={{ color: 'red' }}>*</span>
+          {t('describe_yourself')} <span style={{ color: 'red' }}>*</span>
         </Typography>
         <Typography variant="body2" mb={1}>
-          You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.
+          {t('describe_yourself_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -341,10 +344,10 @@ export default function CandidateProfileDashboard() {
         />
 
         <Typography variant="subtitle1" fontWeight={600}>
-          Career Objectives
+          {t('career_objectives')}
         </Typography>
         <Typography variant="body2" mb={1}>
-          Write about your career goals or what you are aiming to achieve in the future.
+          {t('career_objectives_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -355,10 +358,10 @@ export default function CandidateProfileDashboard() {
       </Box>
     ),
 
-    "Work Experiences": () => (
+    [t('work_experiences')]: () => (
       <Box>
         <Typography variant="body2" mb={1}>
-          Add details about your previous jobs, roles, and achievements.
+          {t('work_experiences_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -369,10 +372,10 @@ export default function CandidateProfileDashboard() {
       </Box>
     ),
 
-    "Education & Qualifications": () => (
+    [t('education_qualifications')]: () => (
       <Box>
         <Typography variant="body2" mb={1}>
-          Add details about your education, degrees, or certifications.
+          {t('education_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -383,10 +386,10 @@ export default function CandidateProfileDashboard() {
       </Box>
     ),
 
-    "Skills": () => (
+    [t('skills')]: () => (
       <Box>
         <Typography variant="body2" mb={1}>
-          Add skills relevant to your profession.
+          {t('skills_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -397,10 +400,10 @@ export default function CandidateProfileDashboard() {
       </Box>
     ),
 
-    "Languages": () => (
+    [t('languages')]: () => (
       <Box>
         <Typography variant="body2" mb={1}>
-          List the languages you know and your proficiency level.
+          {t('languages_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -411,10 +414,10 @@ export default function CandidateProfileDashboard() {
       </Box>
     ),
 
-    "References": () => (
+    [t('references')]: () => (
       <Box>
         <Typography variant="body2" mb={1}>
-          Add references from previous employers or colleagues.
+          {t('references_hint')}
         </Typography>
         <ReactQuill
           theme="snow"
@@ -428,18 +431,18 @@ export default function CandidateProfileDashboard() {
 
   const sections = [
     {
-      title: 'Overview',
-      subtitle: 'Describe Yourself *',
-      subtitle1: 'You can write about your years of experience, industry, or skills. People also talk about their achievements or previous job experiences.',
-      description: `About ${user_data.user_data?.user_name}. Career Objectives.`,
-      buttonText: 'Edit Overview',
+      title: t('overview'),
+      subtitle: t('describe_yourself'),
+      subtitle1: t('describe_yourself_hint'),
+      description: t('overview_description', { name: user_data.user_data?.user_name }),
+      buttonText: t('edit_overview'),
       hasData: Boolean(profile?.about_me || profile?.career_objective),
       content: (
         <>
           {profile?.about_me && (
             <>
               <Typography fontWeight={600}>
-                About {user_data.user_data?.user_name}
+                {t('about_user', { name: user_data.user_data?.user_name })}
               </Typography>
               <Box
                 sx={{ mt: 1 }}
@@ -451,7 +454,7 @@ export default function CandidateProfileDashboard() {
           {profile?.career_objective && (
             <>
               <Typography fontWeight={600} sx={{ mt: 2 }}>
-                Career Objectives
+                {t('career_objectives')}
               </Typography>
               <Box
                 sx={{ mt: 1 }}
@@ -464,9 +467,9 @@ export default function CandidateProfileDashboard() {
     },
 
     {
-      title: 'Work Experiences',
-      description: 'Add Work Experience to be found by more Employers',
-      buttonText: 'Add Work Experience',
+      title: t('work_experiences'),
+      description: t('work_experiences_description'),
+      buttonText: t('add_work_experience'),
       hasData: Boolean(profile?.experience),
       content: profile?.experience && (
         <Box dangerouslySetInnerHTML={{ __html: profile.experience }} />
@@ -474,9 +477,9 @@ export default function CandidateProfileDashboard() {
     },
 
     {
-      title: 'Education & Qualifications',
-      description: 'Add Education to be found by more Employers',
-      buttonText: 'Add Education',
+      title: t('education_qualifications'),
+      description: t('education_description'),
+      buttonText: t('add_education'),
       hasData: Boolean(profile?.education),
       content: profile?.education && (
         <Box dangerouslySetInnerHTML={{ __html: profile.education }} />
@@ -484,9 +487,9 @@ export default function CandidateProfileDashboard() {
     },
 
     {
-      title: 'Skills',
-      description: 'Add Skills to be found by more Employers',
-      buttonText: 'Add Skill',
+      title: t('skills'),
+      description: t('skills_description'),
+      buttonText: t('add_skill'),
       hasData: Boolean(profile?.skills),
       content:
         profile?.skills && (
@@ -499,9 +502,9 @@ export default function CandidateProfileDashboard() {
     },
 
     {
-      title: 'Languages',
-      description: 'Add Languages to be found by more Employers',
-      buttonText: 'Add Language',
+      title: t('languages'),
+      description: t('languages_description'),
+      buttonText: t('add_language'),
       hasData: Boolean(profile?.languages),
       content: profile?.languages && (
         <Box dangerouslySetInnerHTML={{ __html: profile.languages }} />
@@ -509,9 +512,9 @@ export default function CandidateProfileDashboard() {
     },
 
     {
-      title: 'References',
-      description: 'Add References to make your profile look more professional',
-      buttonText: 'Add Reference',
+      title: t('references'),
+      description: t('references_description'),
+      buttonText: t('add_reference'),
       hasData: Boolean(profile?.reference_text),
       content: profile?.reference_text && (
         <Box dangerouslySetInnerHTML={{ __html: profile.reference_text }} />
@@ -555,7 +558,7 @@ export default function CandidateProfileDashboard() {
 
             <Box>
               <Typography variant="h5" fontWeight={700}>
-                {user_data.user_data?.user_name || 'Unnamed'}
+                {user_data.user_data?.user_name || t('unnamed')}
               </Typography>
 
               {user_data?.user_data?.address && (
@@ -591,7 +594,7 @@ export default function CandidateProfileDashboard() {
               width: { xs: '100%', sm: 'auto' },
             }}
           >
-            Edit Profile
+            {t('edit_profile')}
           </Button>
         </Stack>
 
@@ -629,7 +632,7 @@ export default function CandidateProfileDashboard() {
                 {label}
               </Typography>
               <Typography variant="body1" fontWeight={500}>
-                {value || 'Not set'}
+                {value || t('not_set')}
               </Typography>
             </Paper>
           ))}
@@ -638,7 +641,7 @@ export default function CandidateProfileDashboard() {
 
       {/* CV Upload Section */}
       <Paper sx={{ borderRadius: 3, bgcolor: '#fff', mb: 3, boxShadow: '0 8px 20px rgba(0,0,0,0.1)', width: '100%', boxSizing: 'border-box', p: 3 }}>
-        <Typography variant="h6" fontWeight={700} mb={2}>Resume / CV</Typography>
+        <Typography variant="h6" fontWeight={700} mb={2}>{t('resume_cv')}</Typography>
 
         {/* Uploaded CVs with scroll */}
         {uploadedCvs.length > 0 && (
@@ -671,10 +674,10 @@ export default function CandidateProfileDashboard() {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {cv.file_name || cv.resume_file?.split('/').pop() || 'Uploaded CV'}
+                      {cv.file_name || cv.resume_file?.split('/').pop() || t('uploaded_cv')}
                     </Typography>
                     <Chip
-                      label={cv.is_primary ? 'Active' : 'Inactive'}
+                      label={cv.is_primary ? t('active') : t('inactive')}
                       size="small"
                       color={cv.is_primary ? 'success' : 'error'}
                       sx={{ ml: 1 }}
@@ -723,7 +726,7 @@ export default function CandidateProfileDashboard() {
                               }}
                             >
                               <StarIcon fontSize="small" sx={{ mr: 1, color: 'warning.main' }} />
-                              Set Default
+                              {t('set_default')}
                             </MenuItem>
                           )}
 
@@ -733,14 +736,14 @@ export default function CandidateProfileDashboard() {
                               sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                             >
                               <FileDownloadIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                              Download
+                              {t('download')}
                             </MenuItem>
                           )}
 
                           <MenuItem sx={{ px: 2, py: 1 }}>
                             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', width: '100%' }}>
                               <EditIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
-                              Replace
+                              {t('replace')}
                               <input
                                 type="file"
                                 hidden
@@ -755,13 +758,13 @@ export default function CandidateProfileDashboard() {
                                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                   ];
                                   if (!allowedTypes.includes(file.type)) {
-                                    setMessage(file.name + ' is not allowed.');
+                                    setMessage(t('file_not_allowed', { filename: file.name }));
                                     setSeverity('error');
                                     setOpenSnackbar(true);
                                     return;
                                   }
                                   if (file.size > 5 * 1024 * 1024) {
-                                    setMessage(file.name + ' exceeds 5MB.');
+                                    setMessage(t('file_exceeds_limit', { filename: file.name }));
                                     setSeverity('error');
                                     setOpenSnackbar(true);
                                     return;
@@ -784,10 +787,10 @@ export default function CandidateProfileDashboard() {
                                       prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
                                     );
 
-                                    setMessage('CV replaced successfully');
+                                    setMessage(t('cv_replace_success'));
                                     setSeverity('success');
                                   } catch (err) {
-                                    setMessage(err.response?.data?.detail || 'Replace failed');
+                                    setMessage(err.response?.data?.detail || t('cv_replace_failed'));
                                     setSeverity('error');
                                   } finally {
                                     setOpenSnackbar(true);
@@ -803,13 +806,13 @@ export default function CandidateProfileDashboard() {
                             sx={{ px: 2, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                           >
                             <DeleteIcon fontSize="small" sx={{ mr: 1, color: 'error.main' }} />
-                            Delete
+                            {t('delete')}
                           </MenuItem>
                         </Menu>
                       </>
                     ) : (
                       <SpeedDial
-                        ariaLabel="CV actions"
+                        ariaLabel={t('cv_actions')}
                         icon={<MoreVertIcon />}
                         direction={'left'}
                         FabProps={{ size: 'small' }}
@@ -845,7 +848,7 @@ export default function CandidateProfileDashboard() {
                         {!cv.is_primary && (
                           <SpeedDialAction
                             icon={<StarIcon />}
-                            tooltipTitle="Set Default"
+                            tooltipTitle={t('set_default')}
                             onClick={() => setDefaultCv(cv.pk_id)}
                           />
                         )}
@@ -853,7 +856,7 @@ export default function CandidateProfileDashboard() {
                         {cv.download_url && (
                           <SpeedDialAction
                             icon={<FileDownloadIcon />}
-                            tooltipTitle="Download"
+                            tooltipTitle={t('download')}
                             onClick={() =>
                               downloadFile(cv.pk_id, cv.resume_file)
                             }
@@ -878,13 +881,13 @@ export default function CandidateProfileDashboard() {
                                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                   ];
                                   if (!allowedTypes.includes(file.type)) {
-                                    setMessage(file.name + ' is not allowed.');
+                                    setMessage(t('file_not_allowed', { filename: file.name }));
                                     setSeverity('error');
                                     setOpenSnackbar(true);
                                     return;
                                   }
                                   if (file.size > 5 * 1024 * 1024) {
-                                    setMessage(file.name + ' exceeds 5MB.');
+                                    setMessage(t('file_exceeds_limit', { filename: file.name }));
                                     setSeverity('error');
                                     setOpenSnackbar(true);
                                     return;
@@ -907,10 +910,10 @@ export default function CandidateProfileDashboard() {
                                       prev.map((c) => (c.pk_id === cv.pk_id ? data : c))
                                     );
 
-                                    setMessage('CV replaced successfully');
+                                    setMessage(t('cv_replace_success'));
                                     setSeverity('success');
                                   } catch (err) {
-                                    setMessage(err.response?.data?.detail || 'Replace failed');
+                                    setMessage(err.response?.data?.detail || t('cv_replace_failed'));
                                     setSeverity('error');
                                   } finally {
                                     setOpenSnackbar(true);
@@ -920,12 +923,12 @@ export default function CandidateProfileDashboard() {
                               />
                             </label>
                           }
-                          tooltipTitle="Replace"
+                          tooltipTitle={t('replace')}
                         />
 
                         <SpeedDialAction
                           icon={<DeleteIcon color="error" />}
-                          tooltipTitle="Delete"
+                          tooltipTitle={t('delete')}
                           onClick={() => {
                             setCvToDelete(cv.pk_id)
                             setConfirmOpen(true)
@@ -964,7 +967,7 @@ export default function CandidateProfileDashboard() {
                     onClick={() => handleUploadSingle(idx)}
                     disabled={loading}
                   >
-                    {loading ? 'Uploading...' : 'Upload'}
+                    {loading ? t('uploading') : t('upload')}
                   </Button>
                   <Button
                     variant="contained"
@@ -974,7 +977,7 @@ export default function CandidateProfileDashboard() {
                       setCvFile((prev) => prev.filter((_, i) => i !== idx))
                     }
                   >
-                    Remove
+                    {t('remove')}
                   </Button>
                 </Stack>
               </Stack>
@@ -989,7 +992,7 @@ export default function CandidateProfileDashboard() {
           startIcon={<UploadFileIcon />}
           sx={{ width: '100%', borderStyle: 'dashed', p: 2 }}
         >
-          Upload CV (PDF, DOC, DOCX)
+          {t('upload_cv_button')}
           <input hidden type="file" accept=".pdf,.doc,.docx" multiple onChange={handleCvChange} />
         </Button>
       </Paper>
@@ -1001,13 +1004,13 @@ export default function CandidateProfileDashboard() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Delete CV</DialogTitle>
+        <DialogTitle>{t('delete_cv')}</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this CV?</Typography>
+          <Typography>{t('delete_cv_confirmation')}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={confirmDelete}>Delete</Button>
+          <Button onClick={() => setConfirmOpen(false)}>{t('cancel')}</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}>{t('delete')}</Button>
         </DialogActions>
       </Dialog>
 
@@ -1023,12 +1026,12 @@ export default function CandidateProfileDashboard() {
           {sectionDialogs[activeSection] ? (
             sectionDialogs[activeSection]()
           ) : (
-            <Typography>No UI defined for this section</Typography>
+            <Typography>{t('no_ui_defined')}</Typography>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseSection}>Cancel</Button>
-          <Button variant="contained" onClick={handleSaveSection}>Save</Button>
+          <Button onClick={handleCloseSection}>{t('cancel')}</Button>
+          <Button variant="contained" onClick={handleSaveSection}>{t('save')}</Button>
         </DialogActions>
       </Dialog>
       <style>
@@ -1067,6 +1070,7 @@ export default function CandidateProfileDashboard() {
 }
 
 function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandidates, jobCategories }) {
+  const { t } = useTranslation();
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -1081,7 +1085,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
       form.password = "123";
       setLoading(true)
       const { data } = await api.post('/user', form)
-      showSnackbar('Profile updated successfully', 'success')
+      showSnackbar(t('profile_updated'), 'success')
       setUserData({
         ...user_data,
         user_data: {
@@ -1102,7 +1106,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
       }));
       onClose()
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || 'Failed to update profile'
+      const errorMsg = err.response?.data?.detail || t('profile_update_failed')
       showSnackbar(errorMsg, 'error')
     } finally {
       setLoading(false)
@@ -1118,7 +1122,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile} scroll="paper">
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Edit Profile
+        {t('edit_profile')}
         <IconButton onClick={onClose}><CloseIcon /></IconButton>
       </DialogTitle>
       <Divider />
@@ -1128,37 +1132,37 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
             <Avatar sx={{ width: 64, height: 64, bgcolor: '#3b5998', fontSize: 24 }}>
               {form.user_name?.charAt(0)?.toUpperCase() || '?'}
             </Avatar>
-            <TextField size="small" fullWidth label="Full Name" name="user_name" required value={form.user_name} onChange={handleChange} />
+            <TextField size="small" fullWidth label={t('full_name')} name="user_name" required value={form.user_name} onChange={handleChange} />
           </Stack>
           <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Email" name="email" type="email" required value={form.email} onChange={handleChange} />
-            <TextField size="small" fullWidth label="Phone" name="phone" value={form.phone || ""} onChange={handleChange} />
+            <TextField size="small" fullWidth label={t('email')} name="email" type="email" required value={form.email} onChange={handleChange} />
+            <TextField size="small" fullWidth label={t('phone')} name="phone" value={form.phone || ""} onChange={handleChange} />
           </Stack>
           <Stack direction="row" spacing={2}>
-            <TextField size="small" fullWidth label="Date of Birth" name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+            <TextField size="small" fullWidth label={t('date_of_birth')} name="date_of_birth" type="date" value={form.date_of_birth ?? ""} onChange={handleChange} InputLabelProps={{ shrink: true }} />
             <TextField
               fullWidth
               size="small"
               name="gender"
-              label="Gender"
+              label={t('gender')}
               select
               required
               value={form.gender} onChange={handleChange}
             >
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
+              <MenuItem value="Male">{t('male')}</MenuItem>
+              <MenuItem value="Female">{t('female')}</MenuItem>
             </TextField>
           </Stack>
-          <TextField size="small" fullWidth label="Address" name="address" value={form.address || ""} onChange={handleChange} multiline rows={2} />
+          <TextField size="small" fullWidth label={t('address')} name="address" value={form.address || ""} onChange={handleChange} multiline rows={2} />
           <Stack direction="row" spacing={2}>
             <FormControl fullWidth size="small">
               <InputLabel id="job-category-label">
-                Job Category
+                {t('job_category')}
               </InputLabel>
               <Select
                 name="jobCategoryId"
                 value={form.jobCategoryId || ''}
-                label="Job Category"
+                label={t('job_category')}
                 onChange={handleChange}
                 MenuProps={{
                   PaperProps: {
@@ -1176,8 +1180,8 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
                 ))}
               </Select>
             </FormControl>
-            <TextField size="small" fullWidth label="Experience Level" name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({ ...prev, experience_level: e.target.value === "" ? null : e.target.value }))} />
-            <TextField size="small" fullWidth label="Min Monthly Salary (USD)" name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({ ...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value }))} />
+            <TextField size="small" fullWidth label={t('experience_level')} name="experience_level" value={form.experience_level ?? ''} onChange={(e) => setForm(prev => ({ ...prev, experience_level: e.target.value === "" ? null : e.target.value }))} />
+            <TextField size="small" fullWidth label={t('min_monthly_salary')} name="min_monthly_salary" type='number' value={form.min_monthly_salary ?? ''} onChange={(e) => setForm(prev => ({ ...prev, min_monthly_salary: e.target.value === "" ? null : e.target.value }))} />
           </Stack>
           <Paper
             elevation={0}
@@ -1188,9 +1192,9 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
           >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography fontWeight={600}>Profile Status</Typography>
+                <Typography fontWeight={600}>{t('profile_status')}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Control whether your profile is visible to employers
+                  {t('profile_status_description')}
                 </Typography>
               </Box>
 
@@ -1204,14 +1208,16 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} variant="outlined">Cancel</Button>
-        <Button variant="contained" type="submit" form="edit-form" color="primary" disableElevation loading={loading} loadingPosition="end" disabled={loading}>Save</Button>
+        <Button onClick={onClose} variant="outlined">{t('cancel')}</Button>
+        <Button variant="contained" type="submit" form="edit-form" color="primary" disableElevation loading={loading} loadingPosition="end" disabled={loading}>{t('save')}</Button>
       </DialogActions>
     </Dialog>
   )
 }
 
 function Section({ title, description, buttonText, onAdd, isEdit, content, hasData }) {
+  const { t } = useTranslation();
+  
   return (
     <Paper
       sx={{

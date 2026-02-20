@@ -17,12 +17,15 @@ from app.controllers.chat_controller import (
     get_or_create_chat_room,
     send_file_message,
     mark_conversation_read,
-    get_unread_counts_for_user
+    get_unread_counts_for_user,
+    send_text_message,
 )
 from app.dependencies.auth import verify_access_token
 from starlette.websockets import WebSocketClose
 import time
 from fastapi.encoders import jsonable_encoder
+import asyncio
+from app.controllers.chat_controller import handle_call_timeout
 
 
 router = APIRouter(prefix="/ws", tags=["chat"])
@@ -37,6 +40,7 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
         return
 
     user_id = user.pk_id
+    username = user.user_name
     
     await manager.connect(ws, user_id, room_id=None)
     
@@ -52,18 +56,166 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
             data = await ws.receive_json()
             event_type = data["type"]
             payload = data.get("payload", {})
+            
+            if event_type in ("ping", "pong"):
+                continue
 
-            if event_type == "chat.join":
+            elif event_type == "call.join":
                 manager.join_room(user_id, payload["room_id"])
-
-            elif event_type == "chat.leave":
+            elif event_type == "call.leave":
                 manager.leave_room(user_id, payload["room_id"])
                 
+            elif event_type == "call.initiate":
+                async with manager.call_lock:
+                    room_id = payload["room_id"]
+                    mode = payload.get("mode", "video")
+
+                    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                    if not room:
+                        continue
+
+                    receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+
+                    caller_busy = any(
+                        user_id in call["participants"] and call["status"] in ("ringing", "active")
+                        for call in manager.active_calls.values()
+                    )
+
+                    receiver_busy = any(
+                        receiver_id in call["participants"] and call["status"] in ("ringing", "active")
+                        for call in manager.active_calls.values()
+                    )
+                    
+                    # auto end in 30s
+                    manager.call_timeouts[room_id] = asyncio.create_task(
+                        handle_call_timeout(db, room_id, user_id)
+                    )
+
+                    if caller_busy:
+                        await manager.broadcast_to_user(user_id, {
+                            "type": "call.busy",
+                            "message": "You are already in another call"
+                        })
+                        continue
+
+                    if receiver_busy:
+                        await manager.broadcast_to_user(user_id, {
+                            "type": "call.busy",
+                            "message": "User is busy"
+                        })
+                        continue
+
+                    manager.active_calls[room_id] = {
+                        "mode": mode,
+                        "participants": [user_id, receiver_id],
+                        "caller_id": user_id,
+                        "status": "ringing",
+                        "started_at": datetime.utcnow()
+                    }
+
+                    await manager.broadcast_call_event(
+                        [receiver_id],
+                        "call.incoming",
+                        {
+                            "fromUserId": user_id,
+                            "fromUsername": username,
+                            "roomId": room_id,
+                            "mode": mode
+                        }
+                    )
+        
+            elif event_type == "call.accept":
+                room_id = payload["room_id"]
+
+                call_data = manager.active_calls.get(room_id)
+                if not call_data:
+                    continue
+
+                if call_data.get("status") != "ringing":
+                    continue
+
+                timeout_task = manager.call_timeouts.pop(room_id, None)
+                if timeout_task:
+                    timeout_task.cancel()
+
+                call_data["status"] = "active"
+
+                participants = call_data["participants"]
+                other_user = next(uid for uid in participants if uid != user_id)
+
+                await manager.broadcast_call_event(
+                    [other_user],
+                    "call.accepted",
+                    {
+                        "fromUserId": user_id,
+                        "fromUsername": username,
+                        "roomId": room_id,
+                        "mode": call_data["mode"]
+                    }
+                )
+
+            elif event_type == "call.decline":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+
+                receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+
+                timeout_task = manager.call_timeouts.pop(room_id, None)
+                if timeout_task:
+                    timeout_task.cancel()
+
+                manager.active_calls.pop(room_id, None)
+
+                await manager.broadcast_call_event(
+                    [receiver_id],
+                    "call.declined",
+                    {"fromUserId": user_id, "roomId": room_id}
+                )
+                
+                await send_text_message(
+                    db=db,
+                    current_user=user,
+                    room=room,
+                    content="📵 Call declined",
+                    message_type=MessageType.CALL
+                )
+                
+            elif event_type == "call.end":
+                room_id = payload["room_id"]
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                if not room:
+                    continue
+                
+                timeout_task = manager.call_timeouts.pop(room_id, None)
+                if timeout_task:
+                    timeout_task.cancel()
+
+                manager.active_calls.pop(room_id, None)
+                
+                await manager.broadcast_call_event(
+                    [room.candidate_user_id, room.employer_user_id],
+                    "call.ended",
+                    {"roomId": room_id}
+                )
+                
+                await send_text_message(
+                    db=db,
+                    current_user=user,
+                    room=room,
+                    content="📞 Call ended",
+                    message_type=MessageType.CALL
+                )
+                
             else:
-                await ws.send_json({
+                
+                if not event_type.startswith("chat.") and not event_type.startswith("call."):
+                    await ws.send_json({
                         "type": "error",
                         "message": "Invalid event type"
                     })
+
 
     except WebSocketDisconnect:
         manager.disconnect(ws, user_id)

@@ -433,12 +433,13 @@ async def delete_message(
     message_id: int,
     requester_id: int
 ):
-    msg: ChatMessage | None =(
+    msg: ChatMessage | None = (
         db.query(ChatMessage)
         .filter(
             ChatMessage.id == message_id,
             ChatMessage.room_id == room.id
-        ).first()
+        )
+        .first()
     )
     
     if not msg:
@@ -446,14 +447,15 @@ async def delete_message(
     
     if msg.sender_id != requester_id:
         raise HTTPException(403, "Only sender can delete this message")
+
+    db.query(MessageReaction).filter(
+        MessageReaction.message_id == message_id
+    ).delete(synchronize_session=False)
     
-    if msg.file_url:
-        file_path = msg.file_url.lstrip("/")
-        asyncio.create_task(remove_file_async(file_path))
-        
     db.delete(msg)
+
     db.commit()
-            
+    
     last_msg = (
         db.query(ChatMessage)
         .options(joinedload(ChatMessage.reply_to))
@@ -476,9 +478,7 @@ async def delete_message(
         }
     )
     
-    last_message_payload = None
-    if last_msg:
-        last_message_payload = serialize_message(ChatMessageOut.from_orm(last_msg))
+    last_message_payload = serialize_message(ChatMessageOut.from_orm(last_msg)) if last_msg else None
     
     for uid in (room.candidate_user_id, room.employer_user_id):
         await manager.broadcast_to_user(
@@ -847,3 +847,37 @@ def get_unread_counts_for_user(db: Session, user_id: int) -> dict[int, int]:
     )
 
     return {room_id: count for room_id, count in rows}
+
+async def handle_call_timeout(db, room_id: int, caller_id: int, timeout: int = 30):
+    try:
+        await asyncio.sleep(timeout)
+
+        call_data = manager.active_calls.get(room_id)
+        if not call_data or call_data.get("status") != "ringing":
+            return  # call already accepted or declined
+
+        participants = call_data["participants"]
+
+        # Broadcast missed call
+        await manager.broadcast_call_event(participants, "call.missed", {"roomId": room_id})
+
+        room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+        if room:
+            system_user = db.query(User).filter(User.pk_id == caller_id).first()
+            await send_text_message(
+                db=db,
+                current_user=system_user,
+                room=room,
+                content="📵 Call missed",
+                message_type=MessageType.CALL
+            )
+
+        # Cleanup
+        manager.active_calls.pop(room_id, None)
+
+    except asyncio.CancelledError:
+        pass  # call accepted or declined, timeout canceled
+
+    finally:
+        # Remove the task reference safely
+        manager.call_timeouts.pop(room_id, None)

@@ -9,8 +9,11 @@ import {
   Paper,
 } from "@mui/material";
 import { Gavel } from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
 
 export default function TermofUse() {
+  const { t } = useTranslation();
+
   return (
     <Box py={1}>
       <Container maxWidth="md">
@@ -42,7 +45,7 @@ export default function TermofUse() {
             </Box>
 
             <Typography variant="h6" fontWeight={700}>
-              Terms of Use
+              {t('terms_of_use')}
             </Typography>
 
             <Typography
@@ -51,8 +54,7 @@ export default function TermofUse() {
               align="center"
               maxWidth={420}
             >
-              Please read these terms carefully before using the True Match 360
-              platform
+              {t('terms_tagline')}
             </Typography>
           </Stack>
 
@@ -61,40 +63,27 @@ export default function TermofUse() {
           {/* Content */}
           <Stack spacing={2.5}>
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              By accessing or using <strong>True Match 360</strong>, you agree to
-              comply with and be bound by these Terms of Use. If you do not agree
-              with any part of these terms, please discontinue use of our
-              services.
+              {t('terms_intro')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              True Match 360 provides an online recruitment platform connecting
-              job seekers and employers throughout Cambodia. Users are
-              responsible for ensuring that all information provided is
-              accurate, complete, and up to date.
+              {t('terms_platform')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              You are responsible for maintaining the confidentiality of your
-              account credentials and for all activities carried out under your
-              account.
+              {t('terms_account_responsibility')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              Users must not misuse the platform, attempt unauthorized access,
-              interfere with system operations, or submit false, misleading, or
-              unlawful content.
+              {t('terms_prohibited')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              True Match 360 reserves the right to suspend or terminate user
-              accounts that violate these terms, with or without prior notice.
+              {t('terms_suspension')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              These Terms of Use may be updated periodically. Continued use of
-              the platform following any changes constitutes acceptance of the
-              revised terms.
+              {t('terms_updates')}
             </Typography>
           </Stack>
         </Paper>

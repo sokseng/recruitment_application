@@ -9,8 +9,11 @@ import {
   Paper,
 } from "@mui/material";
 import { Security } from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
 
 export default function PrivacyPolicy() {
+  const { t } = useTranslation();
+
   return (
     <Box py={1}>
       <Container maxWidth="md">
@@ -42,7 +45,7 @@ export default function PrivacyPolicy() {
             </Box>
 
             <Typography variant="h6" fontWeight={700}>
-              Privacy Policy
+              {t('privacy_policy')}
             </Typography>
 
             <Typography
@@ -51,7 +54,7 @@ export default function PrivacyPolicy() {
               align="center"
               maxWidth={360}
             >
-              Your privacy and data security matter to True Match 360
+              {t('privacy_tagline')}
             </Typography>
           </Stack>
 
@@ -60,34 +63,23 @@ export default function PrivacyPolicy() {
           {/* Content */}
           <Stack spacing={2.5}>
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              At <strong>True Match 360</strong>, we respect your privacy and are
-              committed to protecting your personal information. This Privacy
-              Policy explains how we collect, use, and safeguard your data.
+              {t('privacy_intro')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              We may collect personal information such as your name, contact
-              details, employment history, and resume when you register, apply
-              for jobs, or interact with our platform.
+              {t('privacy_collection')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              Your information is used solely for recruitment purposes,
-              improving our services, and connecting candidates with potential
-              employers. We do not sell, rent, or share your data with third
-              parties without your consent.
+              {t('privacy_usage')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              We implement reasonable technical and organizational security
-              measures to protect your data from unauthorized access, loss,
-              misuse, or disclosure.
+              {t('privacy_security')}
             </Typography>
 
             <Typography variant="body2" color="text.secondary" lineHeight={1.8}>
-              By using True Match 360, you agree to this Privacy Policy. We may
-              update this policy periodically, and any changes will be published
-              on this page.
+              {t('privacy_agreement')}
             </Typography>
           </Stack>
         </Paper>
