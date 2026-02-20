@@ -59,7 +59,7 @@ init_global_settings()
 
 app = FastAPI(title=settings.APP_NAME)
 
-# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

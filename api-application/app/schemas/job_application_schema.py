@@ -53,10 +53,12 @@ class ApplicationOutForEmployer(BaseModel):
     candidate_id: int
     candidate: CandidateBasicOut
     candidate_resume_id: Optional[int]
-    resume: Optional[ResumeBasicOut]
+    resume: Optional[ResumeBasicOut] = None
     applied_date: datetime
     application_status: ApplicationStatus
     cancelled: bool
+    has_cover_letter: bool
+    
     model_config = {"from_attributes": True}
 
 class ApplicationStatusUpdate(BaseModel):
