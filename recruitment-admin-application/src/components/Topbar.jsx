@@ -1,4 +1,4 @@
-//Topbar.jsx
+
 import {
   AppBar,
   Toolbar,
@@ -61,16 +61,15 @@ import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
 import { useUnreadStore } from "../store/unreadStore";
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useTranslation } from 'react-i18next'; // Import useTranslation hook
+import { useTranslation } from 'react-i18next';
 
 export default function Topbar() {
-  const { t } = useTranslation(); // Initialize translation hook
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const globalUnread = useUnreadStore(state => state.globalCount);
 
-  //const [failedAttempts, setFailedAttempts] = useState(0);
   const [showRobotCheck, setShowRobotCheck] = useState(false);
   const [isHuman, setIsHuman] = useState(false);
   const [robotAnswer, setRobotAnswer] = useState([]);
@@ -89,7 +88,6 @@ export default function Topbar() {
     handleCloseLoginForm();
   };
 
-
   const {
     access_token,
     setAccessToken,
@@ -100,7 +98,6 @@ export default function Topbar() {
     user_data,
   } = useAuthStore();
 
-  // 🔹 Settings menu (AppBar)
   const [settingsAnchor, setSettingsAnchor] = useState(null);
   const openSettings = Boolean(settingsAnchor);
   const location = useLocation();
@@ -109,7 +106,6 @@ export default function Topbar() {
   const toggleDrawerSettings = () =>
     setOpenDrawerSettings((prev) => !prev);
 
-  // 🔹 is settings active?
   const isSettingsActive = location.pathname.startsWith("/system_parameter");
 
   const handleOpenSettings = (event) => {
@@ -200,18 +196,27 @@ export default function Topbar() {
     setDrawerOpen(false);
   };
 
-  const handleRobotConfirm = () => {
-    const correctIds = robotOptions
-      .filter(o => o.isCorrect)
-      .map(o => o.id)
-      .sort();
+  const handleCloseLogin = () => {
+    setOpenLogin(false);
+    setFormData({ email: "", password: "" });
+    setShowRobotCheck(false);
+    setIsHuman(false);
+    setRobotAnswer([]);
+    setRobotError(false);
+  };
 
+  const toggleRobotOption = (id) => {
+    setRobotError(false);
+    setRobotAnswer((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const verifyHuman = () => {
+    const correct = robotOptions.filter((o) => o.isCorrect).map((o) => o.id).sort();
     const selected = [...robotAnswer].sort();
 
-    const isValid =
-      JSON.stringify(correctIds) === JSON.stringify(selected);
-
-    if (!isValid) {
+    if (JSON.stringify(correct) !== JSON.stringify(selected)) {
       setRobotError(true);
       return;
     }
@@ -235,7 +240,7 @@ export default function Topbar() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // block if robot check not done
     if (showRobotCheck && !isHuman) {
       setMessage(t('complete_security_check'));
@@ -837,70 +842,6 @@ export default function Topbar() {
 
   return (
     <>
-      <Dialog
-        open={showRobotCheck}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 1,
-          },
-        }}
-      >
-
-        <DialogTitle sx={{ fontWeight: 600 }}>
-          🤖 {t('security_check')}
-        </DialogTitle>
-
-        <DialogContent>
-          <Typography mb={2}>
-            {t('select_fruits')}
-          </Typography>
-
-          <Stack direction="row" flexWrap="wrap" gap={1}>
-            {robotOptions.map(option => {
-              const selected = robotAnswer.includes(option.id);
-
-              return (
-                <Chip
-                  key={option.id}
-                  label={option.label}
-                  clickable
-                  color={selected ? "primary" : "default"}
-                  variant={selected ? "filled" : "outlined"}
-                  onClick={() => {
-                    setRobotError(false);
-                    setRobotAnswer(prev =>
-                      selected
-                        ? prev.filter(id => id !== option.id)
-                        : [...prev, option.id]
-                    );
-                  }}
-                  sx={{ fontSize: 16 }}
-                />
-              );
-            })}
-          </Stack>
-
-          {robotError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {t('incorrect_selection')}
-            </Alert>
-          )}
-        </DialogContent>
-
-        <DialogActions>
-          <Button sx={{ textTransform: "none" }} size="small" variant="outlined" onClick={() => setShowRobotCheck(false)}>
-            {t('cancel')}
-          </Button>
-          <Button sx={{ textTransform: "none" }} variant="contained" size="small" onClick={handleRobotConfirm}>
-            {t('verify')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-
-
-
       {/* Snackbar */}
       <Snackbar
         open={openSnackbar}
@@ -984,10 +925,10 @@ export default function Topbar() {
                   </Box>
                 )}
               </Box>
-              
+
               {/* 🌐 Mobile Language Switcher - Compact version */}
               <LanguageSwitcher />
-              
+
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
                 <Avatar>
                   {user_data?.user_data?.user_name
@@ -1566,16 +1507,28 @@ export default function Topbar() {
           if (reason === "backdropClick" || reason === "escapeKeyDown") return;
         }}
         maxWidth="xs"
+        fullWidth
         fullScreen={isMobile}
         PaperProps={{
           sx: {
-            borderRadius: 3, // rounded modal corners
-            p: 3, // padding inside modal
-            boxShadow: 3, // soft shadow
+            borderRadius: 3,
+            boxShadow: 3,
+            maxHeight: isMobile ? "100vh" : "85vh", // ✅ only limit height
           },
         }}
       >
-        <DialogContent>
+        <DialogContent
+          sx={{
+            p: 3,
+            overflowY: "auto",
+            transition: "all 0.3s ease",
+            "&::-webkit-scrollbar": { width: 6 },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(0,0,0,0.2)",
+              borderRadius: 3,
+            },
+          }}
+        >
           <Stack
             spacing={3}
             component="form"
@@ -1594,7 +1547,7 @@ export default function Topbar() {
                   objectFit: "contain",
                   borderRadius: "0.6rem",
                   cursor: "pointer",
-                  p: 0.5
+                  p: 0.5,
                 }}
               />
             </Stack>
@@ -1602,10 +1555,10 @@ export default function Topbar() {
             {/* Header */}
             <Box textAlign="start">
               <Typography variant="h7" fontWeight={700}>
-                {t('login_account')} 🚀
+                {t("login_account")} 🚀
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t('join_us')}
+                {t("join_us")}
               </Typography>
             </Box>
 
@@ -1613,7 +1566,7 @@ export default function Topbar() {
             <TextField
               fullWidth
               size="small"
-              label={t('email')}
+              label={t("email")}
               name="email"
               type="email"
               required
@@ -1627,7 +1580,7 @@ export default function Topbar() {
             <TextField
               fullWidth
               size="small"
-              label={t('password')}
+              label={t("password")}
               name="password"
               required
               type={showPassword ? "text" : "password"}
@@ -1649,12 +1602,59 @@ export default function Topbar() {
               sx={{ borderRadius: 2 }}
             />
 
+            {/* Robot Section with Smooth Collapse */}
+            <Collapse in={showRobotCheck}>
+              <Box sx={{ mt: 1, p: 2, bgcolor: "grey.50", borderRadius: 2 }}>
+                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                  {t("security_check")}
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2 }}
+                >
+                  {t("select_fruits")}
+                </Typography>
+
+                <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
+                  {robotOptions.map((opt) => {
+                    const selected = robotAnswer.includes(opt.id);
+                    return (
+                      <Chip
+                        key={opt.id}
+                        label={opt.label}
+                        clickable
+                        size="small"
+                        color={selected ? "primary" : "default"}
+                        variant={selected ? "filled" : "outlined"}
+                        onClick={() => toggleRobotOption(opt.id)}
+                      />
+                    );
+                  })}
+                </Stack>
+
+                {robotError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {t("incorrect_selection")}
+                  </Alert>
+                )}
+
+                <Button
+                  variant="contained"
+                  size="small"
+                  fullWidth
+                  onClick={verifyHuman}
+                  disabled={robotAnswer.length === 0}
+                  sx={{ textTransform: "none" }}
+                >
+                  {t("verify")}
+                </Button>
+              </Box>
+            </Collapse>
+
             {/* Actions */}
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ width: "100%", mt: 2, justifyContent: "flex-end" }}
-            >
+            <Stack direction="row" spacing={1} sx={{ width: "100%", mt: 2 }}>
               <Button
                 onClick={handleCloseLoginForm}
                 variant="outlined"
@@ -1667,28 +1667,27 @@ export default function Topbar() {
                   textTransform: "none",
                 }}
               >
-                {t('cancel')}
+                {t("cancel")}
               </Button>
+
               <Button
                 size="small"
                 variant="contained"
                 type="submit"
                 fullWidth
+                disabled={showRobotCheck && !isHuman}
                 sx={{
                   borderRadius: 2,
                   fontWeight: 600,
                   textTransform: "none",
                 }}
               >
-                {t('login')}
+                {t("login")}
               </Button>
-
             </Stack>
-            <Box
-              display="flex"
-              justifyContent="flex-end"
-              sx={{ mt: 1, mb: 1 }}
-            >
+
+            {/* Forgot Password */}
+            <Box display="flex" justifyContent="flex-end">
               <Link
                 type="button"
                 component="button"
@@ -1699,7 +1698,7 @@ export default function Topbar() {
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                {t('forgot_password')}
+                {t("forgot_password")}
               </Link>
             </Box>
           </Stack>
