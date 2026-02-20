@@ -16,6 +16,7 @@ export default function App() {
   const [userData, setUserData] = useState(null);
   const ringtoneRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const userId = useAuthStore((s) => s.user_data?.pk_id);
 
   const { send } = useGlobalWebSocket((data) => {
     switch (data.type) {
@@ -80,7 +81,6 @@ export default function App() {
     });
 
     setIncomingCall(null);
-    setIncomingCall(null);
     setIsProcessing(false);
   }
 
@@ -100,35 +100,35 @@ export default function App() {
     hydrate()
   }, [hydrate])
 
-  // useEffect(() => {
-  //   ringtoneRef.current = new Audio(ringtone);
-  //   ringtoneRef.current.loop = true; // keep ringing
-  // }, []);
+  useEffect(() => {
+    ringtoneRef.current = new Audio(ringtone);
+    ringtoneRef.current.loop = true; // keep ringing
+  }, []);
 
-  // useEffect(() => {
-  //   const unlockAudio = () => {
-  //     if (ringtoneRef.current) {
-  //       ringtoneRef.current.play().then(() => {
-  //         ringtoneRef.current.pause();
-  //         ringtoneRef.current.currentTime = 0;
-  //       });
-  //     }
-  //     window.removeEventListener("click", unlockAudio);
-  //   };
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (ringtoneRef.current) {
+        ringtoneRef.current.play().then(() => {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        });
+      }
+      window.removeEventListener("click", unlockAudio);
+    };
 
-  //   window.addEventListener("click", unlockAudio);
-  // }, []);
+    window.addEventListener("click", unlockAudio);
+  }, []);
 
-  // useEffect(() => {
-  //   if (!ringtoneRef.current) return;
+  useEffect(() => {
+    if (!ringtoneRef.current) return;
 
-  //   if (incomingCall && !activeCallRoom) {
-  //     ringtoneRef.current.play().catch(() => { });
-  //   } else {
-  //     ringtoneRef.current.pause();
-  //     ringtoneRef.current.currentTime = 0;
-  //   }
-  // }, [incomingCall, activeCallRoom]);
+    if (incomingCall && !activeCallRoom) {
+      ringtoneRef.current.play().catch(() => { });
+    } else {
+      ringtoneRef.current.pause();
+      ringtoneRef.current.currentTime = 0;
+    }
+  }, [incomingCall, activeCallRoom]);
 
   return (
     <BrowserRouter>
@@ -156,7 +156,7 @@ export default function App() {
         >
           <CallRoom
             roomId={activeCallRoom.roomId}
-            userId={useAuthStore.getState().user_data.pk_id}
+            userId={userId}
             mode={userData.mode}
             onEndCall={endCall}
             userData={userData}

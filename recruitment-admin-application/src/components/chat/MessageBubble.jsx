@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Button, Avatar, IconButton, Link } from '@mui/material';
+import { Box, Typography, Paper, Button, Avatar, IconButton, Link, CircularProgress } from '@mui/material';
 import Popper from '@mui/material/Popper';
 import Fade from '@mui/material/Fade';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
@@ -26,7 +26,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 
-function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -171,7 +171,8 @@ function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, on
                                         : 'grey.200',
                             transition: 'transform 0.2s ease',
                         },
-                        position: 'relative'
+                        position: 'relative',
+                        overflow: 'hidden',
                     }}
                     onClick={handleMenuOpen}
                     onMouseEnter={() => {
@@ -188,6 +189,45 @@ function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, on
                         />
                     )}
 
+                    {message.isUploading && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                bgcolor: isOwn
+                                    ? 'rgba(0,0,0,0.45)'
+                                    : 'rgba(0,0,0,0.25)',
+                                backdropFilter: 'blur(2px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexDirection: 'column',
+                                gap: 1,
+                                zIndex: 10,
+                            }}
+                        >
+                            <CircularProgress
+                                variant="determinate"
+                                value={message.progress || 0}
+                                size={42}
+                                thickness={4}
+                                sx={{
+                                    color: '#fff'
+                                }}
+                            />
+
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: '#fff',
+                                    fontWeight: 600
+                                }}
+                            >
+                                {message.progress || 0}%
+                            </Typography>
+                        </Box>
+                    )}
+
                     {message.type === 'text' && (
                         <Typography
                             variant="body2"
@@ -198,6 +238,7 @@ function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, on
                             {message.content}
                         </Typography>
                     )}
+
                     {message.type === 'system' && (
                         <Typography
                             variant="caption"
@@ -209,21 +250,23 @@ function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, on
                                 lineHeight: 1.2,
                             }}
                         >
-                            {message.content.split(' ').map((word, i) =>
-                                word.startsWith('/') || word.startsWith('http') ? (
-                                    <Link
-                                        key={i}
-                                        href={word}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        sx={{ color: isOwn ? 'orange' : 'primary.main', p:0 }}
-                                    >
-                                        {word}{' '}
-                                    </Link>
-                                ) : (
-                                    word + ' '
-                                )
-                            )}
+                            {message.content
+                                .split(' ')
+                                .map((word, i) =>
+                                    word.startsWith('/') || word.startsWith('http') ? (
+                                        <Link
+                                            key={i}
+                                            href={word}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
+                                        >
+                                            {word}{' '}
+                                        </Link>
+                                    ) : (
+                                        word + ' '
+                                    )
+                                )}
                         </Typography>
                     )}
 
@@ -280,7 +323,7 @@ function MessageBubble({ roomId, message, isOwn, isForward, onEdit, onDelete, on
                                     my: 1,
                                     textTransform: "none"
                                 }}
-                                onClick={(e)=>{
+                                onClick={(e) => {
                                     e.stopPropagation();
                                     onStartCall();
                                 }}

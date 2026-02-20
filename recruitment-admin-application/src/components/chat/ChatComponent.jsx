@@ -8,7 +8,6 @@ import CallIcon from '@mui/icons-material/Call';
 import CloseIcon from '@mui/icons-material/Close';
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
-import StopIcon from '@mui/icons-material/Stop';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import { Alert, AppBar, Avatar, Box, CircularProgress, IconButton, Paper, Snackbar, TextField, Toolbar, Typography, Button } from "@mui/material";
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +20,7 @@ import DeleteDialog from './dialog/DeleteDialog';
 import ForwardDialog from './dialog/ForwardDialog';
 import MediaPreviewDialog from './dialog/MediaPreviewDialog';
 import PinnedMessageComponent from './PinnedMessageComponent';
+// import { useResumableUploads } from '../../hooks/useResumableUploads';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -77,6 +77,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         if (!msg.file_url) return false; // skip if no URL
         return true;
     });
+
+    const [uploadingFiles, setUploadingFiles] = useState([]);
 
     const checkMediaUrl = async (url) => {
         try {
@@ -357,33 +359,97 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         }
 
         if (audioBlob) {
-            const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
-                type: audioBlob.type,
-            })
+            const id = `temp-voice-${Date.now()}`;
 
-            const res = await uploadFileMessage({ file: audioFile, type: 'voice' })
-            addMessage(res.data);
-            setReplyingTo(null);
-            setAudioBlob(null)
-            setRecordTime(0)
-            setTimeout(scrollToBottom, 50);
-            return
+            setUploadingFiles(prev => [
+                ...prev,
+                {
+                    id,
+                    sender_id: currentUserId,
+                    type: 'voice',
+                    isUploading: true,
+                    progress: 0
+                }
+            ]);
+
+            try {
+                const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+                    type: audioBlob.type,
+                });
+
+                const res = await uploadFileMessage({
+                    file: audioFile,
+                    type: 'voice'
+                });
+
+                addMessage(res.data);
+
+                setUploadingFiles(prev =>
+                    prev.filter(f => f.id !== id)
+                );
+            } catch (err) {
+                setUploadingFiles(prev =>
+                    prev.filter(f => f.id !== id)
+                );
+            }
+
+            setAudioBlob(null);
+            setRecordTime(0);
+            return;
         }
 
         if (selectedFiles.length > 0) {
-            for (const file of selectedFiles) {
-                const res = await uploadFileMessage({
-                    file,
-                    type: getFileType(file),
-                    caption: newMessage || null,
-                })
-                addMessage(res.data);
+            const filesToUpload = selectedFiles.map(file => ({
+                file,
+                id: `temp-${file.name}-${Date.now()}`,
+                type: getFileType(file), // image | video | file
+                progress: 0
+            }));
+
+            const placeholders = filesToUpload.map(item => ({
+                id: item.id,
+                sender_id: currentUserId,
+                type: item.type,
+                content: item.file.name,
+                isUploading: true,
+                progress: 0
+            }));
+
+            setUploadingFiles(prev => [...prev, ...placeholders]);
+
+            for (const item of filesToUpload) {
+                try {
+                    const res = await uploadFileMessage({
+                        file: item.file,
+                        type: item.type,
+                        caption: newMessage || null,
+                        onUploadProgress: (e) => {
+                            const progress = Math.round((e.loaded * 100) / e.total);
+                            setUploadingFiles(prev =>
+                                prev.map(f =>
+                                    f.id === item.id ? { ...f, progress } : f
+                                )
+                            );
+                        }
+                    });
+
+                    addMessage(res.data);
+
+                    setUploadingFiles(prev =>
+                        prev.filter(f => f.id !== item.id)
+                    );
+                } catch (err) {
+                    console.error(err);
+                    setUploadingFiles(prev =>
+                        prev.filter(f => f.id !== item.id)
+                    );
+                }
             }
+
             setSelectedFiles([]);
             setNewMessage('');
             setReplyingTo(null);
             clearFiles();
-            setTimeout(scrollToBottom, 50);
             return;
         }
 
@@ -760,7 +826,6 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 messages.map((message) => (
                                     <MessageBubble
                                         key={message.id}
-                                        roomId={chat.id}
                                         message={message}
                                         isOwn={message.sender_id === currentUserId}
                                         isForward={message?.forward_from?.sender?.pk_id === currentUserId}
@@ -779,6 +844,28 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
                                     />
                                 )))}
+
+                            {uploadingFiles.map((file) => (
+                                <MessageBubble
+                                    key={file.id}
+                                    message={file}
+                                    isOwn={true}
+                                    isForward={false}
+                                    onEdit={handleEditMessage}
+                                    onDelete={handleDeleteMessage}
+                                    onReply={(msg) => setReplyingTo(msg)}
+                                    onForward={handleForwardMessage}
+                                    onReplace={handleReplaceMessage}
+                                    onPreview={handleOpenPreview}
+                                    onPin={handlePinMessage}
+                                    isPin={false}
+                                    onUnpin={handleUnpinMessage}
+                                    onReact={toggleReactMessage}
+                                    reactionsData={reactionsData}
+                                    onRemoveReact={handleRemoveReact}
+                                    onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
+                                />
+                            ))}
 
                             {Object.entries(typingUsers)
                                 .filter(([userId, isTyping]) => isTyping && parseInt(userId) !== currentUserId)
@@ -806,10 +893,19 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     borderTop: 1,
                                     borderColor: 'divider',
                                     bgcolor: 'background.paper',
+                                    overflowX: 'hidden',
                                 }}
                             >
-
-                                <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, overflowX: 'auto', py: 1 }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        gap: 1,
+                                        flexGrow: 1,
+                                        overflowX: 'auto',
+                                        py: 1,
+                                        scrollSnapType: 'x mandatory',
+                                    }}
+                                >
                                     {selectedFiles.map((file, index) => {
                                         const isImage = file.type.startsWith('image/');
                                         const url = isImage ? URL.createObjectURL(file) : null;
@@ -819,12 +915,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                 key={index}
                                                 variant="outlined"
                                                 sx={{
+                                                    flex: '0 0 auto',
                                                     p: 1,
                                                     minWidth: 120,
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
                                                     gap: 1,
+                                                    position: 'relative',
                                                 }}
                                             >
                                                 {isImage ? (
@@ -850,10 +948,10 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     onClick={() => removeFile(index)}
                                                     sx={{
                                                         position: 'absolute',
-                                                        top: 14,
-                                                        transform: 'translateX(200%)',
+                                                        top: 4,
+                                                        right: 4,
                                                         backgroundColor: 'white',
-                                                        boxShadow: 1
+                                                        boxShadow: 1,
                                                     }}
                                                 >
                                                     <CloseIcon sx={{ fontSize: 14 }} />
@@ -862,6 +960,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         );
                                     })}
                                 </Box>
+
                                 <Snackbar
                                     open={!!error}
                                     autoHideDuration={5000}

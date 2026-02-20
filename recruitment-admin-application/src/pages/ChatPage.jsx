@@ -37,8 +37,8 @@ function getLastMessagePreview(chat, currentUserId) {
 function ChatPage() {
     const location = useLocation();
     const initialRoomId = location.state?.roomId;
-    const token = useAuthStore.getState().access_token;
-    const currentUserId = useAuthStore.getState().user_data.pk_id;
+    const token = useAuthStore(s => s.access_token);
+    const currentUserId = useAuthStore(s => s.user_data?.pk_id);
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -73,7 +73,6 @@ function ChatPage() {
     const [foundUsers, setFoundUsers] = useState([]);
     const [searchLoading, setSearchLoading] = useState(false);
 
-    const [activeCallRoom, setActiveCallRoom] = useState(null);
     const [callRequest, setCallRequest] = useState(null);
     const [isCallBusy, setIsCallBusy] = useState(false);
 
@@ -169,7 +168,6 @@ function ChatPage() {
 
         const res = await api.get(`/chat/rooms/${roomId}/pin`);
         setPinMessage(res.data);
-        console.log("pinMessage", res.data)
     }
 
     const fetchReactions = async (roomId, messageId) => {
@@ -200,8 +198,6 @@ function ChatPage() {
         if (newMessages.length < LIMIT) setHasMore(false);
         if (reset) setOffset(LIMIT);
         else setOffset(prev => prev + LIMIT);
-
-        console.log("messages", newMessages)
 
         return newMessages;
     };
@@ -306,7 +302,7 @@ function ChatPage() {
         roomId: selectedChat?.room_id,
         token,
         onMessage: (data) => {
-            console.log("WS EVENT RECEIVED:", data);
+            // console.log("WS EVENT RECEIVED:", data);
 
             switch (data.type) {
                 case "connected":
@@ -436,7 +432,8 @@ function ChatPage() {
 
 
                 default:
-                    console.log("WS event", data);
+                    // console.log("WS event", data);
+                    break;
             }
         },
     });
@@ -445,11 +442,7 @@ function ChatPage() {
         if (connected && send) send(data);
     }, [connected, send]);
 
-    useEffect(() => {
-        if (!connected && !selectedChatRef.current) return;
-    }, [connected]);
-
-    const { send: sendGlobal, connect } = useGlobalWebSocket((data) => {
+    const { send: sendGlobal, connected: globalConnected } = useGlobalWebSocket((data) => {
         switch (data.type) {
             case "chat_list_update":
                 setChats(prev => {
@@ -506,7 +499,7 @@ function ChatPage() {
     });
 
     const startCall = (roomId, mode = 'video') => {
-        if (!connect && selectedChat) {
+        if (!globalConnected && selectedChat) {
             console.warn("WS not connected yet");
             return;
         }
@@ -514,7 +507,6 @@ function ChatPage() {
             type: "call.initiate",
             payload: { room_id: roomId, mode: mode }
         });
-        setActiveCallRoom(roomId, mode);
         setCallRequest(selectedChat);
     };
 
@@ -523,7 +515,6 @@ function ChatPage() {
             type: "call.decline",
             payload: { room_id: roomId }
         });
-        setActiveCallRoom(null);
         setCallRequest(null);
     };
 
