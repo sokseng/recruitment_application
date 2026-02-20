@@ -24,7 +24,7 @@ export function useGlobalWebSocket(onGlobalEvent) {
       socketRef.current = ws;
 
       ws.onopen = () => {
-        console.log("🌍 Global WS connected");
+        // console.log("🌍 Global WS connected");
         setConnect(true);
         reconnectAttempts.current = 0;
 
@@ -38,7 +38,7 @@ export function useGlobalWebSocket(onGlobalEvent) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("Global Received Data", data);
+          // console.log("Global Received Data", data);
 
           if (["unread_snapshot", "unread_update"].includes(data.type)) {
             setAllChats(data.counts);
@@ -78,7 +78,7 @@ export function useGlobalWebSocket(onGlobalEvent) {
     return () => {
       intentionalClose.current = true;
       if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-      socketRef.current?.close();
+      // socketRef.current?.close();
     };
   }, [token]);
 
@@ -92,7 +92,6 @@ export function useGlobalWebSocket(onGlobalEvent) {
 
   return {
     send,
-    connect,
     connected: connect,
   };
 }

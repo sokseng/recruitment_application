@@ -63,7 +63,7 @@ export function useWebSocket({
       socketRef.current = ws;
 
       ws.onopen = () => {
-        console.log("WS connected", wsUrl);
+        // console.log("WS connected", wsUrl);
         intentionalClose.current = false;
         setConnected(true);
 
@@ -72,7 +72,7 @@ export function useWebSocket({
       };
 
       ws.onmessage = (event) => {
-        console.log("WS raw:", event.data);
+        // console.log("WS raw:", event.data);
         if (event.data.room_id && event.data.room_id !== currentRoomId.current) {
           return;
         }

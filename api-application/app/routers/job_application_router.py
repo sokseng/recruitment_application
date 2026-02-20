@@ -305,8 +305,6 @@ async def update_status(
 
     updated = update_application_status(db, application_id, data.new_status, employer.pk_id)
     
-    print(f"application_status: {updated.application_status}")
-    
     room = get_or_create_chat_room(
         db=db,
         user_a_id=updated.candidate.user.pk_id,
@@ -317,11 +315,12 @@ async def update_status(
         current_user = db.query(User).filter(User.pk_id == current_user_id).first()
         
         job_link = f"/applied_candidates?job={updated.job_id}"
+        status_text = updated.application_status.value.lower()
 
         message = (
-            f"📌 Application Status Update\n\n"
+            f"📌 Application Status Update\n"
             f"Your application has been "
-            f"{updated.application_status.value}.\n\n"
+            f"{status_text}.\n"
             # f"View details: {job_link}"
         )
         

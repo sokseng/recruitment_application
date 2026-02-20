@@ -10,6 +10,7 @@ import {
     Button,
     CircularProgress,
     Box,
+    Typography,
 } from "@mui/material";
 
 export default function ForwardDialog({
@@ -41,26 +42,32 @@ export default function ForwardDialog({
             >
 
                 <List dense>
-                    {rooms.map((room) => {
-                        const checked = selectedRooms.has(room.room_id);
+                    {rooms.length === 0 ?
+                        (
+                            <Typography textAlign="center">
+                                No more room available
+                            </Typography>
+                        ) :
+                        (rooms.map((room) => {
+                            const checked = selectedRooms.has(room.room_id);
 
-                        return (
-                            <ListItemButton
-                                key={room.room_id}
-                                onClick={() => toggleRoom(room.room_id)}
-                            >
-                                <Checkbox
-                                    edge="start"
-                                    checked={checked}
-                                    tabIndex={-1}
-                                    disableRipple
-                                />
-                                <ListItemText
-                                    primary={room.username}
-                                />
-                            </ListItemButton>
-                        );
-                    })}
+                            return (
+                                <ListItemButton
+                                    key={room.room_id}
+                                    onClick={() => toggleRoom(room.room_id)}
+                                >
+                                    <Checkbox
+                                        edge="start"
+                                        checked={checked}
+                                        tabIndex={-1}
+                                        disableRipple
+                                    />
+                                    <ListItemText
+                                        primary={room.username}
+                                    />
+                                </ListItemButton>
+                            );
+                        }))}
                 </List>
 
                 {hasMore && (
