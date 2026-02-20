@@ -62,6 +62,7 @@ import { useUnreadStore } from "../store/unreadStore";
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import FactCheckIcon from "@mui/icons-material/FactCheck";
 
 export default function Topbar() {
   const { t } = useTranslation();
@@ -194,6 +195,7 @@ export default function Topbar() {
       { label: t('jobs'), path: "/admin/jobs", icon: <PersonIcon /> },
       { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon /> },
       { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon /> },
+      { label: 'Audit', path: "/audit", icon: <FactCheckIcon /> },
     ],
     2: [
       { label: t('home'), path: "/", icon: <HomeIcon /> },
