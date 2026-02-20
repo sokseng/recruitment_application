@@ -1,5 +1,5 @@
 // src/pages/AppliedCandidates.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -30,6 +30,7 @@ import {
   DialogActions,
   IconButton,
   DialogTitle,
+  Paper,
 } from "@mui/material";
 import {
   Work as WorkIcon,
@@ -41,12 +42,29 @@ import {
   CancelOutlined,
   CheckCircleOutline,
   PersonOutlineSharp,
-  InsertDriveFileSharp,
-  BadgeSharp,
-  Image,
+  DescriptionOutlined,
 } from "@mui/icons-material";
 import api from "../services/api";
 import { FaFacebookMessenger } from "react-icons/fa";
+import { DataGrid } from "@mui/x-data-grid";
+import Draggable from "react-draggable";
+
+// ────────────────────────────────────────────────
+//      Draggable Paper
+// ────────────────────────────────────────────────
+function DraggablePaper(props) {
+  const nodeRef = useRef(null);
+
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle="#draggable-dialog-title"
+      cancel={'[class*="MuiDialogContent-root"]'}
+    >
+      <Paper ref={nodeRef} {...props} />
+    </Draggable>
+  );
+}
 
 const STATUS_MAP = {
   PENDING: { label: "Pending", color: "warning" },
@@ -79,7 +97,6 @@ export default function AppliedCandidates() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
-  
 
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -100,6 +117,9 @@ export default function AppliedCandidates() {
   const [candidateDetailOpen, setCandidateDetailOpen] = useState(false);
   const [selectedCandidateApp, setSelectedCandidateApp] = useState(null);
 
+  const [candidateImages, setCandidateImages] = useState([]); // ← new
+  const [loadingImages, setLoadingImages] = useState(false);
+  
 
   useEffect(() => {
     loadMyJobsWithApplicationCounts();
@@ -111,6 +131,32 @@ export default function AppliedCandidates() {
       setTabValue(0);
     }
   }, [selectedJobId]);
+
+  useEffect(() => {
+    if (candidateDetailOpen && selectedCandidateApp?.candidate_resume_id) {
+      loadCandidateImages(selectedCandidateApp.candidate_resume_id);
+    } else {
+      setCandidateImages([]);
+    }
+  }, [candidateDetailOpen, selectedCandidateApp]);
+
+  const loadCandidateImages = async (resumeId) => {
+    if (!resumeId) return;
+
+    try {
+      setLoadingImages(true);
+      const res = await api.get(
+        `/applications/attach-file/${selectedCandidateApp.pk_id}/resume-images`,
+      );
+      console.log("Loaded images from API:", res.data);
+      setCandidateImages(res.data || []);
+    } catch (err) {
+      console.error("Image load error:", err?.response?.data);
+      setCandidateImages([]);
+    } finally {
+      setLoadingImages(false);
+    }
+  };
 
   const loadMyJobsWithApplicationCounts = async () => {
     try {
@@ -133,7 +179,7 @@ export default function AppliedCandidates() {
       });
 
       const jobsWithApplications = allMyJobs.filter(
-        (job) => (countsMap[job.pk_id] || 0) >= 1
+        (job) => (countsMap[job.pk_id] || 0) >= 1,
       );
 
       setMyJobs(jobsWithApplications);
@@ -142,7 +188,7 @@ export default function AppliedCandidates() {
         let initialJobId;
         if (selectedJobFromUrl) {
           const found = jobsWithApplications.find(
-            (j) => j.pk_id === Number(selectedJobFromUrl)
+            (j) => j.pk_id === Number(selectedJobFromUrl),
           );
           initialJobId = found ? found.pk_id : jobsWithApplications[0].pk_id;
         } else {
@@ -181,7 +227,7 @@ export default function AppliedCandidates() {
 
   const handleStatusChange = async (appId, newStatusLabel) => {
     const newKey = Object.keys(STATUS_MAP).find(
-      (k) => STATUS_MAP[k].label === newStatusLabel
+      (k) => STATUS_MAP[k].label === newStatusLabel,
     );
     if (!newKey) return;
 
@@ -192,9 +238,16 @@ export default function AppliedCandidates() {
 
       setApplications((prev) =>
         prev.map((app) =>
-          app.pk_id === appId ? { ...app, application_status: newKey } : app
-        )
+          app.pk_id === appId ? { ...app, application_status: newKey } : app,
+        ),
       );
+
+      // Update currently viewed candidate detail
+      if (selectedCandidateApp?.pk_id === appId) {
+        setSelectedCandidateApp((prev) =>
+          prev ? { ...prev, application_status: newKey } : prev,
+        );
+      }
 
       setSnackbar({
         open: true,
@@ -210,40 +263,100 @@ export default function AppliedCandidates() {
     }
   };
 
-   // ────────────────────────────────────────────────
+  // ────────────────────────────────────────────────
   // one by one PDF – View & Download
   // ────────────────────────────────────────────────
   const handleDownload = async (resumeId, fileName) => {
-      if (!resumeId) return;
+    if (!resumeId) return;
 
-      try {
-          const res = await api.get(
-            `/applications/resumes/${resumeId}/file`,
-            {
-              responseType: "blob",
-            }
-          );
+    try {
+      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
+        responseType: "blob",
+      });
 
-          const blob = new Blob([res.data], {
-            type: res.headers["content-type"],
-          });
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"],
+      });
 
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.setAttribute("download", fileName || "resume");
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          window.URL.revokeObjectURL(url);
-      } catch (err) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName || "resume");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: "Failed to download resume",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleViewFile = async (resumeId, fileName) => {
+    if (!resumeId) return;
+
+    try {
+      const res = await api.get(`/applications/resumes/${resumeId}/file`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], {
+        type: res.headers["content-type"],
+      });
+
+      const url = URL.createObjectURL(blob);
+
+      setFileUrl(url);
+      setFileName(fileName);
+      setFileType(blob.type);
+      setViewFileOpen(true);
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Unable to view file",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleViewCoverLetter = async (applicationId, candidateName) => {
+    if (!applicationId) return;
+
+    try {
+      const res = await api.get(`/applications/${applicationId}/cover-letter`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: res.headers["content-type"] });
+      const url = URL.createObjectURL(blob);
+
+      setFileUrl(url);
+      setFileName(
+        `Cover_Letter_${candidateName.replace(/\s+/g, "_")}${blob.type.includes("pdf") ? ".pdf" : ""}`,
+      );
+      setFileType(blob.type);
+      setViewFileOpen(true);
+    } catch (err) {
+      if (err?.response?.status === 404) {
         setSnackbar({
           open: true,
-          message: "Failed to download resume",
+          message: "This candidate did not upload a cover letter",
+          severity: "info",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Failed to load cover letter",
           severity: "error",
         });
       }
+    }
   };
+
   const handleDownloadCoverLetter = async (applicationId, candidateName) => {
     try {
       const res = await api.get(`/applications/${applicationId}/cover-letter`, {
@@ -265,117 +378,19 @@ export default function AppliedCandidates() {
         severity: "success",
       });
     } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: "Failed to download cover letter",
-        severity: "error",
-      });
-    }
-  };
-
-  const handleViewFile = async (resumeId, fileName) => {
-    if (!resumeId) return;
-
-    try {
-      const res = await api.get(
-        `/applications/resumes/${resumeId}/file`,
-        {
-          responseType: "blob",
-        }
-      );
-
-      const blob = new Blob([res.data], {
-        type: res.headers["content-type"],
-      });
-
-      const url = URL.createObjectURL(blob);
-
-      setFileUrl(url);
-      setFileName(fileName);
-      setFileType(blob.type);
-      setViewFileOpen(true);
-
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: "Unable to view file",
-        severity: "error",
-      });
-    }
-  };
-  const handleViewCoverLetter = async (applicationId, candidateName) => {
-    if (!applicationId) return;
-
-    try {
-      const res = await api.get(
-        `/applications/${applicationId}/cover-letter`,
-        { responseType: "blob" }
-      );
-
-      const blob = new Blob([res.data], { type: res.headers["content-type"] });
-      const url = URL.createObjectURL(blob);
-
-      setFileUrl(url);
-      setFileName(`Cover_Letter_${candidateName.replace(/\s+/g, "_")}${blob.type.includes("pdf") ? ".pdf" : ""}`);
-      setFileType(blob.type);
-      setViewFileOpen(true);
-
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: err?.response?.status === 404 
-          ? "No cover letter found" 
-          : "Unable to view cover letter",
-        severity: "error",
-      });
-    }
-  };
-
-  // ────────────────────────────────────────────────
-  // Combined PDF – View & Download
-  // ────────────────────────────────────────────────
-
-  const getCombinedPdfUrl = (applicationId) =>
-    `${baseURL}/applications/${applicationId}/combined-pdf`;
-
-  const handleViewCombined = (appId, candidateName) => {
-    const url = getCombinedPdfUrl(appId);
-    setFileUrl(url);
-    setFileName(`Application - ${candidateName.replace(/\s+/g, "_")}.pdf`);
-    setFileType("application/pdf");
-    setViewFileOpen(true);
-  };
-
-  const handleDownloadCombined = async (appId, candidateName) => {
-    try {
-      const res = await api.get(`/applications/${appId}/combined-pdf`, {
-        responseType: "blob",
-      });
-
-      const blob = new Blob([res.data], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Application_${candidateName.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-
-      setSnackbar({
-        open: true,
-        message: "Combined PDF downloaded",
-        severity: "success",
-      });
-    } catch (err) {
-      console.error(err);
-      setSnackbar({
-        open: true,
-        message: "Could not download combined PDF",
-        severity: "error",
-      });
+      if (err?.response?.status === 404) {
+        setSnackbar({
+          open: true,
+          message: "No cover letter available",
+          severity: "info",
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Failed to download cover letter",
+          severity: "error",
+        });
+      }
     }
   };
 
@@ -414,12 +429,19 @@ export default function AppliedCandidates() {
     tabValue === 0
       ? applications
       : applications.filter(
-          (app) => app.application_status === STATUS_FILTER[tabValue]
+          (app) => app.application_status === STATUS_FILTER[tabValue],
         );
 
   if (loadingJobs) {
     return (
-      <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box
+        sx={{
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -464,7 +486,9 @@ export default function AppliedCandidates() {
             }}
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
-            <Typography variant="subtitle2">No jobs with applications yet</Typography>
+            <Typography variant="subtitle2">
+              No jobs with applications yet
+            </Typography>
             <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
               When candidates apply, their jobs will appear here.
             </Typography>
@@ -495,7 +519,12 @@ export default function AppliedCandidates() {
                         ? `${baseURL}/uploads/employers/${job.employer.company_logo}`
                         : undefined
                     }
-                    sx={{ width: 48, height: 48, border: "1px solid", borderColor: "divider" }}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
                   >
                     {job.employer?.company_name?.[0]?.toUpperCase() || "?"}
                   </Avatar>
@@ -504,7 +533,8 @@ export default function AppliedCandidates() {
                       {job.job_title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {job.employer?.company_name || "—"} • {job.location || "—"}
+                      {job.employer?.company_name || "—"} •{" "}
+                      {job.location || "—"}
                     </Typography>
                   </Box>
                   <Chip
@@ -514,8 +544,8 @@ export default function AppliedCandidates() {
                       job.status === "Open"
                         ? "success"
                         : job.status === "Closed"
-                        ? "error"
-                        : "warning"
+                          ? "error"
+                          : "warning"
                     }
                     variant="outlined"
                   />
@@ -529,11 +559,17 @@ export default function AppliedCandidates() {
   );
 
   const InfoRow = ({ label, value }) => (
-    <Stack direction="row" justifyContent="space-between" sx={{ maxWidth: 550 }}>
-      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+    <Stack
+      direction="row"
+    >
+      <Typography variant="body2" color="text.secondary">
         {label}:
       </Typography>
-      <Typography variant="body2" fontWeight={500} sx={{ flex: 1, textAlign: "right" }}>
+      <Typography
+        variant="body2"
+        fontWeight={500}
+        sx={{flex: 1, textAlign: "right" }}
+      >
         {value}
       </Typography>
     </Stack>
@@ -567,7 +603,12 @@ export default function AppliedCandidates() {
                     ? `${baseURL}/uploads/employers/${selectedJob.employer.company_logo}`
                     : undefined
                 }
-                sx={{ width: 60, height: 60, border: "1px solid", borderColor: "divider" }}
+                sx={{
+                  width: 60,
+                  height: 60,
+                  border: "1px solid",
+                  borderColor: "divider",
+                }}
               >
                 {selectedJob?.employer?.company_name?.[0]?.toUpperCase() || "?"}
               </Avatar>
@@ -576,7 +617,8 @@ export default function AppliedCandidates() {
                   {selectedJob?.job_title}
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
-                  {selectedJob?.employer?.company_name} • {applications.length} application
+                  {selectedJob?.employer?.company_name} • {applications.length}{" "}
+                  application
                   {applications.length !== 1 ? "s" : ""}
                 </Typography>
               </Box>
@@ -594,7 +636,13 @@ export default function AppliedCandidates() {
             </Stack>
           </Box>
           <Divider />
-          <Box sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1.5, sm: 2 } }}>
+          <Box
+            sx={{
+              borderBottom: 1,
+              borderColor: "divider",
+              px: { xs: 1.5, sm: 2 },
+            }}
+          >
             <Tabs
               value={tabValue}
               onChange={(_, v) => setTabValue(v)}
@@ -605,9 +653,12 @@ export default function AppliedCandidates() {
               {TAB_LABELS.map((label, i) => (
                 <Tab
                   key={label}
-                  label={`${label} (${i === 0
-                    ? applications.length
-                    : applications.filter((a) => a.application_status === STATUS_FILTER[i]).length
+                  label={`${label} (${
+                    i === 0
+                      ? applications.length
+                      : applications.filter(
+                          (a) => a.application_status === STATUS_FILTER[i],
+                        ).length
                   })`}
                   sx={{ textTransform: "none" }}
                 />
@@ -616,7 +667,12 @@ export default function AppliedCandidates() {
           </Box>
           <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 1.5, sm: 2 } }}>
             {loadingApps ? (
-              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                height="100%"
+              >
                 <CircularProgress />
               </Box>
             ) : filteredApplications.length === 0 ? (
@@ -639,11 +695,10 @@ export default function AppliedCandidates() {
               <Stack spacing={2}>
                 {filteredApplications.map((app) => {
                   const candidateName =
-                    app.candidate?.user?.user_name || `Candidate #${app.candidate_id}`;
-                  const candidateEmail = app.candidate?.user?.email || "No email";
-                  const resumeId = app.candidate_resume_id;
-                  const hasResume = !!resumeId;
-                  const userId = app.candidate?.user?.pk_id || app.candidate?.user_id;
+                    app.candidate?.user?.user_name ||
+                    `Candidate #${app.candidate_id}`;
+                  const candidateEmail =
+                    app.candidate?.user?.email || "No email";
 
                   return (
                     <Card
@@ -659,7 +714,6 @@ export default function AppliedCandidates() {
                         transition: "box-shadow 0.2s",
                         "&:hover": { boxShadow: 3 },
                         cursor: "pointer",
-                        
                       }}
                     >
                       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
@@ -755,9 +809,9 @@ export default function AppliedCandidates() {
                                   borderRadius: 2,
                                   backgroundColor: "rgba(211, 47, 47, 0.15)",
                                   color: "error.main",
-                                  width: {xs: "100%", sm: 180},      
-                                  height: 40,      
-                                  display: "flex", 
+                                  width: { xs: "100%", sm: 180 },
+                                  height: 40,
+                                  display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
                                 }}
@@ -794,7 +848,9 @@ export default function AppliedCandidates() {
           justifyContent="center"
           color="text.secondary"
         >
-          <Typography variant="h7">Select a job to view applications</Typography>
+          <Typography variant="h7">
+            Select a job to view applications
+          </Typography>
         </Box>
       )}
     </Card>
@@ -837,7 +893,9 @@ export default function AppliedCandidates() {
                   position: "fixed",
                   inset: 0,
                   zIndex: showDetailMobile ? 20 : -1,
-                  transform: showDetailMobile ? "translateX(0)" : "translateX(100%)",
+                  transform: showDetailMobile
+                    ? "translateX(0)"
+                    : "translateX(100%)",
                   transition: "transform 0.3s ease-in-out",
                   bgcolor: "background.default",
                   overflowY: "auto",
@@ -849,24 +907,41 @@ export default function AppliedCandidates() {
         </Box>
       </Box>
 
-      {/* Combined PDF Viewer Dialog */}
       <Dialog
         open={viewFileOpen}
         onClose={() => {
           setViewFileOpen(false);
-          if (fileUrl && !fileUrl.startsWith("blob:")) {
-            // Only revoke blob URLs
-          }
         }}
         fullWidth
         maxWidth="md"
         PaperProps={{ sx: { height: "90vh", overflow: "hidden" } }}
       >
-        <DialogContent sx={{ p: 0, height: "100%", overflow: "hidden" }}>
-          {fileType === "application/pdf" ? (
+        <DialogContent sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}>
+          {fileType?.startsWith("image/") ? (
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#f8f8f8",
+                p: 2,
+              }}
+            >
+              <img
+                src={fileUrl}
+                alt={fileName}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </Box>
+          ) : fileType === "application/pdf" ? (
             <iframe
               src={fileUrl}
-              title="Combined Application PDF"
+              title="File Preview"
               width="100%"
               height="100%"
               style={{ border: "none" }}
@@ -874,14 +949,16 @@ export default function AppliedCandidates() {
           ) : (
             <Box
               sx={{
-                height: "100%",
+                flex: 1,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: "text.secondary",
               }}
             >
-              <Typography>Preview not available for this file type</Typography>
+              <Typography>
+                Preview not available for this file type ({fileType})
+              </Typography>
             </Box>
           )}
         </DialogContent>
@@ -899,374 +976,506 @@ export default function AppliedCandidates() {
           setSelectedCandidateApp(null);
         }}
         PaperProps={{
-          sx: { width: 500 }   // exact width in px
+          sx: { 
+            width: 700, 
+            maxHeight: "90vh" 
+          },
         }}
-        maxWidth="sm"
-        scroll="body"
+        maxWidth="md"
+        scroll="paper"
+        PaperComponent={DraggablePaper}
       >
-        {selectedCandidateApp && (() => {
-          const candidateName =
-            selectedCandidateApp.candidate?.user?.user_name ||
-            `Candidate #${selectedCandidateApp.candidate_id}`;
-          const resumeId = selectedCandidateApp.candidate_resume_id;
-          const hasResume = !!resumeId;
-          const userId =
-            selectedCandidateApp.candidate?.user?.pk_id ||
-            selectedCandidateApp.candidate?.user_id;
+        {selectedCandidateApp &&
+          (() => {
+            const candidateName =
+              selectedCandidateApp.candidate?.user?.user_name ||
+              `Candidate #${selectedCandidateApp.candidate_id}`;
+            const userId =
+              selectedCandidateApp.candidate?.user?.pk_id ||
+              selectedCandidateApp.candidate?.user_id;
 
-          return (
-            <>
-              {/* Header */}
-              <Stack
-                direction="row"
-                sx={{
-                  p: 2,
-                  pb: 1.5,
-                  borderBottom: 1,
-                  borderColor: "divider",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Candidate Details
-                </Typography>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => setCandidateDetailOpen(false)}
-                >
-                  <CancelOutlined fontSize="small" />
-                </IconButton>
-              </Stack>
+            // ─── Prepare rows for DataGrid ───────────────────────────────────────
+            const documentRows = [];
 
-              {/* Content */}
-              <DialogContent dividers sx={{ px: 2, py: 2 }}>
-                <Stack spacing={2.5}>
-                  {/* Candidate basic info + message button */}
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        bgcolor: "primary.dark",
-                        fontSize: "1.6rem",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {candidateName?.[0]?.toUpperCase() || "?"}
-                    </Avatar>
+            // 1. Resume
+            if (selectedCandidateApp.candidate_resume_id) {
+              documentRows.push({
+                id: "resume",
+                documentType: "Resume",
+                fileName: `${candidateName}_Resume.pdf`,
+                hasFile: true,
+                view: () =>
+                  handleViewFile(
+                    selectedCandidateApp.candidate_resume_id,
+                    `${candidateName}_resume`,
+                  ),
+                download: () =>
+                  handleDownload(
+                    selectedCandidateApp.candidate_resume_id,
+                    `${candidateName}_resume`,
+                  ),
+              });
+            }
+            // ─── 2. Cover Letter ──────────────────────────────────
+            if (selectedCandidateApp.has_cover_letter) {
+              documentRows.push({
+                id: "cover-letter",
+                documentType: "Cover Letter",
+                fileName: `${candidateName}_Cover_Letter.pdf`,
+                hasFile: true,
+                view: () =>
+                  handleViewCoverLetter(
+                    selectedCandidateApp.pk_id,
+                    candidateName,
+                  ),
+                download: () =>
+                  handleDownloadCoverLetter(
+                    selectedCandidateApp.pk_id,
+                    candidateName,
+                  ),
+              });
+            } else {
+              documentRows.push({
+                id: "cover-letter",
+                documentType: "Cover Letter",
+                fileName: "Not uploaded",
+                hasFile: false,
+              });
+            }
 
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        {candidateName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {selectedCandidateApp.candidate?.user?.email || "—"}
-                      </Typography>
-                    </Box>
+            // 3. Attached Images / Files
+            (candidateImages || []).forEach((img, index) => {
+              const isPdf  = img.filename?.toLowerCase().endsWith(".pdf");
+              const isImage = /\.(jpg|jpeg|png)$/i.test(img.filename || "");
 
-                    <Tooltip title={`Message ${candidateName}`}>
-                      <IconButton
-                        color="success"
-                        size="large"
-                        onClick={() => handleSelect(userId)}
+              const attachmentViewUrl  = `${baseURL}/applications/attachments/${img.filename}?disposition=inline`;
+              const attachmentDownloadUrl = `${baseURL}/applications/attachments/${img.filename}?disposition=attachment`;
+
+              documentRows.push({
+                id: `attachment-${img.id || index}`,
+                documentType: isPdf ? "Attached PDF" : isImage ? "Attached Image" : "Attachment",
+                fileName: img.original_name || img.filename || `File ${index + 1}`,
+                hasFile: true,
+
+                // ─── VIEW ───────────────────────────────────────────────
+                view: () => {
+                  setFileUrl(attachmentViewUrl);
+                  setFileName(img.original_name || img.filename);
+                  setFileType(isPdf ? "application/pdf" : isImage ? "image/jpeg" : "application/octet-stream");
+                  setViewFileOpen(true);
+                },
+
+                // ─── DOWNLOAD ─────
+                download: async () => {
+                  try {
+                    const res = await api.get(attachmentDownloadUrl, {   
+                      responseType: "blob",
+                    });
+
+                    const blob = new Blob([res.data], { type: res.headers["content-type"] });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = img.original_name || img.filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(url);
+
+                    setSnackbar({
+                      open: true,
+                      message: "File downloaded",
+                      severity: "success",
+                    });
+                  } catch (err) {
+                    setSnackbar({
+                      open: true,
+                      message: "Failed to download attachment",
+                      severity: "error",
+                    });
+                  }
+                },
+              });
+            });
+
+            const documentColumns = [
+              {
+                field: "documentType",
+                headerName: "Document",
+                width: 160,
+                renderCell: (params) => (
+                  <Typography variant="body2" fontWeight={500}>
+                    {params.value}
+                  </Typography>
+                ),
+              },
+              {
+                field: "fileName",
+                headerName: "File Name",
+                flex: 1,
+                minWidth: 220,
+                renderCell: (params) => (
+                  <Typography
+                    variant="body2"
+                    color={
+                      params.row.hasFile ? "text.primary" : "text.disabled"
+                    }
+                  >
+                    {params.value}
+                  </Typography>
+                ),
+              },
+              {
+                field: "actions",
+                headerName: "Actions",
+                width: 140,
+                sortable: false,
+                align: "center",
+                renderCell: (params) => (
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1,
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    {params.row.hasFile && params.row.view && (
+                      <Tooltip title="View">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            params.row.view();
+                          }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+
+                    {params.row.hasFile && params.row.download && (
+                      <Tooltip title="Download">
+                        <IconButton
+                          size="small"
+                          color="warning"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            params.row.download();
+                          }}
+                        >
+                          <FileDownloadIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+
+                    {!params.row.hasFile && (
+                      <Typography
+                        variant="caption"
+                        color="text.disabled"
+                        sx={{ py: 1 }}
                       >
-                        <FaFacebookMessenger size={34} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-
-                  {/* Personal Information */}
-                  <Box>
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      spacing={1}
-                      sx={{ mb: 1 }}
-                    >
-                      <PersonOutlineSharp color="primary" />
-                      <Typography variant="body1" fontWeight={700}>
-                        Personal Information
+                        Not uploaded
                       </Typography>
-                    </Stack>
+                    )}
+                  </Stack>
+                ),
+              },
+            ];
 
-                    <Divider sx={{ mb: 1.5 }} />
-
-                    <Stack spacing={1.2} sx={{ pl: 1 }}>
-                      <InfoRow
-                        label="Phone"
-                        value={
-                          selectedCandidateApp.candidate?.user?.phone || "—"
-                        }
-                      />
-                      <InfoRow
-                        label="Gender"
-                        value={
-                          selectedCandidateApp.candidate?.user?.gender
-                            ? selectedCandidateApp.candidate.user.gender
-                                .charAt(0)
-                                .toUpperCase() +
-                              selectedCandidateApp.candidate.user.gender
-                                .slice(1)
-                                .toLowerCase()
-                            : "—"
-                        }
-                      />
-                      <InfoRow
-                        label="Date of Birth"
-                        value={
-                          selectedCandidateApp.candidate?.user?.date_of_birth
-                            ? new Date(
-                                selectedCandidateApp.candidate.user
-                                  .date_of_birth,
-                              ).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })
-                            : "—"
-                        }
-                      />
-                      <InfoRow
-                        label="Address"
-                        value={
-                          selectedCandidateApp.candidate?.user?.address || "—"
-                        }
-                      />
-                    </Stack>
-                  </Box>
-                </Stack>
-              </DialogContent>
-
-              {/* Bottom actions - matching screenshot style, no DialogActions */}
-              <Box sx={{ p: 1.2, borderTop: 1, borderColor: "divider" }}>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
-                  {/* LEFT BOX */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      position: "relative",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1.5,
-                      p: 1.2,
-                      pt: 2,
-                    }}
+            return (
+              <>
+                {/* Header */}
+                <Stack
+                  direction="row"
+                  sx={{
+                    p: 1.5,
+                    pb: 1.5,
+                    borderBottom: 1,
+                    borderColor: "divider",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                  id="draggable-dialog-title"
+                >
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Candidate Details
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => setCandidateDetailOpen(false)}
                   >
-                    <Typography
-                      sx={{
-                        position: "absolute",
-                        top: -8,
-                        left: 10,
-                        px: 0.6,
-                        fontSize: 11,
-                        bgcolor: "background.paper",
-                        fontWeight: 600,
-                        color: "text.secondary",
-                      }}
-                    >
-                      One at a Time
-                    </Typography>
+                    <CancelOutlined fontSize="small" />
+                  </IconButton>
+                </Stack>
 
-                    <Stack direction="row" spacing={0.5}>
-                      <Tooltip title="View Resume" arrow>
+                {/* Content */}
+                <DialogContent dividers sx={{ px: 3, py: 4 }}>
+                  <Stack spacing={2.5}>
+                    {/* Candidate basic info + message button */}
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          bgcolor: "primary.dark",
+                          fontSize: "1.6rem",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {candidateName?.[0]?.toUpperCase() || "?"}
+                      </Avatar>
+
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {candidateName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {selectedCandidateApp.candidate?.user?.email || "—"}
+                        </Typography>
+                      </Box>
+
+                      <Tooltip title={`Message ${candidateName}`}>
                         <IconButton
-                          sx={{
-                            border: 1,
-                            borderColor: "primary.main",
-                            color: "primary.main",
-                          }}
-                          color="primary"
-                          size="small"
-                          onClick={() => handleViewFile(
-                            selectedCandidateApp.candidate_resume_id,
-                            candidateName
-                          )}
+                          color="success"
+                          size="large"
+                          onClick={() => handleSelect(userId)}
                         >
-                          <InsertDriveFileSharp fontSize="small" />
+                          <FaFacebookMessenger size={34} />
                         </IconButton>
                       </Tooltip>
-
-                      <Tooltip title="View Cover Letter" arrow>
-                        <IconButton
-                          sx={{
-                            border: 1,
-                            borderColor: "primary.main",
-                            color: "primary.main",
-                          }}
-                          color="primary"
-                          size="small"
-                          onClick={() => handleViewCoverLetter(
-                            selectedCandidateApp.pk_id,           
-                            candidateName
-                          )}
-                        >
-                          <BadgeSharp fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                        
-                      <Tooltip title="View Image" arrow>
-                        <IconButton
-                          sx={{
-                            border: 1,
-                            borderColor: "primary.main",
-                            color: "primary.main",
-                          }}
-                          color="primary"
-                          size="small"
-                        >
-                          <Image fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Stack direction="row" spacing={0.5} sx={{ pl: 0.5 }}>
-                        <Tooltip title="Download Resume" arrow>
-                          <IconButton
-                            sx={{
-                              border: 1,
-                              borderColor: "warning.main",
-                              color: "warning.main",
-                            }}
-                            color="warning"
-                            size="small"
-                            onClick={() => handleDownload(
-                              selectedCandidateApp.candidate_resume_id,
-                              candidateName
-                            )}
-                          >
-                            <FileDownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Download Cover Letter" arrow>
-                          <IconButton
-                            sx={{
-                              border: 1,
-                              borderColor: "warning.main",
-                              color: "warning.main",
-                            }}
-                            color="warning"
-                            size="small"
-                            onClick={() => handleDownloadCoverLetter(
-                              selectedCandidateApp.pk_id,
-                              candidateName
-                            )}
-                          >
-                            <FileDownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Download Image" arrow>
-                          <IconButton
-                            sx={{
-                              border: 1,
-                              borderColor: "warning.main",
-                              color: "warning.main",
-                            }}
-                            color="warning"
-                            size="small"
-                          >
-                            <FileDownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                    </Stack>
+                    {/* Personal Information */}
+                    <Box>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                      >
+                        <PersonOutlineSharp color="primary" />
+                        <Typography variant="body1" fontWeight={700}>
+                          Personal Information
+                        </Typography>
                       </Stack>
-                    </Stack>
-                  </Box>
 
-                  {/* RIGHT BOX */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      position: "relative",
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1.5,
-                      p: 1.2,
-                      pt: 2,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        position: "absolute",
-                        top: -8,
-                        left: 10,
-                        px: 0.6,
-                        fontSize: 11,
-                        bgcolor: "background.paper",
-                        fontWeight: 600,
-                        color: "text.secondary",
-                      }}
-                    >
-                      Combined
-                    </Typography>
+                      <Divider sx={{ mb: 1 }} />
 
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      {hasResume ? (
-                        <>
-                          <Tooltip title="View combined" arrow>
-                            <IconButton
-                              color="primary"
-                              size="small"
-                              sx={{
-                                border: 1,
-                                borderColor: "primary.main",
-                                color: "primary.main",
-                              }}
-                              onClick={() =>
-                                handleViewCombined(
-                                  selectedCandidateApp.pk_id,
-                                  candidateName,
-                                )
-                              }
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Download combined" arrow>
-                            <IconButton
-                              color="warning"
-                              size="small"
-                              sx={{
-                                border: 1,
-                                borderColor: "warning.main",
-                                color: "warning.main",
-                              }}
-                              onClick={() =>
-                                handleDownloadCombined(
-                                  selectedCandidateApp.pk_id,
-                                  candidateName,
-                                )
-                              }
-                            >
-                              <FileDownloadIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      ) : (
-                        <Chip
-                          label="No resume available"
-                          size="small"
-                          color="default"
-                          variant="outlined"
+                      <Stack spacing={1.2} sx={{ pl: 1 }}>
+                        <InfoRow
+                          label="Phone"
+                          value={
+                            selectedCandidateApp.candidate?.user?.phone || "—"
+                          }
                         />
-                      )}
-                    </Stack>
-                  </Box>
-                </Stack>
-              </Box>
-            </>
-          );
-        })()}
-      </Dialog>
+                        <InfoRow
+                          label="Gender"
+                          value={
+                            selectedCandidateApp.candidate?.user?.gender
+                              ? selectedCandidateApp.candidate.user.gender
+                                  .charAt(0)
+                                  .toUpperCase() +
+                                selectedCandidateApp.candidate.user.gender
+                                  .slice(1)
+                                  .toLowerCase()
+                              : "—"
+                          }
+                        />
+                        <InfoRow
+                          label="Date of Birth"
+                          value={
+                            selectedCandidateApp.candidate?.user?.date_of_birth
+                              ? new Date(
+                                  selectedCandidateApp.candidate.user
+                                    .date_of_birth,
+                                ).toLocaleDateString("en-GB", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"
+                          }
+                        />
+                        <InfoRow
+                          label="Address"
+                          value={
+                            selectedCandidateApp.candidate?.user?.address || "—"
+                          }
+                        />
+                      </Stack>
+                      <Divider sx={{ mb: 1, mt: 1 }} />
+                        <Box>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <DescriptionOutlined fontSize="small" color="primary" />
 
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight={600}
+                            >
+                              Application Documents
+                            </Typography>
+                          </Stack>
+
+                          <Box sx={{ height: 223, width: "100%" }}>
+                            <DataGrid
+                              rows={documentRows}
+                              columns={documentColumns}
+                              disableRowSelectionOnClick
+                              density="compact"
+                              rowHeight={40}
+                              pageSizeOptions={[5, 10, 20]}
+                              initialState={{
+                                pagination: {
+                                  paginationModel: { pageSize: 5 },
+                                },
+                              }}
+                              sx={{
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 1.5,
+                                bgcolor: "background.paper",
+                                fontSize: 13,
+
+                                "& .MuiDataGrid-columnHeaders": {
+                                  bgcolor: "action.hover",
+                                  borderBottom: 1,
+                                  borderColor: "divider",
+                                },
+
+                                "& .MuiDataGrid-columnHeaderTitle": {
+                                  fontWeight: 600,
+                                  width: "100%",
+                                  textAlign: "center",
+                                },
+
+                                "& .MuiDataGrid-cell": {
+                                  py: 0.5,
+                                },
+
+                                "& .MuiDataGrid-row:hover": {
+                                  bgcolor: "action.hover",
+                                },
+
+                                "& .MuiDataGrid-footerContainer": {
+                                  borderTop: 1,
+                                  borderColor: "divider",
+                                  minHeight: 32,        
+                                },
+
+                                "& .MuiTablePagination-root": {
+                                  fontSize: 12,
+                                  minHeight: 32,
+                                },
+
+                                "& .MuiTablePagination-selectLabel": {
+                                  fontSize: 12,
+                                },
+
+                                "& .MuiTablePagination-displayedRows": {
+                                  fontSize: 12,
+                                },
+
+                                "& .MuiTablePagination-select": {
+                                  fontSize: 12,
+                                  paddingTop: 0,
+                                  paddingBottom: 0,
+                                },
+
+                                "& .MuiTablePagination-actions": {
+                                  transform: "scale(0.85)",  
+                                },
+
+                                "& .MuiToolbar-root": {
+                                  minHeight: "28px !important",
+                                }
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      {/* Status Selector in Detail Dialog */}
+
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="center"
+                        justifyContent="center"
+                        sx={{ pl: 1, mt: 2 }}
+                      >
+                        <FormControl 
+                          sx={{
+                            minWidth: 140,
+                            "& .MuiInputBase-root": {
+                              height: 30,          
+                              fontSize: 13,        
+                              paddingTop: 0,
+                              paddingBottom: 0,
+                            },
+                            "& .MuiSelect-select": {
+                              paddingTop: 4,       
+                              paddingBottom: 4,
+                            },
+                            "& .MuiInputLabel-root": {
+                              fontSize: 13,       
+                            },
+                          }}
+                        >
+                          <InputLabel>Application Status</InputLabel>
+                          <Select
+                            value={selectedCandidateApp.application_status || "PENDING"}
+                            label="Application Status"
+                            size="small"
+                            onChange={(e) => {
+                              const newKey = e.target.value;
+                              const newLabel = STATUS_MAP[newKey]?.label;
+
+                              if (!newLabel || newKey === selectedCandidateApp.application_status) {
+                                return;
+                              }
+
+                              setConfirmDialog({
+                                open: true,
+                                appId: selectedCandidateApp.pk_id,
+                                currentStatus: selectedCandidateApp.application_status,
+                                newStatusLabel: newLabel,
+                                newStatusKey: newKey,
+                              });
+                            }}
+                          >
+                            {Object.entries(STATUS_MAP).map(([key, { label }]) => (
+                              <MenuItem key={key} value={key}>
+                                {label}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+
+                        <Chip
+                          label={STATUS_MAP[selectedCandidateApp.application_status]?.label || "Pending"}
+                          color={STATUS_MAP[selectedCandidateApp.application_status]?.color || "warning"}
+                          size="small"
+                          sx={{ fontWeight: 600, minWidth: 100 }}
+                        />
+                      </Stack>
+                    </Box>
+                    
+                  </Stack>
+                </DialogContent>
+              </>
+            );
+          })()}
+      </Dialog>
 
       {/* Confirm status */}
       <Dialog
         open={confirmDialog.open}
         onClose={(even, reason) => {
           if (reason === "backdropClick" || reason === "escapeKeyDown") return;
-          setConfirmDialog({ ...confirmDialog, open: false })
+          setConfirmDialog({ ...confirmDialog, open: false });
         }}
         maxWidth="xs"
         fullWidth
@@ -1277,31 +1486,23 @@ export default function AppliedCandidates() {
             fontWeight: 600,
             fontSize: 16,
             py: 1.2,
-            px: 2
+            px: 2,
           }}
         >
           Confirm Status Change
         </DialogTitle>
-        <Divider/>
+        <Divider />
 
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
-          <Box
-            component="p"
-            sx={{ fontSize: 14, lineHeight: 1.5 }}
-          >
+          <Box component="p" sx={{ fontSize: 14, lineHeight: 1.5 }}>
             Change status from{" "}
-            <Box
-              component="span"
-              sx={{ fontWeight: 600 }}
-            >
-              {STATUS_MAP[confirmDialog.currentStatus]?.label || confirmDialog.currentStatus}
+            <Box component="span" sx={{ fontWeight: 600 }}>
+              {STATUS_MAP[confirmDialog.currentStatus]?.label ||
+                confirmDialog.currentStatus}
             </Box>{" "}
             to{" "}
-            <Box
-              component="span"
-              sx={{ fontWeight: 600 }}
-            >
+            <Box component="span" sx={{ fontWeight: 600 }}>
               {confirmDialog.newStatusLabel}
             </Box>
             ?
@@ -1318,7 +1519,7 @@ export default function AppliedCandidates() {
               onClick={() =>
                 setConfirmDialog({ ...confirmDialog, open: false })
               }
-              sx={{textTransform: "none"}}
+              sx={{ textTransform: "none" }}
             >
               Cancel
             </Button>
@@ -1327,22 +1528,23 @@ export default function AppliedCandidates() {
               size="small"
               variant="contained"
               startIcon={<CheckCircleOutline />}
-              sx={{textTransform: "none"}}
+              sx={{ textTransform: "none" }}
               color={
                 confirmDialog.newStatusLabel === "Rejected"
                   ? "error"
                   : confirmDialog.newStatusLabel === "Accepted"
-                  ? "success"
-                  : confirmDialog.newStatusLabel === "Shortlisted"
-                  ? "primary"
-                  : "warning"
+                    ? "success"
+                    : confirmDialog.newStatusLabel === "Shortlisted"
+                      ? "primary"
+                      : "warning"
               }
               onClick={async () => {
-                if (!confirmDialog.appId || !confirmDialog.newStatusLabel) return;
+                if (!confirmDialog.appId || !confirmDialog.newStatusLabel)
+                  return;
 
                 await handleStatusChange(
                   confirmDialog.appId,
-                  confirmDialog.newStatusLabel
+                  confirmDialog.newStatusLabel,
                 );
 
                 setConfirmDialog({ ...confirmDialog, open: false });

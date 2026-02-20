@@ -2215,7 +2215,7 @@ export default function Dashboard() {
                           backgroundColor: "background.paper",
                         }}
                       >
-                        Attached Images (JPG/PNG) – optional
+                        Supporting Documents (PDF, JPG, PNG) – optional
                       </Typography>
 
                       {/* Existing images (from DB) */}
@@ -2296,11 +2296,11 @@ export default function Dashboard() {
                           textTransform: "none",
                         }}
                       >
-                        Add more images...
+                        Add more attachments
                         <input
                           type="file"
                           hidden
-                          accept="image/jpeg,image/png"
+                          accept="image/jpeg,image/png,application/pdf"
                           multiple
                           onChange={(e) => {
                             const newFiles = Array.from(e.target.files || []);

@@ -2,20 +2,18 @@
 from datetime import datetime
 import os
 import aiofiles
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, logger
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from app.dependencies.auth import verify_access_token, get_db
 from app.dependencies.candidate import get_current_candidate_id
 from app.models.employer_model import Employer
 from app.models.job_application_model import JobApplication
 from app.models.candidate_resume_model import CandidateResume
-from app.models.job_model import Job
 from app.models.resume_image_model import ResumeImage
-from app.models.chat_room import ChatRoom
 from app.models.chat_message import MessageType
 from app.models.user_model import User
 from app.controllers.chat_controller import get_or_create_chat_room
@@ -30,11 +28,7 @@ from app.controllers.job_application_controller import (
     get_applications_for_job,
     update_application_status
 )
-from fastapi.responses import StreamingResponse
-from io import BytesIO
 import os
-from PyPDF2 import PdfReader, PdfWriter
-from PIL import Image
 import mimetypes
 from app.controllers.chat_controller import send_text_message
 
@@ -59,6 +53,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER_ATTACHMENTS, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER_COVER_LETTER, exist_ok=True)
 
+ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".pdf"}
+
 @router.get("/resumes/{resume_id}/images", response_model=List[ResumeImageOut])
 def get_resume_images(
     resume_id: int,
@@ -71,6 +67,39 @@ def get_resume_images(
     ).first()
     if not resume:
         raise HTTPException(404, "Resume not found or not owned by you")
+
+    images = (
+        db.query(ResumeImage)
+        .filter(ResumeImage.resume_id == resume_id)
+        .order_by(ResumeImage.sort_order)
+        .all()
+    )
+    return images
+
+@router.get("/attach-file/{application_id}/resume-images", response_model=List[ResumeImageOut])
+def get_resume_images_for_employer(
+    application_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    # Get application
+    app = (
+        db.query(JobApplication)
+        .options(joinedload(JobApplication.job))
+        .filter(JobApplication.pk_id == application_id)
+        .first()
+    )
+    if not app:
+        raise HTTPException(404, "Application not found")
+
+    # Security: must own the job
+    employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
+    if not employer or app.job.employer_id != employer.pk_id:
+        raise HTTPException(403, "You can only view images for applications to your own jobs")
+
+    resume_id = app.candidate_resume_id
+    if not resume_id:
+        return []
 
     images = (
         db.query(ResumeImage)
@@ -231,7 +260,7 @@ async def apply_to_job_endpoint(
             if not file.filename:
                 continue
             ext = os.path.splitext(file.filename)[1].lower()
-            if ext not in [".jpg", ".jpeg", ".png"]:
+            if ext not in ALLOWED_IMAGE_EXT:
                 continue
             filename = await save_uploaded_file(file, UPLOAD_FOLDER_ATTACHMENTS)
             new_image_filenames.append(filename)
@@ -402,87 +431,31 @@ def download_cover_letter(
         media_type=mime_type
     )
 
-@router.get("/{application_id}/combined-pdf")
-async def get_combined_application_pdf(
-    application_id: int,
-    db: Session = Depends(get_db)
+@router.get("/attachments/{filename}")
+def get_attachment_file(
+    filename: str,
+    disposition: str = "inline",
+    db: Session = Depends(get_db),
 ):
-    application = (
-        db.query(JobApplication)
-        .filter(JobApplication.pk_id == application_id)
-        .first()
+    file_path = os.path.join(UPLOAD_FOLDER_ATTACHMENTS, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+    cd = 'inline' if disposition == 'inline' else 'attachment'
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type=mime_type,
+        headers={
+            "Content-Disposition": f'{cd}; filename="{filename}"'
+        }
     )
-    if not application:
-        raise HTTPException(status_code=404, detail="Application not found")
-
-    job = db.query(Job).filter(Job.pk_id == application.job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Related job not found")
-
-    buffers = []
-
-    resume = None
-    if application.candidate_resume_id:
-        resume = db.query(CandidateResume).filter(
-            CandidateResume.pk_id == application.candidate_resume_id
-        ).first()
-
-    if resume and resume.resume_file:
-        resume_path = os.path.join(UPLOAD_FOLDER, resume.resume_file)
-        if os.path.exists(resume_path) and resume_path.lower().endswith(".pdf"):
-            with open(resume_path, "rb") as f:
-                buffers.append((BytesIO(f.read()), True))
-
-    if resume and resume.cover_letter_file:
-        cl_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
-        if os.path.exists(cl_path) and cl_path.lower().endswith(".pdf"):
-            with open(cl_path, "rb") as f:
-                buffers.append((BytesIO(f.read()), True))
-
-    if resume:
-        images = db.query(ResumeImage).filter(
-            ResumeImage.resume_id == resume.pk_id
-        ).order_by(ResumeImage.sort_order).all()
-
-        for img in images:
-            img_path = os.path.join(UPLOAD_FOLDER_ATTACHMENTS, img.filename)
-            if os.path.exists(img_path):
-                try:
-                    img_buffer = BytesIO()
-                    with Image.open(img_path) as img_pil:
-                        img_pil.save(img_buffer, format="PDF", resolution=100.0)
-                    img_buffer.seek(0)
-                    buffers.append((img_buffer, True))
-                except Exception as e:
-                    print(f"Image to PDF failed for {img.filename}: {e}")
-
-    if not buffers:
-        raise HTTPException(
-            status_code=404,
-            detail="No combinable files (PDF resume, cover letter, or images) available"
-        )
-
-    output = PdfWriter()
-    try:
-        for buf, _ in buffers:
-            buf.seek(0)
-            reader = PdfReader(buf)
-            for page in reader.pages:
-                output.add_page(page)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"PDF merge failed: {str(e)}")
-
-    pdf_bytes = BytesIO()
-    output.write(pdf_bytes)
-    pdf_bytes.seek(0)
-
-    filename = f"application_{application_id}_combined.pdf"
-    return StreamingResponse(
-        pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"inline; filename={filename}"}
-    )
-
 
 @router.delete("/resumes/{resume_id}/images/{image_id}")
 def delete_resume_image(

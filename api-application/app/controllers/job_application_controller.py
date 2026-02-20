@@ -1,5 +1,4 @@
 #job_application_controller.py
-import logging
 import os
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
@@ -12,8 +11,7 @@ from sqlalchemy import func, select
 from app.models.candidate_model import Candidate
 from app.models.resume_image_model import ResumeImage
 from app.routers import job_application_router
-
-logger = logging.getLogger(__name__)
+from app.schemas.job_application_schema import ApplicationOutForEmployer
 
 def apply_to_job(
     db: Session,
@@ -49,12 +47,8 @@ def apply_to_job(
             try:
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                    logger.info(f"Deleted cover letter file: {file_path}")
-                else:
-                    logger.warning(f"Cover letter file not found on disk: {file_path}")
-            except Exception as e:
-                logger.exception(f"Failed to delete cover letter file {file_path}: {e}")
-                # Continue – do not fail the whole request
+            except Exception:
+                pass
 
             resume.cover_letter_file = None
             update_needed = True
@@ -123,12 +117,11 @@ def get_applications_for_job(
     job = db.query(Job).filter(Job.pk_id == job_id, Job.employer_id == employer_id).first()
     if not job:
         raise HTTPException(404, "Job not found or you do not own this job")
-
     stmt = (
         select(JobApplication)
         .options(
             joinedload(JobApplication.candidate).joinedload(Candidate.user),
-            joinedload(JobApplication.resume)
+            joinedload(JobApplication.resume).joinedload(CandidateResume.images),
         )
         .where(JobApplication.job_id == job_id)
         .order_by(JobApplication.applied_date.desc())
@@ -136,7 +129,57 @@ def get_applications_for_job(
         .limit(limit)
     )
 
-    return db.scalars(stmt).all()
+    applications = db.scalars(stmt).unique().all()
+
+    result = []
+
+    for app in applications:
+        resume_images = []
+        if app.resume:
+            resume_images = [
+                {
+                    "id": img.id,
+                    "filename": img.filename,
+                    "original_name": img.original_name,
+                    "sort_order": img.sort_order,
+                }
+                for img in app.resume.images
+            ]
+            resume_images.sort(key=lambda x: x["sort_order"])
+        else:
+            resume_images = []
+
+        app_data = ApplicationOutForEmployer.model_validate({
+            "pk_id": app.pk_id,
+            "job_id": app.job_id,
+            "candidate_id": app.candidate_id,
+            "candidate_resume_id": app.candidate_resume_id,
+            "applied_date": app.applied_date,
+            "application_status": app.application_status.value
+                if hasattr(app.application_status, "value")
+                else str(app.application_status),
+            "cancelled": getattr(app, "cancelled", False),
+            "candidate": {
+                "pk_id": app.candidate.pk_id,
+                "user_id": app.candidate.user_id,
+                "user": {
+                    "pk_id": app.candidate.user.pk_id,
+                    "user_name": app.candidate.user.user_name,
+                    "email": app.candidate.user.email,
+                    "phone": app.candidate.user.phone,
+                    "gender": app.candidate.user.gender,
+                    "date_of_birth": app.candidate.user.date_of_birth,
+                    "address": app.candidate.user.address,
+                } if app.candidate.user else None
+            } if app.candidate else None,
+            "has_cover_letter": app.resume.cover_letter_file is not None if app.resume else False,
+            "resume_images": resume_images,
+        }).model_dump()   
+
+        result.append(app_data)
+
+    return result
+
 
 def update_application_status(
     db: Session,
