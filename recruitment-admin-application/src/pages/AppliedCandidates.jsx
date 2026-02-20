@@ -975,14 +975,8 @@ export default function AppliedCandidates() {
           setCandidateDetailOpen(false);
           setSelectedCandidateApp(null);
         }}
-        PaperProps={{
-          sx: { 
-            width: 700, 
-            maxHeight: "90vh" 
-          },
-        }}
         maxWidth="md"
-        scroll="paper"
+        PaperProps={{ sx: { height: "85vh", overflow: "hidden" } }}
         PaperComponent={DraggablePaper}
       >
         {selectedCandidateApp &&
@@ -1216,14 +1210,14 @@ export default function AppliedCandidates() {
                 </Stack>
 
                 {/* Content */}
-                <DialogContent dividers sx={{ px: 3, py: 4 }}>
+                <DialogContent dividers={false} sx={{ px: 3, py: 1.5, overflow: "visible" }}>
                   <Stack spacing={2.5}>
                     {/* Candidate basic info + message button */}
                     <Stack direction="row" spacing={2} alignItems="center">
                       <Avatar
                         sx={{
-                          width: 56,
-                          height: 56,
+                          width: 50,
+                          height: 50,
                           bgcolor: "primary.dark",
                           fontSize: "1.6rem",
                           fontWeight: "bold",
@@ -1321,11 +1315,12 @@ export default function AppliedCandidates() {
                             </Typography>
                           </Stack>
 
-                          <Box sx={{ height: 223, width: "100%" }}>
+                          <Box sx={{ width: "100%" }}>
                             <DataGrid
                               rows={documentRows}
                               columns={documentColumns}
                               disableRowSelectionOnClick
+                              autoHeight
                               density="compact"
                               rowHeight={40}
                               pageSizeOptions={[5, 10, 20]}
