@@ -13,6 +13,7 @@ import {
   PictureAsPdf,
   Send,
   UploadFile,
+  HourglassEmpty,
 } from "@mui/icons-material";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -146,6 +147,7 @@ export default function Dashboard() {
   const [coverLetterToDelete, setCoverLetterToDelete] = useState(false);
   const [originalResumeId, setOriginalResumeId] = useState(null);
   const canUploadNewCoverLetter = !previousCoverLetterName || coverLetterToDelete;
+  const [checkButtonApply, setCheckButtonApply] = useState(true);
 
   const handleStageDeleteCoverLetter = () => {
     setCoverLetterToDelete(true);
@@ -542,6 +544,26 @@ export default function Dashboard() {
         const res = await api.get(
           `/applications/job/${selectedJob.pk_id}/my-status`,
         );
+        const closeDate = res.data?.close_date;
+        const jobStatus = res.data?.job_status?.toLowerCase?.() || '';
+
+        let isClosedByDate = false;
+
+        if (closeDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const closing = new Date(closeDate);
+          closing.setHours(0, 0, 0, 0);
+
+          isClosedByDate = closing < today;
+        }
+
+        const isClosedByStatus = jobStatus === "closed";
+
+        const isClosed = isClosedByDate || isClosedByStatus;
+
+        setCheckButtonApply(isClosed);
         setHasAppliedToThisJob(!!res.data?.applied);
       } catch (err) {
         setHasAppliedToThisJob(false);
@@ -1576,7 +1598,7 @@ export default function Dashboard() {
                 </Stack>
 
                 {/* Apply button – only for candidates */}
-                {isCandidate && (
+                {!checkButtonApply && isCandidate && (
                   <Button
                     variant="contained"
                     color="primary"
@@ -1601,7 +1623,7 @@ export default function Dashboard() {
                     sx={{ mt: 1 }}
                     justifyContent="flex-end"
                   >
-                    {isCandidate && (
+                    {isCandidate && !checkButtonApply && (
                       <Tooltip
                         title={hasAppliedToThisJob ? t('reapply') : t('apply')}
                         arrow
@@ -2526,6 +2548,25 @@ export default function Dashboard() {
                     {selectedJob.location}
                   </Typography>
                 </Stack>
+                {selectedJob.applications?.length > 0 && selectedJob.applications[0]?.application_status && (
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <HourglassEmpty color="action" fontSize="small" />
+                    <Typography
+                      variant="body2"
+                      fontWeight={600}
+                      minWidth={110}
+                      color="text.secondary"
+                    >
+                      {t('status')}:
+                    </Typography>
+                    <Chip
+                      label={selectedJob.applications[0]?.application_status}
+                      size="small"
+                      variant="outlined"
+                      color="info"
+                    />
+                  </Stack>
+                )}
               </Stack>
             </Box>
 

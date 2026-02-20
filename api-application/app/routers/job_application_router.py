@@ -265,6 +265,16 @@ async def apply_to_job_endpoint(
             filename = await save_uploaded_file(file, UPLOAD_FOLDER_ATTACHMENTS)
             new_image_filenames.append(filename)
 
+    job = db.query(JobApplication).filter(
+        JobApplication.job_id == job_id,
+        JobApplication.candidate_id == candidate_id
+    ).first()
+
+    if job:
+        job.cancelled = False
+        db.commit()
+        db.refresh(job)
+
     application = apply_to_job(
         db=db,
         job_id=job_id,
@@ -368,6 +378,9 @@ def get_my_application_status(
         "applied_date": app.applied_date,
         "cover_letter_filename": cover_letter_filename,     
         "has_images": has_images,
+        "close_date": app.job.closing_date if app.job else None,
+        "job_status": app.job.status if app.job else None,
+        "cancelled": app.cancelled,
     }
 
 @router.get("/resumes/{resume_id}/file")

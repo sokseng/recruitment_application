@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import date, datetime
 from app.models.job_model import JobLevel, JobType, JobStatus
+from app.schemas.job_application_schema import JobApplicationOut
 
 
 class JobCreate(BaseModel):
@@ -68,6 +69,7 @@ class JobOut(BaseModel):
     closing_date: Optional[date]
     status: JobStatus
     created_at: datetime
+    applications: List[JobApplicationOut] = []
 
     model_config = {"from_attributes": True}
 
