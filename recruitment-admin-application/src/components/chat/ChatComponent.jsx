@@ -1171,6 +1171,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     onClose={() => setPopup(false)}
                     user={chat}
                     roomId={chat?.room_id}
+                    currentUserId={currentUserId}
                 />
             )}
             <DeleteDialog
