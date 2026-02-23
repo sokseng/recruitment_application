@@ -14,85 +14,139 @@ import {
     Tabs,
     Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import api from '../../../services/api';
+import { VoiceMessagePlayer } from '../VoiceMessagePlayer';
+import ChatFile from '../ChatFile';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-function ChatMenuDialog({ open, onClose, user, roomId }) {
+function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
     const [tabValue, setTabValue] = useState(0);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
     const [anchorEl, setAnchorEl] = useState(null);
+    const [previewMedia, setPreviewMedia] = useState(null);
+
+    const LIMIT = 30;
+
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [cursor, setCursor] = useState(null);
+
+    const scrollRef = useRef(null);
+    const loadMoreRef = useRef(null);
+
+    const loadSharedMedia = async (reset = false) => {
+        if (loading || loadingMore) return;
+
+        try {
+            if (reset) {
+                setLoading(true);
+                setCursor(null);
+                setHasMore(true);
+            } else {
+                setLoadingMore(true);
+            }
+
+            const response = await api.get(
+                `/chat/rooms/${roomId}/shared-media`,
+                {
+                    params: {
+                        limit: LIMIT,
+                        cursor: reset ? null : cursor,
+                    },
+                }
+            );
+
+            const { data, nextCursor } = response.data;
+
+            setMessages(prev =>
+                reset ? data : [...prev, ...data]
+            );
+
+            setCursor(nextCursor);
+            setHasMore(Boolean(nextCursor));
+
+        } catch (err) {
+            console.error("Failed to load shared media", err);
+            setErrorMsg("Could not load shared media");
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    };
 
     useEffect(() => {
         if (!open || !roomId) {
             setMessages([]);
+            setCursor(null);
+            setHasMore(true);
             setErrorMsg(null);
             return;
         }
 
-        let isMounted = true;
+        loadSharedMedia(true);
 
-        const loadChatHistory = async () => {
-            setLoading(true);
-            setErrorMsg(null);
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = 0;
+        }
+    }, [open, roomId]);
 
-            try {
-                const response = await api.get(`/chat/room/${roomId}/messages`, {
-                    params: {
-                        limit: 120,
-                        offset: 0,
-                    },
-                });
+    useEffect(() => {
+        const target = loadMoreRef.current;
+        if (!target) return;
 
-                if (isMounted) {
-                    setMessages(response.data || []);
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (
+                    entries[0].isIntersecting &&
+                    hasMore &&
+                    !loadingMore &&
+                    !loading
+                ) {
+                    loadSharedMedia();
                 }
-            } catch (err) {
-                console.error('Failed to load chat history for profile', err);
-                if (isMounted) {
-                    setErrorMsg('Could not load media / voice / links history');
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+            },
+            {
+                root: scrollRef.current,
+                threshold: 0.1,
             }
-        };
+        );
 
-        loadChatHistory();
+        observer.observe(target);
 
-        return () => {
-            isMounted = false;
-        };
-    }, [open, roomId, tabValue]);
+        return () => observer.disconnect();
+    }, [hasMore, loadingMore, loading]);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
     };
 
-    const mediaMessages = messages.filter(
-        (m) => (m.type === 'image' || m.type === 'video') && m.file_url
-    );
+    const { mediaMessages, voiceMessages, fileMessages } = useMemo(() => {
+        const media = [];
+        const voice = [];
+        const file = [];
 
-    const voiceMessages = messages.filter(
-        (m) => m.type === 'voice' && m.file_url
-    );
+        for (const m of messages) {
+            if (!m.file_url) continue;
 
-    const linkMessages = messages.filter((m) => {
-        if (m.type === 'text' && m.content && /https?:\/\/[^\s]+/.test(m.content)) {
-            return true;
+            if (m.type === 'image' || m.type === 'video') {
+                media.push(m);
+            } else if (m.type === 'voice') {
+                voice.push(m);
+            } else if (m.type === 'file') {
+                file.push(m);
+            }
         }
 
-        if (m.type === 'file' && m.file_url) {
-            return true;
-        }
-
-
-        return false;
-    });
+        return {
+            mediaMessages: media,
+            voiceMessages: voice,
+            fileMessages: file,
+        };
+    }, [messages]);
 
     const handleMenuOpen = (event) => {
         setAnchorEl(event.currentTarget);
@@ -103,262 +157,268 @@ function ChatMenuDialog({ open, onClose, user, roomId }) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>
-                <Box sx={{ position: 'relative', textAlign: 'center', py: 1 }}>
-                    <Avatar
-                        src={user?.avatar_url || undefined}
-                        sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
-                    >
-                        {user?.username?.charAt(0)?.toUpperCase() || '?'}
-                    </Avatar>
+        <>
+            <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    <Box sx={{ position: 'relative', textAlign: 'center', py: 1 }}>
+                        <Avatar
+                            src={user?.avatar_url || undefined}
+                            sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
+                        >
+                            {user?.username?.charAt(0)?.toUpperCase() || '?'}
+                        </Avatar>
 
-                    <Typography variant="h6">{user?.username || 'User'}</Typography>
+                        <Typography variant="h6">{user?.username || 'User'}</Typography>
 
-                    <Typography
-                        variant="caption"
-                        color={user?.is_online ? 'success.main' : 'text.secondary'}
-                    >
-                        {user?.is_online ? 'Online' : 'Offline'}
-                    </Typography>
+                        <Typography
+                            variant="caption"
+                            color={user?.is_online ? 'success.main' : 'text.secondary'}
+                        >
+                            {user?.is_online ? 'Online' : 'Offline'}
+                        </Typography>
 
-                    <IconButton
-                        onClick={handleMenuOpen}
-                        sx={{ position: 'absolute', top: 8, right: 8 }}
-                    >
-                        <MoreVertIcon />
-                    </IconButton>
+                        <IconButton
+                            onClick={handleMenuOpen}
+                            sx={{ position: 'absolute', top: 8, right: 8 }}
+                        >
+                            <MoreVertIcon />
+                        </IconButton>
 
-                    <Menu
-                        anchorEl={anchorEl}
-                        open={Boolean(anchorEl)}
-                        onClose={handleMenuClose}
-                    >
-                        <MenuItem onClick={handleMenuClose}>Mute notifications</MenuItem>
-                        <MenuItem onClick={handleMenuClose}>Report user</MenuItem>
-                        <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
-                            Block user
-                        </MenuItem>
-                    </Menu>
-                </Box>
-            </DialogTitle>
-
-            <DialogContent sx={{ px: 2, pb: 3 }}>
-                <Tabs
-                    value={tabValue}
-                    onChange={handleTabChange}
-                    variant="fullWidth"
-                    sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-                >
-                    <Tab label="Media" />
-                    <Tab label="Voice" />
-                    <Tab label="Links" />
-                </Tabs>
-
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-                        <CircularProgress />
+                        <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={handleMenuClose}
+                        >
+                            <MenuItem onClick={handleMenuClose}>Mute notifications</MenuItem>
+                            <MenuItem onClick={handleMenuClose}>Report user</MenuItem>
+                            <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
+                                Block user
+                            </MenuItem>
+                        </Menu>
                     </Box>
-                ) : errorMsg ? (
-                    <Typography color="error" align="center" sx={{ py: 6 }}>
-                        {errorMsg}
-                    </Typography>
-                ) : (
-                    <>
-                        {tabValue === 0 && (
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                                    gap: 1.5,
-                                }}
-                            >
-                                {mediaMessages.length === 0 ? (
-                                    <Typography
-                                        color="text.secondary"
-                                        align="center"
-                                        sx={{ gridColumn: '1 / -1', py: 8 }}
-                                    >
-                                        No images or videos shared yet
-                                    </Typography>
-                                ) : (
-                                    mediaMessages.map((msg) => (
-                                        <Box
-                                            key={msg.id}
-                                            sx={{
-                                                aspectRatio: '1',
-                                                borderRadius: 2,
-                                                overflow: 'hidden',
-                                                bgcolor: 'grey.100',
-                                                cursor: 'pointer',
-                                            }}
-                                            onClick={() => {
-                                                if (msg.file_url) {
-                                                    window.open(`${BASE_URL}${msg.file_url}`, '_blank');
-                                                }
-                                            }}
+                </DialogTitle>
+
+                <DialogContent
+                    ref={scrollRef}
+                    sx={{
+                        px: 2,
+                        pb: 3,
+                        maxHeight: 500,
+                        overflowY: 'auto',
+                    }}
+                >
+                    <Tabs
+                        value={tabValue}
+                        onChange={handleTabChange}
+                        variant="fullWidth"
+                        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+                    >
+                        <Tab label="Media" />
+                        <Tab label="Voice" />
+                        <Tab label="File" />
+                    </Tabs>
+
+                    {loading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : errorMsg ? (
+                        <Typography color="error" align="center" sx={{ py: 6 }}>
+                            {errorMsg}
+                        </Typography>
+                    ) : (
+                        <>
+                            {/* TAB CONTENT */}
+                            {tabValue === 0 && (
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                                        gap: 1.5,
+                                    }}
+                                >
+                                    {mediaMessages.length === 0 ? (
+                                        <Typography
+                                            color="text.secondary"
+                                            align="center"
+                                            sx={{ gridColumn: '1 / -1', py: 8 }}
                                         >
-                                            {msg.type === 'video' ? (
-                                                <video
-                                                    src={`${BASE_URL}${msg.file_url}`}
-                                                    muted
-                                                    loop
-                                                    playsInline
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%',
-                                                        objectFit: 'cover',
-                                                    }}
-                                                />
-                                            ) : (
-                                                <img
-                                                    src={`${BASE_URL}${msg.file_url}`}
-                                                    alt="chat media"
-                                                    loading="lazy"
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%',
-                                                        objectFit: 'cover',
-                                                    }}
-                                                />
-                                            )}
-                                        </Box>
-                                    ))
-                                )}
-                            </Box>
-                        )}
+                                            No images or videos shared yet
+                                        </Typography>
+                                    ) : (
+                                        mediaMessages.map((msg) => (
+                                            <Box
+                                                key={msg.id}
+                                                sx={{
+                                                    aspectRatio: '1',
+                                                    borderRadius: 2,
+                                                    overflow: 'hidden',
+                                                    bgcolor: 'grey.100',
+                                                    cursor: 'pointer',
+                                                    mb: 1
+                                                }}
+                                                onClick={() => setPreviewMedia(msg)}
+                                            >
+                                                {msg.type === 'video' ? (
+                                                    <video
+                                                        src={`${BASE_URL}${msg.file_url}`}
+                                                        muted
+                                                        loop
+                                                        playsInline
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover',
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <img
+                                                        src={`${BASE_URL}${msg.file_url}`}
+                                                        alt="chat media"
+                                                        loading="lazy"
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover',
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        ))
+                                    )}
+                                </Box>
+                            )}
 
-                        {tabValue === 1 && (
-                            <Box sx={{ px: 1 }}>
-                                {voiceMessages.length === 0 ? (
-                                    <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
-                                        No voice messages yet
-                                    </Typography>
-                                ) : (
-                                    voiceMessages.map((msg) => (
-                                        <Box key={msg.id} sx={{ mb: 3 }}>
-                                            <audio
-                                                controls
-                                                src={`${BASE_URL}${msg.file_url}`}
-                                                style={{ width: '100%' }}
-                                            />
-                                            {msg.content && (
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                    sx={{ mt: 0.5, display: 'block' }}
-                                                >
-                                                    {msg.content}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    ))
-                                )}
-                            </Box>
-                        )}
-                        {tabValue === 2 && (
-                            <Box sx={{ px: 1, py: 1 }}>
-                                {linkMessages.length === 0 ? (
-                                    <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
-                                        No links or documents shared yet
-                                    </Typography>
-                                ) : (
-                                    linkMessages.map((msg) => {
-                                        if (msg.type === 'text') {
-                                            const urlMatch = msg.content?.match(/https?:\/\/[^\s]+/);
-                                            const url = urlMatch ? urlMatch[0] : '';
-
+                            {tabValue === 1 && (
+                                <Box sx={{ px: 1 }}>
+                                    {voiceMessages.length === 0 ? (
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
+                                            No voice messages yet
+                                        </Typography>
+                                    ) : (
+                                        voiceMessages.map((msg) => {
+                                            const isOwn = currentUserId === msg.sender_id;
                                             return (
-                                                <Box key={msg.id} sx={{ mb: 2.5, p: 1.5, bgcolor: 'grey.50', borderRadius: 2 }}>
-                                                    <Typography
-                                                        component="a"
-                                                        href={url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        color="primary"
-                                                        variant="body2"
-                                                        sx={{ wordBreak: 'break-all', fontWeight: 500 }}
-                                                    >
-                                                        {url}
-                                                    </Typography>
-                                                    {msg.content && msg.content !== url && (
-                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                                                            {msg.content}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            );
-                                        }
-
-                                        // File message (PDF, doc, etc.)
-                                        if (msg.type === 'file' && msg.file_url) {
-                                            const fileName = msg.file_url.split('/').pop() || 'document.pdf';
-                                            const isPdf = /\.pdf$/i.test(fileName);
-
-                                            return (
-                                                <Box
-                                                    key={msg.id}
+                                                <Box key={msg.id}
                                                     sx={{
-                                                        mb: 2,
-                                                        p: 2,
-                                                        bgcolor: 'grey.50',
+                                                        px: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
+                                                        py: msg.type === 'image' || msg.type === 'video' ? 0 : 1,
+                                                        bgcolor:
+                                                            msg.type === 'image' || msg.type === 'video'
+                                                                ? 'transparent'
+                                                                : isOwn
+                                                                    ? 'primary.main'
+                                                                    : 'grey.100',
+                                                        boxShadow: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
+                                                        color: isOwn ? 'white' : 'text.primary',
                                                         borderRadius: 2,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 2,
-                                                        '&:hover': { bgcolor: 'grey.100' },
-                                                        transition: 'background-color 0.2s',
+                                                        '&:hover': {
+                                                            bgcolor:
+                                                                msg.type === 'image' || msg.type === 'video'
+                                                                    ? 'transparent'
+                                                                    : isOwn
+                                                                        ? '#1f62a5ff'
+                                                                        : 'grey.200',
+                                                            transition: 'transform 0.2s ease',
+                                                        },
+                                                        position: 'relative',
+                                                        overflow: 'hidden',
+                                                        mb: 1
                                                     }}
                                                 >
-                                                    <Box sx={{ fontSize: 32, color: isPdf ? '#d32f2f' : 'primary.main' }}>
-                                                        {isPdf ? '📄' : '📎'}
-                                                    </Box>
+                                                    <VoiceMessagePlayer
+                                                        url={`${BASE_URL}${msg.file_url}`}
+                                                        isOwn={isOwn}
+                                                    />
+                                                </Box>
+                                            )
+                                        })
+                                    )}
+                                </Box>
+                            )}
 
-                                                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                        <Typography
-                                                            component="a"
-                                                            href={`${BASE_URL}${msg.file_url}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            variant="body2"
-                                                            sx={{
-                                                                fontWeight: 500,
-                                                                color: 'primary.main',
-                                                                textDecoration: 'none',
-                                                                display: 'block',
-                                                                wordBreak: 'break-all',
-                                                            }}
-                                                        >
-                                                            {fileName}
-                                                        </Typography>
-
-                                                        {msg.content && (
-                                                            <Typography
-                                                                variant="caption"
-                                                                color="text.secondary"
-                                                                sx={{ display: 'block', mt: 0.5 }}
-                                                            >
-                                                                {msg.content}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-
-                                                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                                                        {new Date(msg.created_at).toLocaleDateString()}
-                                                    </Typography>
+                            {tabValue === 2 && (
+                                <Box sx={{ px: 1 }}>
+                                    {fileMessages.length === 0 ? (
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
+                                            No files shared yet
+                                        </Typography>
+                                    ) : (
+                                        fileMessages.map((msg) => {
+                                            const isOwn = currentUserId === msg.sender_id;
+                                            return (
+                                                <Box key={msg.id}
+                                                    sx={{
+                                                        px: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
+                                                        py: msg.type === 'image' || msg.type === 'video' ? 0 : 1,
+                                                        bgcolor:
+                                                            msg.type === 'image' || msg.type === 'video'
+                                                                ? 'transparent'
+                                                                : isOwn
+                                                                    ? 'primary.main'
+                                                                    : 'grey.100',
+                                                        boxShadow: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
+                                                        color: isOwn ? 'white' : 'text.primary',
+                                                        borderRadius: 2,
+                                                        '&:hover': {
+                                                            bgcolor:
+                                                                msg.type === 'image' || msg.type === 'video'
+                                                                    ? 'transparent'
+                                                                    : isOwn
+                                                                        ? '#1f62a5ff'
+                                                                        : 'grey.200',
+                                                            transition: 'transform 0.2s ease',
+                                                        },
+                                                        position: 'relative',
+                                                        overflow: 'hidden',
+                                                        mb: 1
+                                                    }}
+                                                >
+                                                    <ChatFile
+                                                        fileUrl={`${BASE_URL}${msg.file_url}`}
+                                                        isOwn={isOwn}
+                                                    />
                                                 </Box>
                                             );
-                                        }
+                                        })
+                                    )}
+                                </Box>
+                            )}
 
-                                        return null;
-                                    })
-                                )}
-                            </Box>
-                        )}
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
+                            {loadingMore && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                    <CircularProgress size={24} />
+                                </Box>
+                            )}
+                        </>
+                    )}
+                    <Box ref={loadMoreRef} />
+                </DialogContent>
+            </Dialog>
+            {previewMedia && (
+                <Dialog
+                    open={Boolean(previewMedia)}
+                    onClose={() => setPreviewMedia(null)}
+                    maxWidth="md"
+                    fullWidth
+                >
+                    {previewMedia?.type === 'video' ? (
+                        <video
+                            src={`${BASE_URL}${previewMedia.file_url}`}
+                            controls
+                            autoPlay
+                            style={{ width: '100%' }}
+                        />
+                    ) : (
+                        <img
+                            src={`${BASE_URL}${previewMedia.file_url}`}
+                            alt="preview"
+                            style={{ width: '100%' }}
+                        />
+                    )}
+                </Dialog>
+            )}
+        </>
     );
 }
 

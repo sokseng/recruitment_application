@@ -100,35 +100,35 @@ export default function App() {
     hydrate()
   }, [hydrate])
 
-  useEffect(() => {
-    ringtoneRef.current = new Audio(ringtone);
-    ringtoneRef.current.loop = true; // keep ringing
-  }, []);
+  // useEffect(() => {
+  //   ringtoneRef.current = new Audio(ringtone);
+  //   ringtoneRef.current.loop = true; // keep ringing
+  // }, []);
 
-  useEffect(() => {
-    const unlockAudio = () => {
-      if (ringtoneRef.current) {
-        ringtoneRef.current.play().then(() => {
-          ringtoneRef.current.pause();
-          ringtoneRef.current.currentTime = 0;
-        });
-      }
-      window.removeEventListener("click", unlockAudio);
-    };
+  // useEffect(() => {
+  //   const unlockAudio = () => {
+  //     if (ringtoneRef.current) {
+  //       ringtoneRef.current.play().then(() => {
+  //         ringtoneRef.current.pause();
+  //         ringtoneRef.current.currentTime = 0;
+  //       });
+  //     }
+  //     window.removeEventListener("click", unlockAudio);
+  //   };
 
-    window.addEventListener("click", unlockAudio);
-  }, []);
+  //   window.addEventListener("click", unlockAudio);
+  // }, []);
 
-  useEffect(() => {
-    if (!ringtoneRef.current) return;
+  // useEffect(() => {
+  //   if (!ringtoneRef.current) return;
 
-    if (incomingCall && !activeCallRoom) {
-      ringtoneRef.current.play().catch(() => { });
-    } else {
-      ringtoneRef.current.pause();
-      ringtoneRef.current.currentTime = 0;
-    }
-  }, [incomingCall, activeCallRoom]);
+  //   if (incomingCall && !activeCallRoom) {
+  //     ringtoneRef.current.play().catch(() => { });
+  //   } else {
+  //     ringtoneRef.current.pause();
+  //     ringtoneRef.current.currentTime = 0;
+  //   }
+  // }, [incomingCall, activeCallRoom]);
 
   return (
     <BrowserRouter>

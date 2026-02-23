@@ -54,6 +54,7 @@ function ChatPage() {
     const [reactionsData, setReactionsData] = useState({});
 
     const LIMIT = 10;
+    const CHAT_LIMIT = 20;
 
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -75,6 +76,7 @@ function ChatPage() {
 
     const [callRequest, setCallRequest] = useState(null);
     const [isCallBusy, setIsCallBusy] = useState(false);
+    const scrollContainerRef = useRef(null);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -148,19 +150,50 @@ function ChatPage() {
         }
     }, [initialRoomId, chats]);
 
-    const fetchChats = async () => {
-        const [roomsRes, unreadRes] = await Promise.all([
-            api.get('/chat/'),
-            api.get('/chat/messages/unread/counts')
-        ]);
-
-        setChats(roomsRes.data);
+    const fetchUnreadCount = async () => {
+        const unreadRes = await api.get('/chat/messages/unread/counts')
 
         useUnreadStore.getState().setAllChats(unreadRes.data);
     };
 
+    const fetchChats = async (offset = 0, limit = CHAT_LIMIT) => {
+        try {
+            const res = await api.get("/chat/", { params: { limit, offset } });
+            const newChats = res.data;
+
+            if (offset === 0) {
+                setChats(newChats);
+            } else {
+                setChats(prev => [...prev, ...newChats]);
+            }
+
+            setHasMore(newChats.length === limit);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleChatScroll = () => {
+        const container = scrollContainerRef.current;
+        if (!container || loadingOlderRef.current || !hasMore) return;
+
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
+            // near bottom
+            loadingOlderRef.current = true;
+            const newOffset = offset + CHAT_LIMIT;
+            fetchChats(newOffset, CHAT_LIMIT).then(() => {
+                setOffset(newOffset);
+                loadingOlderRef.current = false;
+            });
+        }
+    };
+
     useEffect(() => {
-        fetchChats();
+        fetchUnreadCount();
+    }, []);
+
+    useEffect(() => {
+        fetchChats(0, CHAT_LIMIT);
     }, []);
 
     const fetchPinMessages = async (roomId) => {
@@ -580,6 +613,8 @@ function ChatPage() {
                     >Chat ({chats.length})</Typography>
 
                     <Box
+                        ref={scrollContainerRef}
+                        onScroll={handleChatScroll}
                         sx={{
                             flex: 1,
                             overflowY: 'auto',
