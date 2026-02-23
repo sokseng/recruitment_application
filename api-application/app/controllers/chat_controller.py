@@ -848,36 +848,58 @@ def get_unread_counts_for_user(db: Session, user_id: int) -> dict[int, int]:
 
     return {room_id: count for room_id, count in rows}
 
-async def handle_call_timeout(db, room_id: int, caller_id: int, timeout: int = 30):
+async def handle_call_timeout(room_id: int, caller_id: int, timeout: int = 30):
     try:
         await asyncio.sleep(timeout)
 
         call_data = manager.active_calls.get(room_id)
         if not call_data or call_data.get("status") != "ringing":
-            return  # call already accepted or declined
+            return
 
         participants = call_data["participants"]
 
-        # Broadcast missed call
-        await manager.broadcast_call_event(participants, "call.missed", {"roomId": room_id})
+        await manager.broadcast_call_event(
+            participants,
+            "call.missed",
+            {"roomId": room_id}
+        )
 
-        room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
-        if room:
-            system_user = db.query(User).filter(User.pk_id == caller_id).first()
-            await send_text_message(
-                db=db,
-                current_user=system_user,
-                room=room,
-                content="📵 Call missed",
-                message_type=MessageType.CALL
-            )
+        from app.database.db_for_ws import get_db_ws
+
+        with get_db_ws() as db:
+            room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+            caller = db.query(User).filter(User.pk_id == caller_id).first()
+
+            if room and caller:
+                await send_text_message(
+                    db=db,
+                    current_user=caller,
+                    room=room,
+                    content="📵 Call missed",
+                    message_type=MessageType.CALL
+                )
 
         # Cleanup
         manager.active_calls.pop(room_id, None)
 
     except asyncio.CancelledError:
-        pass  # call accepted or declined, timeout canceled
+        pass
 
     finally:
-        # Remove the task reference safely
         manager.call_timeouts.pop(room_id, None)
+        
+async def _persist_disconnect_call(room_id: int, user_id: int):
+        from app.database.db_for_ws import get_db_ws
+
+        with get_db_ws() as db:
+            room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+            user = db.query(User).filter(User.pk_id == user_id).first()
+
+            if room and user:
+                await send_text_message(
+                    db=db,
+                    current_user=user,
+                    room=room,
+                    content="📞 Call ended (disconnect)",
+                    message_type=MessageType.CALL
+                )

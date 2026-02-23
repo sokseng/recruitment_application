@@ -6,7 +6,7 @@ from sqlalchemy import or_, func
 from app.database.deps import get_db
 from app.models.user_model import User
 from app.models.chat_room import ChatRoom
-from app.models.chat_message import ChatMessage
+from app.models.chat_message import ChatMessage, MessageType
 from app.models.message_react_model import MessageReaction, ReactionType
 from app.schemas.chat import (
     SendTextMessage, SendFileMessage,
@@ -69,17 +69,26 @@ def search_users(
 def get_my_conversations(
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0)
 ):
     current_user = db.query(User).filter(User.pk_id == current_user_id).first()
     if not current_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    rooms = db.query(ChatRoom).filter(
-        or_(
-            ChatRoom.candidate_user_id == current_user.pk_id,
-            ChatRoom.employer_user_id == current_user.pk_id
+    rooms = (
+        db.query(ChatRoom)
+        .filter(
+            or_(
+                ChatRoom.candidate_user_id == current_user.pk_id,
+                ChatRoom.employer_user_id == current_user.pk_id
+            )
         )
-    ).all()
+        .order_by(ChatRoom.last_message_id.desc())
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
 
     result = []
     for room in rooms:
@@ -661,5 +670,54 @@ async def remove_reaction_by_id(
         user_id=current_user_id
     )
 
+@router.get("/rooms/{room_id}/shared-media")
+def get_user_shared_media(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+    limit: int = Query(50, ge=1, le=200),
+    cursor: Optional[datetime] = Query(None),
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Chat room not existing")
 
+    if current_user_id not in [room.candidate_user_id, room.employer_user_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to access this room")
+
+    query = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.room_id == room_id,
+            ChatMessage.type.in_([
+                MessageType.IMAGE,
+                MessageType.VIDEO,
+                MessageType.FILE,
+                MessageType.VOICE
+            ])
+        )
+    )
+
+    if cursor:
+        query = query.filter(ChatMessage.created_at < cursor)
+
+    messages = (
+        query
+        .order_by(ChatMessage.created_at.desc())
+        .limit(limit + 1)
+        .all()
+    )
+
+    has_more = len(messages) > limit
+
+    if has_more:
+        messages = messages[:limit]
+
+    next_cursor = messages[-1].created_at if messages else None
+
+    return {
+        "data": [ChatMessageOut.from_orm(msg) for msg in messages],
+        "nextCursor": next_cursor,
+        "hasMore": has_more
+    }
 

@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy.orm import Session
 from typing import Annotated, List
 from sqlalchemy import or_, func
-from app.database.deps import get_db
 from app.models.user_model import User
 from app.models.chat_room import ChatRoom
 from app.models.chat_message import ChatMessage, MessageType
@@ -25,26 +24,27 @@ from starlette.websockets import WebSocketClose
 import time
 from fastapi.encoders import jsonable_encoder
 import asyncio
-from app.controllers.chat_controller import handle_call_timeout
-
+from app.controllers.chat_controller import handle_call_timeout, _persist_disconnect_call
+from app.database.db_for_ws import get_db_ws
 
 router = APIRouter(prefix="/ws", tags=["chat"])
 
 @router.websocket("/")
-async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
+async def websocket_global(ws: WebSocket):
     await ws.accept()
 
-    user = await get_current_user_ws(ws, db)
-    if not user:
-        await ws.close(code=1008)
-        return
+    with get_db_ws() as db:
+        user = await get_current_user_ws(ws, db)
+        if not user:
+            await ws.close(code=1008)
+            return
+
+        unread_counts = get_unread_counts_for_user(db, user.pk_id)
 
     user_id = user.pk_id
     username = user.user_name
-    
+
     await manager.connect(ws, user_id, room_id=None)
-    
-    unread_counts = get_unread_counts_for_user(db, user_id) 
 
     await ws.send_json({
         "type": "unread_snapshot",
@@ -54,9 +54,9 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
     try:
         while True:
             data = await ws.receive_json()
-            event_type = data["type"]
+            event_type = data.get("type")
             payload = data.get("payload", {})
-            
+
             if event_type in ("ping", "pong"):
                 continue
 
@@ -64,13 +64,14 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                 manager.join_room(user_id, payload["room_id"])
             elif event_type == "call.leave":
                 manager.leave_room(user_id, payload["room_id"])
-                
+
             elif event_type == "call.initiate":
                 async with manager.call_lock:
                     room_id = payload["room_id"]
                     mode = payload.get("mode", "video")
 
-                    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                    with get_db_ws() as db:
+                        room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
                     if not room:
                         continue
 
@@ -80,15 +81,9 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                         user_id in call["participants"] and call["status"] in ("ringing", "active")
                         for call in manager.active_calls.values()
                     )
-
                     receiver_busy = any(
                         receiver_id in call["participants"] and call["status"] in ("ringing", "active")
                         for call in manager.active_calls.values()
-                    )
-                    
-                    # auto end in 30s
-                    manager.call_timeouts[room_id] = asyncio.create_task(
-                        handle_call_timeout(db, room_id, user_id)
                     )
 
                     if caller_busy:
@@ -113,6 +108,11 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                         "started_at": datetime.utcnow()
                     }
 
+                    # Auto end after 30s if not accepted
+                    manager.call_timeouts[room_id] = asyncio.create_task(
+                        handle_call_timeout(room_id, user_id)
+                    )
+
                     await manager.broadcast_call_event(
                         [receiver_id],
                         "call.incoming",
@@ -123,23 +123,19 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
                             "mode": mode
                         }
                     )
-        
+
             elif event_type == "call.accept":
                 room_id = payload["room_id"]
-
                 call_data = manager.active_calls.get(room_id)
-                if not call_data:
+                if not call_data or call_data.get("status") != "ringing":
                     continue
 
-                if call_data.get("status") != "ringing":
-                    continue
-
+                # Cancel timeout
                 timeout_task = manager.call_timeouts.pop(room_id, None)
                 if timeout_task:
                     timeout_task.cancel()
 
                 call_data["status"] = "active"
-
                 participants = call_data["participants"]
                 other_user = next(uid for uid in participants if uid != user_id)
 
@@ -156,88 +152,107 @@ async def websocket_global(ws: WebSocket, db: Session = Depends(get_db)):
 
             elif event_type == "call.decline":
                 room_id = payload["room_id"]
-                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
-                if not room:
-                    continue
-
-                receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
-
+                call_data = manager.active_calls.pop(room_id, None)
                 timeout_task = manager.call_timeouts.pop(room_id, None)
                 if timeout_task:
                     timeout_task.cancel()
 
-                manager.active_calls.pop(room_id, None)
+                if not call_data:
+                    continue
+
+                participants = call_data["participants"]
+                caller_id = call_data["caller_id"]
+                other_user_id = next(uid for uid in participants if uid != user_id)
 
                 await manager.broadcast_call_event(
-                    [receiver_id],
+                    participants,
                     "call.declined",
                     {"fromUserId": user_id, "roomId": room_id}
                 )
-                
-                await send_text_message(
-                    db=db,
-                    current_user=user,
-                    room=room,
-                    content="📵 Call declined",
-                    message_type=MessageType.CALL
-                )
-                
+
+                with get_db_ws() as db:
+                    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                    if room:
+                        sender = db.query(User).filter(User.pk_id == caller_id).first()
+                        if sender:
+                            await send_text_message(
+                                db=db,
+                                current_user=sender,
+                                room=room,
+                                content="📵 Call declined",
+                                message_type=MessageType.CALL
+                            )
+
             elif event_type == "call.end":
                 room_id = payload["room_id"]
-                room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
-                if not room:
-                    continue
-                
+                call_data = manager.active_calls.pop(room_id, None)
                 timeout_task = manager.call_timeouts.pop(room_id, None)
                 if timeout_task:
                     timeout_task.cancel()
 
-                manager.active_calls.pop(room_id, None)
-                
+                if not call_data:
+                    continue
+
+                participants = call_data["participants"]
+                caller_id = call_data["caller_id"]
+
                 await manager.broadcast_call_event(
-                    [room.candidate_user_id, room.employer_user_id],
+                    participants,
                     "call.ended",
                     {"roomId": room_id}
                 )
-                
-                await send_text_message(
-                    db=db,
-                    current_user=user,
-                    room=room,
-                    content="📞 Call ended",
-                    message_type=MessageType.CALL
-                )
-                
+
+                with get_db_ws() as db:
+                    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                    if room:
+                        sender = db.query(User).filter(User.pk_id == caller_id).first()
+                        if sender:
+                            await send_text_message(
+                                db=db,
+                                current_user=sender,
+                                room=room,
+                                content="📞 Call ended",
+                                message_type=MessageType.CALL
+                            )
+
             else:
-                
                 if not event_type.startswith("chat.") and not event_type.startswith("call."):
                     await ws.send_json({
                         "type": "error",
                         "message": "Invalid event type"
                     })
 
-
     except WebSocketDisconnect:
-        manager.disconnect(ws, user_id)
+        # Disconnect and get affected calls
+        ended_calls = manager.disconnect(ws, user_id)
 
+        # Save system messages for ended calls
+        with get_db_ws() as db:
+            for room_id_, sender_id in ended_calls:
+                room = db.query(ChatRoom).filter(ChatRoom.id == room_id_).first()
+                sender = db.query(User).filter(User.pk_id == sender_id).first()
+                if room and sender:
+                    await send_text_message(
+                        db=db,
+                        current_user=sender,
+                        room=room,
+                        content="📞 Call ended (disconnect)",
+                        message_type=MessageType.CALL
+                    )
+                    
 @router.websocket("/chat/room/{room_id}")
 async def websocket_chat(
     websocket: WebSocket,
     room_id: int,
-    db: Session = Depends(get_db)
 ):
     
     await websocket.accept()
     
-    try:
+    with get_db_ws() as db:
         current_user = await get_current_user_ws(websocket, db)
         if not current_user:
             await websocket.close(code=1008)
             return
-    except Exception as e:
-        print("WS auth error:", e)
-        await websocket.close(code=1011)
-        return
     
     current_user_id = current_user.pk_id
 
