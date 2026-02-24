@@ -80,7 +80,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
     const [uploadingFiles, setUploadingFiles] = useState([]);
     const [isSending, setIsSending] = useState(false);
-    const isUploading = isSending || uploadingFiles.length > 0 || isRecording;
+    const isUploading = isSending || uploadingFiles.length > 0;
 
     const checkMediaUrl = async (url) => {
         try {
