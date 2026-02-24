@@ -36,7 +36,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
     const [anchorEl, setAnchorEl] = useState(null);
     const [previewMedia, setPreviewMedia] = useState(null);
 
-    const LIMIT = 30;
+    const LIMIT = 10;
 
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);

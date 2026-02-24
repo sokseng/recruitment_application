@@ -7,7 +7,7 @@ import { useGlobalWebSocket } from './hooks/useGlobalWebSocket';
 import CallRoom from './components/chat/CallRoom';
 import CallIcon from '@mui/icons-material/Call';
 import CallEndIcon from '@mui/icons-material/CallEnd';
-import ringtone from './assets/ringing.mp3';
+import ringtone from './assets/ringing1.mp3';
 
 export default function App() {
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -17,12 +17,22 @@ export default function App() {
   const ringtoneRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const userId = useAuthStore((s) => s.user_data?.pk_id);
+  const [firstData, setFirstData] = useState(null);
+
+  const [remoteParticipants, setRemoteParticipants] = useState([]);
 
   const { send } = useGlobalWebSocket((data) => {
     switch (data.type) {
       case "call.incoming":
         setIncomingCall({ roomId: data.roomId, fromUserId: data.fromUserId, fromUsername: data.fromUsername, mode: data.mode || "video" })
         setUserData({ username: data.fromUsername, mode: data.mode || "video" });
+        setRemoteParticipants([{
+          userId: data.fromUserId,
+          username: data.fromUsername,
+          mic: true,
+          cam: true
+        }]);
+        setFirstData(data.mode || "video");
         break
 
       case "call.accepted":
@@ -34,6 +44,13 @@ export default function App() {
         });
         ;
         setUserData({ username: data.fromUsername, mode: data.mode || "video" });
+        setRemoteParticipants([{
+          userId: data.fromUserId,
+          username: data.fromUsername,
+          mic: true,
+          cam: true
+        }]);
+        setFirstData(data.mode || "video");
         break;
 
       case "call.declined":
@@ -50,6 +67,19 @@ export default function App() {
         setActiveCallRoom(null);
         setIncomingCall(null);
         break
+
+      case "call.toggle":
+        const { mic, cam, fromUserId } = data;
+
+        setRemoteParticipants((prev) =>
+          prev.map((p) =>
+            p.userId === fromUserId ? { ...p, mic, cam } : p
+          )
+        );
+        if (cam) {
+          setFirstData(null);
+        }
+        break;
 
       default:
         break
@@ -100,35 +130,35 @@ export default function App() {
     hydrate()
   }, [hydrate])
 
-  // useEffect(() => {
-  //   ringtoneRef.current = new Audio(ringtone);
-  //   ringtoneRef.current.loop = true; // keep ringing
-  // }, []);
+  useEffect(() => {
+    ringtoneRef.current = new Audio(ringtone);
+    ringtoneRef.current.loop = true; // keep ringing
+  }, []);
 
-  // useEffect(() => {
-  //   const unlockAudio = () => {
-  //     if (ringtoneRef.current) {
-  //       ringtoneRef.current.play().then(() => {
-  //         ringtoneRef.current.pause();
-  //         ringtoneRef.current.currentTime = 0;
-  //       });
-  //     }
-  //     window.removeEventListener("click", unlockAudio);
-  //   };
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (ringtoneRef.current) {
+        ringtoneRef.current.play().then(() => {
+          ringtoneRef.current.pause();
+          ringtoneRef.current.currentTime = 0;
+        });
+      }
+      window.removeEventListener("click", unlockAudio);
+    };
 
-  //   window.addEventListener("click", unlockAudio);
-  // }, []);
+    window.addEventListener("click", unlockAudio);
+  }, []);
 
-  // useEffect(() => {
-  //   if (!ringtoneRef.current) return;
+  useEffect(() => {
+    if (!ringtoneRef.current) return;
 
-  //   if (incomingCall && !activeCallRoom) {
-  //     ringtoneRef.current.play().catch(() => { });
-  //   } else {
-  //     ringtoneRef.current.pause();
-  //     ringtoneRef.current.currentTime = 0;
-  //   }
-  // }, [incomingCall, activeCallRoom]);
+    if (incomingCall && !activeCallRoom) {
+      ringtoneRef.current.play().catch(() => { });
+    } else {
+      ringtoneRef.current.pause();
+      ringtoneRef.current.currentTime = 0;
+    }
+  }, [incomingCall, activeCallRoom]);
 
   return (
     <BrowserRouter>
@@ -160,6 +190,9 @@ export default function App() {
             mode={userData.mode}
             onEndCall={endCall}
             userData={userData}
+            send={send}
+            remoteParticipants={remoteParticipants}
+            firstData={firstData}
           />
         </Box>
       )}

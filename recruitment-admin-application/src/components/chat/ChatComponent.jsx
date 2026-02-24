@@ -79,6 +79,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     });
 
     const [uploadingFiles, setUploadingFiles] = useState([]);
+    const [isSending, setIsSending] = useState(false);
+    const isUploading = isSending || uploadingFiles.length > 0;
 
     const checkMediaUrl = async (url) => {
         try {
@@ -317,150 +319,155 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     }
 
     const handleSend = async () => {
-        if (!chat?.room_id || !send) return;
+        if (!chat?.room_id || !send || isSending) return;
 
-        const addMessage = (msg) => {
-            setMessages(prev => {
-                // skip if duplicate
-                if (prev.some(m => m.id === msg.id)) return prev;
-                const updated = [...prev, msg];
-                if (isNearBottom() || prev.length === 0) {
-                    setTimeout(scrollToBottom, 50);
-                }
-                return updated;
-            });
-        }
+        setIsSending(true);
+        try {
+            const addMessage = (msg) => {
+                setMessages(prev => {
+                    // skip if duplicate
+                    if (prev.some(m => m.id === msg.id)) return prev;
+                    const updated = [...prev, msg];
+                    if (isNearBottom() || prev.length === 0) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+                    return updated;
+                });
+            }
 
-        if (editingMessage) {
-            if (!newMessage.trim()) return;
+            if (editingMessage) {
+                if (!newMessage.trim()) return;
 
-            await api.put(`/chat/room/${chat.room_id}/messages/${editingMessage.id}/text`, {
-                content: newMessage.trim()
-            });
+                await api.put(`/chat/room/${chat.room_id}/messages/${editingMessage.id}/text`, {
+                    content: newMessage.trim()
+                });
 
-            stopTyping();
-            setEditingMessage(null);
-            setNewMessage('');
-            return;
-        }
-
-        if (isRecording) {
-            const blob = await stopRecordingAndGetBlob();
-            if (blob) {
-                const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
-                const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
-                addMessage(res.data);
-                setReplyingTo(null);
-                setAudioBlob(null);
-                setRecordTime(0);
-                setTimeout(scrollToBottom, 50);
+                stopTyping();
+                setEditingMessage(null);
+                setNewMessage('');
                 return;
             }
-        }
 
-        if (audioBlob) {
-            const id = `temp-voice-${Date.now()}`;
-
-            setUploadingFiles(prev => [
-                ...prev,
-                {
-                    id,
-                    sender_id: currentUserId,
-                    type: 'voice',
-                    isUploading: true,
-                    progress: 0
+            if (isRecording) {
+                const blob = await stopRecordingAndGetBlob();
+                if (blob) {
+                    const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+                    const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
+                    addMessage(res.data);
+                    setReplyingTo(null);
+                    setAudioBlob(null);
+                    setRecordTime(0);
+                    setTimeout(scrollToBottom, 50);
+                    return;
                 }
-            ]);
-
-            try {
-                const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
-                    type: audioBlob.type,
-                });
-
-                const res = await uploadFileMessage({
-                    file: audioFile,
-                    type: 'voice'
-                });
-
-                addMessage(res.data);
-
-                setUploadingFiles(prev =>
-                    prev.filter(f => f.id !== id)
-                );
-            } catch (err) {
-                setUploadingFiles(prev =>
-                    prev.filter(f => f.id !== id)
-                );
             }
 
-            setAudioBlob(null);
-            setRecordTime(0);
-            return;
-        }
+            if (audioBlob) {
+                const id = `temp-voice-${Date.now()}`;
 
-        if (selectedFiles.length > 0) {
-            const filesToUpload = selectedFiles.map(file => ({
-                file,
-                id: `temp-${file.name}-${Date.now()}`,
-                type: getFileType(file), // image | video | file
-                progress: 0
-            }));
+                setUploadingFiles(prev => [
+                    ...prev,
+                    {
+                        id,
+                        sender_id: currentUserId,
+                        type: 'voice',
+                        isUploading: true,
+                        progress: 0
+                    }
+                ]);
 
-            const placeholders = filesToUpload.map(item => ({
-                id: item.id,
-                sender_id: currentUserId,
-                type: item.type,
-                content: item.file.name,
-                isUploading: true,
-                progress: 0
-            }));
-
-            setUploadingFiles(prev => [...prev, ...placeholders]);
-
-            for (const item of filesToUpload) {
                 try {
+                    const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+                        type: audioBlob.type,
+                    });
+
                     const res = await uploadFileMessage({
-                        file: item.file,
-                        type: item.type,
-                        caption: newMessage || null,
-                        onUploadProgress: (e) => {
-                            const progress = Math.round((e.loaded * 100) / e.total);
-                            setUploadingFiles(prev =>
-                                prev.map(f =>
-                                    f.id === item.id ? { ...f, progress } : f
-                                )
-                            );
-                        }
+                        file: audioFile,
+                        type: 'voice'
                     });
 
                     addMessage(res.data);
 
                     setUploadingFiles(prev =>
-                        prev.filter(f => f.id !== item.id)
+                        prev.filter(f => f.id !== id)
                     );
                 } catch (err) {
-                    console.error(err);
                     setUploadingFiles(prev =>
-                        prev.filter(f => f.id !== item.id)
+                        prev.filter(f => f.id !== id)
                     );
                 }
+
+                setAudioBlob(null);
+                setRecordTime(0);
+                return;
             }
 
-            setSelectedFiles([]);
-            setNewMessage('');
-            setReplyingTo(null);
-            clearFiles();
-            return;
-        }
+            if (selectedFiles.length > 0) {
+                const filesToUpload = selectedFiles.map(file => ({
+                    file,
+                    id: `temp-${file.name}-${Date.now()}`,
+                    type: getFileType(file), // image | video | file
+                    progress: 0
+                }));
 
-        if (newMessage.trim()) {
+                const placeholders = filesToUpload.map(item => ({
+                    id: item.id,
+                    sender_id: currentUserId,
+                    type: item.type,
+                    content: item.file.name,
+                    isUploading: true,
+                    progress: 0
+                }));
 
-            await sendTextMessage(newMessage.trim());
+                setUploadingFiles(prev => [...prev, ...placeholders]);
 
-            setNewMessage('');
-            setReplyingTo(null);
-            stopTyping();
-            setTimeout(scrollToBottom, 50);
+                for (const item of filesToUpload) {
+                    try {
+                        const res = await uploadFileMessage({
+                            file: item.file,
+                            type: item.type,
+                            caption: newMessage || null,
+                            onUploadProgress: (e) => {
+                                const progress = Math.round((e.loaded * 100) / e.total);
+                                setUploadingFiles(prev =>
+                                    prev.map(f =>
+                                        f.id === item.id ? { ...f, progress } : f
+                                    )
+                                );
+                            }
+                        });
+
+                        addMessage(res.data);
+
+                        setUploadingFiles(prev =>
+                            prev.filter(f => f.id !== item.id)
+                        );
+                    } catch (err) {
+                        console.error(err);
+                        setUploadingFiles(prev =>
+                            prev.filter(f => f.id !== item.id)
+                        );
+                    }
+                }
+
+                setSelectedFiles([]);
+                setNewMessage('');
+                setReplyingTo(null);
+                clearFiles();
+                return;
+            }
+
+            if (newMessage.trim()) {
+
+                await sendTextMessage(newMessage.trim());
+
+                setNewMessage('');
+                setReplyingTo(null);
+                stopTyping();
+                setTimeout(scrollToBottom, 50);
+            }
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -1171,9 +1178,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         onClick={handleSend}
                                         disabled={
                                             (!newMessage.trim() && !audioBlob && selectedFiles.length === 0 && !isRecording)
+                                            || isSending
                                         }
                                     >
-                                        <SendIcon />
+                                        {isUploading ? (
+                                            <CircularProgress size={24} color="inherit" />
+                                        ) : (
+                                            <SendIcon />
+                                        )}
                                     </IconButton>
                                 </Paper>
                             )}

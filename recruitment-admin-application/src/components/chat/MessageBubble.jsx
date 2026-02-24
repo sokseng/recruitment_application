@@ -328,7 +328,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     onStartCall();
                                 }}
                             >
-                                Call back
+                                {isOwn ? 'Call again':'Call back'}
                             </Button>
                         </Box>
                     )}
