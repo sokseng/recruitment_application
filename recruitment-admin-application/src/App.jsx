@@ -7,7 +7,7 @@ import { useGlobalWebSocket } from './hooks/useGlobalWebSocket';
 import CallRoom from './components/chat/CallRoom';
 import CallIcon from '@mui/icons-material/Call';
 import CallEndIcon from '@mui/icons-material/CallEnd';
-import ringtone from './assets/ringing.mp3';
+import ringtone from './assets/ringing1.mp3';
 
 export default function App() {
   const hydrate = useAuthStore((s) => s.hydrate);
@@ -76,7 +76,9 @@ export default function App() {
             p.userId === fromUserId ? { ...p, mic, cam } : p
           )
         );
-        setFirstData(null);
+        if (cam) {
+          setFirstData(null);
+        }
         break;
 
       default:

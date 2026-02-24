@@ -16,6 +16,7 @@ import useAuthStore from '../store/useAuthStore';
 import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
 import CallRequestDialog from '../components/chat/dialog/CallRequestDialog';
+import ringtone from '../assets/outgoing_sound.mp3';
 
 function getLastMessagePreview(chat, currentUserId) {
     const msg = chat.last_message;
@@ -78,6 +79,7 @@ function ChatPage() {
     const [callRequest, setCallRequest] = useState(null);
     const [isCallBusy, setIsCallBusy] = useState(false);
     const scrollContainerRef = useRef(null);
+    const audioRef = useRef(null);
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -525,24 +527,21 @@ function ChatPage() {
                     return updated.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
                 });
                 break;
-            case "call.accepted":
-                setCallRequest(null);
-                break;
 
+            case "call.accepted":
             case "call.missed":
+            case "call.declined":
+                stopRingtone();
                 setCallRequest(null);
                 break;
 
             case "call.busy":
+                stopRingtone();
                 setIsCallBusy(true);
                 setTimeout(() => {
                     setCallRequest(null);
                     setIsCallBusy(false);
                 }, 2000);
-                break;
-
-            case "call.declined":
-                setCallRequest(null);
                 break;
 
             default:
@@ -560,6 +559,7 @@ function ChatPage() {
             payload: { room_id: roomId, mode: mode }
         });
         setCallRequest(selectedChat);
+        playRingtone();
     };
 
     const declinedCall = (roomId) => {
@@ -567,7 +567,36 @@ function ChatPage() {
             type: "call.decline",
             payload: { room_id: roomId }
         });
+        stopRingtone();
         setCallRequest(null);
+    };
+
+    useEffect(() => {
+        audioRef.current = new Audio(ringtone);
+        audioRef.current.loop = true; // Keep ringing until stopped
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    const playRingtone = () => {
+        if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(err => {
+                console.warn("Autoplay prevented:", err);
+            });
+        }
+    };
+
+    const stopRingtone = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
     };
 
     return (
