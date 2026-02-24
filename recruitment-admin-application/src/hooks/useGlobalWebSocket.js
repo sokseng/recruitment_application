@@ -38,7 +38,6 @@ export function useGlobalWebSocket(onGlobalEvent) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("Global Received Data", data);
 
           if (["unread_snapshot", "unread_update"].includes(data.type)) {
             setAllChats(data.counts);
