@@ -72,7 +72,15 @@ async def websocket_global(ws: WebSocket):
 
                     with get_db_ws() as db:
                         room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                        
                     if not room:
+                        continue
+                    
+                    if room.is_blocked:
+                        await manager.broadcast_to_user(user_id,{
+                            "type": "error",
+                            "message": "Cannot start call. This chat is blocked"
+                        })
                         continue
 
                     receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
@@ -91,6 +99,7 @@ async def websocket_global(ws: WebSocket):
                             "type": "call.busy",
                             "message": "You are already in another call"
                         })
+                        
                         continue
 
                     if receiver_busy:
@@ -98,6 +107,7 @@ async def websocket_global(ws: WebSocket):
                             "type": "call.busy",
                             "message": "User is busy"
                         })
+                        
                         continue
 
                     manager.active_calls[room_id] = {
@@ -129,6 +139,19 @@ async def websocket_global(ws: WebSocket):
                 call_data = manager.active_calls.get(room_id)
                 if not call_data or call_data.get("status") != "ringing":
                     continue
+                
+                with get_db_ws() as db:
+                    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+
+                if not room:
+                    continue
+                
+                if room.is_blocked:
+                        await manager.broadcast_to_user(user_id,{
+                            "type": "error",
+                            "message": "Cannot start call. This chat is blocked"
+                        })
+                        continue
 
                 # Cancel timeout
                 timeout_task = manager.call_timeouts.pop(room_id, None)

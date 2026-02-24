@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, func, UniqueConstraint
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, func, UniqueConstraint, Boolean
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 
@@ -36,6 +36,10 @@ class ChatRoom(Base):
     pinned_message_id = Column(Integer, ForeignKey("t_chat_message.id", ondelete="SET NULL"), nullable=True)
     pinned_by_user_id = Column(Integer, ForeignKey("t_user.pk_id", ondelete="SET NULL"), nullable=True)
     pinned_at = Column(DateTime(timezone=True), nullable=True)
+    
+    is_blocked = Column(Boolean, default=False, nullable=False)
+    blocked_by_user_id = Column(Integer, ForeignKey("t_user.pk_id", ondelete="SET NULL"), nullable=True)
+    blocked_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     candidate_user = relationship(
@@ -75,7 +79,8 @@ class ChatRoom(Base):
         "User",
         foreign_keys=[pinned_by_user_id]
     )
-
+    
+    blocked_by_user = relationship("User", foreign_keys=[blocked_by_user_id])
 
     __table_args__ = (
         UniqueConstraint("candidate_user_id", "employer_user_id", name="uix_chat_cand_emp"),

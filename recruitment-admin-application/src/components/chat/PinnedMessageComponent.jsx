@@ -3,7 +3,6 @@ import { FormatTime } from './FormatTime';
 import CloseIcon from '@mui/icons-material/Close';
 
 function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin }) {
-    console.log("pinMessage", pinMessage)
     return (
         <Box
             sx={{
