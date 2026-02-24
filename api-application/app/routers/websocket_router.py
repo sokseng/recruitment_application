@@ -237,6 +237,26 @@ async def websocket_global(ws: WebSocket):
                                 content="📞 Call ended",
                                 message_type=MessageType.CALL
                             )
+                            
+            elif event_type == "call.toggle":
+                room_id = payload.get("room_id")
+                mic = payload.get("mic")
+                cam = payload.get("cam")
+
+                call_data = manager.active_calls.get(room_id)
+                if not call_data or user_id not in call_data["participants"]:
+                    continue
+
+                other_participants = [uid for uid in call_data["participants"] if uid != user_id]
+                await manager.broadcast_call_event(
+                    other_participants,
+                    "call.toggle",
+                    {
+                        "fromUserId": user_id,
+                        "mic": mic,
+                        "cam": cam
+                    }
+                )
 
             else:
                 if not event_type.startswith("chat.") and not event_type.startswith("call."):

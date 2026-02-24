@@ -17,12 +17,12 @@ import MicIcon from '@mui/icons-material/Mic';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
+import { Snackbar, Alert } from "@mui/material";
 
 function LocalTracksPublisher({ startWithVideo = true }) {
 
   const room = useRoomContext();
   const connectionState = useConnectionState();
-
 
   useEffect(() => {
     if (!room) return;
@@ -31,7 +31,6 @@ function LocalTracksPublisher({ startWithVideo = true }) {
     let videoTrack, audioTrack;
 
     async function initTracks() {
-      // console.log("[LocalTracksPublisher] Room connected. Creating tracks...");
 
       videoTrack = await createLocalVideoTrack();
       audioTrack = await createLocalAudioTrack();
@@ -42,10 +41,8 @@ function LocalTracksPublisher({ startWithVideo = true }) {
         await room.localParticipant.publishTrack(videoTrack);
       } else {
         await room.localParticipant.publishTrack(videoTrack);
-        await room.localParticipant.setCameraEnabled(false); // starts muted
+        await room.localParticipant.setCameraEnabled(false);
       }
-
-      // console.log("[LocalTracksPublisher] Tracks published!");
     }
 
     initTracks();
@@ -65,12 +62,19 @@ function LocalTracksPublisher({ startWithVideo = true }) {
   return null;
 }
 
-function CallControls({ onEndCall }) {
+function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, setCamEnabled, roomId }) {
   const room = useRoomContext();
   const connectionState = useConnectionState();
 
-  const [micEnabled, setMicEnabled] = useState(true);
-  const [camEnabled, setCamEnabled] = useState(true);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
+
+  const showSnackbar = (message, severity = "info") => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   useEffect(() => {
     if (!room) return;
@@ -102,14 +106,37 @@ function CallControls({ onEndCall }) {
   if (!room || connectionState !== ConnectionState.Connected) return null;
 
   const toggleMic = async () => {
-    await room.localParticipant.setMicrophoneEnabled(!micEnabled);
+    if (!room) return;
+
+    const newState = !micEnabled;
+    try {
+      await room.localParticipant.setMicrophoneEnabled(newState);
+      setMicEnabled(newState);
+
+      send({
+        type: "call.toggle",
+        payload: { room_id: roomId, mic: newState, cam: camEnabled }
+      });
+    } catch (err) {
+      showSnackbar("No microphone found on your device!", "error");
+    }
   };
 
   const toggleCamera = async () => {
     if (!room) return;
+
     const newState = !camEnabled;
-    await room.localParticipant.setCameraEnabled(newState);
-    setCamEnabled(newState);
+    try {
+      await room.localParticipant.setCameraEnabled(newState);
+      setCamEnabled(newState);
+
+      send({
+        type: "call.toggle",
+        payload: { room_id: roomId, mic: micEnabled, cam: newState }
+      });
+    } catch (err) {
+      showSnackbar("No camera found on your device!", "error");
+    }
   };
 
   const endCall = () => {
@@ -117,71 +144,79 @@ function CallControls({ onEndCall }) {
     onEndCall?.();
   };
 
+  if (!room || connectionState !== ConnectionState.Connected) return null;
+
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      sx={{
-        position: "absolute",
-        bottom: 40,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 2000,
-      }}
-    >
-      <IconButton
-        onClick={toggleMic}
+    <>
+      <Stack
+        direction="row"
+        spacing={2}
         sx={{
-          backgroundColor: micEnabled ? "primary.main" : "error.main",
-          color: "white",
-          "&:hover": {
-            backgroundColor: micEnabled ? "primary.dark" : "error.dark",
-          },
+          position: "absolute",
+          bottom: 40,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 2000,
         }}
       >
-        {micEnabled ? <MicIcon /> : <MicOffIcon />}
-      </IconButton>
+        <IconButton
+          onClick={toggleMic}
+          sx={{
+            backgroundColor: micEnabled ? "primary.main" : "error.main",
+            color: "white",
+            "&:hover": {
+              backgroundColor: micEnabled ? "primary.dark" : "error.dark",
+            },
+          }}
+        >
+          {micEnabled ? <MicIcon /> : <MicOffIcon />}
+        </IconButton>
 
-      <IconButton
-        onClick={toggleCamera}
-        sx={{
-          backgroundColor: camEnabled ? "primary.main" : "error.main",
-          color: "white",
-          "&:hover": {
-            backgroundColor: camEnabled ? "primary.dark" : "error.dark",
-          },
-        }}
+        <IconButton
+          onClick={toggleCamera}
+          sx={{
+            backgroundColor: camEnabled ? "primary.main" : "error.main",
+            color: "white",
+            "&:hover": {
+              backgroundColor: camEnabled ? "primary.dark" : "error.dark",
+            },
+          }}
+        >
+          {camEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
+        </IconButton>
+
+        <IconButton
+          onClick={endCall}
+          sx={{
+            backgroundColor: "error.main",
+            color: "white",
+            "&:hover": {
+              backgroundColor: "error.dark",
+            },
+          }}
+        >
+          <CallEndIcon />
+        </IconButton>
+
+      </Stack>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "left", zIndex: 1600 }}
       >
-        {camEnabled ? <VideocamIcon /> : <VideocamOffIcon />}
-      </IconButton>
-
-      <IconButton
-        onClick={endCall}
-        sx={{
-          backgroundColor: "error.main",
-          color: "white",
-          "&:hover": {
-            backgroundColor: "error.dark",
-          },
-        }}
-      >
-        <CallEndIcon />
-      </IconButton>
-
-    </Stack>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
 
-function CallParticipants({ userData }) {
+function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
   const [seconds, setSeconds] = useState(0);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const [remoteParticipants, setRemoteParticipants] = useState(remoteParticipantsWS);
 
   const tracks = useTracks(
     [
@@ -191,42 +226,39 @@ function CallParticipants({ userData }) {
     { onlySubscribed: false }
   );
 
-  if (!tracks.length)
-    return (
-      <div style={{
-        width: "100%",
-        height: "100vh",
-        background: "#000",
-        color: "#fff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-      }}>
-        Connecting...
-      </div>
-    );
+  useEffect(() => {
+    setRemoteParticipants(remoteParticipantsWS);
+  }, [remoteParticipantsWS]);
 
-  const localVideo = tracks.find(
-    (t) => t.participant?.isLocal && t.source === "camera"
-  );
+  useEffect(() => {
+    const interval = setInterval(() => setSeconds(prev => prev + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const remoteVideos = tracks.filter(
-    (t) => !t.participant?.isLocal && t.source === "camera"
-  );
-
-  const audioTracks = tracks.filter((t) => t.source === "microphone");
+  const localVideo = tracks.find(t => t.participant?.isLocal && t.source === "camera");
+  const remoteVideos = tracks.filter(t => !t.participant?.isLocal && t.source === "camera");
+  const audioTracks = tracks.filter(t => t.source === "microphone");
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh", background: "#000" }}>
-      {remoteVideos.map((trackRef) => {
-        const isMuted = trackRef.publication?.isMuted;
+
+      {remoteVideos.map(trackRef => {
+        const key = trackRef.trackSid ?? `${trackRef.participant?.identity}-camera`;
+        const participantState = remoteParticipants.find(p => p.userId === trackRef.participant?.identity);
+
+        const isCamOn =
+          firstData !== null
+            ? firstData === "video"
+            : participantState?.cam ?? !trackRef.publication?.isMuted;
+        const isMicOn = participantState?.mic ?? !audioTracks.some(
+          a => a.participant?.identity === trackRef.participant?.identity && a.publication?.isMuted
+        );
+
         return (
-          <div key={trackRef.trackSid ?? `${trackRef.participant?.identity}-${trackRef.source}`} style={{ width: "100%", height: "100%", position: "relative" }}>
-            {!isMuted ? (
-              <VideoTrack
-                trackRef={trackRef}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
+          <div key={key} style={{ width: "100%", height: "100%", position: "relative" }}>
+
+            {(isCamOn) ? (
+              <VideoTrack trackRef={trackRef} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               <Box sx={{
                 width: "100%",
@@ -236,70 +268,32 @@ function CallParticipants({ userData }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 24,
-                flexDirection: 'column',
-                textAlign: 'center',
-                gap: 1
+                flexDirection: "column",
+                textAlign: "center",
+                gap: 1,
+                fontSize: 24
               }}>
-                <Avatar
-                  sx={{
-                    width: 45,
-                    height: 45
-                  }}
-                >
+                <Avatar sx={{ width: 45, height: 45 }}>
                   {userData.username.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography
-                  sx={{
-                    color: 'white'
-                  }}
-                >
-                  {userData.username}
-                </Typography>
+                <Typography sx={{ color: "white" }}>{userData.username}</Typography>
               </Box>
             )}
 
-            {/* Mic muted badge */}
-            {audioTracks
-              .filter(a => a.participant?.identity === trackRef.participant?.identity)
-              .some(a => a.publication?.isMuted) && (
-                <div style={{
-                  position: "absolute",
-                  top: 20,
-                  left: 20,
-                  background: "grey",
-                  color: "white",
-                  padding: "6px 10px",
-                  borderRadius: 20,
-                  fontSize: 12
-                }}>
-                  {userData.username} is muted
-                </div>
-              )}
-
-            <Box
-              style={{
-                position: 'fixed',
-                top: 10,
-                backgroundColor: 'transparent',
-                padding: 2,
-                borderRadius: 2,
-                color: 'white',
-                textAlign: 'center',
-                width: '100%',
-                zIndex: 1600
-              }}
-            >
-              {!isMuted && (
-                <Typography variant="h6">
-                  {userData.username}
-                </Typography>
-              )}
-              <Typography>
-                {Math.floor(seconds / 60)}:
-                {String(seconds % 60).padStart(2, '0')}
-              </Typography>
-            </Box>
+            {!isMicOn && (
+              <div style={{
+                position: "absolute",
+                top: 20,
+                left: 20,
+                background: "grey",
+                color: "white",
+                padding: "6px 10px",
+                borderRadius: 20,
+                fontSize: 12
+              }}>
+                {userData.username} is muted
+              </div>
+            )}
           </div>
         );
       })}
@@ -318,10 +312,7 @@ function CallParticipants({ userData }) {
           background: "#000"
         }}>
           {!localVideo.publication?.isMuted ? (
-            <VideoTrack
-              trackRef={localVideo}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+            <VideoTrack trackRef={localVideo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <div style={{
               width: "100%",
@@ -339,18 +330,35 @@ function CallParticipants({ userData }) {
         </div>
       )}
 
-      {audioTracks.map((trackRef) => (
-        <AudioTrack
-          key={trackRef.trackSid ?? `${trackRef.participant?.identity}-audio`}
-          trackRef={trackRef}
-          autoPlay
-        />
-      ))}
+      {audioTracks.map(trackRef => {
+        const key = trackRef.trackSid ?? `${trackRef.participant?.identity}-audio`;
+        return (
+          <AudioTrack key={key} trackRef={trackRef} autoPlay />
+        )
+      })}
+
+      <Box sx={{
+        position: 'absolute',
+        top: 10,
+        width: '100%',
+        textAlign: 'center',
+        color: 'white',
+        zIndex: 1200
+      }}>
+        <Typography variant="h6" sx={{ color: "white" }}>{userData.username}</Typography>
+        <Typography variant="body2">
+          {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+        </Typography>
+      </Box>
+
     </div>
   );
 }
 
-export default function CallRoom({ roomId, userId, mode, onEndCall, userData }) {
+export default function CallRoom({ roomId, userId, mode, onEndCall, userData, send, remoteParticipants, firstData }) {
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [camEnabled, setCamEnabled] = useState(true);
+
   const [tokenData, setTokenData] = useState(null);
   const isVideoCall = mode === "video";
 
@@ -378,8 +386,8 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData }) 
         onDisconnected={() => console.log("LiveKit disconnected")}
       >
         <LocalTracksPublisher startWithVideo={isVideoCall} />
-        <CallParticipants userData={userData} />
-        <CallControls onEndCall={onEndCall} />
+        <CallParticipants userData={userData} remoteParticipantsWS={remoteParticipants} firstData={firstData} />
+        <CallControls onEndCall={onEndCall} send={send} micEnabled={micEnabled} setMicEnabled={setMicEnabled} camEnabled={camEnabled} setCamEnabled={setCamEnabled} roomId={roomId} />
       </LiveKitRoom>
     </Box>
   );
