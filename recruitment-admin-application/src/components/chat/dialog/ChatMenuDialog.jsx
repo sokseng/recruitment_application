@@ -13,15 +13,22 @@ import {
     Tab,
     Tabs,
     Typography,
+    ListItemIcon,
+    ListItemText,
+    DialogActions,
+    Button
 } from '@mui/material';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import api from '../../../services/api';
 import { VoiceMessagePlayer } from '../VoiceMessagePlayer';
 import ChatFile from '../ChatFile';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import BackHandIcon from '@mui/icons-material/BackHand';
+import BlockIcon from '@mui/icons-material/Block';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
+function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUser, blockMessage }) {
     const [tabValue, setTabValue] = useState(0);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -37,6 +44,9 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
 
     const scrollRef = useRef(null);
     const loadMoreRef = useRef(null);
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [actionType, setActionType] = useState('block');
 
     const loadSharedMedia = async (reset = false) => {
         if (loading || loadingMore) return;
@@ -156,6 +166,26 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
         setAnchorEl(null);
     };
 
+    const handleBlockClick = () => {
+        if (blockMessage?.is_blocked) {
+            if (blockMessage?.blocked_by_user?.pk_id !== currentUserId) {
+                alert("Only the user who blocked can unblock.");
+                return;
+            }
+            setActionType('unblock');
+        } else {
+            setActionType('block');
+        }
+        setConfirmOpen(true);
+    };
+
+    const handleConfirm = async () => {
+        setConfirmOpen(false);
+        await onBlockUser(actionType === 'block');
+        handleMenuClose();
+        onClose();
+    };
+
     return (
         <>
             <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -177,22 +207,35 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
                             {user?.is_online ? 'Online' : 'Offline'}
                         </Typography>
 
-                        <IconButton
-                            onClick={handleMenuOpen}
-                            sx={{ position: 'absolute', top: 8, right: 8 }}
-                        >
-                            <MoreVertIcon />
-                        </IconButton>
+                        {(!blockMessage?.is_blocked || blockMessage?.blocked_by_user?.pk_id === currentUserId) && (
+                            <IconButton
+                                onClick={handleMenuOpen}
+                                sx={{ position: 'absolute', top: 8, right: 8 }}
+                            >
+                                <MoreVertIcon />
+                            </IconButton>
+                        )}
 
                         <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
                             onClose={handleMenuClose}
                         >
-                            <MenuItem onClick={handleMenuClose}>Mute notifications</MenuItem>
-                            <MenuItem onClick={handleMenuClose}>Report user</MenuItem>
-                            <MenuItem onClick={handleMenuClose} sx={{ color: 'error.main' }}>
-                                Block user
+                            <MenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleBlockClick();
+                                }}
+                                sx={{ color: 'error.main' }}
+                            >
+                                <ListItemIcon>
+                                    {!blockMessage?.is_blocked ? (
+                                        <BackHandIcon fontSize="small" sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }} />
+                                    ) : (
+                                        <BlockIcon fontSize="small" sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }} />
+                                    )}
+                                </ListItemIcon>
+                                <ListItemText sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }}>{blockMessage?.is_blocked ? 'Unblock user' : 'Block user'}</ListItemText>
                             </MenuItem>
                         </Menu>
                     </Box>
@@ -250,27 +293,42 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
                                             <Box
                                                 key={msg.id}
                                                 sx={{
+                                                    position: 'relative',
                                                     aspectRatio: '1',
                                                     borderRadius: 2,
                                                     overflow: 'hidden',
                                                     bgcolor: 'grey.100',
                                                     cursor: 'pointer',
-                                                    mb: 1
+                                                    mb: 1,
                                                 }}
                                                 onClick={() => setPreviewMedia(msg)}
                                             >
                                                 {msg.type === 'video' ? (
-                                                    <video
-                                                        src={`${BASE_URL}${msg.file_url}`}
-                                                        muted
-                                                        loop
-                                                        playsInline
-                                                        style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover',
-                                                        }}
-                                                    />
+                                                    <>
+                                                        <video
+                                                            src={`${BASE_URL}${msg.file_url}`}
+                                                            muted
+                                                            loop
+                                                            playsInline
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover',
+                                                            }}
+                                                        />
+                                                        <PlayArrowIcon
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                top: '50%',
+                                                                left: '50%',
+                                                                transform: 'translate(-50%, -50%)',
+                                                                color: 'white',
+                                                                fontSize: 48,
+                                                                opacity: 0.8,
+                                                                pointerEvents: 'none',
+                                                            }}
+                                                        />
+                                                    </>
                                                 ) : (
                                                     <img
                                                         src={`${BASE_URL}${msg.file_url}`}
@@ -418,6 +476,22 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId }) {
                     )}
                 </Dialog>
             )}
+            <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+                <DialogTitle>
+                    {actionType === 'block' ? 'Block User' : 'Unblock User'}
+                </DialogTitle>
+                <DialogContent>
+                    Are you sure you want to {actionType} {user?.username || 'this user'}?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleConfirm} color="error">
+                        {actionType === 'block' ? 'Block' : 'Unblock'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 }

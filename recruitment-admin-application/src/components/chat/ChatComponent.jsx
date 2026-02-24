@@ -31,7 +31,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall, blockMessage }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -641,6 +641,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         }
     }
 
+    const isBlocked = blockMessage?.is_blocked ?? false;
+
+    const handleBlockUser = async () => {
+        if (!isBlocked) {
+            await api.post(`/chat/rooms/${chat.room_id}/block`);
+        } else {
+            await api.post(`/chat/rooms/${chat.room_id}/unblock`);
+        }
+    }
+
     return (
         <Box
             sx={{
@@ -723,21 +733,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 <CallIcon
                                     sx={{
                                         fontSize: { xs: 22, md: 26 },
-                                        color: 'primary.main',
-                                        transition: 'transform 1s',
-                                        '&:hover': {
-                                            scale: 1.1
-                                        }
-                                    }}
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onStartCall(chat.room_id, 'voice');
-                                    }}
-                                />
-                                <VideocamIcon
-                                    sx={{
-                                        fontSize: { xs: 24, md: 30 },
-                                        color: 'primary.main',
+                                        color: isBlocked ? 'grey' : 'primary.main',
                                         transition: 'transform 1s',
                                         '&:hover': {
                                             scale: 1.1
@@ -745,6 +741,22 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isBlocked) return;
+                                        onStartCall(chat.room_id, 'voice');
+                                    }}
+                                />
+                                <VideocamIcon
+                                    sx={{
+                                        fontSize: { xs: 24, md: 30 },
+                                        color: isBlocked ? 'grey' : 'primary.main',
+                                        transition: 'transform 1s',
+                                        '&:hover': {
+                                            scale: 1.1
+                                        }
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isBlocked) return;
                                         onStartCall(chat.room_id, 'video');
                                     }}
                                 />
@@ -864,6 +876,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     reactionsData={reactionsData}
                                     onRemoveReact={handleRemoveReact}
                                     onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
+                                    isBlocked={isBlocked}
                                 />
                             ))}
 
@@ -1035,118 +1048,135 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             </Box>
                         )}
 
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                position: 'absolute',
-                                bottom: 0,
-                                width: '100%',
-                                p: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                borderTop: 1,
-                                borderColor: 'divider',
-                                bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
-                            }}
-                        >
-                            {(isRecording || audioBlob) && (
-                                <>
-                                    <IconButton color="error" onClick={cancelRecording}>
-                                        <CloseIcon />
-                                    </IconButton>
-
-                                    <Typography sx={{ flexGrow: 1 }}>
-                                        {isRecording
-                                            ? `Recording... ${recordTime}s`
-                                            : 'Audio ready'}
+                        {isBlocked ?
+                            (
+                                <Box
+                                    sx={{
+                                        backgroundColor: 'white',
+                                        p: 2,
+                                        textAlign: 'center',
+                                        borderTop: 1,
+                                        borderColor: 'divider',
+                                    }}
+                                >
+                                    <Typography>
+                                        This person is not contactable on Chat.
                                     </Typography>
-                                </>
-                            )}
-
-                            {!isRecording && !audioBlob && (
-                                <>
-                                    {!showContent && (
+                                </Box>
+                            ) : (
+                                <Paper
+                                    elevation={0}
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        width: '100%',
+                                        p: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        borderTop: 1,
+                                        borderColor: 'divider',
+                                        bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
+                                    }}
+                                >
+                                    {(isRecording || audioBlob) && (
                                         <>
-                                            <IconButton component="label">
-                                                <AttachFileIcon />
-                                                <input
-                                                    ref={fileInputRef}
-                                                    hidden
-                                                    type="file"
-                                                    multiple
-                                                    onChange={handleFileSelect}
-                                                    accept={Object.values(FILE_RULES).flatMap(r => [...r.extensions]).map(ext => `.${ext}`).join(',')}
-                                                />
+                                            <IconButton color="error" onClick={cancelRecording}>
+                                                <CloseIcon />
                                             </IconButton>
 
-                                            <IconButton
-                                                color="primary"
-                                                onMouseDown={startRecording}
-                                                onMouseUp={handleSend}
-                                                onTouchStart={startRecording}
-                                                onTouchEnd={handleSend}
-                                            >
-                                                <MicIcon />
-                                            </IconButton>
-
-                                            <Box sx={{ position: 'relative' }}>
-                                                <IconButton
-                                                    ref={emojiButtonRef}
-                                                    onClick={() => setShowEmojiPicker((v) => !v)}
-                                                    sx={{ color: 'orange' }}
-                                                >
-                                                    {showEmojiPicker
-                                                        ? <EmojiEmotionsIcon />
-                                                        : <InsertEmoticonIcon />}
-                                                </IconButton>
-
-                                                {showEmojiPicker && (
-                                                    <EmojiPicker
-                                                        onSelect={(emoji) =>
-                                                            setNewMessage((prev) => prev + emoji)
-                                                        }
-                                                        onClose={() => setShowEmojiPicker(false)}
-                                                        anchorEl={emojiButtonRef.current}
-                                                        placement="top-start"
-                                                    />
-                                                )}
-                                            </Box>
+                                            <Typography sx={{ flexGrow: 1 }}>
+                                                {isRecording
+                                                    ? `Recording... ${recordTime}s`
+                                                    : 'Audio ready'}
+                                            </Typography>
                                         </>
                                     )}
 
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        placeholder="Aa..."
-                                        value={newMessage}
-                                        onChange={onInputChange}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                stopTyping();
-                                                handleSend();
-                                            }
-                                        }}
-                                        sx={{ '& fieldset': { borderRadius: 3 } }}
-                                        // onFocus={() => setSowContent(true)}
-                                        onBlur={() => {
-                                            stopTyping();
-                                            // setSowContent(false);
-                                        }}
-                                    />
-                                </>
-                            )}
+                                    {!isRecording && !audioBlob && (
+                                        <>
+                                            {!showContent && (
+                                                <>
+                                                    <IconButton component="label">
+                                                        <AttachFileIcon />
+                                                        <input
+                                                            ref={fileInputRef}
+                                                            hidden
+                                                            type="file"
+                                                            multiple
+                                                            onChange={handleFileSelect}
+                                                            accept={Object.values(FILE_RULES).flatMap(r => [...r.extensions]).map(ext => `.${ext}`).join(',')}
+                                                        />
+                                                    </IconButton>
 
-                            <IconButton
-                                color="primary"
-                                onClick={handleSend}
-                                disabled={
-                                    (!newMessage.trim() && !audioBlob && selectedFiles.length === 0 && !isRecording)
-                                }
-                            >
-                                <SendIcon />
-                            </IconButton>
-                        </Paper>
+                                                    <IconButton
+                                                        color="primary"
+                                                        onMouseDown={startRecording}
+                                                        onMouseUp={handleSend}
+                                                        onTouchStart={startRecording}
+                                                        onTouchEnd={handleSend}
+                                                    >
+                                                        <MicIcon />
+                                                    </IconButton>
+
+                                                    <Box sx={{ position: 'relative' }}>
+                                                        <IconButton
+                                                            ref={emojiButtonRef}
+                                                            onClick={() => setShowEmojiPicker((v) => !v)}
+                                                            sx={{ color: 'orange' }}
+                                                        >
+                                                            {showEmojiPicker
+                                                                ? <EmojiEmotionsIcon />
+                                                                : <InsertEmoticonIcon />}
+                                                        </IconButton>
+
+                                                        {showEmojiPicker && (
+                                                            <EmojiPicker
+                                                                onSelect={(emoji) =>
+                                                                    setNewMessage((prev) => prev + emoji)
+                                                                }
+                                                                onClose={() => setShowEmojiPicker(false)}
+                                                                anchorEl={emojiButtonRef.current}
+                                                                placement="top-start"
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </>
+                                            )}
+
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Aa..."
+                                                value={newMessage}
+                                                onChange={onInputChange}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        stopTyping();
+                                                        handleSend();
+                                                    }
+                                                }}
+                                                sx={{ '& fieldset': { borderRadius: 3 } }}
+                                                // onFocus={() => setSowContent(true)}
+                                                onBlur={() => {
+                                                    stopTyping();
+                                                    // setSowContent(false);
+                                                }}
+                                            />
+                                        </>
+                                    )}
+
+                                    <IconButton
+                                        color="primary"
+                                        onClick={handleSend}
+                                        disabled={
+                                            (!newMessage.trim() && !audioBlob && selectedFiles.length === 0 && !isRecording)
+                                        }
+                                    >
+                                        <SendIcon />
+                                    </IconButton>
+                                </Paper>
+                            )}
 
                     </Box>
                 </Box>
@@ -1172,6 +1202,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     user={chat}
                     roomId={chat?.room_id}
                     currentUserId={currentUserId}
+                    onBlockUser={handleBlockUser}
+                    blockMessage={blockMessage}
                 />
             )}
             <DeleteDialog

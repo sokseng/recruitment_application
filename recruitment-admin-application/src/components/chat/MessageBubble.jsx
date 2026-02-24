@@ -26,7 +26,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall, isBlocked }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -36,7 +36,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
     const [isHovered, setIsHovered] = React.useState(false);
 
     const handleMenuOpen = (event) => {
-        if (message.type === 'call') return;
+        if (message.type === 'call' || isBlocked) return;
         setAnchorEl(event.currentTarget);
     };
 
@@ -332,6 +332,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             </Button>
                         </Box>
                     )}
+                    
                     {message.type === 'image' && (
                         <ChatImage
                             src={`${BASE_URL}${message.file_url}`}
@@ -345,7 +346,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             onRemoveReact={onRemoveReact}
                         />
                     )}
-
+                    
                     <IconButton
                         size="small"
                         sx={{

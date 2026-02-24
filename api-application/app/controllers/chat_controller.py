@@ -182,7 +182,7 @@ async def send_text_message(
 async def send_file_message(
     db: Session,
     room: ChatRoom,
-    sender_id: int,
+    current_user: User,
     file_type: str,
     caption: str | None,
     file: UploadFile,
@@ -216,7 +216,7 @@ async def send_file_message(
 
     msg = ChatMessage(
         room_id=room.id,
-        sender_id=sender_id,
+        sender_id=current_user.pk_id,
         type=MessageType(file_type),
         content=caption,
         file_url=f"/{path}",
@@ -229,7 +229,7 @@ async def send_file_message(
 
     receiver_id = (
         room.employer_user_id
-        if sender_id == room.candidate_user_id
+        if current_user.pk_id == room.candidate_user_id
         else room.candidate_user_id
     )
 
@@ -852,19 +852,18 @@ async def handle_call_timeout(room_id: int, caller_id: int, timeout: int = 30):
     try:
         await asyncio.sleep(timeout)
 
-        call_data = manager.active_calls.get(room_id)
+        call_data = manager.active_calls.pop(room_id, None)
+
         if not call_data or call_data.get("status") != "ringing":
             return
 
         participants = call_data["participants"]
 
         await manager.broadcast_call_event(
-            participants,
+            [caller_id],
             "call.missed",
             {"roomId": room_id}
         )
-
-        from app.database.db_for_ws import get_db_ws
 
         with get_db_ws() as db:
             room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
@@ -878,9 +877,6 @@ async def handle_call_timeout(room_id: int, caller_id: int, timeout: int = 30):
                     content="📵 Call missed",
                     message_type=MessageType.CALL
                 )
-
-        # Cleanup
-        manager.active_calls.pop(room_id, None)
 
     except asyncio.CancelledError:
         pass
@@ -903,3 +899,44 @@ async def _persist_disconnect_call(room_id: int, user_id: int):
                     content="📞 Call ended (disconnect)",
                     message_type=MessageType.CALL
                 )
+
+async def block_user_in_room(
+    db: Session,
+    room: ChatRoom,
+    blocker_id: int,
+    block: bool = True
+):
+    blocker_user = db.query(User).filter(User.pk_id == blocker_id).first()
+    if not blocker_user:
+        raise HTTPException(404, "Blocker user not found")
+
+    if block:
+        room.is_blocked = True
+        room.blocked_by_user = blocker_user
+        room.blocked_at = datetime.utcnow()
+    else:
+        room.is_blocked = False
+        room.blocked_by_user = None
+        room.blocked_at = None
+
+    db.commit()
+    db.refresh(room)
+
+    blocked_user_info = None
+    if room.blocked_by_user:
+        blocked_user_info = {
+            "pk_id": room.blocked_by_user.pk_id,
+            "user_name": room.blocked_by_user.user_name,
+            # "avatar_url": room.blocked_by_user.avatar_url
+        }
+
+    for uid in (room.candidate_user_id, room.employer_user_id):
+        await manager.broadcast_to_user(uid, {
+            "type": "chat_room_block_update",
+            "room_id": room.id,
+            "is_blocked": room.is_blocked,
+            "blocked_by_user": blocked_user_info,
+            "blocked_at": room.blocked_at.isoformat() if room.blocked_at else None
+        })
+
+    return room

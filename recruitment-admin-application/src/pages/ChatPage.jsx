@@ -52,6 +52,7 @@ function ChatPage() {
     const [typingUsers, setTypingUsers] = useState({});
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [reactionsData, setReactionsData] = useState({});
+    const [blockMessage, setBlockMessage] = useState(null);
 
     const LIMIT = 10;
     const CHAT_LIMIT = 20;
@@ -213,10 +214,21 @@ function ChatPage() {
         }
     };
 
+    const fetchBlockMessage = async (roomId) => {
+        try {
+            const res = await api.get(`/chat/rooms/${roomId}/block-status`);
+            setBlockMessage(res.data);
+        } catch (err) {
+            console.error("Error fetching reactions:", err);
+            return [];
+        }
+    }
+
     useEffect(() => {
         if (!selectedChat) return;
 
         fetchPinMessages(selectedChat.room_id);
+        fetchBlockMessage(selectedChat.room_id);
     }, [selectedChat]);
 
     const fetchMessages = async (roomId, reset = false) => {
@@ -462,7 +474,14 @@ function ChatPage() {
                         )
                     );
                     break;
-
+                case "chat_room_block_update":
+                    if (selectedChat?.room_id === data.room_id) {
+                        setBlockMessage({
+                            is_blocked: data.is_blocked,
+                            blocked_by_user: data.blocked_by_user,
+                            blocked_at: data.blocked_at
+                        })
+                    }
 
                 default:
                     // console.log("WS event", data);
@@ -610,7 +629,7 @@ function ChatPage() {
                             px: 1,
                             pt: 0.5
                         }}
-                    >Chat ({chats.length})</Typography>
+                    >All Chats</Typography>
 
                     <Box
                         ref={scrollContainerRef}
@@ -766,6 +785,7 @@ function ChatPage() {
                         pinMessage={pinMessage}
                         reactionsData={reactionsData}
                         onStartCall={startCall}
+                        blockMessage={blockMessage}
                     />
                 </Box>
             )}

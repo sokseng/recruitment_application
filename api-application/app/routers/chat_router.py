@@ -30,9 +30,10 @@ from app.controllers.chat_controller import (
     toggle_reaction,
     get_message_reactions,
     remove_reaction,
-    get_unread_counts_for_user
+    get_unread_counts_for_user,
+    block_user_in_room
 )
-from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest
+from app.schemas.chat import ChatRoomOut, CreateChatIn, UserSearchOut, GetOrCreateRoomRequest, ChatBlockResponse, UserPreview
 from app.dependencies.auth import verify_access_token
 from typing import Optional
 
@@ -223,6 +224,9 @@ async def send_text(
 
     if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot sent message because this chat is blocked.")
 
     payload = await send_text_message(
         db=db,
@@ -244,6 +248,10 @@ async def send_file(
     current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db),
 ):
+    current_user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not current_user:
+        raise HTTPException(404, "User not found")
+    
     room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
     if not room:
         raise HTTPException(404, "Chat room not found")
@@ -253,11 +261,14 @@ async def send_file(
         room.employer_user_id,
     ):
         raise HTTPException(403, "Not allowed")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot sent message because this chat is blocked.")
 
     return await send_file_message(
         db=db,
         room=room,
-        sender_id=current_user_id,
+        current_user=current_user,
         file_type=type,
         caption=content,
         file=file,
@@ -287,6 +298,9 @@ async def forward_message_to_rooms(
     ).all()
     if not rooms:
         raise HTTPException(404, "No target room found")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot sent message because this chat is blocked.")
 
     payloads = await forward_message(
         db=db,
@@ -461,6 +475,9 @@ async def edit_text_message(
 
     if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot edit message because this chat is blocked.")
 
     return await edit_message(
         db=db,
@@ -486,6 +503,9 @@ async def edit_file_message(
 
     if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot edit message because this chat is blocked.")
 
     return await edit_message(
         db=db,
@@ -513,6 +533,9 @@ async def delete_message_by_id(
         room.employer_user_id,
     ):
         raise HTTPException(403, "Not allowed")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot delete message because this chat is blocked.")
 
     return await delete_message(
         db=db,
@@ -534,6 +557,9 @@ async def pin_message_route(
     
     if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed in this room")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot pin message because this chat is blocked.")
 
     result = await pin_message(
         db=db,
@@ -556,6 +582,9 @@ async def unpin_message_route(
     
     if current_user_id not in (room.candidate_user_id, room.employer_user_id):
         raise HTTPException(403, "Not allowed in this room")
+    
+    if room.is_blocked:
+        raise HTTPException(403, "Cannot unpin message because this chat is blocked.")
 
     result = await unpin_message(
         db=db,
@@ -720,4 +749,87 @@ def get_user_shared_media(
         "nextCursor": next_cursor,
         "hasMore": has_more
     }
+    
+@router.post("/rooms/{room_id}/block", response_model=ChatBlockResponse)
+async def block_user(room_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Chat room not existing")
+
+    if current_user_id not in [room.candidate_user_id, room.employer_user_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to access this room")
+
+    room = await block_user_in_room(db, room, blocker_id=current_user_id, block=True)
+
+    blocked_user_info = None
+    if room.blocked_by_user:
+        blocked_user_info = UserPreview(
+            pk_id=room.blocked_by_user.pk_id,
+            user_name=room.blocked_by_user.user_name,
+            # avatar_url=room.blocked_by_user.avatar_url
+        )
+
+    return ChatBlockResponse(
+        room_id=room.id,
+        is_blocked=room.is_blocked,
+        blocked_by_user=blocked_user_info,
+        blocked_at=room.blocked_at.isoformat() if room.blocked_at else None
+    )
+    
+@router.post("/rooms/{room_id}/unblock", response_model=ChatBlockResponse)
+async def unblock_user(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Chat room not existing")
+
+    if current_user_id not in [room.candidate_user_id, room.employer_user_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to access this room")
+
+    room = await block_user_in_room(db, room, blocker_id=current_user_id, block=False)
+
+    blocked_user_info = None
+    if room.blocked_by_user:
+        blocked_user_info = UserPreview(
+            pk_id=room.blocked_by_user.pk_id,
+            user_name=room.blocked_by_user.user_name
+        )
+
+    return ChatBlockResponse(
+        room_id=room.id,
+        is_blocked=room.is_blocked,
+        blocked_by_user=blocked_user_info,
+        blocked_at=room.blocked_at.isoformat() if room.blocked_at else None
+    )
+    
+@router.get("/rooms/{room_id}/block-status", response_model=ChatBlockResponse)
+def check_block_status(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Chat room not existing")
+    
+    if current_user_id not in [room.candidate_user_id, room.employer_user_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to access this room")
+
+    blocked_user_info = None
+    if room.blocked_by_user:
+        blocked_user_info = UserPreview(
+            pk_id=room.blocked_by_user.pk_id,
+            user_name=room.blocked_by_user.user_name,
+            # avatar_url=room.blocked_by_user.avatar_url
+        )
+
+    return ChatBlockResponse(
+        room_id=room.id,
+        is_blocked=room.is_blocked,
+        blocked_by_user=blocked_user_info,
+        blocked_at=room.blocked_at.isoformat() if room.blocked_at else None
+    )
 

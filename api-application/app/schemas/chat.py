@@ -162,3 +162,9 @@ class PinnedMessageOut(BaseModel):
 
 class ReactionRequest(BaseModel):
     reaction: ReactionType
+    
+class  ChatBlockResponse(BaseModel):
+    room_id: int
+    is_blocked: bool
+    blocked_by_user: Optional[UserPreview] = None
+    blocked_at: Optional[str]
