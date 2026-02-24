@@ -18,7 +18,8 @@ from app.routers import (
     global_setting_router,
     dashboard_router,
     forgot_password_router,
-    call_router
+    call_router,
+    audit_trace_router
 )
 
 from app.database.session import Base, engine
@@ -36,6 +37,7 @@ from app.models.global_setting_model import GlobalSetting
 from app.models.forgot_password_model import ForgotPassword
 from app.models.email_log_model import EmailLog
 from app.models.message_react_model import MessageReaction
+from app.models.audit_trace_model import AuditTrace
 
 from app.script.init_user import run as init_user
 from app.script.init_category import run as init_category
@@ -92,3 +94,4 @@ app.include_router(global_setting_router.router)
 app.include_router(dashboard_router.router)
 app.include_router(forgot_password_router.router)
 app.include_router(call_router.router)
+app.include_router(audit_trace_router.router)

@@ -23,6 +23,7 @@ function LocalTracksPublisher({ startWithVideo = true }) {
   const room = useRoomContext();
   const connectionState = useConnectionState();
 
+
   useEffect(() => {
     if (!room) return;
     if (connectionState !== ConnectionState.Connected) return;
@@ -377,8 +378,8 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData }) 
         onDisconnected={() => console.log("LiveKit disconnected")}
       >
         <LocalTracksPublisher startWithVideo={isVideoCall} />
-        <CallParticipants userData={userData}/>
-        <CallControls onEndCall={onEndCall}/>
+        <CallParticipants userData={userData} />
+        <CallControls onEndCall={onEndCall} />
       </LiveKitRoom>
     </Box>
   );
