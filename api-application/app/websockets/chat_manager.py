@@ -83,6 +83,18 @@ class ConnectionManager:
                 if timeout_task:
                     timeout_task.cancel()
 
+                self.active_calls.pop(r_id, None)
+                other_participants = [uid for uid in call_data["participants"] if uid != user_id]
+                ended_calls.extend([(r_id, uid) for uid in other_participants])
+
+                asyncio.create_task(
+                    self.broadcast_call_event(
+                        other_participants,
+                        "call.ended",
+                        {"roomId": r_id, "reason": "disconnect"}
+                    )
+                )
+
         return ended_calls
 
     async def broadcast_to_room(self, room_id: int, message: dict, exclude_user_id: int | None = None):
