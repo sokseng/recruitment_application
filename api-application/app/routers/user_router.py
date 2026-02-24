@@ -108,18 +108,21 @@ def create_or_update_user(user: UserCreate, db: Session = Depends(get_db)):
 
 #update user
 @router.put("/approve/{pk_id}", response_model=UserResponse)
-def update_user(pk_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return user_controller.update_user(db, pk_id)
+def update_user(request: Request, pk_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    ip_address = request.client.host
+    return user_controller.update_user(db, current_user_id, pk_id, ip_address)
 
 #delete mutiple users = disable
 @router.delete("/delete")
-def delete_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return user_controller.delete_users(db, data)
+def delete_users(request: Request, data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    ip_address = request.client.host
+    return user_controller.delete_users(db, data, ip_address, current_user_id)
 
 #enable users
 @router.delete("/enable")
-def enable_users(data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return user_controller.enable_users(db, data)
+def enable_users(request: Request, data: DeleteUser, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    ip_address = request.client.host
+    return user_controller.enable_users(db, data, ip_address, current_user_id)
 
 
 # verify token
@@ -175,8 +178,9 @@ def get_my_jobs(
 
 #create or update user by admin
 @router.post("/create-or-update")
-def create_or_update_user_admin(user: UserCreate, db: Session = Depends(get_db)):
-    return user_controller.create_or_update_user_admin(user, db)
+def create_or_update_user_admin(request: Request, user: UserCreate, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    ip_address = request.client.host
+    return user_controller.create_or_update_user_admin(user, db, ip_address, current_user_id)
 
 
 

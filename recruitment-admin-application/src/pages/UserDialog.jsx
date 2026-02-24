@@ -279,10 +279,10 @@ const UserDialog = ({ open, onClose, user, refresh }) => {
                     </DialogContent>
 
                     <DialogActions>
-                        <Button onClick={onClose}>Cancel</Button>
+                        <Button sx={{textTransform: "none"}} variant="outlined" onClick={onClose}>Cancel</Button>
 
                         {/* ✅ submit triggers browser validation */}
-                        <Button variant="contained" type="submit">
+                        <Button variant="contained" type="submit" sx={{textTransform: "none"}}>
                             {form.pk_id ? "Update" : "Create"}
                         </Button>
                     </DialogActions>

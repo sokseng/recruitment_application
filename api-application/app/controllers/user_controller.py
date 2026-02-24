@@ -10,10 +10,11 @@ from jose import jwt
 from datetime import timedelta, datetime, timezone
 from app.config.settings import settings  # secret + algorithm from env/config
 from fastapi import HTTPException
-from app.enums.global_enum import UserType
+from app.enums.global_enum import UserType, UserTypeName
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
 from app.models.global_setting_model import GlobalSetting
+from app.models.audit_trace_model import AuditTrace
 
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
@@ -238,14 +239,42 @@ def create_or_update_user(user: UserCreate, db: Session):
 
 
 # update user
-def update_user(db: Session, pk_id: int):
+def update_user(db: Session, current_user_id: int, pk_id: int, ip_address: str):
+    user_connection = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user_connection:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     db_user = db.query(User).filter(User.pk_id == pk_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    #------------------- AUDIT LOG ----------------------
+    detail_info = None
+    action_type = None
+    
+    changes = [
+        f"pk_id: '{db_user.pk_id}'",
+        f"user_name: '{db_user.user_name}'",
+        f"email: '{db_user.email}'"
+    ]
+
+    detail_info = "Approved: " + " | ".join(changes)
+    action_type = "Approved User"
+
+    if detail_info and changes:
+        audit = AuditTrace(
+            user_action=user_connection.user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type,
+            ip=ip_address,
+            detail_information=detail_info
+        )
+        db.add(audit)
+    
     db_user.approved = True
     db.commit()
     return db_user
+
 #get all users
 def get_all_users(db: Session):
     return db.query(User).order_by(User.user_name).all()
@@ -330,7 +359,12 @@ def verify_access_token(access_token: str, db: Session):
     return access_token_data
 
 #delete user
-def delete_users(db: Session, data: DeleteUser):
+def delete_users(db: Session, data: DeleteUser, ip_address: str, current_user_id: int):
+
+    user_connection = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user_connection:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     if not data.ids or len(data.ids) == 0:
         raise HTTPException(status_code=400, detail="No IDs provided for deletion")
     
@@ -338,14 +372,44 @@ def delete_users(db: Session, data: DeleteUser):
     if not users:
         raise HTTPException(status_code=404, detail="User not found")
 
+    
+    detail_info = None
+    action_type = None
+        
     # Delete all users
     for user in users:
+
+        #------------------- AUDIT LOG ----------------------
+        changes = [
+            f"pk_id: '{user.pk_id}'",
+            f"user_name: '{user.user_name}'",
+            f"email: '{user.email}'"
+        ]
+
+        detail_info = "Disabled: " + " | ".join(changes)
+        action_type = "Disabled User"
+
+        if detail_info and changes:
+            audit = AuditTrace(
+                user_action=user_connection.user_name,# who did it
+                action_datetime=datetime.now().replace(microsecond=0),
+                action=action_type,
+                ip=ip_address,
+                detail_information=detail_info
+            )
+            db.add(audit)
+
         user.is_active = False
     db.commit()
     return {"message": "Users deleted successfully"}
 
 #Enable user
-def enable_users(db: Session, data: DeleteUser):
+def enable_users(db: Session, data: DeleteUser, ip_address: str, current_user_id: int):
+
+    user_connection = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user_connection:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     if not data.ids or len(data.ids) == 0:
         raise HTTPException(status_code=400, detail="No IDs provided for deletion")
     
@@ -353,8 +417,33 @@ def enable_users(db: Session, data: DeleteUser):
     if not users:
         raise HTTPException(status_code=404, detail="User not found")
 
+    
+    detail_info = None
+    action_type = None
+
     # Delete all users
     for user in users:
+
+        #------------------- AUDIT LOG ----------------------
+        changes = [
+            f"pk_id: '{user.pk_id}'",
+            f"user_name: '{user.user_name}'",
+            f"email: '{user.email}'"
+        ]
+
+        detail_info = "Enabled: " + " | ".join(changes)
+        action_type = "Enabled User"
+
+        if detail_info and changes:
+            audit = AuditTrace(
+                user_action=user_connection.user_name,# who did it
+                action_datetime=datetime.now().replace(microsecond=0),
+                action=action_type,
+                ip=ip_address,
+                detail_information=detail_info
+            )
+            db.add(audit)
+
         user.is_active = True
     db.commit()
     return {"message": "Users enabled successfully"}
@@ -448,7 +537,18 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-def create_or_update_user_admin(user: UserCreate, db: Session):
+def get_user_type_name(user_type_number: int) -> str:
+    mapping = {
+        int(UserType.ADMIN.value): UserTypeName.ADMIN.value,
+        int(UserType.EMPLOYER.value): UserTypeName.EMPLOYER.value,
+        int(UserType.CANDIDATE.value): UserTypeName.CANDIDATE.value,
+    }
+    return mapping.get(user_type_number, "Unknown")
+
+def create_or_update_user_admin(user: UserCreate, db: Session, ip_address: str, current_user_id: int):
+    user_connection = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user_connection:
+        raise HTTPException(status_code=404, detail="User not found")
 
     # ==========================
     # UPDATE USER
@@ -461,6 +561,37 @@ def create_or_update_user_admin(user: UserCreate, db: Session):
         existing_email = db.query(User).filter(User.email == user.email).first()
         if existing_email and existing_email.pk_id != user.pk_id:
             raise HTTPException(status_code=400, detail="Email already exists")
+        
+        # ----------------- AUDIT LOG -----------------
+        detail_info = None
+        action_type = None
+
+        changes = []
+        changes.append(f"pk_id: '{db_user.pk_id}'")
+        if db_user.user_name != user.user_name:
+            changes.append(f"user_name: '{db_user.user_name}' → '{user.user_name}'")
+
+        if db_user.email != user.email:
+            changes.append(f"email: '{db_user.email}' → '{user.email}'")
+
+        if db_user.gender != user.gender:
+            changes.append(f"gender: '{db_user.gender if db_user.gender else 'NULL'}' → '{user.gender if user.gender else 'NULL'}'")
+
+        if db_user.phone != user.phone:
+            changes.append(f"phone: '{db_user.phone if db_user.phone else 'NULL'}' → '{user.phone if user.phone else 'NULL'}'")
+        
+        if db_user.date_of_birth != user.date_of_birth:
+            changes.append(f"date_of_birth: '{db_user.date_of_birth if db_user.date_of_birth else 'NULL'}' → '{user.date_of_birth if user.date_of_birth else 'NULL'}'")
+
+        if db_user.address != user.address:
+            changes.append(f"address: '{db_user.address if db_user.address else 'NULL'}' → '{user.address if user.address else 'NULL'}'")
+
+        if db_user.user_type != user.user_type:
+            old_type = get_user_type_name(db_user.user_type)
+            new_type = get_user_type_name(user.user_type)
+
+            changes.append(f"user_type: '{old_type}' → '{new_type}'")
+            
 
         # ---- Update user fields ----
         db_user.user_name = user.user_name
@@ -472,6 +603,20 @@ def create_or_update_user_admin(user: UserCreate, db: Session):
         db_user.address = user.address
         db_user.is_active = user.is_active
         db_user.updated_date = datetime.now().replace(microsecond=0)
+        
+        if changes:
+            detail_info = "UPDATED: " + " | ".join(changes)
+            action_type = "Update User"
+
+        if detail_info and changes:
+            audit = AuditTrace(
+                user_action=user_connection.user_name,# who did it
+                action_datetime=datetime.now().replace(microsecond=0),
+                action=action_type,
+                ip=ip_address,
+                detail_information=detail_info
+            )
+            db.add(audit)
 
         # ==========================
         # UPDATE EMPLOYER
@@ -621,6 +766,48 @@ def create_or_update_user_admin(user: UserCreate, db: Session):
         created_date=datetime.now().replace(microsecond=0),
         updated_date=datetime.now().replace(microsecond=0),
     )
+
+    # ----------------- AUDIT LOG -----------------
+    detail_info = None
+    action_type = None
+
+    changes = [
+        f"user_name: {user.user_name}",
+        f"email: {user.email}",
+    ]
+
+    # Optional fields
+    optional_fields = {
+        "gender": user.gender,
+        "phone": user.phone,
+        "date_of_birth": user.date_of_birth,
+        "address": user.address,
+    }
+
+    for key, value in optional_fields.items():
+        if value:  # skips None, "", etc.
+            changes.append(f"{key}: {value}")
+
+    if db_user.user_type == int(UserType.ADMIN.value):
+        changes.append(f"user_type: '{UserTypeName.ADMIN.value}'")
+    elif db_user.user_type == int(UserType.EMPLOYER.value):
+        changes.append(f"user_type: '{UserTypeName.EMPLOYER.value}'")
+    elif db_user.user_type == int(UserType.CANDIDATE.value):
+        changes.append(f"user_type: '{UserTypeName.CANDIDATE.value}'")
+
+    detail_info = "CREATED: " + " | ".join(changes)
+    action_type = "Create User"
+
+    if detail_info and changes:
+        audit = AuditTrace(
+            user_action=user_connection.user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type,
+            ip=ip_address,
+            detail_information=detail_info
+        )
+        db.add(audit)
+    #--------------------End Audit Log----------------------
 
     db.add(db_user)
     db.commit()

@@ -26,7 +26,7 @@ const Audit = () => {
     {
       field: "action_datetime",
       headerName: "Action DateTime",
-      flex: 1.5,
+      flex: 1,
       minWidth: 180,
     },
     {
@@ -58,7 +58,7 @@ const Audit = () => {
     {
       field: "ip",
       headerName: "IP Address",
-      flex: 1,
+      flex: 0.5,
       minWidth: 120,
     },
   ];
