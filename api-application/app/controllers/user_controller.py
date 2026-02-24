@@ -291,7 +291,7 @@ def create_access_token(user_id: int, expires_delta: timedelta):
     return encoded_jwt
 
 # # insert data into table token
-def create_token(ip_address: str, user_id: int, access_token: str, expiration_date: datetime, db: Session):
+def create_token(user_name: str, email: str, ip_address: str, user_id: int, access_token: str, expiration_date: datetime, db: Session):
     token = UserSession(
         user_id = user_id,  
         access_token = access_token,
@@ -299,6 +299,29 @@ def create_token(ip_address: str, user_id: int, access_token: str, expiration_da
         ip_address=ip_address,
     )
     db.add(token)
+
+    #------------------- AUDIT LOG ----------------------
+    detail_info = None
+    action_type = None
+    changes = [
+        f"user_name: '{user_name}'",
+        f"email: '{email}'"
+    ]
+
+    detail_info = "Login: " + " | ".join(changes)
+    action_type = "Login User"
+
+    if detail_info and changes:
+        audit = AuditTrace(
+            user_action=user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type,
+            ip=ip_address,
+            detail_information=detail_info
+        )
+        db.add(audit)
+    #-------------------End AUDIT LOG ----------------------
+
     db.commit()
     db.refresh(token)
     return token
@@ -313,9 +336,37 @@ def verify_password(password: str, hashed_password: str):
     return isMatch
 
 # # check token when logout
-def check_token_when_logout(access_token: str, db: Session) -> bool:
+def check_token_when_logout(access_token: str, db: Session, ip_address: str) -> bool:
     try:
         session_token = db.query(UserSession).filter(UserSession.access_token == access_token).first()
+        if not session_token:
+            return False
+        
+        user_db = db.query(User).filter(User.pk_id == session_token.user_id).first()
+        if not user_db:
+            return False
+
+        #------------------- AUDIT LOG ----------------------
+        detail_info = None
+        action_type = None
+        changes = [
+            f"user_name: '{user_db.user_name}'",
+            f"email: '{user_db.email}'"
+        ]
+
+        detail_info = "Logout: " + " | ".join(changes)
+        action_type = "Logout User"
+
+        if detail_info and changes:
+            audit = AuditTrace(
+                user_action=user_db.user_name,# who did it
+                action_datetime=datetime.now().replace(microsecond=0),
+                action=action_type,
+                ip=ip_address,
+                detail_information=detail_info
+            )
+            db.add(audit)
+        #-------------------End AUDIT LOG ----------------------
     
         if session_token:
             db.delete(session_token)

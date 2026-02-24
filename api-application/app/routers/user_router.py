@@ -74,6 +74,8 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
 
     # Save token into database
     user_controller.create_token(
+        user_name=user.user_name,
+        email=user.email,
         ip_address=ip_address,
         user_id=user.pk_id,
         access_token=access_token,
@@ -135,6 +137,7 @@ def verify_token(token: str = Body(..., embed=True), db: Session = Depends(get_d
 #user logout
 @router.post("/logout", response_model=bool)
 def logout(
+    request: Request,
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
@@ -146,7 +149,8 @@ def logout(
 
     access_token = authorization.replace("Bearer ", "")
 
-    return user_controller.check_token_when_logout(access_token, db)
+    ip_address = request.client.host
+    return user_controller.check_token_when_logout(access_token, db, ip_address)
 
 
 #change password
