@@ -34,10 +34,12 @@ import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 const ITEMS_PER_PAGE = 8;
 
 const AdminEmployers = () => {
+  const { t } = useTranslation();
   const [employers, setEmployers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -119,7 +121,7 @@ const AdminEmployers = () => {
     try {
       await api.put(`/user/approve/${selectedEmployer.user_id}`);
 
-      setSnackbarMessage("Employer approved successfully");
+      setSnackbarMessage(t('employer_approved_success'));
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
 
@@ -128,7 +130,7 @@ const AdminEmployers = () => {
       setOpenDetail(false);
     } catch (err) {
       console.error(err);
-      setSnackbarMessage("Failed to approve employer");
+      setSnackbarMessage(t('employer_approve_failed'));
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
@@ -137,7 +139,7 @@ const AdminEmployers = () => {
   return (
     <Box sx={{ maxWidth: 1600, mx: "auto" }}>
       <Box sx={{ mb: 3 }}>
-        {/* ← Replace only this Tabs part */}
+        {/* Tabs */}
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -200,7 +202,7 @@ const AdminEmployers = () => {
                   },
                 }}
               >
-                Pending
+                {t('pending')}
               </Badge>
             }
           />
@@ -218,16 +220,16 @@ const AdminEmployers = () => {
                   },
                 }}
               >
-                Approved
+                {t('approved')}
               </Badge>
             }
           />
         </Tabs>
 
-        {/* Search field + showing text remain unchanged */}
+        {/* Search field */}
         <TextField
           size="small"
-          placeholder="Search companies..."
+          placeholder={t('search_companies')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -255,12 +257,16 @@ const AdminEmployers = () => {
             color="text.secondary"
             sx={{ mt: 1.5, display: { xs: "block", sm: "inline-block" }, ml: { sm: 2 } }}
           >
-            Showing {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} of {totalItems}
+            {t('showing_items', { 
+              start: startIndex + 1, 
+              end: Math.min(startIndex + ITEMS_PER_PAGE, totalItems), 
+              total: totalItems 
+            })}
           </Typography>
         )}
       </Box>
 
-      {/* Grid - unchanged */}
+      {/* Grid */}
       <Box
         sx={{
           display: "grid",
@@ -317,7 +323,7 @@ const AdminEmployers = () => {
               </Box>
 
               <Chip
-                label={emp.status}
+                label={emp.status === "Approved" ? t('approved') : t('pending')}
                 size="small"
                 variant="outlined"
                 sx={{
@@ -381,14 +387,14 @@ const AdminEmployers = () => {
                     transition: "all 0.25s ease",
                   }}
                 >
-                  View Details
+                  {t('view_details')}
                 </Button>
               </CardContent>
             </Card>
           ))}
       </Box>
 
-      {/* Pagination - unchanged */}
+      {/* Pagination */}
       {!loading && totalPages > 1 && (
         <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
           <Pagination
@@ -406,7 +412,7 @@ const AdminEmployers = () => {
         </Box>
       )}
 
-      {/* Detail Dialog with Switch added */}
+      {/* Detail Dialog */}
       <Dialog
         open={openDetail}
         onClose={handleCloseDetail}
@@ -429,12 +435,12 @@ const AdminEmployers = () => {
                 pr: 2,
               }}
             >
-              <Typography fontWeight={700}>Company Details</Typography>
+              <Typography fontWeight={700}>{t('company_details')}</Typography>
 
               <Stack direction="row" spacing={1} alignItems="center">
                 {selectedEmployer?.status === "Pending" && (
                   <Button
-                    title="Approve"
+                    title={t('approve')}
                     variant="contained"
                     size="small"
                     onClick={() => setOpenConfirm(true)}
@@ -450,7 +456,7 @@ const AdminEmployers = () => {
                       },
                     }}
                   >
-                    Approve Now
+                    {t('approve_now')}
                   </Button>
                 )}
 
@@ -459,7 +465,6 @@ const AdminEmployers = () => {
                 </IconButton>
               </Stack>
             </DialogTitle>
-
 
             <DialogContent dividers sx={{ pt: 2 }}>
               <Stack direction="row" spacing={2.5} alignItems="center" sx={{ mb: 3 }}>
@@ -484,7 +489,7 @@ const AdminEmployers = () => {
                     </Typography>
 
                     <Chip
-                      label={selectedEmployer.status || "Pending"}
+                      label={selectedEmployer.status === "Approved" ? t('approved') : t('pending')}
                       size="small"
                       sx={{
                         background: selectedEmployer.status === "Approved"
@@ -508,7 +513,6 @@ const AdminEmployers = () => {
                         letterSpacing: 0.5,
                       }}
                     />
-
                   </Stack>
 
                   <Typography
@@ -521,26 +525,25 @@ const AdminEmployers = () => {
                 </Box>
               </Stack>
 
-              {/* The rest remains 100% unchanged */}
               <Stack spacing={2}>
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <PhoneIcon fontSize="small" color="action" />
                   <Typography variant="body2">
-                    <strong>Contact:</strong> {selectedEmployer.company_contact || "—"}
+                    <strong>{t('contact')}:</strong> {selectedEmployer.company_contact || "—"}
                   </Typography>
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <LocationOnIcon fontSize="small" color="action" />
                   <Typography variant="body2">
-                    <strong>Address:</strong> {selectedEmployer.company_address || "—"}
+                    <strong>{t('address')}:</strong> {selectedEmployer.company_address || "—"}
                   </Typography>
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                   <LanguageIcon fontSize="small" color="action" />
                   <Typography variant="body2">
-                    <strong>Website:</strong>{" "}
+                    <strong>{t('website')}:</strong>{" "}
                     {selectedEmployer.company_website ? (
                       <a
                         href={selectedEmployer.company_website}
@@ -562,13 +565,13 @@ const AdminEmployers = () => {
               <Stack direction="row" spacing={4} sx={{ mb: 2 }}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    <strong>Jobs Posted</strong>
+                    <strong>{t('jobs_posted')}</strong>
                   </Typography>
                   <Typography variant="h6">{selectedEmployer.job_count || 0}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    <strong>Categories</strong>
+                    <strong>{t('categories')}</strong>
                   </Typography>
                   <Typography variant="body2">
                     {selectedEmployer.categories?.map((c) => c.name).join(", ") || "—"}
@@ -580,10 +583,10 @@ const AdminEmployers = () => {
 
               <Box>
                 <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                  About the Company
+                  {t('about_company')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "pre-line" }}>
-                  {selectedEmployer.company_description || "No description provided."}
+                  {selectedEmployer.company_description || t('no_description')}
                 </Typography>
               </Box>
             </DialogContent>
@@ -598,11 +601,10 @@ const AdminEmployers = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>Confirm Approval</DialogTitle>
+        <DialogTitle>{t('confirm_approval')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 3 }}>
-            Are you sure you want to approve{" "}
-            <strong>{selectedEmployer?.company_name}</strong>?
+            {t('confirm_approval_message', { company: selectedEmployer?.company_name })}
           </Typography>
 
           <Stack direction="row" justifyContent="flex-end" spacing={2}>
@@ -612,7 +614,7 @@ const AdminEmployers = () => {
               sx={{ textTransform: "none" }}
               onClick={() => setOpenConfirm(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
@@ -625,12 +627,11 @@ const AdminEmployers = () => {
                 await handleApprove();
               }}
             >
-              Yes, Approve
+              {t('yes_approve')}
             </Button>
           </Stack>
         </DialogContent>
       </Dialog>
-
 
       {/* Snackbar feedback */}
       <Snackbar

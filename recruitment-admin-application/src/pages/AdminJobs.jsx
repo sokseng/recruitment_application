@@ -11,8 +11,10 @@ import {
   Skeleton,
 } from "@mui/material";
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 const AdminJobs = () => {
+  const { t } = useTranslation();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -49,6 +51,13 @@ const AdminJobs = () => {
     return "default";
   };
 
+  const getStatusLabel = (status) => {
+    if (status === "Open") return t('open');
+    if (status === "Closed") return t('closed');
+    if (status === "Draft") return t('draft');
+    return status;
+  };
+
   return (
     <Box sx={{ p: 1 }}>
       {/* SUMMARY CARDS */}
@@ -62,10 +71,10 @@ const AdminJobs = () => {
         mb={2}
       >
         {[
-          { label: "Total Jobs", value: summary.total, color: "text.primary" },
-          { label: "Open", value: summary.open, color: "success.main" },
-          { label: "Closed", value: summary.closed, color: "error.main" },
-          { label: "Draft", value: summary.draft, color: "warning.main" },
+          { label: t('total_jobs'), value: summary.total, color: "text.primary" },
+          { label: t('open'), value: summary.open, color: "success.main" },
+          { label: t('closed'), value: summary.closed, color: "error.main" },
+          { label: t('draft'), value: summary.draft, color: "warning.main" },
         ].map((item, idx) => (
           <Card
             key={idx}
@@ -148,7 +157,11 @@ const AdminJobs = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  <Chip label={job.status} size="small" color={getStatusColor(job.status)} />
+                  <Chip 
+                    label={getStatusLabel(job.status)} 
+                    size="small" 
+                    color={getStatusColor(job.status)} 
+                  />
                 </Box>
 
                 <Divider sx={{ mb: 1 }} />
@@ -159,22 +172,22 @@ const AdminJobs = () => {
                   {job.level && (
                     <Chip label={job.level} size="small" color="secondary" variant="outlined" />
                   )}
-                  <Chip label={job.location || "Remote"} size="small" variant="outlined" />
+                  <Chip label={job.location || t('remote')} size="small" variant="outlined" />
                 </Stack>
 
                 {/* DETAILS */}
                 <Stack spacing={0.2}>
                   <Typography variant="body2" fontSize={12} color="text.secondary">
-                    💰 {job.salary_range || "Negotiable"}
+                    💰 {t('salary')}: {job.salary_range || t('negotiable')}
                   </Typography>
                   <Typography variant="body2" fontSize={12} color="text.secondary">
-                    👥 Positions: {job.position_number || 1}
+                    👥 {t('positions')}: {job.position_number || 1}
                   </Typography>
                   <Typography variant="caption" color="text.disabled">
-                    Posted: {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : "-"}
+                    {t('posted')}: {job.posting_date ? new Date(job.posting_date).toLocaleDateString() : "-"}
                   </Typography>
                   <Typography variant="caption" color="text.disabled">
-                    Closing: {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : "-"}
+                    {t('closing')}: {job.closing_date ? new Date(job.closing_date).toLocaleDateString() : "-"}
                   </Typography>
                 </Stack>
               </CardContent>
@@ -183,9 +196,9 @@ const AdminJobs = () => {
 
         {!loading && jobs.length === 0 && (
           <Box gridColumn="1 / -1" textAlign="center" py={6}>
-            <Typography variant="h6">No jobs available</Typography>
+            <Typography variant="h6">{t('no_jobs_available')}</Typography>
             <Typography color="text.secondary">
-              Job postings will appear here once created.
+              {t('job_postings_will_appear')}
             </Typography>
           </Box>
         )}
