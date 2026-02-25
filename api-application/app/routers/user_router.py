@@ -129,8 +129,16 @@ def enable_users(request: Request, data: DeleteUser, db: Session = Depends(get_d
 
 # verify token
 @router.post("/verify_token", response_model=bool)
-def verify_token(token: str = Body(..., embed=True), db: Session = Depends(get_db)):
-    token = user_controller.verify_refresh_token(token, db)
+def verify_token(authorization: str = Header(None),db: Session = Depends(get_db)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+    access_token = authorization.replace("Bearer ", "")
+
+    token = user_controller.verify_refresh_token(access_token, db)
     return token
 
 

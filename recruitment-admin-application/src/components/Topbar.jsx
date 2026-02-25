@@ -329,8 +329,21 @@ export default function Topbar() {
     setRobotError(false);
   };
 
+  const isTokenExpired = async () => {
+    try {
+      const resp = await api.post("/user/verify_token");
+      if(!resp.data){
+        clearAccessToken();
+        navigate("/");
+      }
+    } catch {
+      console.log("Token expired");
+    }
+  };
+
 
   useEffect(() => {
+    isTokenExpired();
     if (isSettingsActive) {
       setOpenDrawerSettings(true);
     }
