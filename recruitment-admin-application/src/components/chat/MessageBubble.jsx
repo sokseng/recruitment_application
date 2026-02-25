@@ -25,7 +25,6 @@ import ForwardIcon from '@mui/icons-material/Forward';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
-import LinkPreview from './LinkPreview';
 
 function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall, isBlocked, scrollToMessage, highlightedMessageId }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -252,27 +251,25 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     <span key={lineIndex}>
                                         {line.split(/\s+/).map((word, i) => {
                                             const urlRegex = /^(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+
                                             if (urlRegex.test(word)) {
                                                 let href = word;
                                                 if (!/^https?:\/\//i.test(word)) {
                                                     href = 'https://' + word;
                                                 }
-
                                                 return (
-                                                    <span key={i} style={{ display: 'inline-block', margin: '0 2px 2px 0' }}>
-                                                        <Link
-                                                            href={href}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
-                                                        >
-                                                            {word}
-                                                        </Link>
-
-                                                        <LinkPreview url={href} />
-                                                    </span>
+                                                    <Link
+                                                        key={i}
+                                                        href={href}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
+                                                    >
+                                                        {word}{' '}
+                                                    </Link>
                                                 );
                                             }
+
                                             return word + ' ';
                                         })}
                                         {lineIndex < message.content.split('\n').length - 1 && <br />}
