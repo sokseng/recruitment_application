@@ -63,6 +63,7 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import FactCheckIcon from "@mui/icons-material/FactCheck";
+import WorkIcon from "@mui/icons-material/Work";
 
 export default function Topbar() {
   const { t } = useTranslation();
@@ -144,6 +145,36 @@ export default function Topbar() {
 
   const isSettingsActive = location.pathname.startsWith("/system_parameter");
 
+  const [managementAnchor, setManagementAnchor] = useState(null);
+  const openManagement = Boolean(managementAnchor);
+  const [openDrawerManagement, setOpenDrawerManagement] = useState(false);
+
+  const toggleDrawerManagement = () =>
+    setOpenDrawerManagement((prev) => !prev);
+
+  const isManagementActive =
+    location.pathname.startsWith("/admin/user") ||
+    location.pathname.startsWith("/admin/jobs") ||
+    location.pathname.startsWith("/admin/employer") ||
+    location.pathname.startsWith("/admin/candidate") ||
+    location.pathname.startsWith("/audit");
+
+  const handleOpenManagement = (event) => {
+    setManagementAnchor(event.currentTarget);
+  };
+
+  const handleCloseManagement = () => {
+    setManagementAnchor(null);
+  };
+
+  const MANAGEMENT_ITEMS = [
+    { label: "Users", path: "/admin/user", icon: <PeopleIcon fontSize="small" /> },
+    { label: "Jobs", path: "/admin/jobs", icon: <WorkIcon fontSize="small" /> },
+    { label: "Companies", path: "/admin/employer", icon: <BusinessIcon fontSize="small" /> },
+    { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon fontSize="small" /> },
+    { label: "Audit", path: "/audit", icon: <FactCheckIcon fontSize="small" /> },
+  ];
+
   const handleOpenSettings = (event) => {
     setSettingsAnchor(event.currentTarget);
   };
@@ -191,11 +222,11 @@ export default function Topbar() {
       { label: t('home'), path: "/", icon: <HomeIcon /> },
       { label: t('dashboard'), path: "/admin/dashboard", icon: <DashboardIcon /> },
       { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
-      { label: t('users'), path: "/admin/user", icon: <PeopleIcon /> },
-      { label: t('jobs'), path: "/admin/jobs", icon: <PersonIcon /> },
-      { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon /> },
-      { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon /> },
-      { label: t('audit'), path: "/audit", icon: <FactCheckIcon /> },
+      // { label: t('users'), path: "/admin/user", icon: <PeopleIcon /> },
+      // { label: t('jobs'), path: "/admin/jobs", icon: <PersonIcon /> },
+      // { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon /> },
+      // { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon /> },
+      // { label: t('audit'), path: "/audit", icon: <FactCheckIcon /> },
     ],
     2: [
       { label: t('home'), path: "/", icon: <HomeIcon /> },
@@ -310,7 +341,11 @@ export default function Topbar() {
     if (isSettingsActive) {
       setOpenDrawerSettings(true);
     }
-  }, [isSettingsActive]);
+
+    if (isManagementActive) {
+      setOpenDrawerManagement(true);
+    }
+  }, [isSettingsActive, isManagementActive]);
 
   /* =====================
      Login
@@ -708,6 +743,60 @@ export default function Topbar() {
               />
             </ListItemButton>
           ))}
+
+          {/* ✅ DESKTOP MANAGEMENT */}
+          {access_token && user_type === 1 && (
+            <>
+              <Button
+                onClick={handleOpenManagement}
+                startIcon={<Settings />}
+                sx={{
+                  fontWeight: 500,
+                  color: "teal",
+                  textTransform: "none",
+                  position: "relative",
+
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    width: isManagementActive ? "100%" : "0%",
+                    height: "2px",
+                    bottom: 0,
+                    left: 0,
+                    backgroundColor: "#00B0FF",
+                    transition: "width 0.3s",
+                  },
+                }}
+              >
+                Management
+              </Button>
+
+              <Menu
+                anchorEl={managementAnchor}
+                open={openManagement}
+                onClose={handleCloseManagement}
+              >
+                {[
+                  { label: "Users", path: "/admin/user" },
+                  { label: "Jobs", path: "/admin/jobs" },
+                  { label: "Companies", path: "/admin/employer" },
+                  { label: "Candidates", path: "/admin/candidate" },
+                  { label: "Audit", path: "/audit" },
+                ].map((item) => (
+                  <MenuItem
+                    key={item.path}
+                    selected={location.pathname.startsWith(item.path)}
+                    onClick={() => {
+                      goTo(item.path);
+                      handleCloseManagement();
+                    }}
+                  >
+                    {item.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
 
           {/* ✅ SETTINGS (Admin only) */}
           {access_token && user_type === 1 && (
@@ -1264,6 +1353,36 @@ export default function Topbar() {
                 </Button>
               ))}
 
+              {/* Management */}
+              {access_token && user_type === 1 && (
+                <Button
+                  onClick={handleOpenManagement}
+                  startIcon={<Settings />}
+                  sx={{
+                    fontWeight: 500,
+                    color: "teal",
+                    textTransform: "none",
+                    position: "relative",
+
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      width: isSettingsActive ? "100%" : "0%",
+                      height: "2px",
+                      bottom: 0,
+                      left: 0,
+                      backgroundColor: "#00B0FF",
+                      transition: "width 0.3s",
+                    },
+                    "&:hover::after": {
+                      width: "100%",
+                    },
+                  }}
+                >
+                  {"Management"}
+                </Button>
+              )}
+
               {/* ⚙️ SETTINGS  */}
               {access_token && user_type === 1 && (
                 <Button
@@ -1529,6 +1648,69 @@ export default function Topbar() {
           )}
         </Toolbar>
 
+        {/* management menu */}
+        <Menu
+          anchorEl={managementAnchor}
+          open={openManagement}
+          onClose={handleCloseManagement}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          PaperProps={{
+            sx: {
+              width: 250,
+              borderRadius: 2,
+              mt: 1,
+            },
+          }}
+        >
+          <MenuItem disabled sx={{ fontWeight: 600 }}>
+            Management
+          </MenuItem>
+
+          <Divider />
+
+          {MANAGEMENT_ITEMS.map((item) => {
+            const isActive = location.pathname.startsWith(item.path);
+
+            return (
+              <MenuItem
+                key={item.path}
+                selected={isActive}
+                onClick={() => {
+                  navigate(item.path);
+                  handleCloseManagement();
+                }}
+                sx={{
+                  borderRadius: 1,
+                  mx: 1,
+                  my: 0.5,
+                  ...(isActive && {
+                    bgcolor: "primary.main",
+                    color: "white",
+                    "& .MuiListItemIcon-root": {
+                      color: "white",
+                    },
+                    "&:hover": {
+                      bgcolor: "primary.dark",
+                    },
+                  }),
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    color: isActive ? "white" : "primary.main",
+                    minWidth: 36,
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+
+                {item.label}
+              </MenuItem>
+            );
+          })}
+        </Menu>
+
         <Menu
           anchorEl={settingsAnchor}
           open={openSettings}
@@ -1682,8 +1864,8 @@ export default function Topbar() {
             />
 
             {/* Robot Section with Smooth Collapse */}
-            <Collapse in={showRobotCheck} sx={{border: "2px solid rgba(0,0,0,0.1)", borderRadius: 2}}>
-              <Box sx={{ p:1,  bgcolor: "grey.50", borderRadius: 2 }}>
+            <Collapse in={showRobotCheck} sx={{ border: "2px solid rgba(0,0,0,0.1)", borderRadius: 2 }}>
+              <Box sx={{ p: 1, bgcolor: "grey.50", borderRadius: 2 }}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   {t("security_check")}
                 </Typography>
