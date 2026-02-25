@@ -281,26 +281,24 @@ async def forward_message_to_rooms(
     current_user_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db)
 ):
-    current_user = db.query(User).filter(
-        User.pk_id == current_user_id
-    ).first()
+    current_user = db.query(User).filter(User.pk_id == current_user_id).first()
     if not current_user:
         raise HTTPException(404, "User not found")
 
-    original_msg = db.query(ChatMessage).filter(
-        ChatMessage.id == request.message_id
-    ).first()
+    original_msg = db.query(ChatMessage).filter(ChatMessage.id == request.message_id).first()
     if not original_msg:
         raise HTTPException(404, "Message not found")
 
-    rooms = db.query(ChatRoom).filter(
-        ChatRoom.id.in_(request.target_room_ids)
-    ).all()
+    rooms = db.query(ChatRoom).filter(ChatRoom.id.in_(request.target_room_ids)).all()
     if not rooms:
         raise HTTPException(404, "No target room found")
-    
-    if room.is_blocked:
-        raise HTTPException(403, "Cannot sent message because this chat is blocked.")
+
+    blocked_rooms = [room.id for room in rooms if room.is_blocked]
+    if blocked_rooms:
+        raise HTTPException(
+            403,
+            f"Cannot send message because the following rooms are blocked: {blocked_rooms}"
+        )
 
     payloads = await forward_message(
         db=db,
@@ -323,6 +321,7 @@ def get_chat_list_without_current(
         db.query(ChatRoom)
         .filter(
             ChatRoom.id != current_room_id,
+            ChatRoom.is_blocked == False,
             (
                 (ChatRoom.candidate_user_id == current_user_id) |
                 (ChatRoom.employer_user_id == current_user_id)
@@ -344,7 +343,7 @@ def get_chat_list_without_current(
         {
             "room_id": room.id,
             "username": (
-                room.employer.username
+                room.employer_user.user_name
                 if room.candidate_user_id == current_user_id
                 else room.candidate_user.user_name
             ),
@@ -706,6 +705,7 @@ def get_user_shared_media(
     current_user_id: int = Depends(verify_access_token),
     limit: int = Query(50, ge=1, le=200),
     cursor: Optional[datetime] = Query(None),
+    type: Optional[str] = Query(None)  # 'media', 'voice', 'file'
 ):
     room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
     if not room:
@@ -714,31 +714,22 @@ def get_user_shared_media(
     if current_user_id not in [room.candidate_user_id, room.employer_user_id]:
         raise HTTPException(status_code=403, detail="Not authorized to access this room")
 
-    query = (
-        db.query(ChatMessage)
-        .filter(
-            ChatMessage.room_id == room_id,
-            ChatMessage.type.in_([
-                MessageType.IMAGE,
-                MessageType.VIDEO,
-                MessageType.FILE,
-                MessageType.VOICE
-            ])
-        )
-    )
+    query = db.query(ChatMessage).filter(ChatMessage.room_id == room_id)
+
+    # Filter by type
+    if type == "media":
+        query = query.filter(ChatMessage.type.in_([MessageType.IMAGE, MessageType.VIDEO]))
+    elif type == "voice":
+        query = query.filter(ChatMessage.type == MessageType.VOICE)
+    elif type == "file":
+        query = query.filter(ChatMessage.type == MessageType.FILE)
 
     if cursor:
         query = query.filter(ChatMessage.created_at < cursor)
 
-    messages = (
-        query
-        .order_by(ChatMessage.created_at.desc())
-        .limit(limit + 1)
-        .all()
-    )
+    messages = query.order_by(ChatMessage.created_at.desc()).limit(limit + 1).all()
 
     has_more = len(messages) > limit
-
     if has_more:
         messages = messages[:limit]
 

@@ -1,4 +1,3 @@
-
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
     Avatar,
@@ -25,6 +24,7 @@ import ChatFile from '../ChatFile';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import BackHandIcon from '@mui/icons-material/BackHand';
 import BlockIcon from '@mui/icons-material/Block';
+import MediaPreviewDialog from './MediaPreviewDialog';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -34,10 +34,9 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
     const [anchorEl, setAnchorEl] = useState(null);
-    const [previewMedia, setPreviewMedia] = useState(null);
+    const [previewIndex, setPreviewIndex] = useState(null);
 
     const LIMIT = 10;
-
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [cursor, setCursor] = useState(null);
@@ -48,40 +47,42 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [actionType, setActionType] = useState('block');
 
+    const TAB_TYPES = ['media', 'voice', 'file'];
+    const activeTypeRef = useRef(TAB_TYPES[0]);
+
     const loadSharedMedia = async (reset = false) => {
         if (loading || loadingMore) return;
+
+        const type = activeTypeRef.current;
 
         try {
             if (reset) {
                 setLoading(true);
                 setCursor(null);
                 setHasMore(true);
+                setMessages([]);
             } else {
                 setLoadingMore(true);
             }
 
-            const response = await api.get(
-                `/chat/rooms/${roomId}/shared-media`,
-                {
-                    params: {
-                        limit: LIMIT,
-                        cursor: reset ? null : cursor,
-                    },
-                }
-            );
+            const response = await api.get(`/chat/rooms/${roomId}/shared-media`, {
+                params: {
+                    limit: LIMIT,
+                    cursor: reset ? null : cursor,
+                    type,
+                },
+            });
 
-            const { data, nextCursor } = response.data;
+            const { data = [], nextCursor, hasMore: backendHasMore } = response.data;
 
-            setMessages(prev =>
-                reset ? data : [...prev, ...data]
-            );
-
+            setMessages(prev => reset ? data : [...prev, ...data]);
             setCursor(nextCursor);
-            setHasMore(Boolean(nextCursor));
+            setHasMore(backendHasMore);
 
         } catch (err) {
             console.error("Failed to load shared media", err);
             setErrorMsg("Could not load shared media");
+            setHasMore(false);
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -97,11 +98,10 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
             return;
         }
 
+        activeTypeRef.current = TAB_TYPES[tabValue];
         loadSharedMedia(true);
 
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = 0;
-        }
+        if (scrollRef.current) scrollRef.current.scrollTop = 0;
     }, [open, roomId]);
 
     useEffect(() => {
@@ -114,7 +114,8 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                     entries[0].isIntersecting &&
                     hasMore &&
                     !loadingMore &&
-                    !loading
+                    !loading &&
+                    scrollRef.current.scrollHeight > scrollRef.current.clientHeight
                 ) {
                     loadSharedMedia();
                 }
@@ -126,45 +127,17 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
         );
 
         observer.observe(target);
-
         return () => observer.disconnect();
     }, [hasMore, loadingMore, loading]);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
+        activeTypeRef.current = TAB_TYPES[newValue];
+        loadSharedMedia(true);
     };
 
-    const { mediaMessages, voiceMessages, fileMessages } = useMemo(() => {
-        const media = [];
-        const voice = [];
-        const file = [];
-
-        for (const m of messages) {
-            if (!m.file_url) continue;
-
-            if (m.type === 'image' || m.type === 'video') {
-                media.push(m);
-            } else if (m.type === 'voice') {
-                voice.push(m);
-            } else if (m.type === 'file') {
-                file.push(m);
-            }
-        }
-
-        return {
-            mediaMessages: media,
-            voiceMessages: voice,
-            fileMessages: file,
-        };
-    }, [messages]);
-
-    const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setAnchorEl(null);
-    };
+    const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+    const handleMenuClose = () => setAnchorEl(null);
 
     const handleBlockClick = () => {
         if (blockMessage?.is_blocked) {
@@ -185,6 +158,25 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
         handleMenuClose();
         onClose();
     };
+
+    const filteredMedia = useMemo(
+        () => messages.filter(msg => msg.type === 'image' || msg.type === 'video' || msg.type === 'voice' || msg.type === 'file'),
+        [messages]
+    );
+
+    const openPreview = (index) => {
+        setPreviewIndex(index);
+    };
+
+    const closePreview = () => setPreviewIndex(null);
+
+    const showPrev = () => {
+        if (previewIndex > 0) setPreviewIndex(previewIndex - 1);
+    };
+
+    const showNext = () => {
+        if (previewIndex < filteredMedia.length - 1) setPreviewIndex(previewIndex + 1);
+    };;
 
     return (
         <>
@@ -216,40 +208,24 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                             </IconButton>
                         )}
 
-                        <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl)}
-                            onClose={handleMenuClose}
-                        >
-                            <MenuItem
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleBlockClick();
-                                }}
-                                sx={{ color: 'error.main' }}
-                            >
+                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                            <MenuItem onClick={(e) => { e.stopPropagation(); handleBlockClick(); }} sx={{ color: 'error.main' }}>
                                 <ListItemIcon>
                                     {!blockMessage?.is_blocked ? (
-                                        <BackHandIcon fontSize="small" sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }} />
+                                        <BackHandIcon fontSize="small" sx={{ color: 'error.main' }} />
                                     ) : (
-                                        <BlockIcon fontSize="small" sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }} />
+                                        <BlockIcon fontSize="small" sx={{ color: 'black' }} />
                                     )}
                                 </ListItemIcon>
-                                <ListItemText sx={{ color: blockMessage?.is_blocked ? 'black' : 'error.main' }}>{blockMessage?.is_blocked ? 'Unblock user' : 'Block user'}</ListItemText>
+                                <ListItemText sx={{ color: !blockMessage?.is_blocked ? 'error.main' : 'black' }}>
+                                    {blockMessage?.is_blocked ? 'Unblock user' : 'Block user'}
+                                </ListItemText>
                             </MenuItem>
                         </Menu>
                     </Box>
                 </DialogTitle>
 
-                <DialogContent
-                    ref={scrollRef}
-                    sx={{
-                        px: 2,
-                        pb: 3,
-                        maxHeight: 500,
-                        overflowY: 'auto',
-                    }}
-                >
+                <DialogContent ref={scrollRef} sx={{ px: 2, pb: 3, maxHeight: 500, overflowY: 'auto' }}>
                     <Tabs
                         value={tabValue}
                         onChange={handleTabChange}
@@ -271,75 +247,26 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                         </Typography>
                     ) : (
                         <>
-                            {/* TAB CONTENT */}
                             {tabValue === 0 && (
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                                        gap: 1.5,
-                                    }}
-                                >
-                                    {mediaMessages.length === 0 ? (
-                                        <Typography
-                                            color="text.secondary"
-                                            align="center"
-                                            sx={{ gridColumn: '1 / -1', py: 8 }}
-                                        >
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 1.5 }}>
+                                    {messages.length === 0 ? (
+                                        <Typography color="text.secondary" align="center" sx={{ gridColumn: '1 / -1', py: 8 }}>
                                             No images or videos shared yet
                                         </Typography>
                                     ) : (
-                                        mediaMessages.map((msg) => (
+                                        messages.map(msg => (
                                             <Box
                                                 key={msg.id}
-                                                sx={{
-                                                    position: 'relative',
-                                                    aspectRatio: '1',
-                                                    borderRadius: 2,
-                                                    overflow: 'hidden',
-                                                    bgcolor: 'grey.100',
-                                                    cursor: 'pointer',
-                                                    mb: 1,
-                                                }}
-                                                onClick={() => setPreviewMedia(msg)}
+                                                sx={{ position: 'relative', aspectRatio: '1', borderRadius: 2, overflow: 'hidden', bgcolor: 'grey.100', cursor: 'pointer', mb: 1 }}
+                                                onClick={() => openPreview(filteredMedia.findIndex(m => m.id === msg.id))}
                                             >
                                                 {msg.type === 'video' ? (
                                                     <>
-                                                        <video
-                                                            src={`${BASE_URL}${msg.file_url}`}
-                                                            muted
-                                                            loop
-                                                            playsInline
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '100%',
-                                                                objectFit: 'cover',
-                                                            }}
-                                                        />
-                                                        <PlayArrowIcon
-                                                            sx={{
-                                                                position: 'absolute',
-                                                                top: '50%',
-                                                                left: '50%',
-                                                                transform: 'translate(-50%, -50%)',
-                                                                color: 'white',
-                                                                fontSize: 48,
-                                                                opacity: 0.8,
-                                                                pointerEvents: 'none',
-                                                            }}
-                                                        />
+                                                        <video src={`${BASE_URL}${msg.file_url}`} muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <PlayArrowIcon sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', fontSize: 48, opacity: 0.8, pointerEvents: 'none' }} />
                                                     </>
                                                 ) : (
-                                                    <img
-                                                        src={`${BASE_URL}${msg.file_url}`}
-                                                        alt="chat media"
-                                                        loading="lazy"
-                                                        style={{
-                                                            width: '100%',
-                                                            height: '100%',
-                                                            objectFit: 'cover',
-                                                        }}
-                                                    />
+                                                    <img src={`${BASE_URL}${msg.file_url}`} alt="chat media" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 )}
                                             </Box>
                                         ))
@@ -349,45 +276,14 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
 
                             {tabValue === 1 && (
                                 <Box sx={{ px: 1 }}>
-                                    {voiceMessages.length === 0 ? (
-                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
-                                            No voice messages yet
-                                        </Typography>
+                                    {messages.length === 0 ? (
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>No voice messages yet</Typography>
                                     ) : (
-                                        voiceMessages.map((msg) => {
+                                        messages.map(msg => {
                                             const isOwn = currentUserId === msg.sender_id;
                                             return (
-                                                <Box key={msg.id}
-                                                    sx={{
-                                                        px: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
-                                                        py: msg.type === 'image' || msg.type === 'video' ? 0 : 1,
-                                                        bgcolor:
-                                                            msg.type === 'image' || msg.type === 'video'
-                                                                ? 'transparent'
-                                                                : isOwn
-                                                                    ? 'primary.main'
-                                                                    : 'grey.100',
-                                                        boxShadow: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
-                                                        color: isOwn ? 'white' : 'text.primary',
-                                                        borderRadius: 2,
-                                                        '&:hover': {
-                                                            bgcolor:
-                                                                msg.type === 'image' || msg.type === 'video'
-                                                                    ? 'transparent'
-                                                                    : isOwn
-                                                                        ? '#1f62a5ff'
-                                                                        : 'grey.200',
-                                                            transition: 'transform 0.2s ease',
-                                                        },
-                                                        position: 'relative',
-                                                        overflow: 'hidden',
-                                                        mb: 1
-                                                    }}
-                                                >
-                                                    <VoiceMessagePlayer
-                                                        url={`${BASE_URL}${msg.file_url}`}
-                                                        isOwn={isOwn}
-                                                    />
+                                                <Box key={msg.id} sx={{ px: 2, py: 1, bgcolor: isOwn ? 'primary.main' : 'grey.100', boxShadow: 2, color: isOwn ? 'white' : 'text.primary', borderRadius: 2, mb: 1 }}>
+                                                    <VoiceMessagePlayer url={`${BASE_URL}${msg.file_url}`} isOwn={isOwn} />
                                                 </Box>
                                             )
                                         })
@@ -397,47 +293,16 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
 
                             {tabValue === 2 && (
                                 <Box sx={{ px: 1 }}>
-                                    {fileMessages.length === 0 ? (
-                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>
-                                            No files shared yet
-                                        </Typography>
+                                    {messages.length === 0 ? (
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>No files shared yet</Typography>
                                     ) : (
-                                        fileMessages.map((msg) => {
+                                        messages.map(msg => {
                                             const isOwn = currentUserId === msg.sender_id;
                                             return (
-                                                <Box key={msg.id}
-                                                    sx={{
-                                                        px: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
-                                                        py: msg.type === 'image' || msg.type === 'video' ? 0 : 1,
-                                                        bgcolor:
-                                                            msg.type === 'image' || msg.type === 'video'
-                                                                ? 'transparent'
-                                                                : isOwn
-                                                                    ? 'primary.main'
-                                                                    : 'grey.100',
-                                                        boxShadow: msg.type === 'image' || msg.type === 'video' ? 0 : 2,
-                                                        color: isOwn ? 'white' : 'text.primary',
-                                                        borderRadius: 2,
-                                                        '&:hover': {
-                                                            bgcolor:
-                                                                msg.type === 'image' || msg.type === 'video'
-                                                                    ? 'transparent'
-                                                                    : isOwn
-                                                                        ? '#1f62a5ff'
-                                                                        : 'grey.200',
-                                                            transition: 'transform 0.2s ease',
-                                                        },
-                                                        position: 'relative',
-                                                        overflow: 'hidden',
-                                                        mb: 1
-                                                    }}
-                                                >
-                                                    <ChatFile
-                                                        fileUrl={`${BASE_URL}${msg.file_url}`}
-                                                        isOwn={isOwn}
-                                                    />
+                                                <Box key={msg.id} sx={{ px: 2, py: 1, bgcolor: isOwn ? 'primary.main' : 'grey.100', boxShadow: 2, color: isOwn ? 'white' : 'text.primary', borderRadius: 2, mb: 1 }}>
+                                                    <ChatFile fileUrl={`${BASE_URL}${msg.file_url}`} isOwn={isOwn} />
                                                 </Box>
-                                            );
+                                            )
                                         })
                                     )}
                                 </Box>
@@ -453,43 +318,27 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                     <Box ref={loadMoreRef} />
                 </DialogContent>
             </Dialog>
-            {previewMedia && (
-                <Dialog
-                    open={Boolean(previewMedia)}
-                    onClose={() => setPreviewMedia(null)}
-                    maxWidth="md"
-                    fullWidth
-                >
-                    {previewMedia?.type === 'video' ? (
-                        <video
-                            src={`${BASE_URL}${previewMedia.file_url}`}
-                            controls
-                            autoPlay
-                            style={{ width: '100%' }}
-                        />
-                    ) : (
-                        <img
-                            src={`${BASE_URL}${previewMedia.file_url}`}
-                            alt="preview"
-                            style={{ width: '100%' }}
-                        />
-                    )}
-                </Dialog>
+
+            {previewIndex !== null && (
+                <MediaPreviewDialog
+                    open={previewIndex !== null}
+                    onClose={closePreview}
+                    mediaMessages={filteredMedia}
+                    currentIndex={previewIndex}
+                    onPrev={showPrev}
+                    onNext={showNext}
+                    BASE_URL={BASE_URL}
+                />
             )}
+
             <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-                <DialogTitle>
-                    {actionType === 'block' ? 'Block User' : 'Unblock User'}
-                </DialogTitle>
+                <DialogTitle>{actionType === 'block' ? 'Block User' : 'Unblock User'}</DialogTitle>
                 <DialogContent>
                     Are you sure you want to {actionType} {user?.username || 'this user'}?
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmOpen(false)} color="primary">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleConfirm} color="error">
-                        {actionType === 'block' ? 'Block' : 'Unblock'}
-                    </Button>
+                    <Button onClick={() => setConfirmOpen(false)} color="primary">Cancel</Button>
+                    <Button onClick={handleConfirm} color="error">{actionType === 'block' ? 'Block' : 'Unblock'}</Button>
                 </DialogActions>
             </Dialog>
         </>
