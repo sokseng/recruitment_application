@@ -18,8 +18,10 @@ import {
 import { Visibility, Download } from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 const AdminCandidate = () => {
+    const { t } = useTranslation();
     const [candidates, setCandidates] = useState([]);
 
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -38,7 +40,7 @@ const AdminCandidate = () => {
             const res = await api.get("/admin/candidates");
             setCandidates(res.data || []);
         } catch (err) {
-            setMessage("Failed to fetch candidates");
+            setMessage(t('fetch_candidates_failed'));
             setSeverity("error");
             setOpenSnackbar(true);
         }
@@ -74,7 +76,7 @@ const AdminCandidate = () => {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            setMessage("Download failed");
+            setMessage(t('download_failed'));
             setSeverity("error");
             setOpenSnackbar(true);
         }
@@ -115,7 +117,7 @@ const AdminCandidate = () => {
             setFileType(contentType);
             setViewFileOpen(true);
         } catch (err) {
-            setMessage("Unable to view file");
+            setMessage(t('view_file_failed'));
             setSeverity("error");
             setOpenSnackbar(true);
         }
@@ -123,12 +125,12 @@ const AdminCandidate = () => {
 
     /* ================= Columns ================= */
     const columns = [
-        { field: "created_date", headerName: "Create Date", flex: 1.2 },
-        { field: "user_name", headerName: "Candidate", flex: 1.5 },
-        { field: "email", headerName: "Email", flex: 2 },
+        { field: "created_date", headerName: t('create_date'), flex: 1.2 },
+        { field: "user_name", headerName: t('candidate'), flex: 1.5 },
+        { field: "email", headerName: t('email'), flex: 2 },
         {
             field: "primary_resume",
-            headerName: "Primary CV",
+            headerName: t('primary_cv'),
             flex: 1.5,
             renderCell: ({ row }) =>
                 row.primary_resume ? (
@@ -143,23 +145,23 @@ const AdminCandidate = () => {
         },
         {
             field: "is_active",
-            headerName: "Status",
+            headerName: t('status'),
             minWidth: 120,
             renderCell: ({ row }) => (
                 <Chip
                     size="small"
-                    label={row.is_active ? "Active" : "Inactive"}
+                    label={row.is_active ? t('active') : t('inactive')}
                     color={row.is_active ? "success" : "default"}
                 />
             ),
         },
         {
             field: "actions",
-            headerName: "Actions",
+            headerName: t('actions'),
             minWidth: 160,
             renderCell: ({ row }) => (
                 <Stack direction="row" spacing={1}>
-                    <Tooltip title="View Resume">
+                    <Tooltip title={t('view_resume')}>
                         <span>
                             <IconButton
                                 size="small"
@@ -177,7 +179,7 @@ const AdminCandidate = () => {
                         </span>
                     </Tooltip>
 
-                    <Tooltip title="Download Resume">
+                    <Tooltip title={t('download_resume')}>
                         <span>
                             <IconButton
                                 size="small"
@@ -275,7 +277,7 @@ const AdminCandidate = () => {
 
                 <DialogActions sx={{ py: 0.5 }}>
                     <Button size="small" onClick={() => setViewFileOpen(false)}>
-                        Close
+                        {t('close')}
                     </Button>
                 </DialogActions>
             </Dialog>

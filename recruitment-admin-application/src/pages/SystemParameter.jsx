@@ -11,8 +11,10 @@ import {
 import SaveIcon from "@mui/icons-material/Save";
 import { DataGrid } from "@mui/x-data-grid";
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 const SystemParameters = () => {
+    const { t } = useTranslation();
     const [systemParameters, setSystemParameters] = useState([]);
     const [saving, setSaving] = useState(false);
     const originalDataRef = useRef([]);
@@ -93,7 +95,7 @@ const SystemParameters = () => {
     const columns = [
         {
             field: "name",
-            headerName: "Name",
+            headerName: t('name'),
             flex: 2,
             filterable: false,
             valueGetter: (value) =>
@@ -101,7 +103,7 @@ const SystemParameters = () => {
         },
         {
             field: "value",
-            headerName: "Value",
+            headerName: t('value'),
             width: 220,
             editable: true,
             renderCell: (params) => {
@@ -154,8 +156,16 @@ const SystemParameters = () => {
                 />
             ),
         },
-        { field: "type", headerName: "Type", flex: 1 },
-        { field: "category", headerName: "Category", flex: 1 },
+        {
+            field: "type",
+            headerName: t('type'),
+            flex: 1,
+        },
+        {
+            field: "category",
+            headerName: t('category'),
+            flex: 1,
+        },
     ];
 
     return (
@@ -184,7 +194,7 @@ const SystemParameters = () => {
                         fontWeight: 600,
                     }}
                 >
-                    {saving ? "Saving..." : "Save"}
+                    {saving ? t('saving') : t('save')}
                 </Button>
             </Stack>
 

@@ -21,6 +21,7 @@ import AddIcon from "@mui/icons-material/Add";
 import api from "../services/api";
 import UserDialog from "./UserDialog";
 import { Edit } from "@mui/icons-material";
+import { useTranslation } from 'react-i18next';
 
 /* ================= Role Meta ================= */
 const ROLE_META = {
@@ -30,6 +31,7 @@ const ROLE_META = {
 };
 
 const AdminUsers = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -54,7 +56,7 @@ const AdminUsers = () => {
       const pk_id = selectedEmployer.pk_id;
       await api.put(`/user/approve/${pk_id}`);
 
-      setMessage("Employer approved successfully");
+      setMessage(t('employer_approved_success'));
       setSeverity("success");
       setOpenSnackbar(true);
       setOpenApproveDialog(false);
@@ -94,19 +96,19 @@ const AdminUsers = () => {
         await api.delete("/user/delete", {
           data: { ids: [selectedUser.pk_id] },
         });
-        setMessage("User disabled successfully");
+        setMessage(t('user_disabled_success'));
       } else {
         await api.delete("/user/enable", {
           data: { ids: [selectedUser.pk_id] },
         });
-        setMessage("User enabled successfully");
+        setMessage(t('user_enabled_success'));
       }
 
       setSeverity("success");
       fetchUsers();
     } catch (err) {
       setSeverity("error");
-      setMessage(err.response?.data?.detail || `Failed to ${actionType} user`);
+      setMessage(err.response?.data?.detail || t('user_action_failed', { action: actionType }));
     } finally {
       setOpenSnackbar(true);
       setConfirmDialogOpen(false);
@@ -184,28 +186,28 @@ const AdminUsers = () => {
   const columns = [
     {
       field: "user_name",
-      headerName: "User Name",
+      headerName: t('user_name'),
       flex: 1.5,
       minWidth: 150,
       sortable: true,
     },
     {
       field: "email",
-      headerName: "Email",
+      headerName: t('email'),
       flex: 1.5,
       minWidth: 200,
       sortable: true,
     },
     {
       field: "phone",
-      headerName: "Phone",
+      headerName: t('phone'),
       flex: 1.5,
       minWidth: 100,
       sortable: true,
     },
     {
       field: "user_type",
-      headerName: "User Type",
+      headerName: t('user_type'),
       flex: 1,
       minWidth: 140,
       renderCell: ({ row }) => {
@@ -237,7 +239,7 @@ const AdminUsers = () => {
 
     {
       field: "status",
-      headerName: "Active Status",
+      headerName: t('active_status'),
       flex: 1,
       minWidth: 120,
       renderCell: ({ row }) => {
@@ -256,7 +258,7 @@ const AdminUsers = () => {
           >
             <Chip
               size="small"
-              label={isActive ? "Active" : "Inactive"}
+              label={isActive ? t('active') : t('inactive')}
               sx={{
                 fontWeight: 600,
                 fontSize: 12,
@@ -281,7 +283,7 @@ const AdminUsers = () => {
 
     {
       field: "approved",
-      headerName: "Approval",
+      headerName: t('approval'),
       flex: 1,
       minWidth: 160,
       sortable: false,
@@ -310,7 +312,7 @@ const AdminUsers = () => {
             {/* Status Chip */}
             <Chip
               size="small"
-              label={isApproved ? "Approved" : "Pending"}
+              label={isApproved ? t('approved') : t('pending')}
               sx={{
                 fontWeight: 600,
                 fontSize: 12,
@@ -334,7 +336,7 @@ const AdminUsers = () => {
 
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: t('actions'),
       sortable: false,
       align: "center",
       headerAlign: "center",
@@ -347,7 +349,7 @@ const AdminUsers = () => {
             justifyContent: "center",
           }}
         >
-          <Tooltip title="Edit">
+          <Tooltip title={t('edit')}>
             <IconButton
               size="small"
               onClick={() => {
@@ -379,12 +381,11 @@ const AdminUsers = () => {
       >
         <Box sx={{ p: 3 }}>
           <Typography variant="h6" fontWeight={600}>
-            Approve Employer
+            {t('approve_employer')}
           </Typography>
 
           <Typography sx={{ mt: 1, color: "text.secondary" }}>
-            Are you sure you want to approve{" "}
-            <strong>{selectedEmployer?.user_name}</strong>?
+            {t('confirm_approve_message', { name: selectedEmployer?.user_name })}
           </Typography>
 
           <Stack direction="row" spacing={1.5} justifyContent="flex-end" mt={3}>
@@ -394,7 +395,7 @@ const AdminUsers = () => {
               sx={{ textTransform: "none" }}
               onClick={() => setOpenApproveDialog(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
@@ -404,7 +405,7 @@ const AdminUsers = () => {
               sx={{ textTransform: "none" }}
               onClick={handleApprove}
             >
-              Approve
+              {t('approve')}
             </Button>
           </Stack>
         </Box>
@@ -446,7 +447,7 @@ const AdminUsers = () => {
               setOpen(true);
             }}
           >
-            Create User
+            {t('create_user')}
           </Button>
         </Stack>
 
@@ -503,14 +504,14 @@ const AdminUsers = () => {
           onClose={() => setConfirmDialogOpen(false)}
         >
           <DialogTitle>
-            Confirm {actionType === "disable" ? "Disable" : "Enable"}
+            {actionType === "disable" ? t('confirm_disable') : t('confirm_enable')}
           </DialogTitle>
 
           <DialogContent>
             <Typography>
-              Are you sure you want to{" "}
-              <strong>{actionType === "disable" ? "disable" : "enable"}</strong>{" "}
-              <strong>{selectedUser?.user_name}</strong>?
+              {actionType === "disable" 
+                ? t('confirm_disable_message', { name: selectedUser?.user_name })
+                : t('confirm_enable_message', { name: selectedUser?.user_name })}
             </Typography>
           </DialogContent>
 
@@ -522,7 +523,7 @@ const AdminUsers = () => {
               variant="outlined"
               sx={{ textTransform: "none" }}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
@@ -532,7 +533,7 @@ const AdminUsers = () => {
               size="small"
               color={actionType === "disable" ? "error" : "success"}
             >
-              {actionType === "disable" ? "Disable" : "Enable"}
+              {actionType === "disable" ? t('disable') : t('enable')}
             </Button>
           </DialogActions>
         </Dialog>
