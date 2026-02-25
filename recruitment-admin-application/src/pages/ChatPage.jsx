@@ -26,10 +26,11 @@ function getLastMessagePreview(chat, currentUserId) {
 
     switch (msg.type) {
         case "text": return msg.content || "";
-        case "image": return isMe ? "You sent an image" : `${chat.username} sent you an image`;
-        case "voice": return isMe ? "You sent a voice message" : `${chat.username} sent you a voice message`;
-        case "video": return isMe ? "You sent a video" : `${chat.username} sent you a video`;
-        case "file": return isMe ? "You sent a file" : `${chat.username} sent you a file`;
+        case "image": return isMe ? "You sent an image" : `Ssent you an image`;
+        case "voice": return isMe ? "You sent a voice message" : `Ssent you a voice`;
+        case "video": return isMe ? "You sent a video" : `Ssent you a video`;
+        case "file": return isMe ? "You sent a file" : `Sent you a file`;
+        case "call": return msg.content || "";
         case "system": return msg.content || "";
         default: return "New message";
     }
