@@ -682,51 +682,51 @@ export default function MyApplicationsToCompanies() {
 
                                 <CardContent sx={{ p: 3 }}>
                                     <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        {/* Avatar */}
-        <Avatar
-            sx={{
-                width: 54,
-                height: 54,
-                bgcolor: alpha(accent, 0.12),
-                color: accent,
-                border: `2px solid ${alpha(accent, 0.3)}`,
-                flexShrink: 0, // don't shrink avatar
-            }}
-        >
-            <WorkIcon />
-        </Avatar>
+                                        {/* Avatar */}
+                                        <Avatar
+                                            sx={{
+                                                width: 54,
+                                                height: 54,
+                                                bgcolor: alpha(accent, 0.12),
+                                                color: accent,
+                                                border: `2px solid ${alpha(accent, 0.3)}`,
+                                                flexShrink: 0, // don't shrink avatar
+                                            }}
+                                        >
+                                            <WorkIcon />
+                                        </Avatar>
 
-        {/* Job Title & Company */}
-        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Tooltip title={job.job_title || '—'} placement="top" arrow>
-                <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
-                    {job.job_title || '—'}
-                </Typography>
-            </Tooltip>
-            <Tooltip title={job.employer?.company_name || '—'} placement="top" arrow>
-                <Typography variant="body2" color="text.secondary" noWrap>
-                    {job.employer?.company_name || '—'}
-                </Typography>
-            </Tooltip>
-        </Box>
+                                        {/* Job Title & Company */}
+                                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                            <Tooltip title={job.job_title || '—'} placement="top" arrow>
+                                                <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
+                                                    {job.job_title || '—'}
+                                                </Typography>
+                                            </Tooltip>
+                                            <Tooltip title={job.employer?.company_name || '—'} placement="top" arrow>
+                                                <Typography variant="body2" color="text.secondary" noWrap>
+                                                    {job.employer?.company_name || '—'}
+                                                </Typography>
+                                            </Tooltip>
+                                        </Box>
 
-        {/* Chips */}
-        {app.cancelled && (
-            <Tooltip title="Cancelled" placement="top" arrow>
-                <Chip
-                    label="Cancelled"
-                    size="small"
-                    color="default"
-                    sx={{
-                        maxWidth: 100,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                    }}
-                />
-            </Tooltip>
-        )}
-    </Stack>
+                                        {/* Chips */}
+                                        {app.cancelled && (
+                                            <Tooltip title="Cancelled" placement="top" arrow>
+                                                <Chip
+                                                    label="Cancelled"
+                                                    size="small"
+                                                    color="default"
+                                                    sx={{
+                                                        maxWidth: 100,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        )}
+                                    </Stack>
 
                                     <Divider sx={{ my: 2, opacity: 0.5 }} />
 
