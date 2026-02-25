@@ -142,7 +142,7 @@ async def send_text_message(
 
     await manager.broadcast_to_user(
         receiver_id,
-        {"type": "unread_update", "counts": counts}
+        {"type": "unread_update", "counts": counts},
     )
 
     payload = jsonable_encoder(ChatMessageOut.from_orm(msg))

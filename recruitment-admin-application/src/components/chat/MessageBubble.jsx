@@ -25,8 +25,9 @@ import ForwardIcon from '@mui/icons-material/Forward';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import LinkPreview from './LinkPreview';
 
-function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall, isBlocked }) {
+function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall, isBlocked, scrollToMessage, highlightedMessageId }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -60,7 +61,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
             link.click();
             document.body.removeChild(link);
 
-            window.URL.revokeObjectURL(url); // free memory
+            window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Download failed:', err);
         }
@@ -91,6 +92,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
 
     return (
         <Box
+            id={`message-${message.id}`}
             sx={{
                 display: 'flex',
                 justifyContent: isOwn ? 'flex-end' : 'flex-start',
@@ -104,7 +106,8 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: isOwn ? 'flex-end' : 'flex-start',
-                    alignItems: isOwn ? 'end' : 'start'
+                    alignItems: isOwn ? 'end' : 'start',
+                    fontSize: 14
                 }}
             >
                 {message.forward_from && (
@@ -116,7 +119,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             mb: 0.5
                         }}
                     >
-                        <ForwardIcon />
+                        <ForwardIcon sx={{ fontSize: 18 }} />
                         forward from
                         {isForward ?
                             (
@@ -153,13 +156,16 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     sx={{
                         px: message.type === 'image' || message.type === 'video' ? 0 : 2,
                         py: message.type === 'image' || message.type === 'video' ? 0 : 1,
+                        transition: 'box-shadow 0.3s ease',
                         bgcolor:
                             message.type === 'image' || message.type === 'video'
                                 ? 'transparent'
                                 : isOwn
                                     ? 'primary.main'
                                     : 'grey.100',
-                        boxShadow: message.type === 'image' || message.type === 'video' ? 0 : 2,
+                        boxShadow: highlightedMessageId === message.id
+                            ? '0 0 0 3px rgba(255, 193, 7, 0.6)' :
+                            message.type === 'image' || message.type === 'video' ? 0 : 2,
                         color: isOwn ? 'white' : 'text.primary',
                         borderRadius: 2,
                         '&:hover': {
@@ -186,6 +192,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             reply={message.reply_to}
                             isOwn={isOwn}
                             isImage={message.type === 'image' || message.type === 'video'}
+                            onScroll={() => scrollToMessage?.(message.reply_to.id)}
                         />
                     )}
 
@@ -229,44 +236,92 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                     )}
 
                     {message.type === 'text' && (
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                textAlign: isOwn ? 'end' : 'start'
-                            }}
-                        >
-                            {message.content}
-                        </Typography>
+                        <>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: isOwn ? 'white' : 'gray',
+                                    whiteSpace: 'pre-line',
+                                    lineHeight: 1.2,
+                                    textAlign: isOwn ? 'end' : 'start',
+                                    fontSize: 14,
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {message.content.split('\n').map((line, lineIndex) => (
+                                    <span key={lineIndex}>
+                                        {line.split(/\s+/).map((word, i) => {
+                                            const urlRegex = /^(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+                                            if (urlRegex.test(word)) {
+                                                let href = word;
+                                                if (!/^https?:\/\//i.test(word)) {
+                                                    href = 'https://' + word;
+                                                }
+
+                                                return (
+                                                    <span key={i} style={{ display: 'inline-block', margin: '0 2px 2px 0' }}>
+                                                        <Link
+                                                            href={href}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
+                                                        >
+                                                            {word}
+                                                        </Link>
+
+                                                        <LinkPreview url={href} />
+                                                    </span>
+                                                );
+                                            }
+                                            return word + ' ';
+                                        })}
+                                        {lineIndex < message.content.split('\n').length - 1 && <br />}
+                                    </span>
+                                ))}
+                            </Typography>
+                        </>
                     )}
 
                     {message.type === 'system' && (
                         <Typography
                             variant="caption"
                             sx={{
-                                textAlign: 'center',
                                 fontStyle: 'italic',
                                 color: isOwn ? 'white' : 'gray',
                                 whiteSpace: 'pre-line',
                                 lineHeight: 1.2,
+                                textAlign: isOwn ? 'end' : 'start',
+                                fontSize: 14
                             }}
                         >
-                            {message.content
-                                .split(' ')
-                                .map((word, i) =>
-                                    word.startsWith('/') || word.startsWith('http') ? (
-                                        <Link
-                                            key={i}
-                                            href={word}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
-                                        >
-                                            {word}{' '}
-                                        </Link>
-                                    ) : (
-                                        word + ' '
-                                    )
-                                )}
+                            {message.content.split('\n').map((line, lineIndex) => (
+                                <span key={lineIndex}>
+                                    {line.split(/\s+/).map((word, i) => {
+                                        const urlRegex = /^(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+
+                                        if (urlRegex.test(word)) {
+                                            let href = word;
+                                            if (!/^https?:\/\//i.test(word)) {
+                                                href = 'https://' + word;
+                                            }
+                                            return (
+                                                <Link
+                                                    key={i}
+                                                    href={href}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    sx={{ color: isOwn ? 'orange' : 'primary.main', p: 0 }}
+                                                >
+                                                    {word}{' '}
+                                                </Link>
+                                            );
+                                        }
+
+                                        return word + ' ';
+                                    })}
+                                    {lineIndex < message.content.split('\n').length - 1 && <br />}
+                                </span>
+                            ))}
                         </Typography>
                     )}
 
@@ -328,11 +383,11 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     onStartCall();
                                 }}
                             >
-                                {isOwn ? 'Call again':'Call back'}
+                                {isOwn ? 'Call again' : 'Call back'}
                             </Button>
                         </Box>
                     )}
-                    
+
                     {message.type === 'image' && (
                         <ChatImage
                             src={`${BASE_URL}${message.file_url}`}
@@ -346,7 +401,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                             onRemoveReact={onRemoveReact}
                         />
                     )}
-                    
+
                     <IconButton
                         size="small"
                         sx={{

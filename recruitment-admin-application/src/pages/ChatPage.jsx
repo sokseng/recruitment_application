@@ -54,6 +54,7 @@ function ChatPage() {
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [reactionsData, setReactionsData] = useState({});
     const [blockMessage, setBlockMessage] = useState(null);
+    const [highlightedMessageId, setHighlightedMessageId] = useState(null);
 
     const LIMIT = 10;
     const CHAT_LIMIT = 20;
@@ -237,16 +238,24 @@ function ChatPage() {
         if (!roomId) return [];
 
         const currentOffset = reset ? 0 : offset;
-        const res = await api.get(`/chat/room/${roomId}/messages`, {
-            params: { limit: LIMIT, offset: currentOffset }
-        });
 
-        const newMessages = res.data;
-        if (newMessages.length < LIMIT) setHasMore(false);
-        if (reset) setOffset(LIMIT);
-        else setOffset(prev => prev + LIMIT);
+        try {
+            const res = await api.get(`/chat/room/${roomId}/messages`, {
+                params: { limit: LIMIT, offset: currentOffset },
+            });
 
-        return newMessages;
+            const newMessages = res.data;
+
+            if (newMessages.length < LIMIT) setHasMore(false);
+            else setHasMore(true);
+
+            setOffset(prev => (reset ? LIMIT : prev + newMessages.length));
+
+            return newMessages;
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
     };
 
     useEffect(() => {
@@ -599,6 +608,59 @@ function ChatPage() {
         }
     };
 
+    const scrollToMessage = async (messageId) => {
+        if (!messageId || !selectedChat) return;
+
+        const elementId = `message-${messageId}`;
+        let element = document.getElementById(elementId);
+
+        let reachedEnd = false;
+        let localOffset = 0;
+
+        while (!element && !reachedEnd) {
+            setLoadingOlder(true);
+
+            const prevScrollHeight = messagesRef.current?.scrollHeight || 0;
+
+            const res = await api.get(`/chat/room/${selectedChat.room_id}/messages`, {
+                params: { limit: LIMIT, offset: localOffset },
+            });
+
+            const newMessages = res.data;
+
+            if (newMessages.length === 0) {
+                reachedEnd = true;
+                break;
+            }
+
+            localOffset += newMessages.length;
+
+            setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const filtered = newMessages.filter(m => !existingIds.has(m.id));
+                return [...filtered, ...prev];
+            });
+
+            await new Promise(requestAnimationFrame);
+
+            element = document.getElementById(elementId);
+
+            if (messagesRef.current) {
+                messagesRef.current.scrollTop =
+                    messagesRef.current.scrollHeight - prevScrollHeight;
+            }
+
+            setLoadingOlder(false);
+        }
+
+        if (!element) return;
+
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        setHighlightedMessageId(messageId);
+        setTimeout(() => setHighlightedMessageId(null), 1500);
+    };
+
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
@@ -815,6 +877,8 @@ function ChatPage() {
                         reactionsData={reactionsData}
                         onStartCall={startCall}
                         blockMessage={blockMessage}
+                        scrollToMessage={scrollToMessage}
+                        highlightedMessageId={highlightedMessageId}
                     />
                 </Box>
             )}

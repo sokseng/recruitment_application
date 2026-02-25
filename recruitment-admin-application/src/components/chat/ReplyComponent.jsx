@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 
-function ReplyComponent({ reply, isOwn, isImage }) {
+function ReplyComponent({ reply, isOwn, isImage, onScroll }) {
     if (!reply) return null;
 
     const getPreviewText = () => {
@@ -36,7 +36,8 @@ function ReplyComponent({ reply, isOwn, isImage }) {
                 maxWidth: '100%',
             }}
             onClick={(e) => {
-                e.stopPropagation()
+                e.stopPropagation();
+                onScroll();
             }}
         >
             <Typography

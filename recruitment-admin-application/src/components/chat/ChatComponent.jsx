@@ -20,7 +20,6 @@ import DeleteDialog from './dialog/DeleteDialog';
 import ForwardDialog from './dialog/ForwardDialog';
 import MediaPreviewDialog from './dialog/MediaPreviewDialog';
 import PinnedMessageComponent from './PinnedMessageComponent';
-// import { useResumableUploads } from '../../hooks/useResumableUploads';
 
 const FILE_RULES = {
     image: { extensions: new Set(['jpg', 'jpeg', 'png', 'gif', 'webp']) },
@@ -31,7 +30,7 @@ const FILE_RULES = {
 
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
-function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall, blockMessage }) {
+function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall, blockMessage, scrollToMessage, highlightedMessageId }) {
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -442,6 +441,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                         setUploadingFiles(prev =>
                             prev.filter(f => f.id !== item.id)
                         );
+
+                        setSelectedFiles(prev => prev.filter(f => f !== item.file));
                     } catch (err) {
                         console.error(err);
                         setUploadingFiles(prev =>
@@ -787,7 +788,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 borderRadius: 0
                             }}
                         >
-                            <PinnedMessageComponent pinMessage={pinMessage} currentUserId={currentUserId} onUnpin={handleUnpinMessage} />
+                            <PinnedMessageComponent pinMessage={pinMessage} currentUserId={currentUserId} onUnpin={handleUnpinMessage} scrollToMessage={scrollToMessage} />
                         </Paper>
                     )}
                     <Box
@@ -861,6 +862,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         reactionsData={reactionsData}
                                         onRemoveReact={handleRemoveReact}
                                         onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
+                                        isBlocked={isBlocked}
+                                        scrollToMessage={scrollToMessage}
+                                        highlightedMessageId={highlightedMessageId}
                                     />
                                 )))}
 
@@ -884,6 +888,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     onRemoveReact={handleRemoveReact}
                                     onStartCall={() => { onStartCall(chat.room_id, 'video'); }}
                                     isBlocked={isBlocked}
+                                    scrollToMessage={scrollToMessage}
+                                    highlightedMessageId={highlightedMessageId}
                                 />
                             ))}
 
@@ -930,6 +936,10 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         const isImage = file.type.startsWith('image/');
                                         const url = isImage ? URL.createObjectURL(file) : null;
 
+                                        const uploadingFile = uploadingFiles.find(f => f.file === file);
+                                        const progress = uploadingFile?.progress || 0;
+                                        const isUploading = uploadingFile?.isUploading;
+
                                         return (
                                             <Paper
                                                 key={index}
@@ -960,6 +970,24 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     >
                                                         {file.name}
                                                     </Typography>
+                                                )}
+
+                                                {isUploading && (
+                                                    <Box
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: '50%',
+                                                            transform: 'translate(-50%, -50%)',
+                                                        }}
+                                                    >
+                                                        <CircularProgress
+                                                            variant={progress ? 'determinate' : 'indeterminate'}
+                                                            value={progress}
+                                                            size={40}
+                                                            thickness={4}
+                                                        />
+                                                    </Box>
                                                 )}
 
                                                 <IconButton
@@ -1154,21 +1182,42 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                 fullWidth
                                                 size="small"
                                                 placeholder="Aa..."
+                                                multiline
                                                 value={newMessage}
                                                 onChange={onInputChange}
                                                 onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        stopTyping();
-                                                        handleSend();
+                                                    if (e.key === 'Enter') {
+                                                        if (e.shiftKey) {
+                                                            const cursorPos = e.target.selectionStart;
+                                                            const textBefore = newMessage.slice(0, cursorPos);
+                                                            const textAfter = newMessage.slice(cursorPos);
+                                                            onInputChange({
+                                                                target: { value: textBefore + '\n' + textAfter }
+                                                            });
+                                                            e.preventDefault();
+                                                        } else {
+                                                            e.preventDefault();
+                                                            stopTyping();
+                                                            handleSend();
+                                                        }
                                                     }
                                                 }}
-                                                sx={{ '& fieldset': { borderRadius: 3 } }}
-                                                // onFocus={() => setSowContent(true)}
-                                                onBlur={() => {
-                                                    stopTyping();
-                                                    // setSowContent(false);
+                                                sx={{
+                                                    '& fieldset': { borderRadius: 25 },
+                                                    '& .MuiInputBase-input': {
+                                                        height: '30px',
+                                                        lineHeight: '20px',
+                                                        overflowY: 'auto', 
+                                                        whiteSpace: 'pre-wrap',
+                                                        padding: '4px',
+                                                    },
                                                 }}
+                                                InputProps={{
+                                                    style: {
+                                                        overflowY: 'hidden',
+                                                    },
+                                                }}
+                                                onBlur={() => stopTyping()}
                                             />
                                         </>
                                     )}
