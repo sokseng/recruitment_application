@@ -80,6 +80,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const [uploadingFiles, setUploadingFiles] = useState([]);
     const [isSending, setIsSending] = useState(false);
     const isUploading = isSending || uploadingFiles.length > 0;
+    const [deleting, setDeleting] = useState(false);
 
     const checkMediaUrl = async (url) => {
         try {
@@ -485,12 +486,17 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     const confirmDelete = async () => {
         if (!messageToDelete) return;
 
-        await api.delete(`/chat/room/${chat.room_id}/messages/${messageToDelete.id}`);
+        try {
+            setDeleting(true);
+            await api.delete(`/chat/room/${chat.room_id}/messages/${messageToDelete.id}`);
 
-        deleteLocalMessage(messageToDelete.id);
+            deleteLocalMessage(messageToDelete.id);
 
-        setOpenConfirm(false);
-        setMessageToDelete(null);
+            setOpenConfirm(false);
+            setMessageToDelete(null);
+        } finally {
+            setDeleting(false);
+        }
     };
 
     const cancelDelete = () => {
@@ -1207,7 +1213,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     '& .MuiInputBase-input': {
                                                         height: '30px',
                                                         lineHeight: '20px',
-                                                        overflowY: 'auto', 
+                                                        overflowY: 'auto',
                                                         whiteSpace: 'pre-wrap',
                                                         padding: '4px',
                                                     },
@@ -1272,6 +1278,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 onClose={() => setOpenConfirm(false)}
                 onCancel={cancelDelete}
                 onConfirm={confirmDelete}
+                deleting={deleting}
             />
             <ForwardDialog
                 open={forwardOpen}

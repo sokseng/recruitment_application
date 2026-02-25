@@ -1,6 +1,6 @@
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button } from "@mui/material";
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, CircularProgress } from "@mui/material";
 
-export default function DeleteDialog({open, onClose, onCancel, onConfirm}) {
+export default function DeleteDialog({ open, onClose, onCancel, onConfirm, deleting }) {
     return (
         <Dialog
             open={open}
@@ -17,7 +17,7 @@ export default function DeleteDialog({open, onClose, onCancel, onConfirm}) {
                     Cancel
                 </Button>
                 <Button onClick={onConfirm} color="error" variant="contained">
-                    Delete
+                    {deleting ? <CircularProgress sx={{ color: 'white', fontSize: 14 }} /> : 'Delete'}
                 </Button>
             </DialogActions>
         </Dialog>
