@@ -25,25 +25,25 @@ const Audit = () => {
   const columns = [
     {
       field: "action_datetime",
-      headerName: "Action DateTime",
+      headerName: t('action_datetime'),
       flex: 1,
       minWidth: 180,
     },
     {
       field: "user_action",
-      headerName: "User Action",
+      headerName: t('user_action'),
       flex: 1,
       minWidth: 150,
     },
     {
       field: "action",
-      headerName: "Action",
+      headerName: t('action'),
       flex: 1,
       minWidth: 120,
     },
     {
       field: "detail_information",
-      headerName: "Detail Information",
+      headerName: t('detail_information'),
       flex: 3,
       minWidth: 250,
       renderCell: (params) => (
@@ -57,7 +57,7 @@ const Audit = () => {
     },
     {
       field: "ip",
-      headerName: "IP Address",
+      headerName: t('ip_address'),
       flex: 0.5,
       minWidth: 120,
     },

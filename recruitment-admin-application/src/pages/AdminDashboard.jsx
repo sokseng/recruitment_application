@@ -1,20 +1,21 @@
-import React, { useEffect, useState } from "react";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import BusinessIcon from "@mui/icons-material/Business";
+import PeopleIcon from "@mui/icons-material/People";
+import PersonIcon from "@mui/icons-material/Person";
+import WorkIcon from "@mui/icons-material/Work";
 import {
   Box,
   Card,
-  Typography,
-  Stack,
   Chip,
   Divider,
   Skeleton,
+  Stack,
+  Typography,
 } from "@mui/material";
-import PeopleIcon from "@mui/icons-material/People";
-import WorkIcon from "@mui/icons-material/Work";
-import BusinessIcon from "@mui/icons-material/Business";
-import PersonIcon from "@mui/icons-material/Person";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import api from "../services/api";
+import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 /* ================= STAT CARD ================= */
 const StatCard = ({ icon, label, value, color, loading }) => (
@@ -65,6 +66,7 @@ const StatCard = ({ icon, label, value, color, loading }) => (
 
 /* ================= DASHBOARD ================= */
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -87,7 +89,6 @@ const AdminDashboard = () => {
   return (
     <Box sx={{ p: 3, minHeight: "100vh" }}>
       
-
       {/* TOP STATS */}
       <Box
         display="grid"
@@ -108,11 +109,10 @@ const AdminDashboard = () => {
         >
           <StatCard
             icon={<PeopleIcon />}
-            label="Total Users"
+            label={t('total_users')}
             value={stats?.users.total}
             color="primary"
             loading={loading}
-
           />
         </Card>
 
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
         >
           <StatCard
             icon={<BusinessIcon />}
-            label="Total Companies"
+            label={t('total_companies')}
             value={stats?.employers.total}
             color="secondary"
             loading={loading}
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
         >
           <StatCard
             icon={<WorkIcon />}
-            label="Total Jobs"
+            label={t('total_jobs')}
             value={stats?.jobs.total}
             color="success"
             loading={loading}
@@ -157,7 +157,7 @@ const AdminDashboard = () => {
         >
           <StatCard
             icon={<PersonIcon />}
-            label="Total Candidates"
+            label={t('total_candidates')}
             value={stats?.candidates.total}
             color="info"
             loading={loading}
@@ -167,13 +167,12 @@ const AdminDashboard = () => {
         <Card>
           <StatCard
             icon={<AssignmentIcon />}
-            label="Applications Applied"
+            label={t('applications_applied')}
             value={stats?.applications.total}
             color="warning"
             loading={loading}
           />
         </Card>
-
       </Box>
 
       {/* STATUS CARDS */}
@@ -185,7 +184,7 @@ const AdminDashboard = () => {
         {/* USER STATUS */}
         <Card sx={{ p: 2.5, borderRadius: 3 }}>
           <Typography fontSize={13} fontWeight={700} mb={1}>
-            Users Status
+            {t('users_status')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
@@ -195,7 +194,7 @@ const AdminDashboard = () => {
             <Stack direction="row" spacing={1.5}>
               <Chip
                 color="success"
-                label={`Active: ${stats.users.active}`}
+                label={`${t('active')}: ${stats.users.active}`}
                 sx={{
                   fontWeight: 600,
                   fontSize: 11,
@@ -203,7 +202,7 @@ const AdminDashboard = () => {
                 }}
               />
               <Chip
-                label={`Inactive: ${stats.users.inactive}`}
+                label={`${t('inactive')}: ${stats.users.inactive}`}
                 sx={{
                   fontWeight: 600,
                   fontSize: 11,
@@ -217,7 +216,7 @@ const AdminDashboard = () => {
         {/* JOB STATUS */}
         <Card sx={{ p: 2.5, borderRadius: 3 }}>
           <Typography fontSize={13} fontWeight={700} mb={1}>
-            Job Status
+            {t('jobs_status')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
@@ -227,7 +226,7 @@ const AdminDashboard = () => {
             <Stack direction="row" spacing={1.5} flexWrap="wrap">
               <Chip
                 color="success"
-                label={`Open: ${stats.jobs.open}`}
+                label={`${t('open')}: ${stats.jobs.open}`}
                 sx={{
                   fontWeight: 600,
                   fontSize: 11,
@@ -236,7 +235,7 @@ const AdminDashboard = () => {
               />
               <Chip
                 color="error"
-                label={`Closed: ${stats.jobs.closed}`}
+                label={`${t('closed')}: ${stats.jobs.closed}`}
                 sx={{
                   fontWeight: 600,
                   fontSize: 11,
@@ -248,9 +247,9 @@ const AdminDashboard = () => {
         </Card>
 
         {/* APPLICATION STATUS - Compact Version */}
-        <Card sx={{ p: 2.5, borderRadius: 3 }}> {/* smaller padding */}
+        <Card sx={{ p: 2.5, borderRadius: 3 }}>
           <Typography fontSize={13} fontWeight={700} mb={1}>
-            Job Applications Applied Status
+            {t('applications_status')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
@@ -260,21 +259,21 @@ const AdminDashboard = () => {
             <Box
               display="grid"
               gridTemplateColumns={{ xs: "1fr 1fr", sm: "repeat(4, 1fr)" }}
-              gap={1} // tighter gap
+              gap={1}
             >
               <Chip
-                label={`Pending: ${stats.applications.pending}`}
+                label={`${t('pending')}: ${stats.applications.pending}`}
                 sx={{
                   bgcolor: "#FFA500",
                   color: "#fff",
                   fontWeight: 600,
-                  fontSize: 11,  // smaller text
-                  py: 0.3,       // shorter height
+                  fontSize: 11,
+                  py: 0.3,
                 }}
                 fullWidth
               />
               <Chip
-                label={`Shortlisted: ${stats.applications.shortlisted}`}
+                label={`${t('shortlisted')}: ${stats.applications.shortlisted}`}
                 sx={{
                   bgcolor: "#1976d2",
                   color: "#fff",
@@ -285,7 +284,7 @@ const AdminDashboard = () => {
                 fullWidth
               />
               <Chip
-                label={`Rejected: ${stats.applications.rejected}`}
+                label={`${t('rejected')}: ${stats.applications.rejected}`}
                 sx={{
                   bgcolor: "#d32f2f",
                   color: "#fff",
@@ -296,7 +295,7 @@ const AdminDashboard = () => {
                 fullWidth
               />
               <Chip
-                label={`Accepted: ${stats.applications.accepted}`}
+                label={`${t('accepted')}: ${stats.applications.accepted}`}
                 sx={{
                   bgcolor: "#388e3c",
                   color: "#fff",
@@ -309,11 +308,7 @@ const AdminDashboard = () => {
             </Box>
           )}
         </Card>
-
-
-
       </Box>
-
     </Box>
   );
 };
