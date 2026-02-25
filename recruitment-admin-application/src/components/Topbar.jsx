@@ -62,6 +62,7 @@ import api from "../services/api";
 import { useUnreadStore } from "../store/unreadStore";
 import useAuthStore from "../store/useAuthStore";
 import LanguageSwitcher from './LanguageSwitcher';
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 export default function Topbar() {
   const { t } = useTranslation();
@@ -766,7 +767,7 @@ export default function Topbar() {
                     color: isManagementActive ? "black" : "primary.main",
                   }}
                 >
-                  <Settings />
+                  <ArrowDropDownIcon />
                 </ListItemIcon>
 
                 <ListItemText
@@ -1373,12 +1374,20 @@ export default function Topbar() {
               {access_token && user_type === 1 && (
                 <Button
                   onClick={handleOpenManagement}
-                  startIcon={<Settings />}
+                  startIcon={<ArrowDropDownIcon />}
                   sx={{
                     fontWeight: 500,
                     color: "teal",
                     textTransform: "none",
                     position: "relative",
+
+                    // make the arrow bigger
+                    "& .MuiButton-startIcon": {
+                      fontSize: 30,
+                      "& svg": {
+                        fontSize: 30,
+                      },
+                    },
 
                     "&::after": {
                       content: '""',
@@ -1701,20 +1710,18 @@ export default function Topbar() {
                   mx: 1,
                   my: 0.5,
                   ...(isActive && {
-                    bgcolor: "primary.main",
-                    color: "white",
-                    "& .MuiListItemIcon-root": {
-                      color: "white",
-                    },
-                    "&:hover": {
-                      bgcolor: "primary.dark",
-                    },
+                    backgroundColor: 'primary.lighter',
+                    color: 'primary.dark',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'primary.light',
+                    }
                   }),
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: isActive ? "white" : "primary.main",
+                    color: isActive ? "primary.dark" : "primary.main",
                     minWidth: 36,
                   }}
                 >
