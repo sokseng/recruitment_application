@@ -1,5 +1,7 @@
 import re
 from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+from pydantic import BaseModel
 from sqlalchemy import desc, update
 from sqlalchemy.orm import Session, joinedload
 from app.dependencies.auth import verify_access_token, get_db
@@ -16,7 +18,6 @@ from app.controllers.candidate_controller import (
     delete_candidate,
     get_candidate_profile_by_candidate_id
 )
-from app.schemas.job_application_schema import ApplicationWithJobOut
 
 router = APIRouter(prefix="/candidate", tags=["Candidates"])
 
@@ -134,8 +135,11 @@ def get_my_job_applications(db: Session = Depends(get_db), current_user_id: int 
 
     return applications
 
+class CancelApplicationRequest(BaseModel):
+    reason: Optional[str] = None
+
 @router.put("/me/applications/{application_id}/cancel")
-def cancel_my_application(application_id: int, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+def cancel_my_application(application_id: int, payload: CancelApplicationRequest, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     candidate = db.query(Candidate).filter(Candidate.user_id == current_user_id).first()
     if not candidate:
         raise HTTPException(
@@ -160,7 +164,7 @@ def cancel_my_application(application_id: int, db: Session = Depends(get_db), cu
     db.execute(
         update(JobApplication)
         .where(JobApplication.pk_id == application_id)
-        .values(cancelled=True)
+        .values(cancelled=True,reason=payload.reason)
     )
     db.commit()
 

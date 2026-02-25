@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, isValidElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -27,6 +27,7 @@ import {
     InputAdornment,
     useTheme,
     useMediaQuery,
+    Tooltip,
 } from '@mui/material';
 import {
     WorkOutline as WorkIcon,
@@ -46,6 +47,14 @@ import api from "../services/api";
 
 // Reusable InfoRow
 function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
+    let tooltipText = '';
+
+    if (typeof value === 'string' || typeof value === 'number') {
+        tooltipText = value;
+    } else if (isValidElement(value) && value.props?.label) {
+        tooltipText = value.props.label;
+    }
+
     return (
         <Stack direction="row" alignItems="center" spacing={1.5}>
             <Box sx={{ color: 'text.secondary', lineHeight: 0 }}>{icon}</Box>
@@ -53,9 +62,24 @@ function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
                 {label}:
             </Typography>
             <Box flexGrow={1} />
-            <Typography component="span" variant="body2" color={color} fontWeight={fontWeight}>
-                {value}
-            </Typography>
+            <Tooltip title={tooltipText} placement="top" arrow>
+                <Typography
+                    component="span"
+                    variant="body2"
+                    color={color}
+                    fontWeight={fontWeight}
+                    sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%',
+                        display: 'inline-block',
+                        verticalAlign: 'middle',
+                    }}
+                >
+                    {value}
+                </Typography>
+            </Tooltip>
         </Stack>
     );
 }
@@ -80,6 +104,7 @@ export default function MyApplicationsToCompanies() {
         message: '',
         severity: 'success',
     });
+    const [cancelReason, setCancelReason] = useState('');
 
     const statusTabs = [
         { label: 'All', value: 'all', color: 'grey' },
@@ -90,23 +115,6 @@ export default function MyApplicationsToCompanies() {
         { label: 'Cancelled', value: 'cancelled', color: 'grey' },
         { label: 'Closed', value: 'closed', color: 'error' }, // ← new tab
     ];
-
-    const getStatusConfig = (status, isClosed = false) => {
-        const s = (status || '').toLowerCase();
-        const map = {
-            accepted: { color: 'success', icon: <CheckCircle fontSize="small" />, label: 'Accepted' },
-            rejected: { color: 'error', icon: <Cancel fontSize="small" />, label: 'Rejected' },
-            shortlisted: { color: 'info', icon: <StarBorder fontSize="small" />, label: 'Shortlisted' },
-            pending: { color: 'warning', icon: <HourglassEmpty fontSize="small" />, label: 'Pending' },
-            cancelled: { color: 'default', icon: <CloseIcon fontSize="small" />, label: 'Cancelled' },
-        };
-
-        if (isClosed && !['accepted', 'rejected', 'cancelled'].includes(s)) {
-            return { color: 'error', icon: <CloseIcon fontSize="small" />, label: 'Closed' };
-        }
-
-        return map[s] || { color: 'default', icon: null, label: status || 'Unknown' };
-    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -128,6 +136,40 @@ export default function MyApplicationsToCompanies() {
         fetchData();
     }, []);
 
+    const getComputedStatus = (app) => {
+        const job = app.job || {};
+        const today = new Date();
+
+        const isClosed =
+            job.status === 'Closed' ||
+            (job.closing_date && new Date(job.closing_date) < today);
+
+        const status = (app.application_status || '').toLowerCase();
+
+        return {
+            status,
+            isCancelled: !!app.cancelled,
+            isClosed,
+        };
+    };
+
+    const getStatusConfig = (status, isClosed = false) => {
+        const s = (status || '').toLowerCase();
+        const map = {
+            accepted: { color: 'success', icon: <CheckCircle fontSize="small" />, label: 'Accepted' },
+            rejected: { color: 'error', icon: <Cancel fontSize="small" />, label: 'Rejected' },
+            shortlisted: { color: 'info', icon: <StarBorder fontSize="small" />, label: 'Shortlisted' },
+            pending: { color: 'warning', icon: <HourglassEmpty fontSize="small" />, label: 'Pending' },
+            cancelled: { color: 'default', icon: <CloseIcon fontSize="small" />, label: 'Cancelled' },
+        };
+
+        if (isClosed && !['accepted', 'rejected', 'cancelled'].includes(s)) {
+            return { color: 'error', icon: <CloseIcon fontSize="small" />, label: 'Closed' };
+        }
+
+        return map[s] || { color: 'default', icon: null, label: status || 'Unknown' };
+    };
+
     const counts = useMemo(() => {
         const c = {
             all: applications.length,
@@ -136,22 +178,15 @@ export default function MyApplicationsToCompanies() {
             accepted: 0,
             rejected: 0,
             cancelled: 0,
-            closed: 0
+            closed: 0,
         };
 
         applications.forEach((app) => {
-            const job = app.job || {};
-            const today = new Date();
-            const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
+            const { status, isCancelled, isClosed } = getComputedStatus(app);
 
-            if (app.cancelled) {
-                c.cancelled += 1;
-            } else if (isClosed) {
-                c.closed += 1;
-            } else {
-                const s = (app.application_status || '').toLowerCase();
-                if (s in c) c[s] += 1;
-            }
+            if (!isClosed && status in c) c[status] += 1;
+            if (isCancelled) c.cancelled += 1;
+            if (isClosed) c.closed += 1;
         });
 
         return c;
@@ -162,17 +197,15 @@ export default function MyApplicationsToCompanies() {
 
         if (tabValue !== 0) {
             const target = statusTabs[tabValue].value.toLowerCase();
-            if (target === 'closed') {
-                list = list.filter((app) => {
-                    const job = app.job || {};
-                    const today = new Date();
-                    return job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
-                });
-            } else if (target === 'cancelled') {
-                list = list.filter((app) => app.cancelled === true);
-            } else {
-                list = list.filter((app) => (app.application_status || '').toLowerCase() === target);
-            }
+
+            list = list.filter((app) => {
+                const { status, isCancelled, isClosed } = getComputedStatus(app);
+
+                if (target === 'closed') return isClosed;
+                if (target === 'cancelled') return isCancelled;
+
+                return !isClosed && status === target;
+            });
         }
 
         if (searchText.trim()) {
@@ -180,6 +213,7 @@ export default function MyApplicationsToCompanies() {
 
             list = list.filter((app) => {
                 const job = app.job || {};
+                const { status, isCancelled, isClosed } = getComputedStatus(app);
 
                 const searchableTexts = [
                     job.job_title || '',
@@ -188,17 +222,14 @@ export default function MyApplicationsToCompanies() {
                     job.job_type || '',
                     job.level || '',
                     job.salary_range || '',
-                    job.status || '',             
-
-                    app.application_status || '',
-                    app.cancelled ? 'cancelled' : '',
-
+                    status,
+                    isCancelled ? 'cancelled' : '',
+                    isClosed ? 'closed' : '',
                     app.applied_date ? new Date(app.applied_date).toLocaleDateString() : '',
                     job.closing_date ? new Date(job.closing_date).toLocaleDateString() : '',
                 ];
 
-                const combinedText = searchableTexts.join(' ').toLowerCase();
-                return combinedText.includes(term);
+                return searchableTexts.join(' ').toLowerCase().includes(term);
             });
         }
 
@@ -224,11 +255,13 @@ export default function MyApplicationsToCompanies() {
 
     const handleOpenCancelDialog = (id) => {
         setCancelDialog({ open: true, applicationId: id, loading: false });
+        setCancelReason('');
     };
 
     const handleCloseCancelDialog = () => {
         if (cancelDialog.loading) return;
         setCancelDialog({ open: false, applicationId: null, loading: false });
+        setCancelReason('');
     };
 
     const handleConfirmCancel = async () => {
@@ -238,7 +271,9 @@ export default function MyApplicationsToCompanies() {
         setCancelDialog((prev) => ({ ...prev, loading: true }));
 
         try {
-            await api.put(`/candidate/me/applications/${id}/cancel`);
+            await api.put(`/candidate/me/applications/${id}/cancel`, {
+                reason: cancelReason.trim() || undefined,
+            });
 
             setApplications((prev) => prev.map((app) =>
                 (app.pk_id || app.id) === id ? { ...app, cancelled: true } : app
@@ -486,7 +521,16 @@ export default function MyApplicationsToCompanies() {
 
     return (
         <Box sx={{ px: { xs: 1.5 } }}>
-            <Stack spacing={1} sx={{ mb: 2 }}>
+            <Stack
+                spacing={1}
+                sx={{
+                    mb: 2,
+                    position: 'sticky',
+                    top: 10,
+                    zIndex: 20,
+                    py: 1,
+                }}
+            >
                 <TextField
                     fullWidth
                     size='small'
@@ -502,7 +546,6 @@ export default function MyApplicationsToCompanies() {
                         ),
                         sx: { borderRadius: 3 },
                     }}
-                    sx={{ maxWidth: 500 }}
                 />
 
                 {/* Tabs */}
@@ -521,6 +564,7 @@ export default function MyApplicationsToCompanies() {
                         border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
                         boxShadow: `0 6px 20px ${alpha(theme.palette.common.black, 0.08)}`,
                         overflow: 'hidden',
+                        WebkitOverflowScrolling: 'touch',
                         p: 0.75,
                         '& .MuiTabs-flexContainer': { gap: { xs: 0.5, sm: 1 } },
                         '& .MuiTab-root': {
@@ -606,7 +650,7 @@ export default function MyApplicationsToCompanies() {
                 </Tabs>
             </Stack>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
                 {filteredApplications.map((app) => {
                     const job = app.job || {};
                     const today = new Date();
@@ -615,13 +659,12 @@ export default function MyApplicationsToCompanies() {
                     const statusCfg = getStatusConfig(app.application_status, isClosed);
 
                     return (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={app.pk_id || app.id} sx={{ minWidth: isMobile ? '100%' : 320 }}>
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={app.pk_id || app.id} sx={{ width: '100%', maxWidth: 400, minWidth: 320, mx: isMobile ? 'auto' : 0 }}>
                             <Card
                                 elevation={0}
                                 sx={{
                                     height: '100%',
-                                    minWidth: isMobile ? '100%' : 320,
-                                    maxWidth: 400,
+                                    width: '100%',
                                     borderRadius: 3,
                                     overflow: 'hidden',
                                     bgcolor: alpha(theme.palette.background.paper, 0.7),
@@ -639,29 +682,51 @@ export default function MyApplicationsToCompanies() {
 
                                 <CardContent sx={{ p: 3 }}>
                                     <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                        <Avatar
-                                            sx={{
-                                                width: 54,
-                                                height: 54,
-                                                bgcolor: alpha(accent, 0.12),
-                                                color: accent,
-                                                border: `2px solid ${alpha(accent, 0.3)}`,
-                                            }}
-                                        >
-                                            <WorkIcon />
-                                        </Avatar>
+        {/* Avatar */}
+        <Avatar
+            sx={{
+                width: 54,
+                height: 54,
+                bgcolor: alpha(accent, 0.12),
+                color: accent,
+                border: `2px solid ${alpha(accent, 0.3)}`,
+                flexShrink: 0, // don't shrink avatar
+            }}
+        >
+            <WorkIcon />
+        </Avatar>
 
-                                        <Box flexGrow={1}>
-                                            <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
-                                                {job.job_title || '—'}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary" noWrap>
-                                                {job.employer?.company_name || '—'}
-                                            </Typography>
-                                        </Box>
+        {/* Job Title & Company */}
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Tooltip title={job.job_title || '—'} placement="top" arrow>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
+                    {job.job_title || '—'}
+                </Typography>
+            </Tooltip>
+            <Tooltip title={job.employer?.company_name || '—'} placement="top" arrow>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                    {job.employer?.company_name || '—'}
+                </Typography>
+            </Tooltip>
+        </Box>
 
-                                        {app.cancelled && <Chip label="Cancelled" size="small" color="default" />}
-                                    </Stack>
+        {/* Chips */}
+        {app.cancelled && (
+            <Tooltip title="Cancelled" placement="top" arrow>
+                <Chip
+                    label="Cancelled"
+                    size="small"
+                    color="default"
+                    sx={{
+                        maxWidth: 100,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                />
+            </Tooltip>
+        )}
+    </Stack>
 
                                     <Divider sx={{ my: 2, opacity: 0.5 }} />
 
@@ -819,6 +884,24 @@ export default function MyApplicationsToCompanies() {
                     <DialogContentText sx={{ color: 'text.primary', fontSize: '1.03rem', lineHeight: 1.65 }}>
                         Are you sure you want to <strong>cancel</strong> this application?
                     </DialogContentText>
+                    <TextField
+                        autoFocus={!isMobile}
+                        margin="dense"
+                        label="Reason"
+                        fullWidth
+                        multiline
+                        rows={3}
+                        variant="outlined"
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        disabled={cancelDialog.loading}
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                            },
+                        }}
+                        FormHelperTextProps={{ sx: { fontSize: '0.82rem', mt: 1 } }}
+                    />
                 </DialogContent>
 
                 <DialogActions
@@ -860,7 +943,7 @@ export default function MyApplicationsToCompanies() {
                         loading={cancelDialog.loading}
                         loadingIndicator={<CircularProgress color="inherit" size={isMobile ? 20 : 16} thickness={5} />}
                         onClick={handleConfirmCancel}
-                        disabled={cancelDialog.loading}
+                        disabled={cancelDialog.loading || !cancelReason.trim()}
                         autoFocus
                         sx={{
                             borderRadius: isMobile ? 28 : 2,
