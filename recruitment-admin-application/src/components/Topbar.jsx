@@ -1,69 +1,67 @@
-
-import {
-  AppBar,
-  Toolbar,
-  Button,
-  TextField,
-  Box,
-  Dialog,
-  DialogContent,
-  Typography,
-  Snackbar,
-  Alert,
-  DialogTitle,
-  Stack,
-  MenuItem,
-  DialogActions,
-  List,
-  ListItemButton,
-  ListItemText,
-  Drawer,
-  Avatar,
-  Menu,
-  ListItemIcon,
-  Divider,
-  Collapse,
-  Link,
-  Chip
-} from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers";
-import { useState, useEffect } from "react";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import MenuIcon from "@mui/icons-material/Menu";
-import Download from "@mui/icons-material/Download";
-import Settings from "@mui/icons-material/Settings";
-import VpnKey from "@mui/icons-material/VpnKey";
-import Logout from "@mui/icons-material/Logout";
-import HomeIcon from "@mui/icons-material/Home";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import PersonIcon from "@mui/icons-material/Person";
-import BusinessIcon from "@mui/icons-material/Business";
-import PeopleIcon from "@mui/icons-material/People";
-import DownloadIcon from "@mui/icons-material/Download";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { useNavigate } from "react-router-dom";
-import { useTheme, useMediaQuery } from "@mui/material";
-import api from "../services/api";
-import useAuthStore from "../store/useAuthStore";
+// Topbar.jsx
 import {
   ExpandLess,
   ExpandMore,
 } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
-import html2pdf from "html2pdf.js";
-import { createRoot } from "react-dom/client";
-import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
-import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
-import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
-import { useUnreadStore } from "../store/unreadStore";
+import BusinessIcon from "@mui/icons-material/Business";
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import LanguageSwitcher from './LanguageSwitcher';
-import { useTranslation } from 'react-i18next';
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import { default as Download, default as DownloadIcon } from "@mui/icons-material/Download";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
+import HomeIcon from "@mui/icons-material/Home";
+import { default as Logout, default as LogoutIcon } from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import PeopleIcon from "@mui/icons-material/People";
+import PersonIcon from "@mui/icons-material/Person";
+import Settings from "@mui/icons-material/Settings";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import VpnKey from "@mui/icons-material/VpnKey";
 import WorkIcon from "@mui/icons-material/Work";
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Drawer,
+  Link,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Stack,
+  TextField,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import { DatePicker } from "@mui/x-date-pickers";
+import html2pdf from "html2pdf.js";
+import { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from "react-router-dom";
+import BlueSidebarModern from '../pages/cv_template/BlueSidebarModern';
+import ClassicSoftwareCV from "../pages/cv_template/ClassicCV";
+import SidebarTechTemplate from '../pages/cv_template/SidebarTechTemplate';
+import api from "../services/api";
+import { useUnreadStore } from "../store/unreadStore";
+import useAuthStore from "../store/useAuthStore";
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Topbar() {
   const { t } = useTranslation();
@@ -168,11 +166,11 @@ export default function Topbar() {
   };
 
   const MANAGEMENT_ITEMS = [
-    { label: "Users", path: "/admin/user", icon: <PeopleIcon fontSize="small" /> },
-    { label: "Jobs", path: "/admin/jobs", icon: <WorkIcon fontSize="small" /> },
-    { label: "Companies", path: "/admin/employer", icon: <BusinessIcon fontSize="small" /> },
-    { label: "Candidates", path: "/admin/candidate", icon: <PersonIcon fontSize="small" /> },
-    { label: "Audit", path: "/audit", icon: <FactCheckIcon fontSize="small" /> },
+    { label: t('users'), path: "/admin/user", icon: <PeopleIcon fontSize="small" /> },
+    { label: t('jobs'), path: "/admin/jobs", icon: <WorkIcon fontSize="small" /> },
+    { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon fontSize="small" /> },
+    { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon fontSize="small" /> },
+    { label: t('audit'), path: "/audit", icon: <FactCheckIcon fontSize="small" /> },
   ];
 
   const handleOpenSettings = (event) => {
@@ -222,11 +220,6 @@ export default function Topbar() {
       { label: t('home'), path: "/", icon: <HomeIcon /> },
       { label: t('dashboard'), path: "/admin/dashboard", icon: <DashboardIcon /> },
       { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
-      // { label: t('users'), path: "/admin/user", icon: <PeopleIcon /> },
-      // { label: t('jobs'), path: "/admin/jobs", icon: <PersonIcon /> },
-      // { label: t('companies'), path: "/admin/employer", icon: <BusinessIcon /> },
-      // { label: t('candidates'), path: "/admin/candidate", icon: <PersonIcon /> },
-      // { label: t('audit'), path: "/audit", icon: <FactCheckIcon /> },
     ],
     2: [
       { label: t('home'), path: "/", icon: <HomeIcon /> },
@@ -238,7 +231,6 @@ export default function Topbar() {
       { label: t('home'), path: "/", icon: <HomeIcon /> },
       { label: t('chat'), path: "/chat", icon: <ChatBubbleIcon /> },
       { label: t('update_profile'), path: "/update_profile", icon: <PersonIcon /> },
-      // { label: t('dashboard'), path: "/candidate", icon: <DashboardIcon /> },
       { label: t('candidate_apply'), path: "/candidate_apply", icon: <BusinessIcon /> },
     ],
   };
@@ -266,14 +258,14 @@ export default function Topbar() {
 
   // Map readable names to your ROBOT_POOL types
   const TYPE_MAP = {
-    Fruits: "fruit",
-    Animals: "animal",
-    Vehicles: "vehicle",
-    Electronics: "electronics",
+    [t('fruits')]: "fruit",
+    [t('animals')]: "animal",
+    [t('vehicles')]: "vehicle",
+    [t('electronics')]: "electronics",
   };
 
   const generateRobotOptions = () => {
-    const readableTypes = Object.keys(TYPE_MAP); // ["Fruits","Animals","Vehicles","Electronics"]
+    const readableTypes = Object.keys(TYPE_MAP);
 
     // Pick a random readable type
     const randomReadableType =
@@ -282,7 +274,7 @@ export default function Topbar() {
     // Get the actual type in ROBOT_POOL
     const poolType = TYPE_MAP[randomReadableType];
 
-    setRobotType(randomReadableType); // For UI: "Select Fruits", "Select Animals", etc.
+    setRobotType(randomReadableType);
 
     // Filter correct and wrong items
     const correctItems = ROBOT_POOL.filter((item) => item.type === poolType);
@@ -618,12 +610,10 @@ export default function Topbar() {
             borderBottom: '1px solid',
             borderColor: 'divider',
             bgcolor: 'background.paper',
-            // subtle gradient background (very light)
             background: 'linear-gradient(135deg, rgba(245,247,255,0.8) 0%, rgba(255,255,255,0.95) 100%)',
             boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
           }}
         >
-          {/* Optional: very subtle decorative accent */}
           <Box
             sx={{
               position: 'absolute',
@@ -638,7 +628,6 @@ export default function Topbar() {
           />
 
           <Stack direction="row" spacing={2.5} alignItems="center">
-            {/* Avatar with nice ring effect */}
             <Avatar
               sx={{
                 width: 64,
@@ -662,7 +651,6 @@ export default function Topbar() {
             </Avatar>
 
             <Box sx={{ minWidth: 0 }}>
-              {/* Name – slightly larger + better weight */}
               <Typography
                 variant="h6"
                 fontWeight={700}
@@ -744,57 +732,85 @@ export default function Topbar() {
             </ListItemButton>
           ))}
 
-          {/* ✅ DESKTOP MANAGEMENT */}
+          {/* MANAGEMENT in Drawer */}
           {access_token && user_type === 1 && (
             <>
-              <Button
-                onClick={handleOpenManagement}
-                startIcon={<Settings />}
+              <ListItemButton
+                onClick={toggleDrawerManagement}
+                selected={isManagementActive}
                 sx={{
-                  fontWeight: 500,
-                  color: "teal",
-                  textTransform: "none",
-                  position: "relative",
+                  borderRadius: 2,
+                  mb: 0.75,
+                  py: 1.4,
+                  px: 2.5,
+                  transition: "all 0.2s ease",
 
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    width: isManagementActive ? "100%" : "0%",
-                    height: "2px",
-                    bottom: 0,
-                    left: 0,
-                    backgroundColor: "#00B0FF",
-                    transition: "width 0.3s",
+                  "&.Mui-selected": {
+                    bgcolor: "primary.main",
+                    color: "black",
+                    boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                    "& .MuiListItemIcon-root": {
+                      color: "white",
+                    },
+                  },
+
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    transform: "translateX(4px)",
                   },
                 }}
               >
-                Management
-              </Button>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 44,
+                    color: isManagementActive ? "black" : "primary.main",
+                  }}
+                >
+                  <Settings />
+                </ListItemIcon>
 
-              <Menu
-                anchorEl={managementAnchor}
-                open={openManagement}
-                onClose={handleCloseManagement}
-              >
-                {[
-                  { label: "Users", path: "/admin/user" },
-                  { label: "Jobs", path: "/admin/jobs" },
-                  { label: "Companies", path: "/admin/employer" },
-                  { label: "Candidates", path: "/admin/candidate" },
-                  { label: "Audit", path: "/audit" },
-                ].map((item) => (
-                  <MenuItem
-                    key={item.path}
-                    selected={location.pathname.startsWith(item.path)}
-                    onClick={() => {
-                      goTo(item.path);
-                      handleCloseManagement();
-                    }}
-                  >
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </Menu>
+                <ListItemText
+                  primary={t('management')}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+
+                {openDrawerManagement ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+
+              <Collapse in={openDrawerManagement} timeout="auto" unmountOnExit>
+                <Box sx={{ pl: 3, pr: 2, pb: 0.5 }}>
+                  {MANAGEMENT_ITEMS.map((item) => (
+                    <ListItemButton
+                      key={item.path}
+                      onClick={() => {
+                        goTo(item.path);
+                        setOpenDrawerManagement(false);
+                      }}
+                      selected={location.pathname.startsWith(item.path)}
+                      sx={{
+                        borderRadius: 2,
+                        py: 1.2,
+                        px: 2,
+
+                        "&.Mui-selected": {
+                          bgcolor: "primary.lighter",
+                          color: "black",
+                        },
+
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                        {item.icon}
+                      </ListItemIcon>
+
+                      <ListItemText primary={item.label} />
+                    </ListItemButton>
+                  ))}
+                </Box>
+              </Collapse>
             </>
           )}
 
@@ -1367,7 +1383,7 @@ export default function Topbar() {
                     "&::after": {
                       content: '""',
                       position: "absolute",
-                      width: isSettingsActive ? "100%" : "0%",
+                      width: isManagementActive ? "100%" : "0%",
                       height: "2px",
                       bottom: 0,
                       left: 0,
@@ -1379,7 +1395,7 @@ export default function Topbar() {
                     },
                   }}
                 >
-                  {"Management"}
+                  {t('management')}
                 </Button>
               )}
 
@@ -1664,7 +1680,7 @@ export default function Topbar() {
           }}
         >
           <MenuItem disabled sx={{ fontWeight: 600 }}>
-            Management
+            {t('management')}
           </MenuItem>
 
           <Divider />
@@ -1774,7 +1790,7 @@ export default function Topbar() {
           sx: {
             borderRadius: 3,
             boxShadow: 3,
-            maxHeight: isMobile ? "100vh" : "85vh", // ✅ only limit height
+            maxHeight: isMobile ? "100vh" : "85vh",
           },
         }}
       >
@@ -1871,7 +1887,7 @@ export default function Topbar() {
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Select {robotType}
+                  {t('select')} {robotType}
                 </Typography>
 
                 <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>

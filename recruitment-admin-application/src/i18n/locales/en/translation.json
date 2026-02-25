@@ -333,6 +333,12 @@
   "value": "Value",
   "type": "Type",
   "category": "Category",
-  "saving": "Saving..."
+  "saving": "Saving...",
+  "management": "Management",
+  "fruits": "Fruits",
+  "animals": "Animals",
+  "vehicles": "Vehicles",
+  "electronics": "Electronics",
+  "select": "Select"
   
 }

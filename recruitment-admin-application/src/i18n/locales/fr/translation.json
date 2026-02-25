@@ -333,5 +333,11 @@
   "value": "Valeur",
   "type": "Type",
   "category": "Catégorie",
-  "saving": "Enregistrement..."
+  "saving": "Enregistrement...",
+  "management": "Gestion",
+  "fruits": "Fruits",
+  "animals": "Animaux",
+  "vehicles": "Véhicules",
+  "electronics": "Électronique",
+  "select": "Sélectionner"
 }
