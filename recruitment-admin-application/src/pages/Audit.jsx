@@ -78,6 +78,7 @@ const Audit = () => {
           border: "3px solid",
           borderColor: "divider",
           borderRadius: 4,
+          overflow: "hidden",
         }}
       >
         <DataGrid
