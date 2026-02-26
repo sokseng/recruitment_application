@@ -1,6 +1,6 @@
 #job_router.py
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.dependencies.auth import verify_access_token, get_db
@@ -17,11 +17,13 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 @router.post("/", response_model=JobOut, status_code=status.HTTP_201_CREATED)
 def create_new_job(
+    request: Request,
     job_data: JobCreate,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    return create_job(db, job_data, current_user_id)
+    ip_address = request.client.host
+    return create_job(db, job_data, current_user_id, ip_address)
 
 
 @router.get("/my-jobs", response_model=List[JobOut])
@@ -83,27 +85,31 @@ def get_public_active_jobs(
 
 @router.put("/{job_id}", response_model=JobOut)
 def update_existing_job(
+    request: Request,
     job_id: int,
     job_data: JobUpdate,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
+    ip_address = request.client.host
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer:
         raise HTTPException(403, "You don't have an employer profile")
 
-    updated_job = update_job(db, job_id, job_data, employer.pk_id)  
+    updated_job = update_job(db, job_id, job_data, employer.pk_id, ip_address, current_user_id )  
     if not updated_job:
         raise HTTPException(404, "Job not found or not yours")
     return updated_job
 
 @router.delete("/{job_id}", response_model=JobOut)
 def delete_existing_job(
+    request: Request,
     job_id: int,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    deleted_job = delete_job(db, job_id, current_user_id)
+    ip_address = request.client.host
+    deleted_job = delete_job(db, job_id, current_user_id, ip_address)
     if not deleted_job:
         raise HTTPException(status_code=404, detail="Job not found or not yours")
     return deleted_job
