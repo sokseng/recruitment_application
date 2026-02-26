@@ -701,21 +701,20 @@ export default function MyJobs() {
   const [openApprovalWarning, setOpenApprovalWarning] = useState(false);
 
   useEffect(() => {
-    fetchMyJobs();
     getApprove();
+    fetchMyJobs();
+    fetchCategories();
   }, []);
 
-  useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get("/categories/"); // ← assume you have this endpoint
+        const res = await api.get("/categories/"); 
         setCategories(res.data || []);
       } catch (err) {
         console.error("Failed to load categories");
       }
     };
-    fetchCategories();
-  }, []);
+
 
   const getApprove = async () => {
     try{
@@ -737,9 +736,6 @@ export default function MyJobs() {
           j.closing_date &&
           new Date(j.closing_date) < new Date(),
       ).length;
-      if (res.data?.length > 0) {
-        setApproved(res.data[0].approved);
-      }
       if (autoClosedCount > 0) {
         toast.info(
           `${autoClosedCount} job(s) were automatically closed due to expiry`,
