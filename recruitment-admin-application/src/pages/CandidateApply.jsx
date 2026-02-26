@@ -651,7 +651,60 @@ export default function MyApplicationsToCompanies() {
             </Stack>
 
             <Grid container spacing={2}>
-                {filteredApplications.map((app) => {
+                {filteredApplications.length === 0 && !loading ? (
+                    <Grid item xs={12} sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Card
+                            elevation={0}
+                            sx={{
+                                borderRadius: 3,
+                                overflow: 'hidden',
+                                bgcolor: alpha(theme.palette.background.paper, 0.7),
+                                backdropFilter: 'blur(14px)',
+                                border: `1px dashed ${alpha(theme.palette.divider, 0.3)}`,
+                                minHeight: 340,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                p: { xs: 5, sm: 7 },
+                                textAlign: 'center',
+                            }}
+                        >
+                            <Box sx={{ height: 5, width: '80px', bgcolor: alpha(theme.palette.primary.main, 0.4), borderRadius: '0 0 4px 4px', mb: 4 }} />
+
+                            <Stack spacing={3} alignItems="center">
+                                <Box
+                                    sx={{
+                                        width: 80,
+                                        height: 80,
+                                        borderRadius: '50%',
+                                        bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    {searchText.trim() ? <SearchIcon sx={{ fontSize: 40 }} /> : <WorkIcon sx={{ fontSize: 40 }} />}
+                                </Box>
+
+                                <Typography variant="h6" fontWeight={600}>
+                                    {searchText.trim() ? 'Nothing matches your search' : 'No applications here yet'}
+                                </Typography>
+                                {(tabValue === 0 || searchText.trim()) && (
+                                    <Button
+                                        variant="contained"
+                                        size="medium"
+                                        disableElevation
+                                        onClick={() => searchText.trim() ? setSearchText('') : navigate('/')}
+                                        sx={{ mt: 2, borderRadius: 50, px: 5 }}
+                                    >
+                                        {searchText.trim() ? 'Clear Search' : 'Find Jobs'}
+                                    </Button>
+                                )}
+                            </Stack>
+                        </Card>
+                    </Grid>
+                ) : (filteredApplications.map((app) => {
                     const job = app.job || {};
                     const today = new Date();
                     const isClosed = job.status === 'Closed' || (job.closing_date && new Date(job.closing_date) < today);
@@ -805,7 +858,7 @@ export default function MyApplicationsToCompanies() {
                             </Card>
                         </Grid>
                     );
-                })}
+                }))}
             </Grid>
 
             {/* Dialog */}
