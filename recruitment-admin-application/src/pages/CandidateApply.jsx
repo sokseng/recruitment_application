@@ -1,49 +1,50 @@
-import { useState, useEffect, useMemo, isValidElement } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    Button,
-    Avatar,
-    Stack,
-    Divider,
-    Chip,
-    Tabs,
-    Tab,
-    Alert,
-    CircularProgress,
-    Snackbar,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
-    IconButton,
-    alpha,
-    TextField,
-    InputAdornment,
-    useTheme,
-    useMediaQuery,
-    Tooltip,
-} from '@mui/material';
-import {
-    WorkOutline as WorkIcon,
+    ArrowForward as ArrowIcon,
     CalendarToday,
-    LocationOn,
-    Visibility,
     Cancel,
     CheckCircle,
-    StarBorder,
-    HourglassEmpty,
     Close as CloseIcon,
-    WarningAmber as WarningAmberIcon,
+    HourglassEmpty,
+    LocationOn,
     Search as SearchIcon,
-    ArrowForward as ArrowIcon,
+    StarBorder,
+    Visibility,
+    WarningAmber as WarningAmberIcon,
+    WorkOutline as WorkIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    alpha,
+    Avatar,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Divider,
+    Grid,
+    IconButton,
+    InputAdornment,
+    Snackbar,
+    Stack,
+    Tab,
+    Tabs,
+    TextField,
+    Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { isValidElement, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 // Reusable InfoRow
 function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
@@ -88,7 +89,7 @@ export default function MyApplicationsToCompanies() {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
+    const { t } = useTranslation();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -467,7 +468,7 @@ export default function MyApplicationsToCompanies() {
                             letterSpacing: '-0.3px',
                         }}
                     >
-                        No applications yet
+                        {t('no_applications_yet')}
                     </Typography>
 
                     <Typography
@@ -481,7 +482,7 @@ export default function MyApplicationsToCompanies() {
                             fontSize: '0.95rem',              // slightly smaller text
                         }}
                     >
-                        Your journey starts here. Browse open positions and apply — your applications will appear in this space.
+                        {t('new_opportunities_added_daily')}
                     </Typography>
 
                     <Button
@@ -504,7 +505,7 @@ export default function MyApplicationsToCompanies() {
                             transition: 'all 0.3s ease',
                         }}
                     >
-                        Explore Jobs
+                        {t('explore_jobs')}
                     </Button>
 
                     <Typography
@@ -512,7 +513,7 @@ export default function MyApplicationsToCompanies() {
                         color="text.disabled"
                         sx={{ mt: 4, display: 'block', fontSize: '0.8rem' }}
                     >
-                        New opportunities added daily — don't miss out!
+                        {t('new_opportunities_added')}
                     </Typography>
                 </Box>
             </Box>
