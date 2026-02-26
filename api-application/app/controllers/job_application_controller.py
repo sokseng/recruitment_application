@@ -173,6 +173,7 @@ def get_applications_for_job(
                 } if app.candidate.user else None
             } if app.candidate else None,
             "has_cover_letter": app.resume.cover_letter_file is not None if app.resume else False,
+            "reason": getattr(app, "reason", None),
             "resume_images": resume_images,
         }).model_dump()   
 

@@ -58,6 +58,7 @@ class ApplicationOutForEmployer(BaseModel):
     application_status: ApplicationStatus
     cancelled: bool
     has_cover_letter: bool
+    reason: Optional[str] = None
     
     model_config = {"from_attributes": True}
 

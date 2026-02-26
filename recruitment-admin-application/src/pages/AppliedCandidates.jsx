@@ -31,6 +31,7 @@ import {
   IconButton,
   DialogTitle,
   Paper,
+  TextField,
 } from "@mui/material";
 import {
   Work as WorkIcon,
@@ -119,7 +120,6 @@ export default function AppliedCandidates() {
 
   const [candidateImages, setCandidateImages] = useState([]); // ← new
   const [loadingImages, setLoadingImages] = useState(false);
-  
 
   useEffect(() => {
     loadMyJobsWithApplicationCounts();
@@ -559,16 +559,14 @@ export default function AppliedCandidates() {
   );
 
   const InfoRow = ({ label, value }) => (
-    <Stack
-      direction="row"
-    >
+    <Stack direction="row">
       <Typography variant="body2" color="text.secondary">
         {label}:
       </Typography>
       <Typography
         variant="body2"
         fontWeight={500}
-        sx={{flex: 1, textAlign: "right" }}
+        sx={{ flex: 1, textAlign: "right" }}
       >
         {value}
       </Typography>
@@ -799,23 +797,53 @@ export default function AppliedCandidates() {
                             </FormControl>
 
                             {app.cancelled && (
-                              <Chip
-                                label="Canceled by the candidate"
-                                color="error"
-                                size="small"
-                                variant="filled"
+                              <Box
                                 sx={{
-                                  fontWeight: 500,
-                                  borderRadius: 2,
-                                  backgroundColor: "rgba(211, 47, 47, 0.15)",
-                                  color: "error.main",
-                                  width: { xs: "100%", sm: 180 },
-                                  height: 40,
                                   display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 1.5,
                                   alignItems: "center",
-                                  justifyContent: "center",
+                                  mt: { xs: 1, sm: 0.5 },
                                 }}
-                              />
+                              >
+                                <Chip
+                                  label="Canceled by the candidate"
+                                  color="error"
+                                  size="medium"
+                                  sx={{
+                                    fontWeight: 600,
+                                    borderRadius: "12px",
+                                    backgroundColor: "rgba(211, 47, 47, 0.14)",
+                                    color: "error.dark",
+                                    height: 36,
+                                    px: 1.5,
+                                  }}
+                                />
+
+                                {app.reason && (
+  
+                                <Chip
+                                    label={`Reason: ${app.reason}`}
+                                    variant="outlined"
+                                    size="medium"
+                                    sx={{
+                                      borderRadius: "12px",
+                                      borderColor: "error.light",
+                                      color: "error.main",
+                                      backgroundColor:
+                                        "rgba(211, 47, 47, 0.05)",
+                                      fontWeight: 500,
+                                      height: 36,
+                                      maxWidth: 380,
+                                      "& .MuiChip-label": {
+                                        paddingLeft: 1.5,
+                                        paddingRight: 1.5,
+                                      },
+                                    }}
+                                  />
+                                  
+                                )}
+                              </Box>
                             )}
                           </Stack>
                         </Stack>
@@ -916,7 +944,9 @@ export default function AppliedCandidates() {
         maxWidth="md"
         PaperProps={{ sx: { height: "90vh", overflow: "hidden" } }}
       >
-        <DialogContent sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}>
+        <DialogContent
+          sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}
+        >
           {fileType?.startsWith("image/") ? (
             <Box
               sx={{
@@ -1039,34 +1069,47 @@ export default function AppliedCandidates() {
 
             // 3. Attached Images / Files
             (candidateImages || []).forEach((img, index) => {
-              const isPdf  = img.filename?.toLowerCase().endsWith(".pdf");
+              const isPdf = img.filename?.toLowerCase().endsWith(".pdf");
               const isImage = /\.(jpg|jpeg|png)$/i.test(img.filename || "");
 
-              const attachmentViewUrl  = `${baseURL}/applications/attachments/${img.filename}?disposition=inline`;
+              const attachmentViewUrl = `${baseURL}/applications/attachments/${img.filename}?disposition=inline`;
               const attachmentDownloadUrl = `${baseURL}/applications/attachments/${img.filename}?disposition=attachment`;
 
               documentRows.push({
                 id: `attachment-${img.id || index}`,
-                documentType: isPdf ? "Attached PDF" : isImage ? "Attached Image" : "Attachment",
-                fileName: img.original_name || img.filename || `File ${index + 1}`,
+                documentType: isPdf
+                  ? "Attached PDF"
+                  : isImage
+                    ? "Attached Image"
+                    : "Attachment",
+                fileName:
+                  img.original_name || img.filename || `File ${index + 1}`,
                 hasFile: true,
 
                 // ─── VIEW ───────────────────────────────────────────────
                 view: () => {
                   setFileUrl(attachmentViewUrl);
                   setFileName(img.original_name || img.filename);
-                  setFileType(isPdf ? "application/pdf" : isImage ? "image/jpeg" : "application/octet-stream");
+                  setFileType(
+                    isPdf
+                      ? "application/pdf"
+                      : isImage
+                        ? "image/jpeg"
+                        : "application/octet-stream",
+                  );
                   setViewFileOpen(true);
                 },
 
                 // ─── DOWNLOAD ─────
                 download: async () => {
                   try {
-                    const res = await api.get(attachmentDownloadUrl, {   
+                    const res = await api.get(attachmentDownloadUrl, {
                       responseType: "blob",
                     });
 
-                    const blob = new Blob([res.data], { type: res.headers["content-type"] });
+                    const blob = new Blob([res.data], {
+                      type: res.headers["content-type"],
+                    });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
                     link.href = url;
@@ -1210,7 +1253,10 @@ export default function AppliedCandidates() {
                 </Stack>
 
                 {/* Content */}
-                <DialogContent dividers={false} sx={{ px: 3, py: 1.5, overflow: "visible" }}>
+                <DialogContent
+                  dividers={false}
+                  sx={{ px: 3, py: 1.5, overflow: "visible" }}
+                >
                   <Stack spacing={2.5}>
                     {/* Candidate basic info + message button */}
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -1247,11 +1293,7 @@ export default function AppliedCandidates() {
                     </Stack>
                     {/* Personal Information */}
                     <Box>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                      >
+                      <Stack direction="row" alignItems="center" spacing={1}>
                         <PersonOutlineSharp color="primary" />
                         <Typography variant="body1" fontWeight={700}>
                           Personal Information
@@ -1303,95 +1345,95 @@ export default function AppliedCandidates() {
                         />
                       </Stack>
                       <Divider sx={{ mb: 1, mt: 1 }} />
-                        <Box>
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <DescriptionOutlined fontSize="small" color="primary" />
+                      <Box>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <DescriptionOutlined
+                            fontSize="small"
+                            color="primary"
+                          />
 
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                            >
-                              Application Documents
-                            </Typography>
-                          </Stack>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Application Documents
+                          </Typography>
+                        </Stack>
 
-                          <Box sx={{ width: "100%" }}>
-                            <DataGrid
-                              rows={documentRows}
-                              columns={documentColumns}
-                              disableRowSelectionOnClick
-                              autoHeight
-                              density="compact"
-                              rowHeight={40}
-                              pageSizeOptions={[5, 10, 20]}
-                              initialState={{
-                                pagination: {
-                                  paginationModel: { pageSize: 5 },
-                                },
-                              }}
-                              sx={{
-                                border: 1,
+                        <Box sx={{ width: "100%" }}>
+                          <DataGrid
+                            rows={documentRows}
+                            columns={documentColumns}
+                            disableRowSelectionOnClick
+                            autoHeight
+                            density="compact"
+                            rowHeight={40}
+                            pageSizeOptions={[5, 10, 20]}
+                            initialState={{
+                              pagination: {
+                                paginationModel: { pageSize: 5 },
+                              },
+                            }}
+                            sx={{
+                              border: 1,
+                              borderColor: "divider",
+                              borderRadius: 1.5,
+                              bgcolor: "background.paper",
+                              fontSize: 13,
+
+                              "& .MuiDataGrid-columnHeaders": {
+                                bgcolor: "action.hover",
+                                borderBottom: 1,
                                 borderColor: "divider",
-                                borderRadius: 1.5,
-                                bgcolor: "background.paper",
-                                fontSize: 13,
+                              },
 
-                                "& .MuiDataGrid-columnHeaders": {
-                                  bgcolor: "action.hover",
-                                  borderBottom: 1,
-                                  borderColor: "divider",
-                                },
+                              "& .MuiDataGrid-columnHeaderTitle": {
+                                fontWeight: 600,
+                                width: "100%",
+                                textAlign: "center",
+                              },
 
-                                "& .MuiDataGrid-columnHeaderTitle": {
-                                  fontWeight: 600,
-                                  width: "100%",
-                                  textAlign: "center",
-                                },
+                              "& .MuiDataGrid-cell": {
+                                py: 0.5,
+                              },
 
-                                "& .MuiDataGrid-cell": {
-                                  py: 0.5,
-                                },
+                              "& .MuiDataGrid-row:hover": {
+                                bgcolor: "action.hover",
+                              },
 
-                                "& .MuiDataGrid-row:hover": {
-                                  bgcolor: "action.hover",
-                                },
+                              "& .MuiDataGrid-footerContainer": {
+                                borderTop: 1,
+                                borderColor: "divider",
+                                minHeight: 32,
+                              },
 
-                                "& .MuiDataGrid-footerContainer": {
-                                  borderTop: 1,
-                                  borderColor: "divider",
-                                  minHeight: 32,        
-                                },
+                              "& .MuiTablePagination-root": {
+                                fontSize: 12,
+                                minHeight: 32,
+                              },
 
-                                "& .MuiTablePagination-root": {
-                                  fontSize: 12,
-                                  minHeight: 32,
-                                },
+                              "& .MuiTablePagination-selectLabel": {
+                                fontSize: 12,
+                              },
 
-                                "& .MuiTablePagination-selectLabel": {
-                                  fontSize: 12,
-                                },
+                              "& .MuiTablePagination-displayedRows": {
+                                fontSize: 12,
+                              },
 
-                                "& .MuiTablePagination-displayedRows": {
-                                  fontSize: 12,
-                                },
+                              "& .MuiTablePagination-select": {
+                                fontSize: 12,
+                                paddingTop: 0,
+                                paddingBottom: 0,
+                              },
 
-                                "& .MuiTablePagination-select": {
-                                  fontSize: 12,
-                                  paddingTop: 0,
-                                  paddingBottom: 0,
-                                },
+                              "& .MuiTablePagination-actions": {
+                                transform: "scale(0.85)",
+                              },
 
-                                "& .MuiTablePagination-actions": {
-                                  transform: "scale(0.85)",  
-                                },
-
-                                "& .MuiToolbar-root": {
-                                  minHeight: "28px !important",
-                                }
-                              }}
-                            />
-                          </Box>
+                              "& .MuiToolbar-root": {
+                                minHeight: "28px !important",
+                              },
+                            }}
+                          />
                         </Box>
+                      </Box>
                       {/* Status Selector in Detail Dialog */}
 
                       <Stack
@@ -1401,63 +1443,78 @@ export default function AppliedCandidates() {
                         justifyContent="center"
                         sx={{ pl: 1, mt: 2 }}
                       >
-                        <FormControl 
+                        <FormControl
                           sx={{
                             minWidth: 140,
                             "& .MuiInputBase-root": {
-                              height: 30,          
-                              fontSize: 13,        
+                              height: 30,
+                              fontSize: 13,
                               paddingTop: 0,
                               paddingBottom: 0,
                             },
                             "& .MuiSelect-select": {
-                              paddingTop: 4,       
+                              paddingTop: 4,
                               paddingBottom: 4,
                             },
                             "& .MuiInputLabel-root": {
-                              fontSize: 13,       
+                              fontSize: 13,
                             },
                           }}
                         >
                           <InputLabel>Application Status</InputLabel>
                           <Select
-                            value={selectedCandidateApp.application_status || "PENDING"}
+                            value={
+                              selectedCandidateApp.application_status ||
+                              "PENDING"
+                            }
                             label="Application Status"
                             size="small"
                             onChange={(e) => {
                               const newKey = e.target.value;
                               const newLabel = STATUS_MAP[newKey]?.label;
 
-                              if (!newLabel || newKey === selectedCandidateApp.application_status) {
+                              if (
+                                !newLabel ||
+                                newKey ===
+                                  selectedCandidateApp.application_status
+                              ) {
                                 return;
                               }
 
                               setConfirmDialog({
                                 open: true,
                                 appId: selectedCandidateApp.pk_id,
-                                currentStatus: selectedCandidateApp.application_status,
+                                currentStatus:
+                                  selectedCandidateApp.application_status,
                                 newStatusLabel: newLabel,
                                 newStatusKey: newKey,
                               });
                             }}
                           >
-                            {Object.entries(STATUS_MAP).map(([key, { label }]) => (
-                              <MenuItem key={key} value={key}>
-                                {label}
-                              </MenuItem>
-                            ))}
+                            {Object.entries(STATUS_MAP).map(
+                              ([key, { label }]) => (
+                                <MenuItem key={key} value={key}>
+                                  {label}
+                                </MenuItem>
+                              ),
+                            )}
                           </Select>
                         </FormControl>
 
                         <Chip
-                          label={STATUS_MAP[selectedCandidateApp.application_status]?.label || "Pending"}
-                          color={STATUS_MAP[selectedCandidateApp.application_status]?.color || "warning"}
+                          label={
+                            STATUS_MAP[selectedCandidateApp.application_status]
+                              ?.label || "Pending"
+                          }
+                          color={
+                            STATUS_MAP[selectedCandidateApp.application_status]
+                              ?.color || "warning"
+                          }
                           size="small"
                           sx={{ fontWeight: 600, minWidth: 100 }}
                         />
                       </Stack>
                     </Box>
-                    
                   </Stack>
                 </DialogContent>
               </>
