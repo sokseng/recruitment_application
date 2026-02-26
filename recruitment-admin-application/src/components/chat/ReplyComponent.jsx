@@ -1,6 +1,9 @@
 import { Box, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 function ReplyComponent({ reply, isOwn, isImage, onScroll }) {
+    const { t } = useTranslation();
+
     if (!reply) return null;
 
     const getPreviewText = () => {
@@ -10,15 +13,15 @@ function ReplyComponent({ reply, isOwn, isImage, onScroll }) {
 
         switch (reply.type) {
             case 'image':
-                return '📷 Photo';
+                return t('photo');
             case 'video':
-                return '🎥 Video';
+                return t('video');
             case 'voice':
-                return '🎤 Voice message';
+                return t('voice_message');
             case 'file':
-                return '📎 File';
+                return t('file');
             default:
-                return 'Message';
+                return t('message');
         }
     };
 
@@ -44,7 +47,7 @@ function ReplyComponent({ reply, isOwn, isImage, onScroll }) {
                 variant="caption"
                 sx={{ opacity: 0.7, color: isImage ? 'grey' : isOwn ? 'white' : 'grey' }}
             >
-                Replying to
+                {t('replying_to')}
             </Typography>
 
             <Typography
@@ -59,4 +62,3 @@ function ReplyComponent({ reply, isOwn, isImage, onScroll }) {
 }
 
 export default ReplyComponent;
-

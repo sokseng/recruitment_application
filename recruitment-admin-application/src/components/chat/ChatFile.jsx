@@ -1,10 +1,12 @@
 import { Box, Typography } from '@mui/material';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getFileIcon } from './FileIcon';
-import React, { useState } from 'react';
 
 export default function ChatFile({ fileUrl, isOwn, maxWidth = 300 }) {
+  const { t } = useTranslation();
   const [hasError, setHasError] = useState(false);
-  const fileName = fileUrl ? fileUrl.split('/').pop() : 'Unknown File';
+  const fileName = fileUrl ? fileUrl.split('/').pop() : t('unknown_file');
 
   return (
     <Box
@@ -53,7 +55,7 @@ export default function ChatFile({ fileUrl, isOwn, maxWidth = 300 }) {
           </a>
         ) : (
           <Typography variant="body2" sx={{ color: 'red' }}>
-            File not found
+            {t('file_not_found')}
           </Typography>
         )}
       </Typography>

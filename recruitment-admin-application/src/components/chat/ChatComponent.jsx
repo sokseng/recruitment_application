@@ -11,6 +11,7 @@ import SendIcon from '@mui/icons-material/Send';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import { Alert, AppBar, Avatar, Box, CircularProgress, IconButton, Paper, Snackbar, TextField, Toolbar, Typography, Button } from "@mui/material";
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import ChatMenuDialog from './dialog/ChatMenuDialog';
 import EmojiPicker from './EmojiPicker';
@@ -31,6 +32,7 @@ const FILE_RULES = {
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserId, isOnline, typingUsers, messagesRef, onScroll, loadingOlderRef, loadingOlder, hasMore, messagesEndRef, pinMessage, reactionsData, onStartCall, blockMessage, scrollToMessage, highlightedMessageId }) {
+    const { t } = useTranslation();
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -256,11 +258,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         if (invalidFiles.length > 0) {
             const messages = invalidFiles.map((f) => {
                 const ext = f.name.split('.').pop().toLowerCase();
-                if (!Object.values(FILE_RULES).some(rule => rule.extensions.has(ext))) return `${f.name} (invalid type)`;
-                if (f.size > MAX_SIZE) return `${f.name} (exceeds 500MB)`;
+                if (!Object.values(FILE_RULES).some(rule => rule.extensions.has(ext))) return `${f.name} (${t('invalid_type')})`;
+                if (f.size > MAX_SIZE) return `${f.name} (${t('exceeds_limit')})`;
                 return f.name;
             });
-            setError(`Invalid file(s): ${messages.join(', ')}`);
+            setError(t('invalid_files', { files: messages.join(', ') }));
             e.target.value = '';
             return;
         }
@@ -581,11 +583,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             const allowed = Object.values(FILE_RULES)
                 .some(rule => rule.extensions.has(ext));
             if (!allowed) {
-                setError(`Invalid file type.`);
+                setError(t('invalid_file_type'));
                 return;
             }
             if (file.size > MAX_SIZE) {
-                setError('File exceeds 500MB');
+                setError(t('file_exceeds_limit'));
                 return;
             }
 
@@ -615,7 +617,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
             } catch (err) {
                 console.error(err);
-                setError('Failed to replace file');
+                setError(t('replace_failed'));
             }
         };
 
@@ -728,11 +730,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
                                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
                                     <Typography variant="h6" fontWeight={600} noWrap>
-                                        {chat?.username || 'Unkown User'}
+                                        {chat?.username || t('unknown_user')}
                                     </Typography>
 
                                     <Typography variant="caption" sx={{ color: typingUsers[chat?.user_id] ? 'primary.main' : isOnline ? 'green' : 'grey', fontWeight: 'bold' }} noWrap>
-                                        {typingUsers[chat?.user_id] ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
+                                        {typingUsers[chat?.user_id] ? t('typing') : isOnline ? t('online') : t('offline')}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -842,7 +844,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                 >
                                     <Typography variant='h6' fontWeight={600}>
-                                        Say something to
+                                        {t('say_something_to')}
                                     </Typography>
                                     <Typography variant='h6' fontWeight={600}>
                                         {chat?.username}
@@ -1042,7 +1044,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 justifyContent: 'space-between'
                             }}>
                                 <Typography >
-                                    Editing message
+                                    {t('editing_message')}
                                 </Typography>
                                 <IconButton
                                     size="small"
@@ -1073,7 +1075,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             >
                                 <Box sx={{ maxWidth: '80%' }}>
                                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                                        Replying to
+                                        {t('replying_to')}
                                     </Typography>
                                     <Typography variant="body2" noWrap>
                                         {replyingTo.content || replyingTo.type}
@@ -1101,7 +1103,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     }}
                                 >
                                     <Typography>
-                                        This person is not contactable on Chat.
+                                        {t('user_not_contactable')}
                                     </Typography>
                                 </Box>
                             ) : (
@@ -1127,8 +1129,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
                                             <Typography sx={{ flexGrow: 1 }}>
                                                 {isRecording
-                                                    ? `Recording... ${recordTime}s`
-                                                    : 'Audio ready'}
+                                                    ? t('recording', { seconds: recordTime })
+                                                    : t('audio_ready')}
                                             </Typography>
                                         </>
                                     )}
@@ -1187,7 +1189,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                             <TextField
                                                 fullWidth
                                                 size="small"
-                                                placeholder="Aa..."
+                                                placeholder={t('message_placeholder')}
                                                 multiline
                                                 value={newMessage}
                                                 onChange={onInputChange}
@@ -1258,7 +1260,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     }}
                 >
                     <Typography variant='h6' fontWeight={600}>
-                        Tab a chat to start message
+                        {t('tab_chat_to_start')}
                     </Typography>
                 </Box>
             )}

@@ -1,12 +1,14 @@
-import { Box, Typography } from '@mui/material';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
-import { FormatTime } from './FormatTime';
-import React, { useState } from 'react';
-import ReactionComponent from './ReactionComponent';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import { Box, Typography } from '@mui/material';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FormatTime } from './FormatTime';
+import ReactionComponent from './ReactionComponent';
 
 export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, isPin, messageId, reactionsData, onRemoveReact, width = 200, height = 150 }) {
+  const { t } = useTranslation();
   const [hasError, setHasError] = useState(false);
 
   return (
@@ -29,7 +31,7 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
         <Box
           component="img"
           src={src}
-          alt="upload"
+          alt={t('upload')}
           onError={() => setHasError(true)}
           sx={{
             width: '100%',
@@ -57,7 +59,7 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
             variant="body2"
             sx={{ textAlign: 'center' }}
           >
-            Image not found
+            {t('image_not_found')}
           </Typography>
         </Box>
       )}
@@ -113,7 +115,7 @@ export default function ChatImage({ src, isOwn, created_at, edited_at, is_read, 
               variant="caption"
               sx={{ ml: 0.5, opacity: 0.7 }}
             >
-              · edited
+              · {t('edited')}
             </Typography>
           )}
         </Typography>
