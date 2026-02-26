@@ -12,6 +12,7 @@ import {
     Box,
     Typography,
 } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 
 export default function ForwardDialog({
     open,
@@ -24,6 +25,8 @@ export default function ForwardDialog({
     hasMore,
     loading,
 }) {
+    const { t } = useTranslation();
+
     return (
         <Dialog
             open={open}
@@ -31,7 +34,7 @@ export default function ForwardDialog({
             fullWidth
             maxWidth="sm"
         >
-            <DialogTitle>Forward message</DialogTitle>
+            <DialogTitle>{t('forward_message')}</DialogTitle>
 
             <DialogContent
                 dividers
@@ -45,7 +48,7 @@ export default function ForwardDialog({
                     {rooms.length === 0 ?
                         (
                             <Typography textAlign="center">
-                                No more room available
+                                {t('no_more_rooms')}
                             </Typography>
                         ) :
                         (rooms.map((room) => {
@@ -80,7 +83,7 @@ export default function ForwardDialog({
                             {loading ? (
                                 <CircularProgress size={20} />
                             ) : (
-                                "Show more"
+                                t('show_more')
                             )}
                         </Button>
                     </Box>
@@ -90,14 +93,14 @@ export default function ForwardDialog({
 
             <DialogActions>
                 <Button onClick={onClose}>
-                    Cancel
+                    {t('cancel')}
                 </Button>
                 <Button
                     variant="contained"
                     onClick={onConfirm}
                     disabled={selectedRooms.size === 0}
                 >
-                    Forward
+                    {t('forward')}
                 </Button>
             </DialogActions>
         </Dialog>

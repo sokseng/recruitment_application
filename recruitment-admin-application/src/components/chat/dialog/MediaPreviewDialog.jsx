@@ -2,8 +2,11 @@ import { Dialog, DialogContent, IconButton, Box } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { useTranslation } from 'react-i18next';
 
 export default function MediaPreviewDialog({ open, onClose, mediaMessages, currentIndex, onPrev, onNext, BASE_URL }) {
+    const { t } = useTranslation();
+
     if (!mediaMessages[currentIndex]) return null;
 
     const message = mediaMessages[currentIndex];
@@ -23,7 +26,7 @@ export default function MediaPreviewDialog({ open, onClose, mediaMessages, curre
                     {message.type === 'image' && (
                         <img
                             src={`${BASE_URL}${message.file_url}`}
-                            alt=""
+                            alt={t('image_preview')}
                             style={{ maxWidth: '100%', maxHeight: '80vh' }}
                             onError={(e) => {
                                 e.target.style.display = 'none'; // hide broken image
@@ -34,16 +37,18 @@ export default function MediaPreviewDialog({ open, onClose, mediaMessages, curre
                     {message.type === 'video' && (
                         <video controls style={{ maxWidth: '100%', maxHeight: '80vh' }}>
                             <source src={`${BASE_URL}${message.file_url}`} type="video/mp4" />
+                            {t('video_not_supported')}
                         </video>
                     )}
                     {message.type === 'voice' && (
                         <audio controls style={{ width: '100%' }}>
                             <source src={`${BASE_URL}${message.file_url}`} type="audio/mpeg" />
+                            {t('audio_not_supported')}
                         </audio>
                     )}
                     {message.type === 'file' && (
                         <a href={`${BASE_URL}${message.file_url}`} target="_blank" rel="noreferrer">
-                            Download {message.file_name || 'File'}
+                            {t('download_file', { filename: message.file_name || t('file') })}
                         </a>
                     )}
                 </DialogContent>

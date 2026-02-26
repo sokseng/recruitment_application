@@ -25,10 +25,12 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import BackHandIcon from '@mui/icons-material/BackHand';
 import BlockIcon from '@mui/icons-material/Block';
 import MediaPreviewDialog from './MediaPreviewDialog';
+import { useTranslation } from 'react-i18next';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUser, blockMessage }) {
+    const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -81,7 +83,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
 
         } catch (err) {
             console.error("Failed to load shared media", err);
-            setErrorMsg("Could not load shared media");
+            setErrorMsg(t('load_shared_media_failed'));
             setHasMore(false);
         } finally {
             setLoading(false);
@@ -142,7 +144,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
     const handleBlockClick = () => {
         if (blockMessage?.is_blocked) {
             if (blockMessage?.blocked_by_user?.pk_id !== currentUserId) {
-                alert("Only the user who blocked can unblock.");
+                alert(t('only_blocker_can_unblock'));
                 return;
             }
             setActionType('unblock');
@@ -176,7 +178,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
 
     const showNext = () => {
         if (previewIndex < filteredMedia.length - 1) setPreviewIndex(previewIndex + 1);
-    };;
+    };
 
     return (
         <>
@@ -190,13 +192,13 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                             {user?.username?.charAt(0)?.toUpperCase() || '?'}
                         </Avatar>
 
-                        <Typography variant="h6">{user?.username || 'User'}</Typography>
+                        <Typography variant="h6">{user?.username || t('user')}</Typography>
 
                         <Typography
                             variant="caption"
                             color={user?.is_online ? 'success.main' : 'text.secondary'}
                         >
-                            {user?.is_online ? 'Online' : 'Offline'}
+                            {user?.is_online ? t('online') : t('offline')}
                         </Typography>
 
                         {(!blockMessage?.is_blocked || blockMessage?.blocked_by_user?.pk_id === currentUserId) && (
@@ -218,7 +220,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                                     )}
                                 </ListItemIcon>
                                 <ListItemText sx={{ color: !blockMessage?.is_blocked ? 'error.main' : 'black' }}>
-                                    {blockMessage?.is_blocked ? 'Unblock user' : 'Block user'}
+                                    {blockMessage?.is_blocked ? t('unblock_user') : t('block_user')}
                                 </ListItemText>
                             </MenuItem>
                         </Menu>
@@ -232,9 +234,9 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                         variant="fullWidth"
                         sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
                     >
-                        <Tab label="Media" />
-                        <Tab label="Voice" />
-                        <Tab label="File" />
+                        <Tab label={t('media')} />
+                        <Tab label={t('voice')} />
+                        <Tab label={t('file')} />
                     </Tabs>
 
                     {loading ? (
@@ -251,7 +253,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 1.5 }}>
                                     {messages.length === 0 ? (
                                         <Typography color="text.secondary" align="center" sx={{ gridColumn: '1 / -1', py: 8 }}>
-                                            No images or videos shared yet
+                                            {t('no_media_shared')}
                                         </Typography>
                                     ) : (
                                         messages.map(msg => (
@@ -277,7 +279,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                             {tabValue === 1 && (
                                 <Box sx={{ px: 1 }}>
                                     {messages.length === 0 ? (
-                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>No voice messages yet</Typography>
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>{t('no_voice_messages')}</Typography>
                                     ) : (
                                         messages.map(msg => {
                                             const isOwn = currentUserId === msg.sender_id;
@@ -294,7 +296,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                             {tabValue === 2 && (
                                 <Box sx={{ px: 1 }}>
                                     {messages.length === 0 ? (
-                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>No files shared yet</Typography>
+                                        <Typography color="text.secondary" align="center" sx={{ py: 8 }}>{t('no_files_shared')}</Typography>
                                     ) : (
                                         messages.map(msg => {
                                             const isOwn = currentUserId === msg.sender_id;
@@ -332,13 +334,13 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
             )}
 
             <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-                <DialogTitle>{actionType === 'block' ? 'Block User' : 'Unblock User'}</DialogTitle>
+                <DialogTitle>{actionType === 'block' ? t('block_user') : t('unblock_user')}</DialogTitle>
                 <DialogContent>
-                    Are you sure you want to {actionType} {user?.username || 'this user'}?
+                    {t('confirm_block_message', { username: user?.username || t('this_user') })}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmOpen(false)} color="primary">Cancel</Button>
-                    <Button onClick={handleConfirm} color="error">{actionType === 'block' ? 'Block' : 'Unblock'}</Button>
+                    <Button onClick={() => setConfirmOpen(false)} color="primary">{t('cancel')}</Button>
+                    <Button onClick={handleConfirm} color="error">{actionType === 'block' ? t('block') : t('unblock')}</Button>
                 </DialogActions>
             </Dialog>
         </>
