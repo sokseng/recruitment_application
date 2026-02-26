@@ -1006,7 +1006,7 @@ export default function AppliedCandidates() {
           setSelectedCandidateApp(null);
         }}
         maxWidth="md"
-        PaperProps={{ sx: { height: "85vh", overflow: "hidden" } }}
+        PaperProps={{ sx: { height: "100vh", overflow: "hidden" } }}
         PaperComponent={DraggablePaper}
       >
         {selectedCandidateApp &&
@@ -1357,78 +1357,71 @@ export default function AppliedCandidates() {
                           </Typography>
                         </Stack>
 
-                        <Box sx={{ width: "100%" }}>
+                        <Box
+                          sx={{
+                            height: "calc(45vh - 100px)",
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                          }}
+                        >
                           <DataGrid
                             rows={documentRows}
                             columns={documentColumns}
                             disableRowSelectionOnClick
-                            autoHeight
                             density="compact"
-                            rowHeight={40}
-                            pageSizeOptions={[5, 10, 20]}
+                            headerHeight={34}
+                            pageSizeOptions={[5, 10]}
                             initialState={{
                               pagination: {
                                 paginationModel: { pageSize: 5 },
                               },
                             }}
                             sx={{
-                              border: 1,
-                              borderColor: "divider",
-                              borderRadius: 1.5,
+                              height: "100%",
+                              fontSize: 12,
                               bgcolor: "background.paper",
-                              fontSize: 13,
 
                               "& .MuiDataGrid-columnHeaders": {
-                                bgcolor: "action.hover",
-                                borderBottom: 1,
-                                borderColor: "divider",
+                                bgcolor: "#f8fafc",
+                                borderBottom: "1px solid #e5e7eb",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                minHeight: "34px !important",
+                                maxHeight: "34px !important",
                               },
 
                               "& .MuiDataGrid-columnHeaderTitle": {
                                 fontWeight: 600,
-                                width: "100%",
-                                textAlign: "center",
                               },
 
                               "& .MuiDataGrid-cell": {
-                                py: 0.5,
+                                py: 0.3,
+                              },
+
+                              "& .MuiDataGrid-row": {
+                                minHeight: "30px !important",
+                                maxHeight: "30px !important",
                               },
 
                               "& .MuiDataGrid-row:hover": {
-                                bgcolor: "action.hover",
+                                bgcolor: "#f1f5f9",
                               },
 
                               "& .MuiDataGrid-footerContainer": {
-                                borderTop: 1,
-                                borderColor: "divider",
-                                minHeight: 32,
+                                minHeight: 30,
+                                borderTop: "1px solid #e5e7eb",
                               },
 
                               "& .MuiTablePagination-root": {
-                                fontSize: 12,
-                                minHeight: 32,
-                              },
-
-                              "& .MuiTablePagination-selectLabel": {
-                                fontSize: 12,
-                              },
-
-                              "& .MuiTablePagination-displayedRows": {
-                                fontSize: 12,
-                              },
-
-                              "& .MuiTablePagination-select": {
-                                fontSize: 12,
-                                paddingTop: 0,
-                                paddingBottom: 0,
+                                fontSize: 11,
+                                minHeight: 30,
                               },
 
                               "& .MuiTablePagination-actions": {
-                                transform: "scale(0.85)",
-                              },
-
-                              "& .MuiToolbar-root": {
-                                minHeight: "28px !important",
+                                transform: "scale(0.8)",
                               },
                             }}
                           />

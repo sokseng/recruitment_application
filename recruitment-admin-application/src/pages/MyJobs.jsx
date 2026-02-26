@@ -1023,13 +1023,13 @@ export default function MyJobs() {
         {/* Reset */}
         <Stack
           direction="row"
-          spacing={0.4}
+          spacing={0.5}
           width="100%"
           justifyContent={{ xs: "flex-end", sm: "flex-end" }}
           sx={{
             gridColumn: {
               xs: "1 / -1",
-              md: "span 1",
+              sm: "span 1",
             },
           }}
         >
@@ -1042,6 +1042,9 @@ export default function MyJobs() {
               sx={{
                 borderRadius: 3,
                 textTransform: "none",
+                "& .MuiButton-startIcon": {
+                  marginRight: 0.5, 
+                }, 
               }}
               onClick={() => {
                 setSearch("");
@@ -1059,7 +1062,13 @@ export default function MyJobs() {
               variant="contained"
               startIcon={<PostAdd />}
               onClick={openCreate}
-              sx={{ borderRadius: 3, textTransform: "none" }}
+              sx={{ 
+                borderRadius: 3, 
+                textTransform: "none",
+                "& .MuiButton-startIcon": {
+                  marginRight: 0.5, 
+                }, 
+              }}
             >
               {t("post")}
             </Button>

@@ -234,10 +234,12 @@ def update_job(
     old_salary_range  = db_job.salary_range
     old_location      = db_job.location
     old_closing_date  = db_job.closing_date
-    old_status        = db_job.status
+    old_status = db_job.status.name 
+    new_status = job_data.status.name
+
     old_category_names = sorted(c.name for c in db_job.categories) if db_job.categories else []
 
-    company_name = db_job.employer.company_name if db_job.employer else "N/A"
+    company_name = db_job.employer.company_name if db_job.employer else ""
 
 
     update_data = job_data.model_dump(exclude_unset=True, exclude={"category_ids"})
@@ -284,25 +286,25 @@ def update_job(
         changes.append(f"level: {old_level} → {db_job.level}")
 
     if old_position_num != db_job.position_number:
-        changes.append(f"position_number: {old_position_num or 'N/A'} → {db_job.position_number or 'N/A'}")
+        changes.append(f"position_number: {old_position_num or 'empty'} → {db_job.position_number or 'empty'}")
 
     if old_salary_range != db_job.salary_range:
-        changes.append(f"salary_range: '{old_salary_range or 'N/A'}' → '{db_job.salary_range or 'N/A'}'")
+        changes.append(f"salary_range: '{old_salary_range or 'empty'}' → '{db_job.salary_range or 'empty'}'")
 
     if old_location != db_job.location:
-        changes.append(f"location: '{old_location or 'N/A'}' → '{db_job.location or 'N/A'}'")
+        changes.append(f"location: '{old_location or 'empty'}' → '{db_job.location or 'empty'}'")
 
     old_date_str = old_closing_date.strftime('%Y-%m-%d') if old_closing_date else "None"
     new_date_str = db_job.closing_date.strftime('%Y-%m-%d') if db_job.closing_date else "None"
     if old_date_str != new_date_str:
         changes.append(f"closing_date: '{old_date_str}' → '{new_date_str}'")
 
-    if old_status != db_job.status:
+    if old_status != new_status:
         reason = " (auto expired)" if auto_closed else ""
         status_line = (
-            f"status: {old_status} → {db_job.status}{reason} | "
-            f"job: '{db_job.job_title}' | "
-            f"company: '{company_name}'"
+            f"status: {old_status} → {new_status}{reason} | "
+            f"job_title: '{db_job.job_title}' | "
+            f"company_name: '{company_name}'"
         )
         changes.append(status_line)
 
