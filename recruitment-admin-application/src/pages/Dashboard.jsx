@@ -2548,7 +2548,7 @@ export default function Dashboard() {
                     {selectedJob.location}
                   </Typography>
                 </Stack>
-                {selectedJob.applications?.length > 0 && selectedJob.applications[0]?.application_status && (
+                {isCandidate && selectedJob.applications?.length > 0 && selectedJob.applications[0]?.application_status && (
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <HourglassEmpty color="action" fontSize="small" />
                     <Typography
