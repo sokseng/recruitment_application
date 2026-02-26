@@ -1,7 +1,10 @@
 import { Box, Typography, Stack, IconButton, Avatar } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
+import { useTranslation } from 'react-i18next';
 
 function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy }) {
+    const { t } = useTranslation();
+
     return (
         <Box
             sx={{
@@ -30,15 +33,16 @@ function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy }) {
                         mx: 'auto'
                     }}
                 >
-                    {callRequest.username.charAt(0).toUpperCase()}
+                    {callRequest.username?.charAt(0).toUpperCase()}
                 </Avatar>
                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: isCallBusy ? 'red' : 'white' }}>
-                    {isCallBusy ? `${callRequest.username} is in another call!!!` : `Calling to ${callRequest.username}`}
+                    {isCallBusy 
+                        ? t('user_in_another_call', { username: callRequest.username })
+                        : t('calling_to', { username: callRequest.username })}
                 </Typography>
             </Box>
 
             <Stack direction="row" spacing={2}>
-
                 <IconButton
                     onClick={() => {
                         onDeclinedCall(callRequest.room_id);
@@ -58,4 +62,4 @@ function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy }) {
     )
 }
 
-export default CallRequestDialog
+export default CallRequestDialog;

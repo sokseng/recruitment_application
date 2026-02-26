@@ -1,23 +1,26 @@
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, CircularProgress } from "@mui/material";
+import { Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 
 export default function DeleteDialog({ open, onClose, onCancel, onConfirm, deleting }) {
+    const { t } = useTranslation();
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
         >
-            <DialogTitle>Delete Message</DialogTitle>
+            <DialogTitle>{t('delete_message')}</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Are you sure you want to delete this message?
+                    {t('delete_message_confirmation')}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
                 <Button onClick={onCancel} color="primary">
-                    Cancel
+                    {t('cancel')}
                 </Button>
                 <Button onClick={onConfirm} color="error" variant="contained">
-                    {deleting ? <CircularProgress sx={{ color: 'white', fontSize: 14 }} /> : 'Delete'}
+                    {deleting ? <CircularProgress sx={{ color: 'white', fontSize: 14 }} /> : t('delete')}
                 </Button>
             </DialogActions>
         </Dialog>

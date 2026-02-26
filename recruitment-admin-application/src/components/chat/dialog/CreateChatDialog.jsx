@@ -15,8 +15,10 @@ import {
 } from "@mui/material";
 import api from "../../../services/api";
 import CloseIcon from "@mui/icons-material/Close";
+import { useTranslation } from 'react-i18next';
 
 const FindUsers = ({ open, onClose, onSelectUser }) => {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [recentRooms, setRecentRooms] = useState([]);
@@ -68,13 +70,13 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth>
-      <DialogTitle>Find users</DialogTitle>
+      <DialogTitle>{t('find_users')}</DialogTitle>
 
       <DialogContent>
         <TextField
           autoFocus
           margin="dense"
-          label="Search by username, email, or phone"
+          label={t('search_users_label')}
           fullWidth
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -83,7 +85,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
         {showRecent && recentRooms.length > 0 && (
           <>
             <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, opacity: 0.7 }}>
-              Recent users
+              {t('recent_users')}
             </Typography>
 
             <List>
@@ -99,7 +101,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
                 >
                   <ListItemAvatar>
                     <Avatar src={room.avatar_url}>
-                      {room.username[0]?.toUpperCase()}
+                      {room.username?.[0]?.toUpperCase()}
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText primary={room.username} />
@@ -118,7 +120,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
               >
                 <ListItemAvatar>
                   <Avatar src={user.avatar_url}>
-                    {user.user_name[0]?.toUpperCase()}
+                    {user.user_name?.[0]?.toUpperCase()}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText primary={user.user_name} />
@@ -129,7 +131,7 @@ const FindUsers = ({ open, onClose, onSelectUser }) => {
 
         {!loading && query && users.length === 0 && (
           <Typography sx={{ opacity: 0.6, mt: 2 }}>
-            No users found
+            {t('no_users_found')}
           </Typography>
         )}
       </DialogContent>
