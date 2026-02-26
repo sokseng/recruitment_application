@@ -1,54 +1,54 @@
 // src/pages/AppliedCandidates.jsx
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Box,
-  Card,
-  Typography,
-  Avatar,
-  Stack,
-  Divider,
-  CircularProgress,
-  Alert,
-  Button,
-  useMediaQuery,
-  useTheme,
-  AppBar,
-  Toolbar,
-  Chip,
-  Snackbar,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CardContent,
-  Tabs,
-  Tab,
-  Tooltip,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  DialogTitle,
-  Paper,
-  TextField,
-} from "@mui/material";
-import {
-  Work as WorkIcon,
   CalendarToday as CalendarIcon,
-  HourglassEmpty,
-  Home,
-  FileDownload as FileDownloadIcon,
-  Visibility as VisibilityIcon,
   CancelOutlined,
   CheckCircleOutline,
-  PersonOutlineSharp,
   DescriptionOutlined,
+  FileDownload as FileDownloadIcon,
+  Home,
+  HourglassEmpty,
+  PersonOutlineSharp,
+  Visibility as VisibilityIcon,
+  Work as WorkIcon,
 } from "@mui/icons-material";
-import api from "../services/api";
-import { FaFacebookMessenger } from "react-icons/fa";
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
+  Stack,
+  Tab,
+  Tabs,
+  Toolbar,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
+import { useTranslation } from "react-i18next";
+import { FaFacebookMessenger } from "react-icons/fa";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../services/api";
 
 // ────────────────────────────────────────────────
 //      Draggable Paper
@@ -78,6 +78,7 @@ const TAB_LABELS = ["All", "Pending", "Shortlisted", "Rejected", "Accepted"];
 const STATUS_FILTER = ["", "PENDING", "SHORTLISTED", "REJECTED", "ACCEPTED"];
 
 export default function AppliedCandidates() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [searchParams, setSearchParams] = useSearchParams();
@@ -469,7 +470,7 @@ export default function AppliedCandidates() {
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h7" fontWeight={700} color="primary.dark">
-          Your Jobs with Applications
+          {t('your_applications')}
         </Typography>
       </Box>
       <Divider />
@@ -487,10 +488,10 @@ export default function AppliedCandidates() {
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
             <Typography variant="subtitle2">
-              No jobs with applications yet
+              {t('no_jobs_with_applications_yet')}
             </Typography>
             <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
-              When candidates apply, their jobs will appear here.
+              {t('no_jobs_with_applications_yet_desc')}
             </Typography>
           </Box>
         ) : (
@@ -877,7 +878,7 @@ export default function AppliedCandidates() {
           color="text.secondary"
         >
           <Typography variant="h7">
-            Select a job to view applications
+            {t('select_a_job_to_view_applications')}
           </Typography>
         </Box>
       )}

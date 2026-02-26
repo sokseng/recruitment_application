@@ -17,26 +17,28 @@ import { FormatTime } from '../components/chat/FormatTime';
 import { useLocation } from "react-router-dom";
 import CallRequestDialog from '../components/chat/dialog/CallRequestDialog';
 import ringtone from '../assets/outgoing_sound.mp3';
+import { useTranslation } from 'react-i18next';
 
-function getLastMessagePreview(chat, currentUserId) {
+function getLastMessagePreview(chat, currentUserId, t) {
     const msg = chat.last_message;
-    if (!msg) return "Tap to start a new message";
+    if (!msg) return t('tap_to_start');
 
     const isMe = msg.sender_id === currentUserId;
 
     switch (msg.type) {
         case "text": return msg.content || "";
-        case "image": return isMe ? "You sent an image" : `Ssent you an image`;
-        case "voice": return isMe ? "You sent a voice message" : `Ssent you a voice`;
-        case "video": return isMe ? "You sent a video" : `Ssent you a video`;
-        case "file": return isMe ? "You sent a file" : `Sent you a file`;
+        case "image": return isMe ? t('you_sent_image') : t('sent_you_image');
+        case "voice": return isMe ? t('you_sent_voice') : t('sent_you_voice');
+        case "video": return isMe ? t('you_sent_video') : t('sent_you_video');
+        case "file": return isMe ? t('you_sent_file') : t('sent_you_file');
         case "call": return msg.content || "";
         case "system": return msg.content || "";
-        default: return "New message";
+        default: return t('new_message');
     }
 }
 
 function ChatPage() {
+    const { t } = useTranslation();
     const location = useLocation();
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore(s => s.access_token);
@@ -526,7 +528,7 @@ function ChatPage() {
                             ...prev,
                             {
                                 room_id: data.room_id,
-                                username: data.username || "New User",
+                                username: data.username || t('new_user'),
                                 avatar_url: data.avatar_url || null,
                                 last_message: data.last_message,
                                 last_message_at: data.last_message?.created_at,
@@ -692,7 +694,7 @@ function ChatPage() {
                             <TextField
                                 fullWidth
                                 size="small"
-                                placeholder="Search..."
+                                placeholder={t('search')}
                                 value={chatSearch}
                                 onChange={(e) => setChatSearch(e.target.value)}
                                 sx={{
@@ -721,7 +723,7 @@ function ChatPage() {
                             px: 1,
                             pt: 0.5
                         }}
-                    >All Chats</Typography>
+                    >{t('all_chats')}</Typography>
 
                     <Box
                         ref={scrollContainerRef}
@@ -756,7 +758,7 @@ function ChatPage() {
                                     >
                                         <ListItemAvatar sx={{ minWidth: 48 }}>
                                             <Avatar src={chat?.avatar_url} sx={{ borderRadius: 12 }}>
-                                                {chat.username.charAt(0).toUpperCase()}
+                                                {chat.username?.charAt(0).toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
 
@@ -774,7 +776,7 @@ function ChatPage() {
                                                     mt: 0.25,
                                                 }}
                                             >
-                                                {getLastMessagePreview(chat, currentUserId)}
+                                                {getLastMessagePreview(chat, currentUserId, t)}
                                             </Typography>
 
                                         </Box>
@@ -816,7 +818,7 @@ function ChatPage() {
                             {chatSearch && newUsers.length > 0 && (
                                 <>
                                     <Typography sx={{ px: 2, mt: 1, opacity: 0.6 }}>
-                                        Start new chat
+                                        {t('start_new_chat')}
                                     </Typography>
 
                                     {newUsers.map(user => (
@@ -826,7 +828,7 @@ function ChatPage() {
                                         >
                                             <ListItemAvatar>
                                                 <Avatar src={user.avatar_url}>
-                                                    {user.user_name[0]?.toUpperCase()}
+                                                    {user.user_name?.[0]?.toUpperCase()}
                                                 </Avatar>
                                             </ListItemAvatar>
                                             <ListItemText
@@ -842,7 +844,7 @@ function ChatPage() {
                                 newUsers.length === 0 &&
                                 !searchLoading && (
                                     <Typography sx={{ textAlign: 'center', mt: 2, opacity: 0.6 }}>
-                                        No chats or users found
+                                        {t('no_chats_or_users_found')}
                                     </Typography>
                                 )}
                         </List>
