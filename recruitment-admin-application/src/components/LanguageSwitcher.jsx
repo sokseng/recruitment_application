@@ -1,6 +1,5 @@
 // LanguageSwitcher.jsx (with SVG flags)
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import LanguageIcon from '@mui/icons-material/Language';
 import {
   Box,
   Button,
@@ -157,7 +156,6 @@ export default function LanguageSwitcher() {
     <>
       <Button
         onClick={handleClick}
-        startIcon={<LanguageIcon />}
         endIcon={<ArrowDropDownIcon />}
         sx={{
           color: 'teal',

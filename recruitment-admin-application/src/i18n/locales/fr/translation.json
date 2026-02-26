@@ -370,7 +370,7 @@
   "image_preview": "Aperçu de l'image",
   "video_not_supported": "Votre navigateur ne supporte pas la balise vidéo.",
   "audio_not_supported": "Votre navigateur ne supporte pas la balise audio.",
-  "download_file": "Télécharger {{filename}}"
+  "download_file": "Télécharger {{filename}}",
   "search_by_title_or_location": "Rechercher par titre ou lieu",
   "post": "Publier",
   "post_job": "Publier un emploi",
