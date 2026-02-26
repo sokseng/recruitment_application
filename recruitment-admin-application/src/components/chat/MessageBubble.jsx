@@ -25,8 +25,10 @@ import ForwardIcon from '@mui/icons-material/Forward';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import ReactionComponent from './ReactionComponent';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import { useTranslation } from 'react-i18next';
 
 function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, onForward, onReplace, onPreview, onPin, isPin, onUnpin, onReact, reactionsData, onRemoveReact, onStartCall, isBlocked, scrollToMessage, highlightedMessageId }) {
+    const { t } = useTranslation();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -119,10 +121,10 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         }}
                     >
                         <ForwardIcon sx={{ fontSize: 18 }} />
-                        forward from
+                        {t('forward_from')}
                         {isForward ?
                             (
-                                ' you'
+                                t('you')
                             ) :
                             (
                                 <Box
@@ -380,7 +382,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                     onStartCall();
                                 }}
                             >
-                                {isOwn ? 'Call again' : 'Call back'}
+                                {isOwn ? t('call_again') : t('call_back')}
                             </Button>
                         </Box>
                     )}
@@ -467,7 +469,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                                             variant="caption"
                                             sx={{ ml: 0.5, opacity: 0.7 }}
                                         >
-                                            · edited
+                                            · {t('edited')}
                                         </Typography>
                                     )}
                                 </Box>
@@ -500,7 +502,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         }}
                     >
                         <ListItemIcon><EmojiEmotionsIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>React</ListItemText>
+                        <ListItemText>{t('react')}</ListItemText>
                     </MenuItem>
                 )}
                 {message.type !== 'call' && (
@@ -513,7 +515,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         }
                     }}>
                         <ListItemIcon><PushPinIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>{isPin ? 'Unpin' : 'Pin'}</ListItemText>
+                        <ListItemText>{isPin ? t('unpin') : t('pin')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -523,7 +525,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onReply?.(message);
                     }}>
                         <ListItemIcon><ReplyIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Reply</ListItemText>
+                        <ListItemText>{t('reply')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -533,7 +535,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onForward?.(message);
                     }}>
                         <ListItemIcon><ReplyAllIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Forward</ListItemText>
+                        <ListItemText>{t('forward')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -543,7 +545,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onReplace?.(message);
                     }}>
                         <ListItemIcon><AutorenewIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Replace</ListItemText>
+                        <ListItemText>{t('replace')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -553,14 +555,14 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onPreview?.(message);
                     }}>
                         <ListItemIcon><PreviewIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Preview</ListItemText>
+                        <ListItemText>{t('preview')}</ListItemText>
                     </MenuItem>
                 )}
 
                 {(message.type === 'image' || message.type === 'video' || message.type === 'file' || message.type === 'voice') && (
                     <MenuItem onClick={handleSave}>
                         <ListItemIcon><DownloadIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Save</ListItemText>
+                        <ListItemText>{t('save')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -570,7 +572,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         onEdit?.(message);
                     }}>
                         <ListItemIcon><EditIcon fontSize="small" /></ListItemIcon>
-                        <ListItemText>Edit</ListItemText>
+                        <ListItemText>{t('edit')}</ListItemText>
                     </MenuItem>
                 )}
 
@@ -585,7 +587,7 @@ function MessageBubble({ message, isOwn, isForward, onEdit, onDelete, onReply, o
                         <ListItemIcon sx={{ color: 'error.main' }}>
                             <DeleteIcon fontSize="small" />
                         </ListItemIcon>
-                        <ListItemText>Delete</ListItemText>
+                        <ListItemText>{t('delete')}</ListItemText>
                     </MenuItem>
                 )}
             </Menu>

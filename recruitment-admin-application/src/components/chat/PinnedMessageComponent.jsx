@@ -2,8 +2,11 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { FormatTime } from './FormatTime';
 import CloseIcon from '@mui/icons-material/Close';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import { useTranslation } from 'react-i18next';
 
-function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin, scrollToMessage }) {
+function PinnedMessageComponent({ pinMessage, currentUserId, onUnpin, scrollToMessage }) {
+    const { t } = useTranslation();
+
     return (
         <Box
             sx={{
@@ -39,8 +42,10 @@ function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin, scrollT
                         sx={{
                             fontSize: 14
                         }}
-                    >Pinned by</Typography>
-                    <Typography component="span" sx={{ color: 'primary.main', textDecoration: 'underline', fontSize: 14 }}>{currentUserId === pinMessage?.pinned_by_user?.pk_id ? 'you' : `@${pinMessage?.pinned_by_user?.user_name}`}</Typography>
+                    >{t('pinned_by')}</Typography>
+                    <Typography component="span" sx={{ color: 'primary.main', textDecoration: 'underline', fontSize: 14 }}>
+                        {currentUserId === pinMessage?.pinned_by_user?.pk_id ? t('you') : `@${pinMessage?.pinned_by_user?.user_name}`}
+                    </Typography>
                     (<FormatTime time={pinMessage.pinned_at} />)
                     <PushPinIcon
                         sx={{
@@ -53,7 +58,7 @@ function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin, scrollT
                     />
                 </Box>
                 <Box>
-                    {pinMessage.message.type === 'text' || pinMessage.message.type === 'system' && (
+                    {(pinMessage.message.type === 'text' || pinMessage.message.type === 'system') && (
                         <Typography
                             sx={{
                                 fontSize: 14,
@@ -69,28 +74,28 @@ function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin, scrollT
                             sx={{
                                 fontSize: 14
                             }}
-                        >Voice</Typography>
+                        >{t('voice')}</Typography>
                     )}
                     {pinMessage.message.type === 'image' && (
                         <Typography
                             sx={{
                                 fontSize: 14
                             }}
-                        >Image</Typography>
+                        >{t('image')}</Typography>
                     )}
                     {pinMessage.message.type === 'file' && (
                         <Typography
                             sx={{
                                 fontSize: 14
                             }}
-                        >File</Typography>
+                        >{t('file')}</Typography>
                     )}
                     {pinMessage.message.type === 'video' && (
                         <Typography
                             sx={{
                                 fontSize: 14
                             }}
-                        >Video</Typography>
+                        >{t('video')}</Typography>
                     )}
                 </Box>
             </Box>
@@ -111,4 +116,4 @@ function PinnedpinMessageComponent({ pinMessage, currentUserId, onUnpin, scrollT
     )
 }
 
-export default PinnedpinMessageComponent
+export default PinnedMessageComponent;

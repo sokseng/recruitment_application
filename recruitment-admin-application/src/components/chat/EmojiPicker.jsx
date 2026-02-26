@@ -1,6 +1,7 @@
-import { useState,useEffect } from 'react';
-import { Box,Popper, ClickAwayListener } from '@mui/material';
+import { Box, ClickAwayListener, Popper } from '@mui/material';
 import EmojiPickerReact from 'emoji-picker-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const EmojiPicker = ({ 
   onSelect, 
@@ -10,6 +11,7 @@ const EmojiPicker = ({
   width = 350,
   height = 400
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
 
   const handleEmojiClick = (emojiData) => {
@@ -51,7 +53,7 @@ const EmojiPicker = ({
             previewConfig={{
               showPreview: false
             }}
-            searchPlaceholder="Search emojis..."
+            searchPlaceholder={t('search_emojis')}
             skinTonesDisabled
           />
         </Box>

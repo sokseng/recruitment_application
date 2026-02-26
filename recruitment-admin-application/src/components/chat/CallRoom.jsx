@@ -18,6 +18,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import { Snackbar, Alert } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 
 function LocalTracksPublisher({ startWithVideo = true }) {
 
@@ -63,6 +64,7 @@ function LocalTracksPublisher({ startWithVideo = true }) {
 }
 
 function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, setCamEnabled, roomId }) {
+  const { t } = useTranslation();
   const room = useRoomContext();
   const connectionState = useConnectionState();
 
@@ -118,7 +120,7 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
         payload: { room_id: roomId, mic: newState, cam: camEnabled }
       });
     } catch (err) {
-      showSnackbar("No microphone found on your device!", "error");
+      showSnackbar(t('no_microphone_found'), "error");
     }
   };
 
@@ -135,7 +137,7 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
         payload: { room_id: roomId, mic: micEnabled, cam: newState }
       });
     } catch (err) {
-      showSnackbar("No camera found on your device!", "error");
+      showSnackbar(t('no_camera_found'), "error");
     }
   };
 
@@ -214,6 +216,7 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
 }
 
 function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
+  const { t } = useTranslation();
   const [seconds, setSeconds] = useState(0);
 
   const [remoteParticipants, setRemoteParticipants] = useState(remoteParticipantsWS);
@@ -238,6 +241,12 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
   const localVideo = tracks.find(t => t.participant?.isLocal && t.source === "camera");
   const remoteVideos = tracks.filter(t => !t.participant?.isLocal && t.source === "camera");
   const audioTracks = tracks.filter(t => t.source === "microphone");
+
+  const formatTime = (totalSeconds) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh", background: "#000" }}>
@@ -274,7 +283,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
                 fontSize: 24
               }}>
                 <Avatar sx={{ width: 45, height: 45 }}>
-                  {userData.username.charAt(0).toUpperCase()}
+                  {userData.username?.charAt(0).toUpperCase()}
                 </Avatar>
                 <Typography sx={{ color: "white" }}>{userData.username}</Typography>
               </Box>
@@ -291,7 +300,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
                 borderRadius: 20,
                 fontSize: 12
               }}>
-                {userData.username} is muted
+                {t('user_muted', { username: userData.username })}
               </div>
             )}
           </div>
@@ -324,7 +333,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
               justifyContent: "center",
               fontSize: 12
             }}>
-              Camera Off
+              {t('camera_off')}
             </div>
           )}
         </div>
@@ -347,7 +356,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
       }}>
         <Typography variant="h6" sx={{ color: "white" }}>{userData.username}</Typography>
         <Typography variant="body2">
-          {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+          {formatTime(seconds)}
         </Typography>
       </Box>
 
@@ -356,6 +365,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
 }
 
 export default function CallRoom({ roomId, userId, mode, onEndCall, userData, send, remoteParticipants, firstData }) {
+  const { t } = useTranslation();
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
 
@@ -374,7 +384,7 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData, se
     fetchToken();
   }, [roomId, userId]);
 
-  if (!tokenData) return <div>Loading...</div>;
+  if (!tokenData) return <div>{t('loading')}</div>;
 
   return (
     <Box sx={{ position: 'fixed', zIndex: 1600, top: 0, left: 0, width: '100%', height: '100%', background: '#111' }}>

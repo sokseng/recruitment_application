@@ -1,6 +1,9 @@
 import { Box, Avatar } from "@mui/material";
+import { useTranslation } from 'react-i18next';
 
 export default function TypingIndicator({ username }) {
+    const { t } = useTranslation();
+
     return (
         <Box
             sx={{
@@ -9,6 +12,8 @@ export default function TypingIndicator({ username }) {
                 gap: 1,
                 mb: 1,
             }}
+            aria-label={t('typing_indicator', { username })}
+            role="status"
         >
             <Box
                 sx={{

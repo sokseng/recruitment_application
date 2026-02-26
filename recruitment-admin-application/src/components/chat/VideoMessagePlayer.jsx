@@ -7,16 +7,18 @@ import DoneAllIcon from '@mui/icons-material/DoneAll';
 import BrokenImageIcon from '@mui/icons-material/BrokenImage';
 import ReactionComponent from './ReactionComponent';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import { useTranslation } from 'react-i18next';
 
 export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reactionsData, onRemoveReact }) {
+  const { t } = useTranslation();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [error, setError] = useState(false); // <-- new state
+  const [error, setError] = useState(false);
 
   const handlePlayPause = (e) => {
     e.stopPropagation();
-    if (!videoRef.current || error) return; // prevent play if error
+    if (!videoRef.current || error) return;
 
     if (videoRef.current.paused) {
       videoRef.current.play();
@@ -78,7 +80,7 @@ export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reaction
               wordBreak: 'break-word',
             }}
           >
-            Video not found
+            {t('video_not_found')}
           </Typography>
 
           <Box
@@ -123,7 +125,7 @@ export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reaction
                   variant="caption"
                   sx={{ ml: 0.5, opacity: 0.7 }}
                 >
-                  · edited
+                  · {t('edited')}
                 </Typography>
               )}
             </Typography>
@@ -142,7 +144,7 @@ export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reaction
             muted
             playsInline
             ref={videoRef}
-            onError={() => setError(true)} // <-- handle load error
+            onError={() => setError(true)}
             sx={{
               width: '100%',
               height: '100%',
@@ -221,7 +223,7 @@ export default function VideoMessage({ message, isOwn, BASE_URL, isPin, reaction
                   variant="caption"
                   sx={{ ml: 0.5, opacity: 0.6 }}
                 >
-                  · edited
+                  · {t('edited')}
                 </Typography>
               )}
             </Typography>

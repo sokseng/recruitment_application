@@ -1,9 +1,11 @@
-import { Box, IconButton, Typography } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PauseIcon from "@mui/icons-material/Pause";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { Box, IconButton, Typography } from "@mui/material";
 import { useRef, useState } from "react";
+import { useTranslation } from 'react-i18next';
 
 export const VoiceMessagePlayer = ({ url, isOwn }) => {
+  const { t } = useTranslation();
   const audioRef = useRef(null);
   const progressBarRef = useRef(null);
 
@@ -54,7 +56,7 @@ export const VoiceMessagePlayer = ({ url, isOwn }) => {
     >
       {error ? (
         <Typography variant="body2" sx={{ color: isOwn ? "white" : "black", textAlign: "center" }}>
-          Voice message not found
+          {t('voice_message_not_found')}
         </Typography>
       ) : (
         <Box
@@ -138,5 +140,3 @@ export const VoiceMessagePlayer = ({ url, isOwn }) => {
     </Box>
   );
 };
-
-
