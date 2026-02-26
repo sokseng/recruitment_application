@@ -13,7 +13,10 @@ const theme = createTheme({
       main: '#1976d2',
     },
   },
-})
+  typography: {
+    fontFamily: '"Noto Sans Khmer", "Roboto", "Arial", sans-serif',
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
