@@ -54,6 +54,8 @@ import {
   WarningAmber,
 } from "@mui/icons-material";
 import Draggable from "react-draggable";
+import { useTranslation } from "react-i18next";
+import { t } from "i18next";
 
 const JOB_TYPES = [
   { value: "Full-time", label: "Full-time" },
@@ -69,10 +71,6 @@ const JOB_LEVELS = [
   { value: "Lead", label: "Lead" },
 ];
 
-const JOB_STATUSES_CREATE = [
-  { value: "Open", label: "Open" },
-  { value: "Closed", label: "Closed" },
-];
 
 const JOB_STATUSES_EDIT = ["Open", "Closed"];
 
@@ -152,25 +150,25 @@ function JobFormDialog({
     const newErrors = {};
 
     if (!formData.job_title?.trim()) {
-      newErrors.job_title = "Job title is required";
+      newErrors.job_title = t("job_title_required");
     }
 
     if (isQuillEmpty(formData.job_description)) {
-      newErrors.job_description = "Job description is required";
+      newErrors.job_description = t("job_description_required");
     }
 
     if (!formData.category_ids?.length) {
-      newErrors.category_ids = "Select at least one category";
+      newErrors.category_ids = t("select_at_least_one_category");
     }
 
-    if (!formData.location?.trim()) newErrors.location = "Location is required";
+    if (!formData.location?.trim()) newErrors.location = t("location_required");
 
     if (!formData.position_number || formData.position_number <= 0) {
-      newErrors.position_number = "Position number must be greater than 0";
+      newErrors.position_number = t("position_number_greater_than_zero");
     }
 
     if (!formData.closing_date) {
-      newErrors.closing_date = "Closing date is required";
+      newErrors.closing_date = t("closing_date_required");
     }
 
     setErrors(newErrors);
@@ -215,15 +213,15 @@ function JobFormDialog({
   };
 
   const title = isEdit
-    ? "Edit Job"
+    ? t("edit_job")
     : isDuplicate
-      ? "Duplicate Job"
-      : "Post a New Job";
+      ? t("duplicate_job")
+      : t("post_job");
   const submitText = isEdit
-    ? "Save Changes"
+    ? t("save_changes")
     : isDuplicate
-      ? "Create Copy"
-      : "Post Job";
+      ? t("duplicate")
+      : t("post_job");
 
   return (
     <Dialog
@@ -294,8 +292,8 @@ function JobFormDialog({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Categories"
-                  placeholder="Select categories"
+                  label={t("category")}
+                  placeholder={t("select_categories")}
                   error={!!errors.category_ids}
                   helperText={errors.category_ids}
                   InputLabelProps={{ required: true }}
@@ -330,13 +328,13 @@ function JobFormDialog({
             {/* Job Title */}
             <TextField
               fullWidth
-              label="Job Title *"
+              label={t("job_title") + " *"}
               name="job_title"
               value={formData.job_title || ""}
               onChange={handleChange}
               error={!!errors.job_title}
               helperText={errors.job_title}
-              placeholder="Please enter job title"
+              placeholder={t("please_enter_job_title")}
               size="small"
             />
 
@@ -357,7 +355,7 @@ function JobFormDialog({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Job Type *"
+                  label={t("job_type") + " *"}
                   InputProps={{
                     ...params.InputProps,
                     startAdornment: (
@@ -385,7 +383,7 @@ function JobFormDialog({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Job Level *"
+                  label={t("level") + " *"}
                   InputProps={{
                     ...params.InputProps,
                     startAdornment: (
@@ -415,14 +413,14 @@ function JobFormDialog({
                 }));
               }}
               renderInput={(params) => (
-                <TextField {...params} label="Status *" fullWidth />
+                <TextField {...params} label={t("status") + " *"} fullWidth />
               )}
             />
 
             {/* Number of Positions */}
             <TextField
               fullWidth
-              label="Number of Positions *"
+              label={t("number_of_positions") + " *"}
               name="position_number"
               type="number"
               value={formData.position_number || ""}
@@ -433,7 +431,7 @@ function JobFormDialog({
                     e.target.value === "" ? "" : Number(e.target.value),
                 }))
               }
-              placeholder="Please enter Number of Positions"
+              placeholder={t("number_of_positions")}
               inputProps={{ min: 1 }}
               size="small"
               error={!!errors.position_number}
@@ -443,11 +441,11 @@ function JobFormDialog({
             {/* Salary Range */}
             <TextField
               fullWidth
-              label="Salary Range"
+              label={t("salary")}
               name="salary_range"
               value={formData.salary_range || ""}
               onChange={handleChange}
-              placeholder="e.g. $2000 - $3500"
+              placeholder={t("salary")}
               size="small"
               InputProps={{
                 startAdornment: (
@@ -459,7 +457,7 @@ function JobFormDialog({
             />
 
             <DatePicker
-              label="Application Closing Date *"
+              label={t("closing_date") + " *"}
               format="YYYY-MM-DD"
               value={
                 formData.closing_date ? dayjs(formData.closing_date) : null
@@ -484,11 +482,11 @@ function JobFormDialog({
             <TextField
               sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
               fullWidth
-              label="Location *"
+              label={t("location") + " *"}
               name="location"
               value={formData.location || ""}
               onChange={handleChange}
-              placeholder="Enter location"
+              placeholder={t("location")}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -505,7 +503,7 @@ function JobFormDialog({
           <Box mb={2} mt={2}>
             <FormControl fullWidth error={!!errors.job_description}>
               <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
-                Job Description *
+                {t("job_description") + " *"}
               </InputLabel>
 
               <Box
@@ -528,7 +526,7 @@ function JobFormDialog({
                 <ReactQuill
                   theme="snow"
                   value={formData.job_description || ""}
-                  placeholder="Enter job description"
+                  placeholder={t("enter_job_description")}
                   onChange={(content) => {
                     setFormData((prev) => ({
                       ...prev,
@@ -566,7 +564,7 @@ function JobFormDialog({
           <Box>
             <FormControl fullWidth>
               <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
-                Requirements
+                {t("experience_required")}
               </InputLabel>
 
               <Box
@@ -589,7 +587,7 @@ function JobFormDialog({
                 <ReactQuill
                   theme="snow"
                   value={formData.experience_required || ""}
-                  placeholder="Enter experience required"
+                  placeholder={t("enter_experience_requirements")}
                   onChange={(content) =>
                     setFormData((prev) => ({
                       ...prev,
@@ -675,6 +673,7 @@ function DraggablePaper(props) {
 //                   My Jobs Page
 // ────────────────────────────────────────────────
 export default function MyJobs() {
+  const { t } = useTranslation();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -870,13 +869,13 @@ export default function MyJobs() {
           <PostAdd />
 
           <Typography variant="h7" fontWeight={700}>
-            Posted Jobs
+            {t("job_posts")}
           </Typography>
         </Stack>
         {/* Search */}
         <TextField
           size="small"
-          placeholder="Search by title or location"
+          placeholder={t("search_by_title_or_location")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{
@@ -931,8 +930,8 @@ export default function MyJobs() {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Category"
-              placeholder="Select categories"
+              label={t("category")}
+              placeholder={t("select_categories")}
               size="small"
               InputProps={{
                 ...params.InputProps,
@@ -974,7 +973,7 @@ export default function MyJobs() {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Type"
+              label={t("job_type")}
               InputProps={{
                 ...params.InputProps,
                 startAdornment: (
@@ -1004,7 +1003,7 @@ export default function MyJobs() {
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Level"
+              label={t("level")}
               InputProps={{
                 ...params.InputProps,
                 startAdornment: (
@@ -1028,7 +1027,7 @@ export default function MyJobs() {
         {/* Reset */}
         <Stack
           direction="row"
-          spacing={1}
+          spacing={0.4}
           width="100%"
           justifyContent={{ xs: "flex-end", sm: "flex-end" }}
           sx={{
@@ -1038,10 +1037,11 @@ export default function MyJobs() {
             },
           }}
         >
-          <Tooltip title="Reset all filters" arrow placement="top">
+          <Tooltip title={t("reset")} arrow placement="top">
             <Button
               variant="outlined"
               startIcon={<Cancel />}
+              size="small"
               color="error"
               sx={{
                 borderRadius: 3,
@@ -1055,17 +1055,17 @@ export default function MyJobs() {
                 setCategoryFilter(["All"]);
               }}
             >
-              Reset
+              {t("reset")}
             </Button>
           </Tooltip>
-          <Tooltip title="Post a job" arrow placement="top">
+          <Tooltip title={t("post_job")} arrow placement="top">
             <Button
               variant="contained"
               startIcon={<PostAdd />}
               onClick={openCreate}
               sx={{ borderRadius: 3, textTransform: "none" }}
             >
-              Post
+              {t("post")}
             </Button>
           </Tooltip>
         </Stack>
@@ -1258,7 +1258,7 @@ export default function MyJobs() {
                     fontWeight={600}
                     color="text.secondary"
                   >
-                    Categories:
+                    {t("categories")}:
                   </Typography>
                   {job.categories.slice(0, 2).map((cat) => (
                     <Chip
@@ -1304,7 +1304,7 @@ export default function MyJobs() {
                   mt={1.5}
                   display="block"
                 >
-                  Posted:{" "}
+                  {t("posted_date")}:{" "}
                   {job.posting_date
                     ? new Date(job.posting_date).toISOString().split("T")[0]
                     : "—"}
@@ -1316,7 +1316,7 @@ export default function MyJobs() {
                   mt={1.5}
                   display="block"
                 >
-                  Closing:{" "}
+                  {t("closing_date")}:{" "}
                   {job.closing_date
                     ? new Date(job.closing_date).toISOString().split("T")[0]
                     : "—"}
@@ -1325,12 +1325,12 @@ export default function MyJobs() {
             </CardContent>
 
             <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1 }}>
-              <Tooltip title="Edit Job" arrow placement="bottom">
+              <Tooltip title={t("edit_job")} arrow placement="bottom">
                 <IconButton size="small" onClick={() => openEdit(job)}>
                   <EditIcon fontSize="small" sx={{ color: "teal" }} />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Duplicate Job" arrow placement="bottom">
+              <Tooltip title={t("duplicate_job")} arrow placement="bottom">
                 <IconButton
                   size="small"
                   color="primary"
@@ -1341,7 +1341,7 @@ export default function MyJobs() {
               </Tooltip>
 
               {job.status !== "Closed" && (
-                <Tooltip title="Close Job" arrow placement="bottom">
+                <Tooltip title={t("close_job")} arrow placement="bottom">
                   <IconButton
                     size="small"
                     color="warning"
@@ -1403,7 +1403,7 @@ export default function MyJobs() {
           }}
         >
           <CloseIcon color="warning" />
-          Close Job Posting
+          {t("close_job_posting")}
         </DialogTitle>
 
         <Divider />
@@ -1416,7 +1416,7 @@ export default function MyJobs() {
           }}
         >
           <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
-            Are you sure you want to close
+            {t("are_you_sure_close")}
             <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
               {closingJob?.job_title}
             </Box>
@@ -1433,7 +1433,7 @@ export default function MyJobs() {
               color: "text.secondary",
             }}
           >
-            ⚠️ This job will no longer accept new applications.
+            ⚠️ {t("close_warning")}
           </Box>
         </DialogContent>
 
@@ -1456,7 +1456,7 @@ export default function MyJobs() {
               borderRadius: 2,
             }}
           >
-            Cancel
+            {t("cancel")}
           </Button>
 
           <Button
@@ -1470,7 +1470,7 @@ export default function MyJobs() {
               px: 2.5,
             }}
           >
-            Close Job
+            {t("close")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1497,7 +1497,7 @@ export default function MyJobs() {
           }}
         >
           <ContentCopyIcon color="primary" />
-          Duplicate Job
+          {t("duplicate_job_posting")}
         </DialogTitle>
 
         <Divider />
@@ -1510,7 +1510,7 @@ export default function MyJobs() {
           }}
         >
           <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
-            Are you sure you want to duplicate
+            {t("are_you_sure_duplicate")}
             <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
               {duplicateJob?.job_title}
             </Box>
@@ -1527,7 +1527,7 @@ export default function MyJobs() {
               color: "text.secondary",
             }}
           >
-            This will create a new job with the same information.
+            ⚠️ {t("duplicate_warning")}
           </Box>
         </DialogContent>
 
@@ -1550,7 +1550,7 @@ export default function MyJobs() {
             }}
             startIcon={<Cancel />}
           >
-            Cancel
+            {t("cancel")}
           </Button>
 
           <Button
@@ -1564,7 +1564,7 @@ export default function MyJobs() {
               px: 2.5,
             }}
           >
-            Duplicate
+            {t("duplicate")}
           </Button>
         </DialogActions>
       </Dialog>
