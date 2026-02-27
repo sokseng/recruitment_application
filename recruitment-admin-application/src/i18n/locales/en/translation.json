@@ -496,6 +496,27 @@
   "code_expired": "Code has expired",
   "error_verifying_code": "Error verifying code. Please try again.",
   "password_reset_success": "Password reset successfully",
-  "error_resetting_password": "Error resetting password. Please try again."
+  "error_resetting_password": "Error resetting password. Please try again.",
+  "unknown": "Unknown",
+  "complete_profile_first": "Please complete your profile first.",
+  "failed_to_load_applications": "Failed to load applications.",
+  "loading_applications": "Loading your applications...",
+  "something_went_wrong": "Something went wrong",
+  "try_again": "Try Again",
+  "nothing_matches_search": "Nothing matches your search",
+  "no_applications_here": "No applications here yet",
+  "clear_search": "Clear Search",
+  "find_jobs": "Find Jobs",
+  "view_job": "View Job",
+  "type_level": "Type / Level",
+  "closes": "Closes",
+  "cancel_application": "Cancel Application",
+  "confirm_cancel_application": "Are you sure you want to <strong>cancel</strong> this application?",
+  "reason": "Reason",
+  "no_keep_it": "No, keep it",
+  "yes_cancel": "Yes, Cancel",
+  "cancelling": "Cancelling…",
+  "application_cancelled_success": "Application cancelled successfully.",
+  "cancel_failed": "Failed to cancel application. Please try again."
   
 }
