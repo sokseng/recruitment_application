@@ -256,5 +256,5 @@ def update_profile_employer(
 
     db.commit()
     db.refresh(db_employer)
-    return db_employer
+    return db_user
 

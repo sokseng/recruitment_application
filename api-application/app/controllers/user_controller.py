@@ -517,10 +517,47 @@ def get_user_by_id(db: Session, user_id: int):
     return db.query(User).filter(User.pk_id == user_id).first()
 
 #update user profile
-def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile):
+def update_user_profile(db: Session, user_id: int, user_data: UpdateUserProfile, ip_address: str):
     user = db.query(User).filter(User.pk_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # ----------------- AUDIT LOG -----------------
+    detail_info = None
+    action_type = None
+    changes = []
+    
+    if user.user_name != user_data.user_name:
+        changes.append(f"user_name: '{user.user_name}' → '{user_data.user_name}'")
+
+    if user.gender != user_data.gender:
+        changes.append(f"gender: '{user.gender if user.gender else 'NULL'}' → '{user_data.gender if user_data.gender else 'NULL'}'")
+
+    if user.phone != user_data.phone:
+        changes.append(f"phone: '{user.phone if user.phone else 'NULL'}' → '{user_data.phone if user_data.phone else 'NULL'}'")
+    
+    if user.date_of_birth != user_data.date_of_birth:
+        changes.append(f"date_of_birth: '{user.date_of_birth if user.date_of_birth else 'NULL'}' → '{user_data.date_of_birth if user_data.date_of_birth else 'NULL'}'")
+
+    if user.address != user_data.address:
+        changes.append(f"address: '{user.address if user.address else 'NULL'}' → '{user_data.address if user_data.address else 'NULL'}'")
+
+    
+    if changes:
+        detail_info = "UPDATED: " + " | ".join(changes)
+        action_type = "Update User"
+
+    if detail_info and changes:
+        audit = AuditTrace(
+            user_action=user.user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type,
+            ip=ip_address,
+            detail_information=detail_info
+        )
+        db.add(audit)
+
+    # ----------------- END AUDIT LOG -----------------
 
     user.user_name = user_data.user_name
     user.phone = user_data.phone
@@ -618,7 +655,7 @@ def create_or_update_user_admin(user: UserCreate, db: Session, ip_address: str, 
         action_type = None
 
         changes = []
-        changes.append(f"pk_id: '{db_user.pk_id}'")
+
         if db_user.user_name != user.user_name:
             changes.append(f"user_name: '{db_user.user_name}' → '{user.user_name}'")
 

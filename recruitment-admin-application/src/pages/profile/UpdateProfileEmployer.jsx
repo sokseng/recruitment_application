@@ -22,6 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { useTranslation } from 'react-i18next';
+import useAuthStore from "../../store/useAuthStore"
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -61,6 +62,10 @@ const UpdateProfileEmployer = () => {
         category_ids: [],
     };
 
+    const {
+        setUserData,
+        user_data
+    } = useAuthStore()
     const [formData, setFormData] = useState(initialFormData);
     const [logoPreview, setLogoPreview] = useState(null);
     const [logoFile, setLogoFile] = useState(null);
@@ -205,6 +210,12 @@ const UpdateProfileEmployer = () => {
             });
 
             if (response.status == 200) {
+                setUserData({
+                    ...user_data,
+                    user_data: {
+                        ...response.data,
+                    },
+                });
                 setOpenSnackbar(true)
                 setSeverity("success")
                 setMessage(t('update_success'))

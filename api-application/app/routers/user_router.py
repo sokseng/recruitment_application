@@ -175,8 +175,9 @@ def get_user_by_id(db: Session = Depends(get_db), current_user_id: int = Depends
 
 #update user profile
 @router.put("/profile", response_model=ResponseUserProfile)
-def update_user_profile(data: UpdateUserProfile, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
-    return user_controller.update_user_profile(db, current_user_id, data)
+def update_user_profile(request: Request, data: UpdateUserProfile, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+    ip_address = request.client.host
+    return user_controller.update_user_profile(db, current_user_id, data, ip_address)
 
 
 @router.get("/my-jobs", response_model=List[JobOut])

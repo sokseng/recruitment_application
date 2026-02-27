@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.dependencies.auth import verify_access_token
+from app.schemas.user_schema import ResponseUserProfile
 
 from app.database.deps import get_db
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer, UserUpdateProfile
@@ -90,7 +91,7 @@ def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = D
         raise HTTPException(status_code=404, detail="Employer not found")
     
 
-@router.post("/profile/updates")
+@router.post("/profile/updates", response_model=ResponseUserProfile)
 async def update_profile(
     user_name: str = Form(...),
     gender: str = Form(None),

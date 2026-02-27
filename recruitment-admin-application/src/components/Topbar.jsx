@@ -379,7 +379,6 @@ export default function Topbar() {
       setIsHuman(false);
       setRobotAnswer([]);
       setRobotError(false);
-
       setAccessToken(res.data.access_token);
       setUserType(res.data.user_type);
       setUserData(res.data);
