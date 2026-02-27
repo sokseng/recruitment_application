@@ -134,6 +134,8 @@ export default function Topbar() {
     user_data,
   } = useAuthStore();
 
+  const profileUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${user_data?.user_data?.profile_image}`
+
   const [settingsAnchor, setSettingsAnchor] = useState(null);
   const openSettings = Boolean(settingsAnchor);
   const location = useLocation();
@@ -659,6 +661,7 @@ export default function Topbar() {
                   transform: 'scale(1.06)',
                 },
               }}
+              src={profileUrl}
             >
               {user_data?.user_data?.user_name?.[0]?.toUpperCase() || '?'}
             </Avatar>
@@ -1127,7 +1130,9 @@ export default function Topbar() {
               <LanguageSwitcher />
 
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                <Avatar>
+                <Avatar
+                src={profileUrl}
+                >
                   {user_data?.user_data?.user_name
                     ? user_data.user_data?.user_name.charAt(0).toUpperCase()
                     : "?"}
@@ -1183,6 +1188,7 @@ export default function Topbar() {
                         border: "3px solid rgba(255,255,255,0.55)",
                         boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
                       }}
+                      src={profileUrl}
                     >
                       {user_data?.user_data?.user_name?.[0]?.toUpperCase() || "?"}
                     </Avatar>
@@ -1459,7 +1465,9 @@ export default function Topbar() {
                 <>
                   {/* Profile Avatar & Menu */}
                   <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
-                    <Avatar>
+                    <Avatar
+                    src={profileUrl}
+                    >
                       {user_data?.user_data?.user_name
                         ? user_data?.user_data?.user_name
                           .charAt(0)
@@ -1523,6 +1531,7 @@ export default function Topbar() {
                             border: "3px solid rgba(255,255,255,0.55)",
                             boxShadow: "0 6px 24px rgba(0,0,0,0.25)",
                           }}
+                          src={profileUrl}
                         >
                           {user_data?.user_data?.user_name?.[0]?.toUpperCase() || "?"}
                         </Avatar>

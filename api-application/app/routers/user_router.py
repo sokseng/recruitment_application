@@ -88,6 +88,7 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
         user_type=user.user_type,
         pk_id=user.pk_id,
         user_name=user.user_name,
+        profile_image=user.profile_image,
         email=user.email,
         gender=user.gender,
         phone=user.phone,

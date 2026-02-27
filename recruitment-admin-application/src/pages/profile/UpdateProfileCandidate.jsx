@@ -46,6 +46,7 @@ import { useTranslation } from 'react-i18next'
 import ReactQuill from "react-quill-new"
 import api from '../../services/api'
 import useAuthStore from '../../store/useAuthStore'
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 export default function CandidateProfileDashboard() {
   const { t } = useTranslation();
@@ -522,6 +523,70 @@ export default function CandidateProfileDashboard() {
     },
   ];
 
+  const [secondAnchor, setSecondAnchor] = useState(null);
+  const open = Boolean(secondAnchor);
+  const profileUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${user_data.user_data.profile_image}`;
+
+  console.log("profileUrl", profileUrl)
+
+  const handleMenuOpen = (event) => {
+    setSecondAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setSecondAnchor(null);
+  };
+
+  const handleUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      await uploadProfile(file);
+      handleMenuClose();
+    }
+  };
+
+  const handleDelete = async () => {
+    await handleDeleteUserProfile();
+    handleMenuClose();
+  };
+
+  const handleView = () => {
+    alert(`Viewing profile of ${user_data?.user_name || 'User'}`);
+    handleMenuClose();
+  };
+
+  const uploadProfile = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await api.post("/user/upload-profile", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setUserData({
+        ...user_data,
+        profile_image: res.data.profile_image,
+      });
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+  };
+
+  const handleDeleteUserProfile = async () => {
+    try {
+      await api.delete("/user/delete-profile");
+      setUserData({
+        ...user_data,
+        profile_image: null,
+      });
+    } catch (error) {
+      console.error("Delete failed:", error);
+    }
+
+  };
+
   return (
     <Box sx={{ width: '100%' }}>
       {/* Profile Header */}
@@ -543,18 +608,49 @@ export default function CandidateProfileDashboard() {
         >
           {/* Avatar and Basic Info */}
           <Stack direction="row" spacing={3} alignItems="center" flexGrow={1}>
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: '#1976d2',
-                fontSize: 32,
-                fontWeight: 'bold',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              }}
-            >
-              {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
-            </Avatar>
+            <>
+              <IconButton onClick={handleMenuOpen}>
+                <Avatar
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    bgcolor: '#1976d2',
+                    fontSize: 32,
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  }}
+                  src={profileUrl}
+                >
+                  {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
+                </Avatar>
+              </IconButton>
+
+              <Menu
+                anchorEl={secondAnchor}
+                open={open}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleView}>
+                  <VisibilityIcon sx={{ mr: 1 }} /> View
+                </MenuItem>
+
+                <MenuItem>
+                  <label htmlFor="upload-file" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <UploadFileIcon sx={{ mr: 1 }} /> Upload
+                  </label>
+                  <input
+                    type="file"
+                    id="upload-file"
+                    style={{ display: 'none' }}
+                    onChange={handleUpload}
+                  />
+                </MenuItem>
+
+                <MenuItem onClick={handleDelete}>
+                  <DeleteIcon sx={{ mr: 1 }} /> Delete
+                </MenuItem>
+              </Menu>
+            </>
 
             <Box>
               <Typography variant="h5" fontWeight={700}>
@@ -1217,7 +1313,7 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
 
 function Section({ title, description, buttonText, onAdd, isEdit, content, hasData }) {
   const { t } = useTranslation();
-  
+
   return (
     <Paper
       sx={{

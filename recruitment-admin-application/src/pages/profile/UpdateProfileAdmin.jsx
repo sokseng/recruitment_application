@@ -131,6 +131,36 @@ const UpdateProfileAdmin = () => {
         }
     };
 
+    const uploadProfile = async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await api.post("/user/upload-profile", formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            setUserData({
+                ...user_data,
+                profile_image: res.data.profile_image,
+            });
+        } catch (error) {
+            console.error("Upload failed:", error);
+        }
+    };
+
+    const handleDeleteUserProfile = async () => {
+        try {
+            await api.delete("/user/delete-profile");
+            setUserData({
+                ...user_data,
+                profile_image: null,
+            });
+        } catch (error) {
+            console.error("Delete failed:", error);
+        }
+
+    };
+
     return (
         <>
             {/* Snackbar */}
