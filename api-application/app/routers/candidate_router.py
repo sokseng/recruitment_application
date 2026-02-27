@@ -1,5 +1,5 @@
 import re
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy import desc, update
@@ -18,6 +18,7 @@ from app.controllers.candidate_controller import (
     delete_candidate,
     get_candidate_profile_by_candidate_id
 )
+from app.utils.audit import audit_log
 
 router = APIRouter(prefix="/candidate", tags=["Candidates"])
 
@@ -139,7 +140,7 @@ class CancelApplicationRequest(BaseModel):
     reason: Optional[str] = None
 
 @router.put("/me/applications/{application_id}/cancel")
-def cancel_my_application(application_id: int, payload: CancelApplicationRequest, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
+def cancel_my_application(request: Request, application_id: int = None, payload: CancelApplicationRequest = None, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     candidate = db.query(Candidate).filter(Candidate.user_id == current_user_id).first()
     if not candidate:
         raise HTTPException(
@@ -167,5 +168,14 @@ def cancel_my_application(application_id: int, payload: CancelApplicationRequest
         .values(cancelled=True,reason=payload.reason)
     )
     db.commit()
+
+    client_ip = request.client.host if request else "Unknown"
+    audit_log(
+        db=db,
+        db_obj=application,
+        action="Cancel Job Application",
+        user_name=candidate.user.user_name if candidate.user else "Unknown",
+        ip_address=client_ip
+    )
 
     return {"message": "Application cancelled successfully"}

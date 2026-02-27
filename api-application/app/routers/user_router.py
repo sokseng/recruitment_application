@@ -106,8 +106,8 @@ def get_all_users(db: Session = Depends(get_db), current_user_id: int = Depends(
 
 #create or update user
 @router.post("", response_model=UserResponse)
-def create_or_update_user(user: UserCreate, db: Session = Depends(get_db)):
-    return user_controller.create_or_update_user(user, db)
+def create_or_update_user(request: Request, user: UserCreate, db: Session = Depends(get_db)):
+    return user_controller.create_or_update_user(user, db, request)
 
 #update user
 @router.put("/approve/{pk_id}", response_model=UserResponse)
