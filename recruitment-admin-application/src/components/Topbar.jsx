@@ -343,7 +343,9 @@ export default function Topbar() {
 
 
   useEffect(() => {
-    isTokenExpired();
+    if(access_token){
+      isTokenExpired();
+    }
     if (isSettingsActive) {
       setOpenDrawerSettings(true);
     }

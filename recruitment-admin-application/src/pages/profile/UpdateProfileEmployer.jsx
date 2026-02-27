@@ -245,6 +245,12 @@ const UpdateProfileEmployer = () => {
                 setSeverity("success");
                 setMessage(t('update_success'));
 
+                setUserData({
+                    ...user_data,
+                    user_data: {
+                        ...response.data,
+                    },
+                });
                 originalFormRef.current = { ...formData };
                 originalLogoRef.current = companyLogoFile
                     ? URL.createObjectURL(companyLogoFile)

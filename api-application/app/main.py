@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.config.settings import settings
 import os
+import traceback
+from app.core.logger import logger
+from fastapi.responses import JSONResponse
 
 from app.routers import (
     user_router,
@@ -95,3 +98,56 @@ app.include_router(dashboard_router.router)
 app.include_router(forgot_password_router.router)
 app.include_router(call_router.router)
 app.include_router(audit_trace_router.router)
+
+
+
+
+# ===============================
+# GLOBAL EXCEPTION HANDLER
+# ===============================
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+
+    logger.error(
+        f"""
+================= UNHANDLED ERROR =================
+URL: {request.url}
+Method: {request.method}
+Client: {request.client.host if request.client else 'Unknown'}
+Error: {str(exc)}
+Traceback:
+{traceback.format_exc()}
+===================================================
+        """
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"}
+    )
+
+
+# ===============================
+# HTTP EXCEPTION HANDLER
+# ===============================
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+
+    logger.error(
+        f"""
+================= HTTP ERROR =================
+URL: {request.url}
+Method: {request.method}
+Client: {request.client.host if request.client else 'Unknown'}
+Status Code: {exc.status_code}
+Detail: {exc.detail}
+==============================================
+        """
+    )
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
