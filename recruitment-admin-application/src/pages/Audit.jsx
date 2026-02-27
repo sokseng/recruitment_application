@@ -85,9 +85,9 @@ const Audit = () => {
           rows={rows}
           columns={columns}
           getRowId={(row) => row.pk_id}
-          pageSizeOptions={[10, 25, 50, 100]}
+          pageSizeOptions={[18, 25, 50, 100]}
           initialState={{
-            pagination: { paginationModel: { pageSize: 10, page: 0 } },
+            pagination: { paginationModel: { pageSize: 18, page: 0 } },
           }}
           disableRowSelectionOnClick
           rowHeight={52}
