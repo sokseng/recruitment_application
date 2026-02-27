@@ -75,6 +75,14 @@ const STATUS_MAP = {
 };
 
 const TAB_LABELS = ["All", "Pending", "Shortlisted", "Rejected", "Accepted"];
+// Use translation keys (recommended)
+const TAB_KEYS = [
+  "applications.tabs.all",
+  "applications.tabs.pending",
+  "applications.tabs.shortlisted",
+  "applications.tabs.rejected",
+  "applications.tabs.accepted",
+];
 const STATUS_FILTER = ["", "PENDING", "SHORTLISTED", "REJECTED", "ACCEPTED"];
 
 export default function AppliedCandidates() {
@@ -252,7 +260,7 @@ export default function AppliedCandidates() {
 
       setSnackbar({
         open: true,
-        message: `Status updated to ${newStatusLabel}`,
+        message: `${t("applications.status_updated_to")} ${newStatusLabel}`,
         severity: "success",
       });
     } catch (err) {
@@ -617,7 +625,7 @@ export default function AppliedCandidates() {
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
                   {selectedJob?.employer?.company_name} • {applications.length}{" "}
-                  application
+                  {t('application')}
                   {applications.length !== 1 ? "s" : ""}
                 </Typography>
               </Box>
@@ -649,10 +657,10 @@ export default function AppliedCandidates() {
               scrollButtons="auto"
               allowScrollButtonsMobile
             >
-              {TAB_LABELS.map((label, i) => (
+              {TAB_KEYS.map((key, i) => (
                 <Tab
-                  key={label}
-                  label={`${label} (${
+                  key={key}
+                  label={`${t(key)} (${
                     i === 0
                       ? applications.length
                       : applications.filter(
@@ -686,8 +694,10 @@ export default function AppliedCandidates() {
                 <HourglassEmpty sx={{ fontSize: 60, opacity: 0.4, mb: 2 }} />
                 <Typography variant="h6">
                   {tabValue === 0
-                    ? "No applications yet"
-                    : `No ${TAB_LABELS[tabValue].toLowerCase()} applications`}
+                    ? t("applications.no_applications_yet")
+                    : t("applications.no_status_applications", {
+                        status: t(TAB_KEYS[tabValue]).toLowerCase(),
+                      })}
                 </Typography>
               </Box>
             ) : (
@@ -763,7 +773,7 @@ export default function AppliedCandidates() {
                               size="small"
                               sx={{ minWidth: { xs: "100%", sm: 140 } }}
                             >
-                              <InputLabel>Status</InputLabel>
+                              <InputLabel>{t('status')}</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
                                 label="Status"
@@ -1139,7 +1149,7 @@ export default function AppliedCandidates() {
             const documentColumns = [
               {
                 field: "documentType",
-                headerName: "Document",
+                headerName: t("applications.documents"),
                 width: 160,
                 renderCell: (params) => (
                   <Typography variant="body2" fontWeight={500}>
@@ -1149,7 +1159,7 @@ export default function AppliedCandidates() {
               },
               {
                 field: "fileName",
-                headerName: "File Name",
+                headerName: t("applications.file_name"),
                 flex: 1,
                 minWidth: 220,
                 renderCell: (params) => (
@@ -1165,7 +1175,7 @@ export default function AppliedCandidates() {
               },
               {
                 field: "actions",
-                headerName: "Actions",
+                headerName: t("applications.actions"),
                 width: 140,
                 sortable: false,
                 align: "center",
@@ -1183,7 +1193,7 @@ export default function AppliedCandidates() {
                     }}
                   >
                     {params.row.hasFile && params.row.view && (
-                      <Tooltip title="View">
+                      <Tooltip title={t("applications.view")}>
                         <IconButton
                           size="small"
                           color="primary"
@@ -1198,7 +1208,7 @@ export default function AppliedCandidates() {
                     )}
 
                     {params.row.hasFile && params.row.download && (
-                      <Tooltip title="Download">
+                      <Tooltip title={t("download")}>
                         <IconButton
                           size="small"
                           color="warning"
@@ -1242,7 +1252,7 @@ export default function AppliedCandidates() {
                   id="draggable-dialog-title"
                 >
                   <Typography variant="subtitle1" fontWeight={600}>
-                    Candidate Details
+                    {t('applications.candidate_details')}
                   </Typography>
                   <IconButton
                     size="small"
@@ -1282,7 +1292,7 @@ export default function AppliedCandidates() {
                         </Typography>
                       </Box>
 
-                      <Tooltip title={`Message ${candidateName}`}>
+                      <Tooltip title={`${t("message")} ${candidateName}`}>
                         <IconButton
                           color="success"
                           size="large"
@@ -1297,7 +1307,7 @@ export default function AppliedCandidates() {
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <PersonOutlineSharp color="primary" />
                         <Typography variant="body1" fontWeight={700}>
-                          Personal Information
+                          {t('applications.personal_information')}
                         </Typography>
                       </Stack>
 
@@ -1305,13 +1315,13 @@ export default function AppliedCandidates() {
 
                       <Stack spacing={1.2} sx={{ pl: 1 }}>
                         <InfoRow
-                          label="Phone"
+                          label={t("phone")}
                           value={
                             selectedCandidateApp.candidate?.user?.phone || "—"
                           }
                         />
                         <InfoRow
-                          label="Gender"
+                          label={t("gender")}
                           value={
                             selectedCandidateApp.candidate?.user?.gender
                               ? selectedCandidateApp.candidate.user.gender
@@ -1324,7 +1334,7 @@ export default function AppliedCandidates() {
                           }
                         />
                         <InfoRow
-                          label="Date of Birth"
+                          label={t("date_of_birth")}
                           value={
                             selectedCandidateApp.candidate?.user?.date_of_birth
                               ? new Date(
@@ -1339,7 +1349,7 @@ export default function AppliedCandidates() {
                           }
                         />
                         <InfoRow
-                          label="Address"
+                          label={t("address")}
                           value={
                             selectedCandidateApp.candidate?.user?.address || "—"
                           }
@@ -1354,7 +1364,7 @@ export default function AppliedCandidates() {
                           />
 
                           <Typography variant="subtitle1" fontWeight={600}>
-                            Application Documents
+                            {t('applications.application_documents')}
                           </Typography>
                         </Stack>
 
@@ -1435,27 +1445,27 @@ export default function AppliedCandidates() {
                         spacing={2}
                         alignItems="center"
                         justifyContent="center"
-                        sx={{ pl: 1, mt: 2 }}
+                        sx={{mt: 2 }}
                       >
                         <FormControl
                           sx={{
                             minWidth: 140,
                             "& .MuiInputBase-root": {
                               height: 30,
-                              fontSize: 13,
+                              fontSize: 16,
                               paddingTop: 0,
                               paddingBottom: 0,
                             },
-                            "& .MuiSelect-select": {
-                              paddingTop: 4,
-                              paddingBottom: 4,
-                            },
-                            "& .MuiInputLabel-root": {
-                              fontSize: 13,
-                            },
+                            // "& .MuiSelect-select": {
+                            //   paddingTop: 4,
+                            //   paddingBottom: 4,
+                            // },
+                            // "& .MuiInputLabel-root": {
+                            //   fontSize: 13,
+                            // },
                           }}
                         >
-                          <InputLabel>Application Status</InputLabel>
+                          <InputLabel>{t("applications.application_status")}</InputLabel>
                           <Select
                             value={
                               selectedCandidateApp.application_status ||
@@ -1535,19 +1545,19 @@ export default function AppliedCandidates() {
             px: 2,
           }}
         >
-          Confirm Status Change
+          {t('applications.confirm_status_change')}
         </DialogTitle>
         <Divider />
 
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
           <Box component="p" sx={{ fontSize: 14, lineHeight: 1.5 }}>
-            Change status from{" "}
+            {t('applications.confirm_status_change_message')}{" "}
             <Box component="span" sx={{ fontWeight: 600 }}>
               {STATUS_MAP[confirmDialog.currentStatus]?.label ||
                 confirmDialog.currentStatus}
             </Box>{" "}
-            to{" "}
+            {t('applications.to')}{" "}
             <Box component="span" sx={{ fontWeight: 600 }}>
               {confirmDialog.newStatusLabel}
             </Box>
@@ -1567,7 +1577,7 @@ export default function AppliedCandidates() {
               }
               sx={{ textTransform: "none" }}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
@@ -1596,7 +1606,7 @@ export default function AppliedCandidates() {
                 setConfirmDialog({ ...confirmDialog, open: false });
               }}
             >
-              Confirm
+              {t('confirm')}
             </Button>
           </Stack>
         </DialogActions>

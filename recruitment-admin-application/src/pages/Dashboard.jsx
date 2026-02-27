@@ -2054,7 +2054,7 @@ export default function Dashboard() {
                           left: 16,
                           px: 1,
                           fontSize: 13,
-                          fontWeight: 600,
+                          fontWeight: 500,
                           bgcolor: "background.paper",
                           color: coverLetterToDelete
                             ? "error.main"
@@ -2234,7 +2234,6 @@ export default function Dashboard() {
                           backgroundColor: "background.paper",
                         }}
                       >
-                        Supporting Documents (PDF, JPG, PNG) – optional
                         {t('attached_images_optional')}
                       </Typography>
 
@@ -2315,7 +2314,6 @@ export default function Dashboard() {
                           textTransform: "none",
                         }}
                       >
-                        Add more attachments
                         {t('add_more_images')}
                         <input
                           type="file"

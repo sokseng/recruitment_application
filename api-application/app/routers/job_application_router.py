@@ -2,7 +2,7 @@
 from datetime import datetime
 import os
 import aiofiles
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -305,6 +305,7 @@ def list_job_applications(
 @router.patch("/{application_id}/status", response_model=dict)
 async def update_status(
     application_id: int,
+    request: Request,
     data: ApplicationStatusUpdate,               
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
@@ -312,8 +313,17 @@ async def update_status(
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer:
         raise HTTPException(403, "Employer profile required")
+    
+    ip_address = request.client.host
 
-    updated = update_application_status(db, application_id, data.new_status, employer.pk_id)
+    updated = update_application_status(
+        db=db, 
+        application_id=application_id, 
+        new_status=data.new_status, 
+        employer_id=employer.pk_id, 
+        ip_address=ip_address,
+        current_user_id=current_user_id
+    )
     
     room = get_or_create_chat_room(
         db=db,

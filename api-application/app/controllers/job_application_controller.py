@@ -2,6 +2,7 @@
 import os
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
+from app.models.audit_trace_model import AuditTrace
 from app.models.job_application_model import JobApplication, ApplicationStatus
 from app.models.job_model import Job, JobStatus
 from app.models.candidate_resume_model import CandidateResume
@@ -10,6 +11,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from app.models.candidate_model import Candidate
 from app.models.resume_image_model import ResumeImage
+from app.models.user_model import User
 from app.routers import job_application_router
 from app.schemas.job_application_schema import ApplicationOutForEmployer
 
@@ -186,11 +188,16 @@ def update_application_status(
     db: Session,
     application_id: int,
     new_status: str,
-    employer_id: int
+    employer_id: int,
+    ip_address: str,
+    current_user_id: int
 ) -> JobApplication:
     app = (
         db.query(JobApplication)
-        .options(joinedload(JobApplication.job))
+        .options(
+            joinedload(JobApplication.job),
+            joinedload(JobApplication.candidate).joinedload(Candidate.user),
+        )
         .filter(JobApplication.pk_id == application_id)
         .first()
     )
@@ -200,10 +207,39 @@ def update_application_status(
     if app.job.employer_id != employer_id:
         raise HTTPException(403, "You can only manage applications for your own jobs")
 
-    if new_status not in [s.value for s in ApplicationStatus]:
-        raise HTTPException(400, f"Invalid status. Allowed: {', '.join([s.value for s in ApplicationStatus])}")
+    allowed_statuses = [s.value for s in ApplicationStatus]
+    if new_status not in allowed_statuses:
+        raise HTTPException(400, f"Invalid status. Allowed: {', '.join(allowed_statuses)}")
+    
+    old_status = app.application_status.value if hasattr(app.application_status, "value") else str(app.application_status)
+    new_status = new_status
+
+    if old_status == new_status:
+        return app
 
     app.application_status = new_status
     db.commit()
     db.refresh(app)
+
+    # ── Audit only if status actually changed ────────────────────
+    user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if user:
+        job_title = app.job.job_title if app.job else ""
+        company_name = app.job.employer.company_name if app.job and app.job.employer else ""
+
+        detail = (
+            f"status: {old_status} → {new_status} | "
+            f"job_title: '{job_title}' | "
+            f"company_name: '{company_name}'"
+        )
+
+        audit = AuditTrace(
+            user_action=user.user_name,
+            action_datetime=datetime.now().replace(microsecond=0),
+            action="Update Application Status",
+            ip=ip_address,
+            detail_information="UPDATED: " + detail
+        )
+        db.add(audit)
+        db.commit()
     return app
