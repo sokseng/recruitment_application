@@ -1,53 +1,54 @@
 // src/pages/AppliedCandidates.jsx
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Box,
-  Card,
-  Typography,
-  Avatar,
-  Stack,
-  Divider,
-  CircularProgress,
-  Alert,
-  Button,
-  useMediaQuery,
-  useTheme,
-  AppBar,
-  Toolbar,
-  Chip,
-  Snackbar,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  CardContent,
-  Tabs,
-  Tab,
-  Tooltip,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  DialogTitle,
-  Paper,
-} from "@mui/material";
-import {
-  Work as WorkIcon,
   CalendarToday as CalendarIcon,
-  HourglassEmpty,
-  Home,
-  FileDownload as FileDownloadIcon,
-  Visibility as VisibilityIcon,
   CancelOutlined,
   CheckCircleOutline,
-  PersonOutlineSharp,
   DescriptionOutlined,
+  FileDownload as FileDownloadIcon,
+  Home,
+  HourglassEmpty,
+  PersonOutlineSharp,
+  Visibility as VisibilityIcon,
+  Work as WorkIcon,
 } from "@mui/icons-material";
-import api from "../services/api";
-import { FaFacebookMessenger } from "react-icons/fa";
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
+  Stack,
+  Tab,
+  Tabs,
+  Toolbar,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
+import { useTranslation } from "react-i18next";
+import { FaFacebookMessenger } from "react-icons/fa";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import api from "../services/api";
 
 // ────────────────────────────────────────────────
 //      Draggable Paper
@@ -74,9 +75,18 @@ const STATUS_MAP = {
 };
 
 const TAB_LABELS = ["All", "Pending", "Shortlisted", "Rejected", "Accepted"];
+// Use translation keys (recommended)
+const TAB_KEYS = [
+  "applications.tabs.all",
+  "applications.tabs.pending",
+  "applications.tabs.shortlisted",
+  "applications.tabs.rejected",
+  "applications.tabs.accepted",
+];
 const STATUS_FILTER = ["", "PENDING", "SHORTLISTED", "REJECTED", "ACCEPTED"];
 
 export default function AppliedCandidates() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [searchParams, setSearchParams] = useSearchParams();
@@ -119,7 +129,6 @@ export default function AppliedCandidates() {
 
   const [candidateImages, setCandidateImages] = useState([]); // ← new
   const [loadingImages, setLoadingImages] = useState(false);
-  
 
   useEffect(() => {
     loadMyJobsWithApplicationCounts();
@@ -251,7 +260,7 @@ export default function AppliedCandidates() {
 
       setSnackbar({
         open: true,
-        message: `Status updated to ${newStatusLabel}`,
+        message: `${t("applications.status_updated_to")} ${newStatusLabel}`,
         severity: "success",
       });
     } catch (err) {
@@ -469,7 +478,7 @@ export default function AppliedCandidates() {
     >
       <Box sx={{ p: 2 }}>
         <Typography variant="h7" fontWeight={700} color="primary.dark">
-          Your Jobs with Applications
+          {t('your_applications')}
         </Typography>
       </Box>
       <Divider />
@@ -487,10 +496,10 @@ export default function AppliedCandidates() {
           >
             <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
             <Typography variant="subtitle2">
-              No jobs with applications yet
+              {t('no_jobs_with_applications_yet')}
             </Typography>
             <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
-              When candidates apply, their jobs will appear here.
+              {t('no_jobs_with_applications_yet_desc')}
             </Typography>
           </Box>
         ) : (
@@ -559,16 +568,14 @@ export default function AppliedCandidates() {
   );
 
   const InfoRow = ({ label, value }) => (
-    <Stack
-      direction="row"
-    >
+    <Stack direction="row">
       <Typography variant="body2" color="text.secondary">
         {label}:
       </Typography>
       <Typography
         variant="body2"
         fontWeight={500}
-        sx={{flex: 1, textAlign: "right" }}
+        sx={{ flex: 1, textAlign: "right" }}
       >
         {value}
       </Typography>
@@ -618,7 +625,7 @@ export default function AppliedCandidates() {
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
                   {selectedJob?.employer?.company_name} • {applications.length}{" "}
-                  application
+                  {t('application')}
                   {applications.length !== 1 ? "s" : ""}
                 </Typography>
               </Box>
@@ -650,10 +657,10 @@ export default function AppliedCandidates() {
               scrollButtons="auto"
               allowScrollButtonsMobile
             >
-              {TAB_LABELS.map((label, i) => (
+              {TAB_KEYS.map((key, i) => (
                 <Tab
-                  key={label}
-                  label={`${label} (${
+                  key={key}
+                  label={`${t(key)} (${
                     i === 0
                       ? applications.length
                       : applications.filter(
@@ -687,8 +694,10 @@ export default function AppliedCandidates() {
                 <HourglassEmpty sx={{ fontSize: 60, opacity: 0.4, mb: 2 }} />
                 <Typography variant="h6">
                   {tabValue === 0
-                    ? "No applications yet"
-                    : `No ${TAB_LABELS[tabValue].toLowerCase()} applications`}
+                    ? t("applications.no_applications_yet")
+                    : t("applications.no_status_applications", {
+                        status: t(TAB_KEYS[tabValue]).toLowerCase(),
+                      })}
                 </Typography>
               </Box>
             ) : (
@@ -764,7 +773,7 @@ export default function AppliedCandidates() {
                               size="small"
                               sx={{ minWidth: { xs: "100%", sm: 140 } }}
                             >
-                              <InputLabel>Status</InputLabel>
+                              <InputLabel>{t('status')}</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
                                 label="Status"
@@ -799,23 +808,53 @@ export default function AppliedCandidates() {
                             </FormControl>
 
                             {app.cancelled && (
-                              <Chip
-                                label="Canceled by the candidate"
-                                color="error"
-                                size="small"
-                                variant="filled"
+                              <Box
                                 sx={{
-                                  fontWeight: 500,
-                                  borderRadius: 2,
-                                  backgroundColor: "rgba(211, 47, 47, 0.15)",
-                                  color: "error.main",
-                                  width: { xs: "100%", sm: 180 },
-                                  height: 40,
                                   display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 1.5,
                                   alignItems: "center",
-                                  justifyContent: "center",
+                                  mt: { xs: 1, sm: 0.5 },
                                 }}
-                              />
+                              >
+                                <Chip
+                                  label="Canceled by the candidate"
+                                  color="error"
+                                  size="medium"
+                                  sx={{
+                                    fontWeight: 600,
+                                    borderRadius: "12px",
+                                    backgroundColor: "rgba(211, 47, 47, 0.14)",
+                                    color: "error.dark",
+                                    height: 36,
+                                    px: 1.5,
+                                  }}
+                                />
+
+                                {app.reason && (
+  
+                                <Chip
+                                    label={`Reason: ${app.reason}`}
+                                    variant="outlined"
+                                    size="medium"
+                                    sx={{
+                                      borderRadius: "12px",
+                                      borderColor: "error.light",
+                                      color: "error.main",
+                                      backgroundColor:
+                                        "rgba(211, 47, 47, 0.05)",
+                                      fontWeight: 500,
+                                      height: 36,
+                                      maxWidth: 380,
+                                      "& .MuiChip-label": {
+                                        paddingLeft: 1.5,
+                                        paddingRight: 1.5,
+                                      },
+                                    }}
+                                  />
+                                  
+                                )}
+                              </Box>
                             )}
                           </Stack>
                         </Stack>
@@ -849,7 +888,7 @@ export default function AppliedCandidates() {
           color="text.secondary"
         >
           <Typography variant="h7">
-            Select a job to view applications
+            {t('select_a_job_to_view_applications')}
           </Typography>
         </Box>
       )}
@@ -916,7 +955,9 @@ export default function AppliedCandidates() {
         maxWidth="md"
         PaperProps={{ sx: { height: "90vh", overflow: "hidden" } }}
       >
-        <DialogContent sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}>
+        <DialogContent
+          sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}
+        >
           {fileType?.startsWith("image/") ? (
             <Box
               sx={{
@@ -976,7 +1017,7 @@ export default function AppliedCandidates() {
           setSelectedCandidateApp(null);
         }}
         maxWidth="md"
-        PaperProps={{ sx: { height: "85vh", overflow: "hidden" } }}
+        PaperProps={{ sx: { height: "100vh", overflow: "hidden" } }}
         PaperComponent={DraggablePaper}
       >
         {selectedCandidateApp &&
@@ -1039,34 +1080,47 @@ export default function AppliedCandidates() {
 
             // 3. Attached Images / Files
             (candidateImages || []).forEach((img, index) => {
-              const isPdf  = img.filename?.toLowerCase().endsWith(".pdf");
+              const isPdf = img.filename?.toLowerCase().endsWith(".pdf");
               const isImage = /\.(jpg|jpeg|png)$/i.test(img.filename || "");
 
-              const attachmentViewUrl  = `${baseURL}/applications/attachments/${img.filename}?disposition=inline`;
+              const attachmentViewUrl = `${baseURL}/applications/attachments/${img.filename}?disposition=inline`;
               const attachmentDownloadUrl = `${baseURL}/applications/attachments/${img.filename}?disposition=attachment`;
 
               documentRows.push({
                 id: `attachment-${img.id || index}`,
-                documentType: isPdf ? "Attached PDF" : isImage ? "Attached Image" : "Attachment",
-                fileName: img.original_name || img.filename || `File ${index + 1}`,
+                documentType: isPdf
+                  ? "Attached PDF"
+                  : isImage
+                    ? "Attached Image"
+                    : "Attachment",
+                fileName:
+                  img.original_name || img.filename || `File ${index + 1}`,
                 hasFile: true,
 
                 // ─── VIEW ───────────────────────────────────────────────
                 view: () => {
                   setFileUrl(attachmentViewUrl);
                   setFileName(img.original_name || img.filename);
-                  setFileType(isPdf ? "application/pdf" : isImage ? "image/jpeg" : "application/octet-stream");
+                  setFileType(
+                    isPdf
+                      ? "application/pdf"
+                      : isImage
+                        ? "image/jpeg"
+                        : "application/octet-stream",
+                  );
                   setViewFileOpen(true);
                 },
 
                 // ─── DOWNLOAD ─────
                 download: async () => {
                   try {
-                    const res = await api.get(attachmentDownloadUrl, {   
+                    const res = await api.get(attachmentDownloadUrl, {
                       responseType: "blob",
                     });
 
-                    const blob = new Blob([res.data], { type: res.headers["content-type"] });
+                    const blob = new Blob([res.data], {
+                      type: res.headers["content-type"],
+                    });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
                     link.href = url;
@@ -1095,7 +1149,7 @@ export default function AppliedCandidates() {
             const documentColumns = [
               {
                 field: "documentType",
-                headerName: "Document",
+                headerName: t("applications.documents"),
                 width: 160,
                 renderCell: (params) => (
                   <Typography variant="body2" fontWeight={500}>
@@ -1105,7 +1159,7 @@ export default function AppliedCandidates() {
               },
               {
                 field: "fileName",
-                headerName: "File Name",
+                headerName: t("applications.file_name"),
                 flex: 1,
                 minWidth: 220,
                 renderCell: (params) => (
@@ -1121,7 +1175,7 @@ export default function AppliedCandidates() {
               },
               {
                 field: "actions",
-                headerName: "Actions",
+                headerName: t("applications.actions"),
                 width: 140,
                 sortable: false,
                 align: "center",
@@ -1139,7 +1193,7 @@ export default function AppliedCandidates() {
                     }}
                   >
                     {params.row.hasFile && params.row.view && (
-                      <Tooltip title="View">
+                      <Tooltip title={t("applications.view")}>
                         <IconButton
                           size="small"
                           color="primary"
@@ -1154,7 +1208,7 @@ export default function AppliedCandidates() {
                     )}
 
                     {params.row.hasFile && params.row.download && (
-                      <Tooltip title="Download">
+                      <Tooltip title={t("download")}>
                         <IconButton
                           size="small"
                           color="warning"
@@ -1198,7 +1252,7 @@ export default function AppliedCandidates() {
                   id="draggable-dialog-title"
                 >
                   <Typography variant="subtitle1" fontWeight={600}>
-                    Candidate Details
+                    {t('applications.candidate_details')}
                   </Typography>
                   <IconButton
                     size="small"
@@ -1210,7 +1264,10 @@ export default function AppliedCandidates() {
                 </Stack>
 
                 {/* Content */}
-                <DialogContent dividers={false} sx={{ px: 3, py: 1.5, overflow: "visible" }}>
+                <DialogContent
+                  dividers={false}
+                  sx={{ px: 3, py: 1.5, overflow: "visible" }}
+                >
                   <Stack spacing={2.5}>
                     {/* Candidate basic info + message button */}
                     <Stack direction="row" spacing={2} alignItems="center">
@@ -1235,7 +1292,7 @@ export default function AppliedCandidates() {
                         </Typography>
                       </Box>
 
-                      <Tooltip title={`Message ${candidateName}`}>
+                      <Tooltip title={`${t("message")} ${candidateName}`}>
                         <IconButton
                           color="success"
                           size="large"
@@ -1247,14 +1304,10 @@ export default function AppliedCandidates() {
                     </Stack>
                     {/* Personal Information */}
                     <Box>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                      >
+                      <Stack direction="row" alignItems="center" spacing={1}>
                         <PersonOutlineSharp color="primary" />
                         <Typography variant="body1" fontWeight={700}>
-                          Personal Information
+                          {t('applications.personal_information')}
                         </Typography>
                       </Stack>
 
@@ -1262,13 +1315,13 @@ export default function AppliedCandidates() {
 
                       <Stack spacing={1.2} sx={{ pl: 1 }}>
                         <InfoRow
-                          label="Phone"
+                          label={t("phone")}
                           value={
                             selectedCandidateApp.candidate?.user?.phone || "—"
                           }
                         />
                         <InfoRow
-                          label="Gender"
+                          label={t("gender")}
                           value={
                             selectedCandidateApp.candidate?.user?.gender
                               ? selectedCandidateApp.candidate.user.gender
@@ -1281,7 +1334,7 @@ export default function AppliedCandidates() {
                           }
                         />
                         <InfoRow
-                          label="Date of Birth"
+                          label={t("date_of_birth")}
                           value={
                             selectedCandidateApp.candidate?.user?.date_of_birth
                               ? new Date(
@@ -1296,102 +1349,95 @@ export default function AppliedCandidates() {
                           }
                         />
                         <InfoRow
-                          label="Address"
+                          label={t("address")}
                           value={
                             selectedCandidateApp.candidate?.user?.address || "—"
                           }
                         />
                       </Stack>
                       <Divider sx={{ mb: 1, mt: 1 }} />
-                        <Box>
-                          <Stack direction="row" alignItems="center" spacing={1}>
-                            <DescriptionOutlined fontSize="small" color="primary" />
+                      <Box>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <DescriptionOutlined
+                            fontSize="small"
+                            color="primary"
+                          />
 
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                            >
-                              Application Documents
-                            </Typography>
-                          </Stack>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {t('applications.application_documents')}
+                          </Typography>
+                        </Stack>
 
-                          <Box sx={{ width: "100%" }}>
-                            <DataGrid
-                              rows={documentRows}
-                              columns={documentColumns}
-                              disableRowSelectionOnClick
-                              autoHeight
-                              density="compact"
-                              rowHeight={40}
-                              pageSizeOptions={[5, 10, 20]}
-                              initialState={{
-                                pagination: {
-                                  paginationModel: { pageSize: 5 },
-                                },
-                              }}
-                              sx={{
-                                border: 1,
-                                borderColor: "divider",
-                                borderRadius: 1.5,
-                                bgcolor: "background.paper",
-                                fontSize: 13,
+                        <Box
+                          sx={{
+                            height: "calc(45vh - 100px)",
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            border: "1px solid",
+                            borderColor: "divider",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                          }}
+                        >
+                          <DataGrid
+                            rows={documentRows}
+                            columns={documentColumns}
+                            disableRowSelectionOnClick
+                            density="compact"
+                            headerHeight={34}
+                            pageSizeOptions={[5, 10]}
+                            initialState={{
+                              pagination: {
+                                paginationModel: { pageSize: 5 },
+                              },
+                            }}
+                            sx={{
+                              height: "100%",
+                              fontSize: 12,
+                              bgcolor: "background.paper",
 
-                                "& .MuiDataGrid-columnHeaders": {
-                                  bgcolor: "action.hover",
-                                  borderBottom: 1,
-                                  borderColor: "divider",
-                                },
+                              "& .MuiDataGrid-columnHeaders": {
+                                bgcolor: "#f8fafc",
+                                borderBottom: "1px solid #e5e7eb",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                minHeight: "34px !important",
+                                maxHeight: "34px !important",
+                              },
 
-                                "& .MuiDataGrid-columnHeaderTitle": {
-                                  fontWeight: 600,
-                                  width: "100%",
-                                  textAlign: "center",
-                                },
+                              "& .MuiDataGrid-columnHeaderTitle": {
+                                fontWeight: 600,
+                              },
 
-                                "& .MuiDataGrid-cell": {
-                                  py: 0.5,
-                                },
+                              "& .MuiDataGrid-cell": {
+                                py: 0.3,
+                              },
 
-                                "& .MuiDataGrid-row:hover": {
-                                  bgcolor: "action.hover",
-                                },
+                              "& .MuiDataGrid-row": {
+                                minHeight: "30px !important",
+                                maxHeight: "30px !important",
+                              },
 
-                                "& .MuiDataGrid-footerContainer": {
-                                  borderTop: 1,
-                                  borderColor: "divider",
-                                  minHeight: 32,        
-                                },
+                              "& .MuiDataGrid-row:hover": {
+                                bgcolor: "#f1f5f9",
+                              },
 
-                                "& .MuiTablePagination-root": {
-                                  fontSize: 12,
-                                  minHeight: 32,
-                                },
+                              "& .MuiDataGrid-footerContainer": {
+                                minHeight: 30,
+                                borderTop: "1px solid #e5e7eb",
+                              },
 
-                                "& .MuiTablePagination-selectLabel": {
-                                  fontSize: 12,
-                                },
+                              "& .MuiTablePagination-root": {
+                                fontSize: 11,
+                                minHeight: 30,
+                              },
 
-                                "& .MuiTablePagination-displayedRows": {
-                                  fontSize: 12,
-                                },
-
-                                "& .MuiTablePagination-select": {
-                                  fontSize: 12,
-                                  paddingTop: 0,
-                                  paddingBottom: 0,
-                                },
-
-                                "& .MuiTablePagination-actions": {
-                                  transform: "scale(0.85)",  
-                                },
-
-                                "& .MuiToolbar-root": {
-                                  minHeight: "28px !important",
-                                }
-                              }}
-                            />
-                          </Box>
+                              "& .MuiTablePagination-actions": {
+                                transform: "scale(0.8)",
+                              },
+                            }}
+                          />
                         </Box>
+                      </Box>
                       {/* Status Selector in Detail Dialog */}
 
                       <Stack
@@ -1399,65 +1445,80 @@ export default function AppliedCandidates() {
                         spacing={2}
                         alignItems="center"
                         justifyContent="center"
-                        sx={{ pl: 1, mt: 2 }}
+                        sx={{mt: 2 }}
                       >
-                        <FormControl 
+                        <FormControl
                           sx={{
                             minWidth: 140,
                             "& .MuiInputBase-root": {
-                              height: 30,          
-                              fontSize: 13,        
+                              height: 30,
+                              fontSize: 16,
                               paddingTop: 0,
                               paddingBottom: 0,
                             },
-                            "& .MuiSelect-select": {
-                              paddingTop: 4,       
-                              paddingBottom: 4,
-                            },
-                            "& .MuiInputLabel-root": {
-                              fontSize: 13,       
-                            },
+                            // "& .MuiSelect-select": {
+                            //   paddingTop: 4,
+                            //   paddingBottom: 4,
+                            // },
+                            // "& .MuiInputLabel-root": {
+                            //   fontSize: 13,
+                            // },
                           }}
                         >
-                          <InputLabel>Application Status</InputLabel>
+                          <InputLabel>{t("applications.application_status")}</InputLabel>
                           <Select
-                            value={selectedCandidateApp.application_status || "PENDING"}
+                            value={
+                              selectedCandidateApp.application_status ||
+                              "PENDING"
+                            }
                             label="Application Status"
                             size="small"
                             onChange={(e) => {
                               const newKey = e.target.value;
                               const newLabel = STATUS_MAP[newKey]?.label;
 
-                              if (!newLabel || newKey === selectedCandidateApp.application_status) {
+                              if (
+                                !newLabel ||
+                                newKey ===
+                                  selectedCandidateApp.application_status
+                              ) {
                                 return;
                               }
 
                               setConfirmDialog({
                                 open: true,
                                 appId: selectedCandidateApp.pk_id,
-                                currentStatus: selectedCandidateApp.application_status,
+                                currentStatus:
+                                  selectedCandidateApp.application_status,
                                 newStatusLabel: newLabel,
                                 newStatusKey: newKey,
                               });
                             }}
                           >
-                            {Object.entries(STATUS_MAP).map(([key, { label }]) => (
-                              <MenuItem key={key} value={key}>
-                                {label}
-                              </MenuItem>
-                            ))}
+                            {Object.entries(STATUS_MAP).map(
+                              ([key, { label }]) => (
+                                <MenuItem key={key} value={key}>
+                                  {label}
+                                </MenuItem>
+                              ),
+                            )}
                           </Select>
                         </FormControl>
 
                         <Chip
-                          label={STATUS_MAP[selectedCandidateApp.application_status]?.label || "Pending"}
-                          color={STATUS_MAP[selectedCandidateApp.application_status]?.color || "warning"}
+                          label={
+                            STATUS_MAP[selectedCandidateApp.application_status]
+                              ?.label || "Pending"
+                          }
+                          color={
+                            STATUS_MAP[selectedCandidateApp.application_status]
+                              ?.color || "warning"
+                          }
                           size="small"
                           sx={{ fontWeight: 600, minWidth: 100 }}
                         />
                       </Stack>
                     </Box>
-                    
                   </Stack>
                 </DialogContent>
               </>
@@ -1484,19 +1545,19 @@ export default function AppliedCandidates() {
             px: 2,
           }}
         >
-          Confirm Status Change
+          {t('applications.confirm_status_change')}
         </DialogTitle>
         <Divider />
 
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
           <Box component="p" sx={{ fontSize: 14, lineHeight: 1.5 }}>
-            Change status from{" "}
+            {t('applications.confirm_status_change_message')}{" "}
             <Box component="span" sx={{ fontWeight: 600 }}>
               {STATUS_MAP[confirmDialog.currentStatus]?.label ||
                 confirmDialog.currentStatus}
             </Box>{" "}
-            to{" "}
+            {t('applications.to')}{" "}
             <Box component="span" sx={{ fontWeight: 600 }}>
               {confirmDialog.newStatusLabel}
             </Box>
@@ -1516,7 +1577,7 @@ export default function AppliedCandidates() {
               }
               sx={{ textTransform: "none" }}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
@@ -1545,7 +1606,7 @@ export default function AppliedCandidates() {
                 setConfirmDialog({ ...confirmDialog, open: false });
               }}
             >
-              Confirm
+              {t('confirm')}
             </Button>
           </Stack>
         </DialogActions>

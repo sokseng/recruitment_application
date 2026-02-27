@@ -1,27 +1,28 @@
-
-import React, { useState } from "react";
+import { ArrowBack } from "@mui/icons-material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
+    Alert,
     Box,
     Button,
     Container,
-    TextField,
-    Typography,
-    Paper,
-    Stepper,
-    Step,
-    StepLabel,
     IconButton,
     InputAdornment,
+    Paper,
     Snackbar,
-    Alert
+    Step,
+    StepLabel,
+    Stepper,
+    TextField,
+    Typography
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
-import api from "../services/api";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useState } from "react";
+import { useTranslation } from 'react-i18next';
+import api from "../services/api";
 
 const ForgotPassword = () => {
+    const { t } = useTranslation();
     const [step, setStep] = useState(0);
     const [email, setEmail] = useState("");
     const [code, setCode] = useState("");
@@ -35,8 +36,7 @@ const ForgotPassword = () => {
     const [message, setMessage] = useState('')
     const [loading, setLoading] = useState(false);
 
-
-    const steps = ["Enter email", "Verify code", "Reset password"];
+    const steps = [t('enter_email'), t('verify_code'), t('reset_password')];
 
     // Step 1: Request reset code
     const handleRequestCode = async () => {
@@ -48,15 +48,15 @@ const ForgotPassword = () => {
 
             if (err.response && err.response.status === 404 && err.response.data.detail === "Email not found") {
                 setSeverity('success')
-                setMessage('Email address not found. Please check and try again.')
+                setMessage(t('email_not_found'))
                 setOpenSnackbar(true)
             } else if (err.response && err.response.status === 429 && err.response.data.detail === "System email limit reached for today. Please try again tomorrow.") {
                 setSeverity('warning')
-                setMessage('System email limit reached for today. Please try again tomorrow.')
+                setMessage(t('email_limit_reached'))
                 setOpenSnackbar(true)
             } else {
                 setSeverity('error')
-                setMessage('Error sending code. Please try again.')
+                setMessage(t('error_sending_code'))
                 setOpenSnackbar(true)
                 console.error(err)
             }
@@ -76,20 +76,20 @@ const ForgotPassword = () => {
         } catch (err) {
             if (err.response && err.response.status === 400 && err.response.data.detail === "code and email not provided") {
                 setSeverity('error')
-                setMessage('code and email not provided')
+                setMessage(t('code_email_not_provided'))
                 setOpenSnackbar(true)
             } else if (err.response && err.response.status === 400 && err.response.data.detail === "Invalid email or code") {
                 setSeverity('error')
-                setMessage('invalid email or code')
+                setMessage(t('invalid_email_or_code'))
                 setOpenSnackbar(true)
             } else if (err.response && err.response.status === 400 && err.response.data.detail === "Code has expired") {
                 setSeverity('error')
-                setMessage('code has expired')
+                setMessage(t('code_expired'))
                 setOpenSnackbar(true)
             }
             else {
                 setSeverity('error')
-                setMessage('Error verifying code. Please try again.')
+                setMessage(t('error_verifying_code'))
                 setOpenSnackbar(true)
                 console.error(err)
             }
@@ -101,7 +101,7 @@ const ForgotPassword = () => {
 
         if (newPassword !== confirmPassword) {
             setSeverity('error')
-            setMessage('Passwords do not match. Please try again.')
+            setMessage(t('passwords_do_not_match'))
             setOpenSnackbar(true)
             return;
         }
@@ -112,17 +112,17 @@ const ForgotPassword = () => {
             });
 
             setSeverity('success')
-            setMessage('Password reset successfully')
+            setMessage(t('password_reset_success'))
             setOpenSnackbar(true)
             window.location.href = "/"; // auto redirect
         } catch (err) {
             if (err.response && err.response.status === 400 && err.response.data.detail === "Email not found") {
                 setSeverity('error')
-                setMessage('Email address not found. Please check and try again.')
+                setMessage(t('email_not_found'))
                 setOpenSnackbar(true)
             } else {
                 setSeverity('error')
-                setMessage('Error resetting password. Please try again.')
+                setMessage(t('error_resetting_password'))
                 setOpenSnackbar(true)
                 console.error(err);
             }
@@ -157,7 +157,7 @@ const ForgotPassword = () => {
                     <Box display="flex" alignItems="center" mb={2}>
 
                         <Typography variant="h5" align="center" sx={{ flexGrow: 1 }}>
-                            Forgot Password
+                            {t('forgot_password')}
                         </Typography>
                     </Box>
 
@@ -184,7 +184,7 @@ const ForgotPassword = () => {
 
                         >
                             <TextField
-                                label="Email"
+                                label={t('email')}
                                 required
                                 type="email"
                                 size="small"
@@ -203,7 +203,7 @@ const ForgotPassword = () => {
                                 {loading ? (
                                     <CircularProgress size={22} color="inherit" />
                                 ) : (
-                                    "Send Code"
+                                    t('send_code')
                                 )}
                             </Button>
                         </Box>
@@ -222,7 +222,7 @@ const ForgotPassword = () => {
                             gap={2}
                         >
                             <TextField
-                                label="Verification Code"
+                                label={t('verification_code')}
                                 required
                                 name="code"
                                 size="small"
@@ -234,7 +234,7 @@ const ForgotPassword = () => {
                                 fullWidth
                             />
                             <Button size="small" variant="contained" type="submit">
-                                Verify
+                                {t('verify')}
                             </Button>
                         </Box>
                     )}
@@ -255,7 +255,7 @@ const ForgotPassword = () => {
                             <TextField
                                 fullWidth
                                 size="small"
-                                label="Password"
+                                label={t('new_password')}
                                 required
                                 name="password"
                                 type={showPassword ? "text" : "password"}
@@ -278,7 +278,7 @@ const ForgotPassword = () => {
                             <TextField
                                 fullWidth
                                 size="small"
-                                label="Confirm Password"
+                                label={t('confirm_password')}
                                 required
                                 name="confirmPassword"
                                 type={showPassword ? "text" : "password"}
@@ -300,7 +300,7 @@ const ForgotPassword = () => {
                             />
 
                             <Button size="small" variant="contained" type="submit">
-                                Reset Password
+                                {t('reset_password')}
                             </Button>
                         </Box>
                     )}

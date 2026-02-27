@@ -257,7 +257,7 @@ def update_profile_employer(
 
     db.commit()
     db.refresh(db_employer)
-    return db_employer
+    return db_user
 
 def delete_company_logo(db: Session, current_user_id: int):
     db_employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()

@@ -54,6 +54,7 @@ const UpdateProfileAdmin = () => {
     const [message, setMessage] = useState('')
     const {
         setUserData,
+        user_data
     } = useAuthStore()
 
     // Load data from API on mount
@@ -102,7 +103,7 @@ const UpdateProfileAdmin = () => {
         if (!originalFormRef.current) return;
 
         setFormData({ ...originalFormRef.current });
-        
+
     };
 
     const handleSubmit = async (e) => {
@@ -114,6 +115,13 @@ const UpdateProfileAdmin = () => {
                 setSeverity("success")
                 setMessage(t('update_success'))
                 setUserData(response.data)
+
+                setUserData({
+                    ...user_data,
+                    user_data: {
+                        ...response.data,
+                    },
+                });
             }
 
         } catch (error) {

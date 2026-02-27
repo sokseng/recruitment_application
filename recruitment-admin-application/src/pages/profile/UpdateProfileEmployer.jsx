@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import UploadIcon from "@mui/icons-material/Upload";
 import CloseIcon from '@mui/icons-material/Close';
+import useAuthStore from "../../store/useAuthStore"
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -69,6 +70,10 @@ const UpdateProfileEmployer = () => {
         category_ids: [],
     };
 
+    const {
+        setUserData,
+        user_data
+    } = useAuthStore()
     const [formData, setFormData] = useState(initialFormData);
 
     const [severity, setSeverity] = useState('error')

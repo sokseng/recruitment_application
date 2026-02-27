@@ -1,52 +1,54 @@
-import { useState, useEffect, useMemo, isValidElement } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    Typography,
-    Button,
-    Avatar,
-    Stack,
-    Divider,
-    Chip,
-    Tabs,
-    Tab,
-    Alert,
-    CircularProgress,
-    Snackbar,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogContentText,
-    DialogActions,
-    IconButton,
-    alpha,
-    TextField,
-    InputAdornment,
-    useTheme,
-    useMediaQuery,
-    Tooltip,
-} from '@mui/material';
-import {
-    WorkOutline as WorkIcon,
+    ArrowForward as ArrowIcon,
     CalendarToday,
-    LocationOn,
-    Visibility,
     Cancel,
     CheckCircle,
-    StarBorder,
-    HourglassEmpty,
     Close as CloseIcon,
-    WarningAmber as WarningAmberIcon,
+    HourglassEmpty,
+    LocationOn,
     Search as SearchIcon,
-    ArrowForward as ArrowIcon,
+    StarBorder,
+    Visibility,
+    WarningAmber as WarningAmberIcon,
+    WorkOutline as WorkIcon,
 } from '@mui/icons-material';
+import {
+    Alert,
+    alpha,
+    Avatar,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Divider,
+    Grid,
+    IconButton,
+    InputAdornment,
+    Snackbar,
+    Stack,
+    Tab,
+    Tabs,
+    TextField,
+    Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
+import { isValidElement, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from "../services/api";
+import { useTranslation } from 'react-i18next';
 
 // Reusable InfoRow
 function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
+    const { t } = useTranslation();
     let tooltipText = '';
 
     if (typeof value === 'string' || typeof value === 'number') {
@@ -59,7 +61,7 @@ function InfoRow({ icon, label, value, color = 'inherit', fontWeight = 600 }) {
         <Stack direction="row" alignItems="center" spacing={1.5}>
             <Box sx={{ color: 'text.secondary', lineHeight: 0 }}>{icon}</Box>
             <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                {label}:
+                {t(label)}:
             </Typography>
             <Box flexGrow={1} />
             <Tooltip title={tooltipText} placement="top" arrow>
@@ -88,7 +90,7 @@ export default function MyApplicationsToCompanies() {
     const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
+    const { t } = useTranslation();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -107,13 +109,13 @@ export default function MyApplicationsToCompanies() {
     const [cancelReason, setCancelReason] = useState('');
 
     const statusTabs = [
-        { label: 'All', value: 'all', color: 'grey' },
-        { label: 'Pending', value: 'pending', color: 'warning' },
-        { label: 'Shortlisted', value: 'shortlisted', color: 'info' },
-        { label: 'Accepted', value: 'accepted', color: 'success' },
-        { label: 'Rejected', value: 'rejected', color: 'error' },
-        { label: 'Cancelled', value: 'cancelled', color: 'grey' },
-        { label: 'Closed', value: 'closed', color: 'error' }, // ← new tab
+        { label: t('all'), value: 'all', color: 'grey' },
+        { label: t('pending'), value: 'pending', color: 'warning' },
+        { label: t('shortlisted'), value: 'shortlisted', color: 'info' },
+        { label: t('accepted'), value: 'accepted', color: 'success' },
+        { label: t('rejected'), value: 'rejected', color: 'error' },
+        { label: t('cancelled'), value: 'cancelled', color: 'grey' },
+        { label: t('closed'), value: 'closed', color: 'error' },
     ];
 
     useEffect(() => {
@@ -126,8 +128,8 @@ export default function MyApplicationsToCompanies() {
                 console.error(err);
                 setError(
                     err.response?.status === 404
-                        ? 'Please complete your profile first.'
-                        : 'Failed to load applications.'
+                        ? t('complete_profile_first')
+                        : t('failed_to_load_applications')
                 );
             } finally {
                 setLoading(false);
@@ -156,18 +158,18 @@ export default function MyApplicationsToCompanies() {
     const getStatusConfig = (status, isClosed = false) => {
         const s = (status || '').toLowerCase();
         const map = {
-            accepted: { color: 'success', icon: <CheckCircle fontSize="small" />, label: 'Accepted' },
-            rejected: { color: 'error', icon: <Cancel fontSize="small" />, label: 'Rejected' },
-            shortlisted: { color: 'info', icon: <StarBorder fontSize="small" />, label: 'Shortlisted' },
-            pending: { color: 'warning', icon: <HourglassEmpty fontSize="small" />, label: 'Pending' },
-            cancelled: { color: 'default', icon: <CloseIcon fontSize="small" />, label: 'Cancelled' },
+            accepted: { color: 'success', icon: <CheckCircle fontSize="small" />, label: t('accepted') },
+            rejected: { color: 'error', icon: <Cancel fontSize="small" />, label: t('rejected') },
+            shortlisted: { color: 'info', icon: <StarBorder fontSize="small" />, label: t('shortlisted') },
+            pending: { color: 'warning', icon: <HourglassEmpty fontSize="small" />, label: t('pending') },
+            cancelled: { color: 'default', icon: <CloseIcon fontSize="small" />, label: t('cancelled') },
         };
 
         if (isClosed && !['accepted', 'rejected', 'cancelled'].includes(s)) {
-            return { color: 'error', icon: <CloseIcon fontSize="small" />, label: 'Closed' };
+            return { color: 'error', icon: <CloseIcon fontSize="small" />, label: t('closed') };
         }
 
-        return map[s] || { color: 'default', icon: null, label: status || 'Unknown' };
+        return map[s] || { color: 'default', icon: null, label: status || t('unknown') };
     };
 
     const counts = useMemo(() => {
@@ -281,7 +283,7 @@ export default function MyApplicationsToCompanies() {
 
             setSnackbar({
                 open: true,
-                message: 'Application cancelled successfully.',
+                message: t('application_cancelled_success'),
                 severity: 'success',
             });
 
@@ -289,7 +291,7 @@ export default function MyApplicationsToCompanies() {
         } catch (err) {
             setSnackbar({
                 open: true,
-                message: err.response?.data?.detail || 'Failed to cancel application. Please try again.',
+                message: err.response?.data?.detail || t('cancel_failed'),
                 severity: 'error',
             });
             setCancelDialog((prev) => ({ ...prev, loading: false }));
@@ -301,7 +303,7 @@ export default function MyApplicationsToCompanies() {
             <Box sx={{ py: 10, textAlign: 'center' }}>
                 <CircularProgress size={60} thickness={4} />
                 <Typography mt={3} variant="h6" color="text.secondary">
-                    Loading your applications...
+                    {t('loading_applications')}
                 </Typography>
             </Box>
         );
@@ -335,7 +337,6 @@ export default function MyApplicationsToCompanies() {
                     },
                 }}
             >
-                {/* Custom icon + title */}
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                     <Box
                         sx={{
@@ -365,11 +366,10 @@ export default function MyApplicationsToCompanies() {
                             letterSpacing: '-0.3px',
                         }}
                     >
-                        Something went wrong
+                        {t('something_went_wrong')}
                     </Typography>
                 </Stack>
 
-                {/* Error message */}
                 <Typography
                     variant="body1"
                     color="text.primary"
@@ -379,10 +379,9 @@ export default function MyApplicationsToCompanies() {
                         opacity: 0.95,
                     }}
                 >
-                    An unexpected error occurred while loading your applications.
+                    {error}
                 </Typography>
 
-                {/* Action button */}
                 <Button
                     variant="contained"
                     color="error"
@@ -402,7 +401,7 @@ export default function MyApplicationsToCompanies() {
                         transition: 'all 0.25s ease',
                     }}
                 >
-                    Try Again
+                    {t('try_again')}
                 </Button>
             </Alert>
         );
@@ -435,10 +434,10 @@ export default function MyApplicationsToCompanies() {
                 >
                     <Box
                         sx={{
-                            width: 80,                        // ← smaller icon container (was 90–100)
+                            width: 80,
                             height: 80,
                             mx: 'auto',
-                            mb: 3,                            // reduced margin
+                            mb: 3,
                             borderRadius: '50%',
                             bgcolor: alpha(theme.palette.primary.main, 0.1),
                             color: 'primary.main',
@@ -453,11 +452,11 @@ export default function MyApplicationsToCompanies() {
                             },
                         }}
                     >
-                        <WorkIcon sx={{ fontSize: 40 }} />  {/* smaller icon */}
+                        <WorkIcon sx={{ fontSize: 40 }} />
                     </Box>
 
                     <Typography
-                        variant="h5"                        // ← slightly smaller heading (was h4)
+                        variant="h5"
                         fontWeight={800}
                         gutterBottom
                         sx={{
@@ -467,7 +466,7 @@ export default function MyApplicationsToCompanies() {
                             letterSpacing: '-0.3px',
                         }}
                     >
-                        No applications yet
+                        {t('no_applications_yet')}
                     </Typography>
 
                     <Typography
@@ -475,26 +474,26 @@ export default function MyApplicationsToCompanies() {
                         color="text.secondary"
                         sx={{
                             mb: 4,
-                            maxWidth: 340,                    // tighter text width
+                            maxWidth: 340,
                             mx: 'auto',
                             lineHeight: 1.6,
-                            fontSize: '0.95rem',              // slightly smaller text
+                            fontSize: '0.95rem',
                         }}
                     >
-                        Your journey starts here. Browse open positions and apply — your applications will appear in this space.
+                        {t('new_opportunities_added_daily')}
                     </Typography>
 
                     <Button
                         variant="contained"
-                        size="medium"                       // ← smaller button (was large)
+                        size="medium"
                         endIcon={<ArrowIcon />}
                         onClick={() => navigate('/')}
                         sx={{
                             px: 5,
-                            py: 1.2,                          // reduced height
+                            py: 1.2,
                             borderRadius: 50,
                             fontWeight: 700,
-                            fontSize: '0.95rem',              // smaller text
+                            fontSize: '0.95rem',
                             textTransform: 'none',
                             boxShadow: '0 8px 24px rgba(99,102,241,0.2)',
                             '&:hover': {
@@ -504,7 +503,7 @@ export default function MyApplicationsToCompanies() {
                             transition: 'all 0.3s ease',
                         }}
                     >
-                        Explore Jobs
+                        {t('explore_jobs')}
                     </Button>
 
                     <Typography
@@ -512,7 +511,7 @@ export default function MyApplicationsToCompanies() {
                         color="text.disabled"
                         sx={{ mt: 4, display: 'block', fontSize: '0.8rem' }}
                     >
-                        New opportunities added daily — don't miss out!
+                        {t('new_opportunities_added')}
                     </Typography>
                 </Box>
             </Box>
@@ -535,7 +534,7 @@ export default function MyApplicationsToCompanies() {
                     fullWidth
                     size='small'
                     variant="outlined"
-                    placeholder="Search"
+                    placeholder={t('search')}
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     InputProps={{
@@ -548,7 +547,6 @@ export default function MyApplicationsToCompanies() {
                     }}
                 />
 
-                {/* Tabs */}
                 <Tabs
                     value={tabValue}
                     onChange={handleChangeTab}
@@ -688,7 +686,7 @@ export default function MyApplicationsToCompanies() {
                                 </Box>
 
                                 <Typography variant="h6" fontWeight={600}>
-                                    {searchText.trim() ? 'Nothing matches your search' : 'No applications here yet'}
+                                    {searchText.trim() ? t('nothing_matches_search') : t('no_applications_here')}
                                 </Typography>
                                 {(tabValue === 0 || searchText.trim()) && (
                                     <Button
@@ -698,7 +696,7 @@ export default function MyApplicationsToCompanies() {
                                         onClick={() => searchText.trim() ? setSearchText('') : navigate('/')}
                                         sx={{ mt: 2, borderRadius: 50, px: 5 }}
                                     >
-                                        {searchText.trim() ? 'Clear Search' : 'Find Jobs'}
+                                        {searchText.trim() ? t('clear_search') : t('find_jobs')}
                                     </Button>
                                 )}
                             </Stack>
@@ -735,7 +733,6 @@ export default function MyApplicationsToCompanies() {
 
                                 <CardContent sx={{ p: 3 }}>
                                     <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                        {/* Avatar */}
                                         <Avatar
                                             sx={{
                                                 width: 54,
@@ -743,13 +740,12 @@ export default function MyApplicationsToCompanies() {
                                                 bgcolor: alpha(accent, 0.12),
                                                 color: accent,
                                                 border: `2px solid ${alpha(accent, 0.3)}`,
-                                                flexShrink: 0, // don't shrink avatar
+                                                flexShrink: 0,
                                             }}
                                         >
                                             <WorkIcon />
                                         </Avatar>
 
-                                        {/* Job Title & Company */}
                                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                             <Tooltip title={job.job_title || '—'} placement="top" arrow>
                                                 <Typography variant="h6" fontWeight={700} lineHeight={1.2} noWrap>
@@ -763,11 +759,10 @@ export default function MyApplicationsToCompanies() {
                                             </Tooltip>
                                         </Box>
 
-                                        {/* Chips */}
                                         {app.cancelled && (
-                                            <Tooltip title="Cancelled" placement="top" arrow>
+                                            <Tooltip title={t('cancelled')} placement="top" arrow>
                                                 <Chip
-                                                    label="Cancelled"
+                                                    label={t('cancelled')}
                                                     size="small"
                                                     color="default"
                                                     sx={{
@@ -786,22 +781,22 @@ export default function MyApplicationsToCompanies() {
                                     <Stack spacing={1.4} sx={{ fontSize: '0.9rem' }}>
                                         <InfoRow
                                             icon={<CalendarToday fontSize="small" />}
-                                            label="Applied"
+                                            label="applied"
                                             value={new Date(app.applied_date).toLocaleDateString()}
                                         />
                                         <InfoRow
                                             icon={<LocationOn fontSize="small" />}
-                                            label="Location"
+                                            label="location"
                                             value={job.location || '—'}
                                         />
                                         <InfoRow
                                             icon={<WorkIcon fontSize="small" />}
-                                            label="Type / Level"
+                                            label="type_level"
                                             value={`${job.job_type || '—'} • ${job.level || '—'}`}
                                         />
                                         <InfoRow
                                             icon={statusCfg.icon}
-                                            label="Status"
+                                            label="status"
                                             value={
                                                 <Chip
                                                     label={statusCfg.label}
@@ -814,7 +809,7 @@ export default function MyApplicationsToCompanies() {
                                         {job.closing_date && (
                                             <InfoRow
                                                 icon={<CalendarToday fontSize="small" />}
-                                                label="Closes"
+                                                label="closes"
                                                 value={new Date(job.closing_date).toLocaleDateString()}
                                                 color={isClosed ? 'error.main' : 'inherit'}
                                                 fontWeight={isClosed ? 700 : 600}
@@ -836,10 +831,9 @@ export default function MyApplicationsToCompanies() {
                                             '&:hover': { bgcolor: alpha(accent, 0.08) },
                                         }}
                                     >
-                                        View Job
+                                        {t('view_job')}
                                     </Button>
 
-                                    {/* Cancel button only if allowed */}
                                     {!app.cancelled &&
                                         (app.application_status || '').toLowerCase() !== 'rejected' &&
                                         !isClosed && (
@@ -851,7 +845,7 @@ export default function MyApplicationsToCompanies() {
                                                 onClick={() => handleOpenCancelDialog(app.pk_id || app.id)}
                                                 sx={{ fontWeight: 600 }}
                                             >
-                                                Cancel
+                                                {t('cancel')}
                                             </Button>
                                         )}
                                 </Stack>
@@ -861,7 +855,6 @@ export default function MyApplicationsToCompanies() {
                 }))}
             </Grid>
 
-            {/* Dialog */}
             <Dialog
                 open={cancelDialog.open}
                 onClose={handleCloseCancelDialog}
@@ -914,11 +907,11 @@ export default function MyApplicationsToCompanies() {
                                 },
                             }}
                         />
-                        Cancel Application
+                        {t('cancel_application')}
                     </DialogTitle>
 
                     <IconButton
-                        aria-label="close"
+                        aria-label={t('close')}
                         onClick={handleCloseCancelDialog}
                         disabled={cancelDialog.loading}
                         sx={{
@@ -935,12 +928,12 @@ export default function MyApplicationsToCompanies() {
 
                 <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 3.5, pb: isMobile ? 4 : 3 }}>
                     <DialogContentText sx={{ color: 'text.primary', fontSize: '1.03rem', lineHeight: 1.65 }}>
-                        Are you sure you want to <strong>cancel</strong> this application?
+                        {t('confirm_cancel_application')}
                     </DialogContentText>
                     <TextField
                         autoFocus={!isMobile}
                         margin="dense"
-                        label="Reason"
+                        label={t('reason')}
                         fullWidth
                         multiline
                         rows={3}
@@ -985,7 +978,7 @@ export default function MyApplicationsToCompanies() {
                             minWidth: 'auto',
                         }}
                     >
-                        No, keep it
+                        {t('no_keep_it')}
                     </Button>
 
                     <Button
@@ -1024,7 +1017,7 @@ export default function MyApplicationsToCompanies() {
                             }),
                         }}
                     >
-                        {cancelDialog.loading ? 'Cancelling…' : 'Yes, Cancel'}
+                        {cancelDialog.loading ? t('cancelling') : t('yes_cancel')}
                     </Button>
                 </DialogActions>
             </Dialog>
