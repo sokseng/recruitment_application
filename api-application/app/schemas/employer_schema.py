@@ -47,6 +47,7 @@ class EmployerOut(BaseModel):
 
 class UserProfileEmployer(BaseModel):
     user_name: Optional[str] = None
+    profile_image:  Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None

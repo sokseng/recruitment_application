@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header
+from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header, File, UploadFile
 from sqlalchemy.orm import Session
 from app.schemas.user_schema import JobOut
 from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword, ResponseUserProfile, UpdateUserProfile
@@ -193,6 +193,21 @@ def get_my_jobs(
 def create_or_update_user_admin(request: Request, user: UserCreate, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     ip_address = request.client.host
     return user_controller.create_or_update_user_admin(user, db, ip_address, current_user_id)
+
+@router.post("/upload-profile")
+def upload_profile_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    return user_controller.upload_profile(db, file, current_user_id)
+
+@router.delete("/delete-profile")
+def delete_user_profile_(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token)
+):
+    return user_controller.delete_user_profile(db, current_user_id)
 
 
 
