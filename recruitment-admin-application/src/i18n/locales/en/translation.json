@@ -215,7 +215,6 @@
   "all_dates": "All dates",
   "custom_range": "Custom range",
   "from": "From",
-  "to": "To",
   "clear": "Clear",
   "company": "Company",
   "contact": "Contact",
@@ -314,7 +313,6 @@
   "active_status": "Active Status",
   "approval": "Approval",
   "approved": "Approved",
-  "actions": "Actions",
   "create_user": "Create User",
   "approve_employer": "Approve Employer",
   "confirm_approve_message": "Are you sure you want to approve {{name}}?",
@@ -497,7 +495,6 @@
   "error_verifying_code": "Error verifying code. Please try again.",
   "password_reset_success": "Password reset successfully",
   "error_resetting_password": "Error resetting password. Please try again.",
-<<<<<<< Updated upstream
   "unknown": "Unknown",
   "complete_profile_first": "Please complete your profile first.",
   "failed_to_load_applications": "Failed to load applications.",
@@ -518,8 +515,7 @@
   "yes_cancel": "Yes, Cancel",
   "cancelling": "Cancelling…",
   "application_cancelled_success": "Application cancelled successfully.",
-  "cancel_failed": "Failed to cancel application. Please try again."
-=======
+  "cancel_failed": "Failed to cancel application. Please try again.",
   "applications": {
     "no_applications_yet": "No applications yet",
     "no_status_applications": "No {{status}} applications",
@@ -544,6 +540,5 @@
       "accepted": "Accepted"
     }
   }
->>>>>>> Stashed changes
   
 }

@@ -94,7 +94,6 @@
   "terms_updates": "Ces Conditions d'Utilisation peuvent être mises à jour périodiquement. L'utilisation continue de la plateforme après toute modification constitue l'acceptation des conditions révisées.",
   "copyright": "{{year}} True Match 360. Tous droits réservés.",
   "about_us": "À Propos",
-  "personal_information": "Informations Personnelles",
   "user_name": "Nom d'utilisateur",
   "save_changes": "Enregistrer les modifications",
   "reset_form": "Réinitialiser le formulaire",
@@ -215,7 +214,6 @@
   "all_dates": "Toutes les dates",
   "custom_range": "Plage personnalisée",
   "from": "Du",
-  "to": "Au",
   "clear": "Effacer",
   "company": "Entreprise",
   "contact": "Contact",
@@ -291,7 +289,6 @@
   "view_file_failed": "Impossible d'afficher le fichier",
   "create_date": "Date de création",
   "primary_cv": "CV Principal",
-  "actions": "Actions",
   "view_resume": "Voir le CV",
   "download_resume": "Télécharger le CV",
   "close": "Fermer",
@@ -497,7 +494,6 @@
   "error_verifying_code": "Erreur lors de la vérification du code. Veuillez réessayer.",
   "password_reset_success": "Mot de passe réinitialisé avec succès",
   "error_resetting_password": "Erreur lors de la réinitialisation du mot de passe. Veuillez réessayer.",
-<<<<<<< Updated upstream
   "cancelled": "Annulé",
   "unknown": "Inconnu",
   "complete_profile_first": "Veuillez d'abord compléter votre profil.",
@@ -519,8 +515,7 @@
   "yes_cancel": "Oui, annuler",
   "cancelling": "Annulation…",
   "application_cancelled_success": "Candidature annulée avec succès.",
-  "cancel_failed": "Échec de l'annulation de la candidature. Veuillez réessayer."
-=======
+  "cancel_failed": "Échec de l'annulation de la candidature. Veuillez réessayer.",
   "applications": {
     "no_applications_yet": "Aucune candidature pour l'instant",
     "no_status_applications": "Aucune candidature {{status}}",
@@ -546,5 +541,4 @@
     }
   },
   "application": "Candidature"
->>>>>>> Stashed changes
 } 

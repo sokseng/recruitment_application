@@ -215,7 +215,6 @@
   "all_dates": "កាលបរិច្ឆេទទាំងអស់",
   "custom_range": "ជួរផ្ទាល់ខ្លួន",
   "from": "ពី",
-  "to": "ដល់",
   "clear": "សម្អាត",
   "company": "ក្រុមហ៊ុន",
   "contact": "ទំនាក់ទំនង",
@@ -291,7 +290,6 @@
   "view_file_failed": "មិនអាចមើលឯកសារបានទេ",
   "create_date": "ថ្ងៃបង្កើត",
   "primary_cv": "CV ចម្បង",
-  "actions": "សកម្មភាព",
   "view_resume": "មើលប្រវត្តិរូប",
   "download_resume": "ទាញយកប្រវត្តិរូប",
   "close": "បិទ",
@@ -497,7 +495,6 @@
   "error_verifying_code": "មានបញ្ហាក្នុងការផ្ទៀងផ្ទាត់លេខកូដ។ សូមព្យាយាមម្តងទៀត។",
   "password_reset_success": "បានកំណត់ពាក្យសម្ងាត់ឡើងវិញដោយជោគជ័យ",
   "error_resetting_password": "មានបញ្ហាក្នុងការកំណត់ពាក្យសម្ងាត់ឡើងវិញ។ សូមព្យាយាមម្តងទៀត។",
-<<<<<<< Updated upstream
   "cancelled": "បានបោះបង់",
   "unknown": "មិនស្គាល់",
   "complete_profile_first": "សូមបំពេញប្រវត្តិរូបរបស់អ្នកជាមុនសិន។",
@@ -519,8 +516,7 @@
   "yes_cancel": "បាទ/ចាស, បោះបង់",
   "cancelling": "កំពុងបោះបង់…",
   "application_cancelled_success": "បានបោះបង់ពាក្យសុំដោយជោគជ័យ។",
-  "cancel_failed": "បរាជ័យក្នុងការបោះបង់ពាក្យសុំ។ សូមព្យាយាមម្តងទៀត។"
-=======
+  "cancel_failed": "បរាជ័យក្នុងការបោះបង់ពាក្យសុំ។ សូមព្យាយាមម្តងទៀត។",
   "applications": {
     "no_applications_yet": "មិនទាន់មានការដាក់ពាក្យសុំការងារនៅឡើយ",
     "no_status_applications": "មិនទាន់មានការដាក់ពាក្យសុំការងារ{{status}}",
@@ -546,6 +542,5 @@
     }
   },
   "application": "ពាក្យសុំ"
->>>>>>> Stashed changes
 
 }
