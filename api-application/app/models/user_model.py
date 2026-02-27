@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     func,
     text,
+    Text
 )
 from app.database.session import Base
 from sqlalchemy.orm import relationship
@@ -24,6 +25,8 @@ class User(Base):
     date_of_birth = Column(Date, nullable=True)
     address = Column(String(255), nullable=True)
     wrong_password = Column(Integer, default=0)
+    bio = Column(Text, nullable=True)
+    profile_image = Column(String(255), nullable=True)
 
     created_date = Column(
         DateTime(timezone=True),

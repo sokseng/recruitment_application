@@ -169,6 +169,7 @@ def get_employer_profiles(db: Session, user_id: int):
         "company_website": db_employer.company_website,
         "company_logo": db_employer.company_logo,
         "user_name": db_user.user_name,
+        "profile_image": db_user.profile_image,
         "email": db_user.email,
         "gender": db_user.gender,
         "phone": db_user.phone,
@@ -258,3 +259,20 @@ def update_profile_employer(
     db.refresh(db_employer)
     return db_user
 
+def delete_company_logo(db: Session, current_user_id: int):
+    db_employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
+    if not db_employer:
+        raise HTTPException(status_code=404, detail="Employer profile not found")
+    
+    if not db_employer.company_logo:
+        raise HTTPException(status_code=400, detail="No logo to delete")
+    
+    logo_path = os.path.join(UPLOAD_DIR, db_employer.company_logo)
+    if os.path.exists(logo_path):
+        os.remove(logo_path)
+    
+    db_employer.company_logo = None
+    db.commit()
+    db.refresh(db_employer)
+    
+    return {"detail": "Company logo deleted successfully"}

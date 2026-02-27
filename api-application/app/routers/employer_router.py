@@ -6,7 +6,7 @@ from app.schemas.user_schema import ResponseUserProfile
 
 from app.database.deps import get_db
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer, UserUpdateProfile
-from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles, update_profile_employer
+from app.controllers.employer_controller import create_employer, get_employer, get_employers, update_employer, delete_employer, get_employer_profiles, update_profile_employer, delete_company_logo
 
 router = APIRouter(prefix="/employer", tags=["Employers"])
 
@@ -128,4 +128,11 @@ async def update_profile(
     )
 
     return update_profile_employer(db, user_data, employer_data, company_logo, remove_logo, category_ids, current_user_id)
+
+@router.delete("/profile/company-logo")
+def delete_company_logo_endpoint(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(verify_access_token),
+):
+    return delete_company_logo(db, current_user_id)
 

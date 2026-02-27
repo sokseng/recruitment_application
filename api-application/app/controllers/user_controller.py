@@ -9,14 +9,17 @@ from passlib.context import CryptContext
 from app.models.job_model import Job
 from jose import jwt
 from datetime import timedelta, datetime, timezone
-from app.config.settings import settings  # secret + algorithm from env/config
-from fastapi import HTTPException, Request
+from app.config.settings import settings
+from fastapi import HTTPException, Request, UploadFile
 from app.enums.global_enum import UserType, UserTypeName
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
 from app.models.global_setting_model import GlobalSetting
 from app.models.audit_trace_model import AuditTrace
 from app.utils.audit import audit_log
+import os
+import uuid
+import shutil
 
 SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = settings.JWT_ALGORITHM
@@ -962,3 +965,64 @@ def create_or_update_user_admin(user: UserCreate, db: Session, ip_address: str, 
     db.refresh(db_user)
 
     return db_user
+
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
+def upload_profile(
+    db: Session,
+    file: UploadFile,
+    current_user_id: int
+):
+    if not file:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    upload_dir = "uploads/user/profile"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    filename = f"{uuid.uuid4()}.{ext}"
+    file_path = os.path.join(upload_dir, filename)
+
+    if user.profile_image:
+        old_path = os.path.join(upload_dir, user.profile_image)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    user.profile_image = filename
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Profile image uploaded successfully",
+        "profile_image": f"/uploads/user/profile/{filename}"
+    }
+    
+def delete_user_profile(db: Session, current_user_id: int):
+    upload_dir = "uploads/user/profile"
+
+    user = db.query(User).filter(User.pk_id == current_user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Authentication failed")
+    
+    if not user.profile_image:
+        raise HTTPException(status_code=400, detail="No profile image to delete")
+    
+    file_path = os.path.join(upload_dir, user.profile_image)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+    
+    user.profile_image = None
+    db.commit()
+    db.refresh(user)
+    
+    return {"detail": "User profile image deleted successfully"}
