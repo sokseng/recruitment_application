@@ -517,6 +517,7 @@
   "cancelling": "កំពុងបោះបង់…",
   "application_cancelled_success": "បានបោះបង់ពាក្យសុំដោយជោគជ័យ។",
   "cancel_failed": "បរាជ័យក្នុងការបោះបង់ពាក្យសុំ។ សូមព្យាយាមម្តងទៀត។",
+  "no_jobs_posted": "អ្នកមិនទាន់បានផ្សាយការងារណាមួយនៅឡើយទេ។",
   "applications": {
     "no_applications_yet": "មិនទាន់មានការដាក់ពាក្យសុំការងារនៅឡើយ",
     "no_status_applications": "មិនទាន់មានការដាក់ពាក្យសុំការងារ{{status}}",

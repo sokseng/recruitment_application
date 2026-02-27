@@ -516,6 +516,7 @@
   "cancelling": "Cancelling…",
   "application_cancelled_success": "Application cancelled successfully.",
   "cancel_failed": "Failed to cancel application. Please try again.",
+  "no_jobs_posted": "You haven't posted any jobs yet.",
   "applications": {
     "no_applications_yet": "No applications yet",
     "no_status_applications": "No {{status}} applications",

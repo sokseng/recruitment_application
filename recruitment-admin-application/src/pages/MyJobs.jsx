@@ -1367,7 +1367,7 @@ export default function MyJobs() {
             py={6}
             color="text.secondary"
           >
-            You haven't posted any jobs yet.
+            {t("no_jobs_posted")}
           </Box>
         )}
       </Box>

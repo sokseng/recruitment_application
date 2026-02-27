@@ -516,6 +516,7 @@
   "cancelling": "Annulation…",
   "application_cancelled_success": "Candidature annulée avec succès.",
   "cancel_failed": "Échec de l'annulation de la candidature. Veuillez réessayer.",
+  "no_jobs_posted": "Vous n'avez pas encore publié d'offres d'emploi.",
   "applications": {
     "no_applications_yet": "Aucune candidature pour l'instant",
     "no_status_applications": "Aucune candidature {{status}}",

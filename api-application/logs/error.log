@@ -1141,3 +1141,12 @@ WHERE t_user.pk_id = %(pk_id_1)s
 
 ===================================================
         
+2026-02-27 16:09:27,105 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/login
+Method: POST
+Client: 127.0.0.1
+Status Code: 400
+Detail: Invalid password
+==============================================
+        
