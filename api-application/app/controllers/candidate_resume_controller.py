@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
 from datetime import datetime
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile, HTTPException, Request
 from sqlalchemy.orm import Session
 from shutil import copyfileobj
 from app.models.candidate_resume_model import CandidateResume
 from app.schemas.candidate_resume_schema import ResumeCreate, ResumeUpdate
+from app.utils.audit import audit_log
 
 UPLOAD_DIR = "uploads/resumes"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -34,7 +35,9 @@ def create_resume(
     db: Session,
     resume_data: ResumeCreate,
     candidate_id: int,
-    resume_file: UploadFile | None = None
+    resume_file: UploadFile | None = None,
+    user: dict = None,
+    request: Request = None,
 ) -> CandidateResume:
     filename = None
 
@@ -57,6 +60,15 @@ def create_resume(
         recommendation_letter=resume_data.recommendation_letter,
         is_primary=resume_data.is_primary,
     )
+    audit_log(
+        db=db,
+        db_obj=db_resume,
+        action="Create Resume",
+        user_name=user.user_name if user else "Unknown",
+        ip_address=request.client.host if request else "Unknown",
+        exclude_fields=["candidate_id", "resume_type", "resume_content", "recommendation_letter", "is_primary"],
+        field_rename={"resume_file": "file"}
+    )
     db.add(db_resume)
     db.commit()
     db.refresh(db_resume)
@@ -68,7 +80,9 @@ def update_resume(
     resume_id: int,
     resume_update: ResumeUpdate,
     candidate_id: int,
-    resume_file: UploadFile | None = None
+    resume_file: UploadFile | None = None,
+    user: dict = None,
+    request: Request = None,
 ) -> CandidateResume | None:
     db_resume = db.query(CandidateResume).filter(
         CandidateResume.pk_id == resume_id,
@@ -107,12 +121,22 @@ def update_resume(
 
         db_resume.resume_file = new_filename
 
+    audit_log(
+        db=db,
+        db_obj=db_resume,
+        action="Update Resume",
+        user_name=user.user_name if user else "Unknown",
+        ip_address=request.client.host if request else "Unknown",
+        exclude_fields=["candidate_id", "resume_type", "resume_content", "recommendation_letter", "is_primary"],
+        field_rename={"resume_file": "file", "resume_content": "content", "recommendation_letter": "recommendation"}
+    )
+
     db.commit()
     db.refresh(db_resume)
     return db_resume
 
 
-def delete_resume(db: Session, resume_id: int, candidate_id: int) -> bool:
+def delete_resume(db: Session, resume_id: int, candidate_id: int, user: dict = None, request: Request = None) -> bool:
     db_resume = db.query(CandidateResume).filter(
         CandidateResume.pk_id == resume_id,
         CandidateResume.candidate_id == candidate_id
@@ -120,7 +144,17 @@ def delete_resume(db: Session, resume_id: int, candidate_id: int) -> bool:
 
     if not db_resume:
         return False
-
+    
+    audit_log(
+        db=db,
+        db_obj=db_resume,
+        action="Delete Resume",
+        user_name=user.user_name if user else "Unknown",
+        ip_address=request.client.host if request else "Unknown",
+        exclude_fields=["candidate_id", "resume_type", "resume_content", "recommendation_letter", "is_primary", "candidate", "images", "pk_id", "cover_letter_file", "created_date", "updated_date"],
+        field_rename={"resume_file": "file"},
+        is_delete=True
+    )
     # Delete file if exists
     if db_resume.resume_file:
         file_path = os.path.join(UPLOAD_DIR, db_resume.resume_file)
