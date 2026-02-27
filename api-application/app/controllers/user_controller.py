@@ -1,6 +1,7 @@
 
 from sqlalchemy.orm import Session
 from app.models.candidate_profile import CandidateProfile
+from app.models.category_model import Category
 from app.models.user_model import User
 from app.models.user_session_model import UserSession
 from app.schemas.user_schema import DeleteUser, UserCreate, ChangePassword, UpdateUserProfile, UserResponse
@@ -8,13 +9,14 @@ from passlib.context import CryptContext
 from app.models.job_model import Job
 from jose import jwt
 from datetime import timedelta, datetime, timezone
-from app.config.settings import settings  # secret + algorithm from env/config
-from fastapi import HTTPException, UploadFile
+from app.config.settings import settings
+from fastapi import HTTPException, Request, UploadFile
 from app.enums.global_enum import UserType, UserTypeName
 from app.models.employer_model import Employer
 from app.models.candidate_model import Candidate
 from app.models.global_setting_model import GlobalSetting
 from app.models.audit_trace_model import AuditTrace
+from app.utils.audit import audit_log
 import os
 import uuid
 import shutil
@@ -64,7 +66,7 @@ def get_password_settings(db: Session):
     return result
 
 #create or update user
-def create_or_update_user(user: UserCreate, db: Session):
+def create_or_update_user(user: UserCreate, db: Session, request: Request):
     if user.pk_id:
         db_user = db.query(User).filter(User.pk_id == user.pk_id).first()
         db_user.user_name = user.user_name
@@ -77,6 +79,17 @@ def create_or_update_user(user: UserCreate, db: Session):
         db_user.address = user.address
         db_user.is_active = user.is_active
         db_user.updated_date = datetime.now().replace(microsecond=0)
+        
+        ip_address = request.client.host if request else "Unknown"
+        audit_log(
+            db=db,
+            db_obj=db_user,
+            action="Updated User",
+            user_name=db_user.user_name,
+            ip_address=ip_address,
+            exclude_fields=["updated_date"]
+        )
+
         if user.user_type == int(UserType.CANDIDATE.value):
             db_candidate = db.query(Candidate).filter(Candidate.user_id == db_user.pk_id).first()
             
@@ -103,6 +116,32 @@ def create_or_update_user(user: UserCreate, db: Session):
                     db_profile.job_category_id = None
                     db_profile.experience_level = None
                     db_profile.expected_salary = None
+
+            def format_job_category(db, value):
+                if not value:
+                    return None
+
+                job_category = db.query(Category).filter(
+                    Category.pk_id == value
+                ).first()
+
+                return job_category.name if job_category else None
+            
+            # 🔥 AUDIT PROFILE
+            if db_profile:
+                audit_log(
+                    db=db,
+                    db_obj=db_profile,
+                    action="Updated Candidate Profile",
+                    user_name=db_user.user_name,
+                    ip_address=ip_address,
+                    value_formatters={
+                        "job_category_id": lambda db, value: format_job_category(db, value)
+                    },
+                    field_rename={
+                        "job_category_id": "category"   
+                    }
+                )
             
         db.commit()
         db.refresh(db_user)
