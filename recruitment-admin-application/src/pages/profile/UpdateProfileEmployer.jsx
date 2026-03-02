@@ -13,10 +13,8 @@ import {
     CardContent,
     Snackbar,
     Alert,
-    Dialog,
-    DialogContent,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import api from "../../services/api";
 import { useRef } from "react";
 import { Autocomplete, Chip } from "@mui/material";
@@ -27,7 +25,9 @@ import Tooltip from "@mui/material/Tooltip";
 import { useTranslation } from 'react-i18next';
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import UploadIcon from "@mui/icons-material/Upload";
-import CloseIcon from '@mui/icons-material/Close';
+import useAuthStore from '../../store/useAuthStore';
+import ViewProfileDialog from "./dialog/ViewProfileDialog";
+import DeleteProfileDialog from "./dialog/DeleteProfileDialog";
 
 const SectionBox = ({ title, children }) => (
     <Paper
@@ -51,6 +51,7 @@ const SectionBox = ({ title, children }) => (
 const UpdateProfileEmployer = () => {
     const { t } = useTranslation();
     const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const { user_data, setUserData } = useAuthStore()
 
     const initialFormData = {
         user_name: "",
@@ -81,6 +82,7 @@ const UpdateProfileEmployer = () => {
     const [removeCompanyLogo, setRemoveCompanyLogo] = useState(false);
 
     const [userProfilePreview, setUserProfilePreview] = useState(null);
+    const [openProfilePreview, setOpenProfilePreview] = useState(null);
 
     const originalFormRef = useRef(null);
     const originalLogoRef = useRef(null);
@@ -89,6 +91,9 @@ const UpdateProfileEmployer = () => {
     const openCompanyMenu = Boolean(companyAnchorEl);
 
     const [openCompanyDialog, setOpenCompanyDialog] = useState(false);
+    const [openDeleteProfile, setOpenDeleteProfile] = useState(false);
+    const [openDeleteLogo, setOpenDeleteLogo] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const handleOpenCompanyMenu = (event) => {
         setCompanyAnchorEl(event.currentTarget);
@@ -118,6 +123,14 @@ const UpdateProfileEmployer = () => {
         setCompanyLogoFile(file);
         setRemoveCompanyLogo(false);
     };
+
+    useEffect(() => {
+        return () => {
+            if (companyLogoPreview?.startsWith("blob:")) {
+                URL.revokeObjectURL(companyLogoPreview);
+            }
+        };
+    }, [companyLogoPreview]);
 
     const fetchUserProfileEmployer = async () => {
         try {
@@ -243,13 +256,38 @@ const UpdateProfileEmployer = () => {
                 setUserData({
                     ...user_data,
                     user_data: {
+                        ...user_data.user_data,
                         ...response.data,
                     },
                 });
-                originalFormRef.current = { ...formData };
-                originalLogoRef.current = companyLogoFile
-                    ? URL.createObjectURL(companyLogoFile)
-                    : companyLogoPreview;
+
+                const updatedData = {
+                    user_name: response.data.user_name || "",
+                    profile_image: response.data.profile_image || "",
+                    email: response.data.email || "",
+                    phone: response.data.phone || "",
+                    gender: response.data.gender || "",
+                    date_of_birth: response.data.date_of_birth || "",
+                    address: response.data.address || "",
+                    company_name: response.data.company_name || "",
+                    company_email: response.data.company_email || "",
+                    company_contact: response.data.company_contact || "",
+                    company_address: response.data.company_address || "",
+                    company_description: response.data.company_description || "",
+                    company_website: response.data.company_website || "",
+                    category_ids: response.data.categories?.map(c => c.id) || [],
+                };
+
+                originalFormRef.current = updatedData;
+                setFormData(updatedData);
+
+                originalLogoRef.current = response.data.company_logo
+                    ? `${BASE_URL}/uploads/employers/${response.data.company_logo}`
+                    : null;
+
+                setCompanyLogoPreview(originalLogoRef.current);
+                setCompanyLogoFile(null);
+                setRemoveCompanyLogo(false);
             }
         } catch (error) {
             setOpenSnackbar(true);
@@ -259,6 +297,7 @@ const UpdateProfileEmployer = () => {
     };
 
     const handleRemoveCompanyLogo = async () => {
+        setLoading(true);
         try {
             await api.delete("/employer/profile/company-logo");
 
@@ -267,6 +306,8 @@ const UpdateProfileEmployer = () => {
             setFormData(prev => ({ ...prev, company_logo: "" }));
             setRemoveCompanyLogo(false);
 
+            setOpenDeleteLogo(false);
+            handleCloseCompanyMenu(null);
             setOpenSnackbar(true);
             setSeverity("success");
             setMessage(t("logo_deleted_success"));
@@ -274,6 +315,8 @@ const UpdateProfileEmployer = () => {
             setOpenSnackbar(true);
             setSeverity("error");
             setMessage(err.response?.data?.detail || t("delete_failed"));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -286,9 +329,11 @@ const UpdateProfileEmployer = () => {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            const imageUrl = `${BASE_URL}${res.data.profile_image}`;
-
-            setUserProfilePreview(imageUrl);
+            if (res.data.profile_image) {
+                setUserProfilePreview(
+                    `${BASE_URL}/uploads/user/profile/${res.data.profile_image}`
+                );
+            }
 
         } catch (error) {
             setOpenSnackbar(true);
@@ -298,12 +343,27 @@ const UpdateProfileEmployer = () => {
     };
 
     const handleDeleteUserProfile = async () => {
+        setLoading(true);
         try {
             await api.delete("/user/delete-profile");
 
-            setUserProfilePreview(null);
-            setFormData(prev => ({ ...prev, profile_image: "" }));
+            setUserData({
+                ...user_data,
+                user_data: {
+                    ...user_data.user_data,
+                    profile_image: null,
+                }
+            });
 
+            setFormData(prev => ({
+                ...prev,
+                profile_image: ""
+            }));
+
+            setUserProfilePreview(null);
+
+            setOpenDeleteProfile(false);
+            handleCloseMenu(null);
             setOpenSnackbar(true);
             setSeverity("success");
             setMessage("Profile image deleted successfully");
@@ -311,6 +371,8 @@ const UpdateProfileEmployer = () => {
             setOpenSnackbar(true);
             setSeverity("error");
             setMessage(error.response?.data?.detail || "Delete failed");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -325,6 +387,32 @@ const UpdateProfileEmployer = () => {
         setAnchorEl(null);
     };
 
+    const isFormChanged = useMemo(() => {
+        if (!originalFormRef.current) return false;
+
+        const formChanged =
+            JSON.stringify(formData) !== JSON.stringify(originalFormRef.current);
+
+        const logoChanged =
+            companyLogoFile !== null ||
+            removeCompanyLogo ||
+            companyLogoPreview !== originalLogoRef.current;
+
+        const profileChanged =
+            userProfilePreview !==
+            (originalFormRef.current.profile_image
+                ? `${BASE_URL}/uploads/user/profile/${originalFormRef.current.profile_image}`
+                : null);
+
+        return formChanged || logoChanged || profileChanged;
+    }, [
+        formData,
+        companyLogoFile,
+        removeCompanyLogo,
+        companyLogoPreview,
+        userProfilePreview,
+        BASE_URL
+    ]);
 
     return (
         <>
@@ -385,6 +473,10 @@ const UpdateProfileEmployer = () => {
                                                         border: "2px dashed",
                                                         borderColor: "primary.main",
                                                         bgcolor: "#f5f5f5",
+                                                        transition: 'transform 0.1s ease-in-out',
+                                                        '&:hover': {
+                                                            transform: 'scale(1.1)'
+                                                        }
                                                     }}
                                                 />
                                             </Tooltip>
@@ -396,13 +488,18 @@ const UpdateProfileEmployer = () => {
                                                     onClick={() => document.getElementById("company-logo-input").click()}
                                                     sx={{
                                                         position: "absolute",
-                                                        bottom: -6,
-                                                        right: -6,
+                                                        bottom: 0,
+                                                        right: 0,
                                                         bgcolor: "white",
-                                                        boxShadow: 2,
+                                                        border: 1,
+                                                        width: 24,
+                                                        height: 24,
+                                                        '&:hover': {
+                                                            backgroundColor: '#f4f4f4ff'
+                                                        }
                                                     }}
                                                 >
-                                                    <PhotoCameraIcon fontSize="small" />
+                                                    <PhotoCameraIcon sx={{ fontSize: 16 }} />
                                                 </IconButton>
                                             </Tooltip>
 
@@ -442,7 +539,7 @@ const UpdateProfileEmployer = () => {
                                                 {companyLogoPreview && (
                                                     <MenuItem
                                                         onClick={() => {
-                                                            handleRemoveCompanyLogo();
+                                                            setOpenDeleteLogo(true);
                                                             handleCloseCompanyMenu();
                                                         }}
                                                         sx={{ color: "error.main" }}
@@ -517,14 +614,18 @@ const UpdateProfileEmployer = () => {
                                                     />
                                                 )}
                                                 renderTags={(value, getTagProps) =>
-                                                    value.map((option, index) => (
-                                                        <Chip
-                                                            key={option.pk_id}
-                                                            label={option.name}
-                                                            size="small"
-                                                            {...getTagProps({ index })}
-                                                        />
-                                                    ))
+                                                    value.map((option, index) => {
+                                                        const { key, ...tagProps } = getTagProps({ index });
+
+                                                        return (
+                                                            <Chip
+                                                                key={key}
+                                                                label={option.name}
+                                                                size="small"
+                                                                {...tagProps}
+                                                            />
+                                                        );
+                                                    })
                                                 }
                                             />
 
@@ -578,26 +679,31 @@ const UpdateProfileEmployer = () => {
                                                         handleCloseMenu();
                                                     }}
                                                 />
-
-                                                <Avatar
-                                                    onClick={handleOpenMenu}
-                                                    sx={{
-                                                        width: 72,
-                                                        height: 72,
-                                                        cursor: "pointer",
-                                                        border: "2px dashed",
-                                                        borderColor: "primary.main",
-                                                        bgcolor: "#f5f5f5",
-                                                    }}
-                                                    src={
-                                                        userProfilePreview ||
-                                                        (formData.profile_image
-                                                            ? `${BASE_URL}/uploads/user/profile/${formData.profile_image}`
-                                                            : null)
-                                                    }
-                                                >
-                                                    {formData.user_name.charAt(0).toUpperCase()}
-                                                </Avatar>
+                                                <Tooltip title={t('click_to_change_logo')}>
+                                                    <Avatar
+                                                        onClick={handleOpenMenu}
+                                                        sx={{
+                                                            width: 72,
+                                                            height: 72,
+                                                            cursor: "pointer",
+                                                            border: "2px dashed",
+                                                            borderColor: "primary.main",
+                                                            bgcolor: "#f5f5f5",
+                                                            transition: 'transform 0.1s ease-in-out',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.1)'
+                                                            }
+                                                        }}
+                                                        src={
+                                                            userProfilePreview ||
+                                                            (formData.profile_image
+                                                                ? `${BASE_URL}/uploads/user/profile/${formData.profile_image}`
+                                                                : null)
+                                                        }
+                                                    >
+                                                        {formData.user_name.charAt(0).toUpperCase()}
+                                                    </Avatar>
+                                                </Tooltip>
                                                 <Tooltip title={t('upload_logo')}>
                                                     <IconButton
                                                         size="small"
@@ -605,13 +711,18 @@ const UpdateProfileEmployer = () => {
                                                         onClick={() => document.getElementById("user-profile-input").click()}
                                                         sx={{
                                                             position: "absolute",
-                                                            bottom: -6,
-                                                            right: -6,
+                                                            bottom: 0,
+                                                            right: 0,
                                                             bgcolor: "white",
-                                                            boxShadow: 2,
+                                                            border: 1,
+                                                            width: 24,
+                                                            height: 24,
+                                                            '&:hover': {
+                                                                backgroundColor: '#f4f4f4ff'
+                                                            }
                                                         }}
                                                     >
-                                                        <PhotoCameraIcon fontSize="small" />
+                                                        <PhotoCameraIcon sx={{ fontSize: 16 }} />
                                                     </IconButton>
                                                 </Tooltip>
 
@@ -631,7 +742,7 @@ const UpdateProfileEmployer = () => {
                                                     {userProfilePreview && (
                                                         <MenuItem
                                                             onClick={() => {
-                                                                window.open(userProfilePreview, "_blank");
+                                                                setOpenProfilePreview(true);
                                                                 handleCloseMenu();
                                                             }}
                                                         >
@@ -649,7 +760,7 @@ const UpdateProfileEmployer = () => {
 
                                                     {userProfilePreview && (
                                                         <MenuItem
-                                                            onClick={handleDeleteUserProfile}
+                                                            onClick={() => setOpenDeleteProfile(true)}
                                                             sx={{ color: "error.main" }}
                                                         >
                                                             <DeleteIcon sx={{ mr: 1 }} /> Delete
@@ -726,10 +837,10 @@ const UpdateProfileEmployer = () => {
 
                             {/* Action Buttons */}
                             <Stack direction="row" justifyContent="flex-end" mt={2} spacing={1}>
-                                <Button variant="outlined" size="small" color="secondary" type="button" onClick={handleResetForm}>
+                                <Button variant="outlined" size="small" color="secondary" type="button" onClick={handleResetForm} disabled={!isFormChanged || loading}>
                                     {t('reset_form')}
                                 </Button>
-                                <Button variant="contained" size="small" type="submit">
+                                <Button variant="contained" size="small" type="submit" disabled={!isFormChanged || loading}>
                                     {t('save_changes')}
                                 </Button>
                             </Stack>
@@ -737,40 +848,30 @@ const UpdateProfileEmployer = () => {
                     </CardContent>
                 </Card>
             </Box>
-
-            <Dialog
+            <ViewProfileDialog
                 open={openCompanyDialog}
                 onClose={handleCloseCompanyDialog}
-                maxWidth="sm"
-                fullWidth
-            >
+                imageUrl={companyLogoPreview}
+            />
+            <ViewProfileDialog
+                open={openProfilePreview}
+                onClose={() => setOpenProfilePreview(false)}
+                imageUrl={userProfilePreview ||
+                    (formData.profile_image
+                        ? `${BASE_URL}/uploads/user/profile/${formData.profile_image}`
+                        : null)}
+            />
+            <DeleteProfileDialog
+                open={openDeleteProfile}
+                onClose={() => setOpenDeleteProfile(false)}
+                onConfirm={handleDeleteUserProfile}
+            />
+            <DeleteProfileDialog
+                open={openDeleteLogo}
+                onClose={() => setOpenDeleteLogo(false)}
+                onConfirm={handleRemoveCompanyLogo}
+            />
 
-                <DialogContent sx={{ textAlign: "center" }}>
-                    {companyLogoPreview && (
-                        <Box
-                            component="img"
-                            src={companyLogoPreview}
-                            alt="Company Logo"
-                            sx={{
-                                maxWidth: "100%",
-                                maxHeight: 400,
-                                borderRadius: 2,
-                            }}
-                        />
-                    )}
-                </DialogContent>
-
-                <IconButton
-                    onClick={handleCloseCompanyDialog}
-                    sx={{
-                        position: 'absolute',
-                        top: 5,
-                        right: 5
-                    }}
-                >
-                    <CloseIcon />
-                </IconButton>
-            </Dialog>
         </>
 
     );

@@ -104,15 +104,44 @@ class ChangePassword(BaseModel):
     old_password: str
     new_password: str
 
+class ResponseSingleUserProfile(BaseModel):
+    pk_id: int
+    user_name: str
+    profile_image: Optional[str]
+    email: str
+    phone: Optional[str]
+    date_of_birth: Optional[date]
+    gender: Optional[str]
+    address: Optional[str]
+
+class EmployerCategoryResponse(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
 
 class ResponseUserProfile(BaseModel):
     pk_id: int
     user_name: str
+    profile_image: Optional[str]
     email: str
-    phone: Optional[str] = None
-    date_of_birth: Optional[date] = None
-    gender: Optional[str] = None
-    address: Optional[str] = None
+    phone: Optional[str]
+    date_of_birth: Optional[date]
+    gender: Optional[str]
+    address: Optional[str]
+
+    company_name: Optional[str]
+    company_email: Optional[str]
+    company_contact: Optional[str]
+    company_address: Optional[str]
+    company_description: Optional[str]
+    company_website: Optional[str]
+    company_logo: Optional[str]
+    categories: List[EmployerCategoryResponse] = []
+
+    class Config:
+        from_attributes = True
 
 class UpdateHospital(BaseModel):
     id: int

@@ -9,7 +9,6 @@ import {
   LocationOn as LocationOnIcon,
   MoreVert as MoreVertIcon,
   Star as StarIcon,
-  UploadFile as UploadFileIcon
 } from '@mui/icons-material'
 import {
   Alert,
@@ -47,12 +46,16 @@ import ReactQuill from "react-quill-new"
 import api from '../../services/api'
 import useAuthStore from '../../store/useAuthStore'
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import UploadIcon from "@mui/icons-material/Upload";
+import ViewProfileDialog from './dialog/ViewProfileDialog';
+import DeleteProfileDialog from "./dialog/DeleteProfileDialog";
 
 export default function CandidateProfileDashboard() {
   const { t } = useTranslation();
   const { user_data, setUserData } = useAuthStore()
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [openDeleteProfile, setOpenDeleteProfile] = useState(false);
 
   // ----- States -----
   const [cvFile, setCvFile] = useState([])
@@ -76,6 +79,7 @@ export default function CandidateProfileDashboard() {
   const [referencesText, setReferencesText] = useState('');
   const [candidates, setCandidates] = useState([]);
   const [jobCategories, setJobCategories] = useState([]);
+  const [openProfile, setOpenProfile] = useState(false);
 
   const handleOpenSection = (section) => {
     setActiveSection(section);
@@ -527,8 +531,6 @@ export default function CandidateProfileDashboard() {
   const open = Boolean(secondAnchor);
   const profileUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${user_data.user_data.profile_image}`;
 
-  console.log("profileUrl", profileUrl)
-
   const handleMenuOpen = (event) => {
     setSecondAnchor(event.currentTarget);
   };
@@ -546,12 +548,12 @@ export default function CandidateProfileDashboard() {
   };
 
   const handleDelete = async () => {
-    await handleDeleteUserProfile();
+    setOpenDeleteProfile(true);
     handleMenuClose();
   };
 
   const handleView = () => {
-    alert(`Viewing profile of ${user_data?.user_name || 'User'}`);
+    setOpenProfile(true);
     handleMenuClose();
   };
 
@@ -566,7 +568,10 @@ export default function CandidateProfileDashboard() {
 
       setUserData({
         ...user_data,
-        profile_image: res.data.profile_image,
+        user_data: {
+          ...user_data.user_data,
+          profile_image: res.data.profile_image,
+        }
       });
 
     } catch (error) {
@@ -575,14 +580,23 @@ export default function CandidateProfileDashboard() {
   };
 
   const handleDeleteUserProfile = async () => {
+    setLoading(true);
     try {
       await api.delete("/user/delete-profile");
       setUserData({
         ...user_data,
-        profile_image: null,
+        user_data: {
+          ...user_data.user_data,
+          profile_image: null,
+        }
       });
+
     } catch (error) {
       console.error("Delete failed:", error);
+    } finally {
+      setLoading(false);
+      setSecondAnchor(null);
+      setOpenDeleteProfile(false);
     }
 
   };
@@ -636,7 +650,7 @@ export default function CandidateProfileDashboard() {
 
                 <MenuItem>
                   <label htmlFor="upload-file" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <UploadFileIcon sx={{ mr: 1 }} /> Upload
+                    <UploadIcon sx={{ mr: 1 }} /> Upload
                   </label>
                   <input
                     type="file"
@@ -646,7 +660,7 @@ export default function CandidateProfileDashboard() {
                   />
                 </MenuItem>
 
-                <MenuItem onClick={handleDelete}>
+                <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
                   <DeleteIcon sx={{ mr: 1 }} /> Delete
                 </MenuItem>
               </Menu>
@@ -1053,7 +1067,7 @@ export default function CandidateProfileDashboard() {
                 sx={{ p: 1, border: '1px solid #eee', borderRadius: 2, width: '100%', flexWrap: 'wrap', boxSizing: 'border-box', }}
               >
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <UploadFileIcon color="primary" />
+                  <UploadIcon color="primary" />
                   <Typography sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</Typography>
                 </Stack>
                 <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
@@ -1085,7 +1099,7 @@ export default function CandidateProfileDashboard() {
         <Button
           component="label"
           variant="outlined"
-          startIcon={<UploadFileIcon />}
+          startIcon={<UploadIcon />}
           sx={{ width: '100%', borderStyle: 'dashed', p: 2 }}
         >
           {t('upload_cv_button')}
@@ -1161,6 +1175,18 @@ export default function CandidateProfileDashboard() {
           onAdd={() => handleOpenSection(section.title)}
         />
       ))}
+
+      <ViewProfileDialog
+        open={openProfile}
+        onClose={() => setOpenProfile(false)}
+        imageUrl={profileUrl}
+      />
+      <DeleteProfileDialog
+        open={openDeleteProfile}
+        onClose={() => setOpenDeleteProfile(false)}
+        loading={loading}
+        onConfirm={handleDeleteUserProfile}
+      />
     </Box>
   )
 }
