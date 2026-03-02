@@ -189,14 +189,13 @@ def update_profile_employer(
     employer_data: UserProfileEmployer,
     logo_file: UploadFile = None,
     remove_logo: bool = False,
-    category_ids: list[int] = [],
+    category_ids: list[int] | None = None,
     user_id: int = None
 ):
     db_user = db.query(User).filter(User.pk_id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # update user
     db_user.user_name = user_data.user_name
     db_user.gender = user_data.gender
     db_user.phone = user_data.phone
@@ -210,7 +209,6 @@ def update_profile_employer(
     if not db_employer:
         raise HTTPException(status_code=404, detail="Employer profile not found")
 
-    # ✅ update employer text fields
     db_employer.company_contact = employer_data.company_contact
     db_employer.company_name = employer_data.company_name
     db_employer.company_email = employer_data.company_email
@@ -218,18 +216,10 @@ def update_profile_employer(
     db_employer.company_description = employer_data.company_description
     db_employer.company_website = employer_data.company_website
 
-    # --- LOGO HANDLING ---
-
-    # --- CATEGORY HANDLING ---
     if category_ids is not None:
-        categories = (
-            db.query(Category)
-            .filter(Category.pk_id.in_(category_ids))
-            .all()
-        )
+        categories = db.query(Category).filter(Category.pk_id.in_(category_ids)).all()
         db_employer.categories = categories
 
-    #Remove logo explicitly
     if remove_logo and db_employer.company_logo:
         old_path = os.path.join(UPLOAD_DIR, db_employer.company_logo)
 
@@ -239,9 +229,7 @@ def update_profile_employer(
         db_employer.company_logo = None
 
 
-    #Upload new logo (replace old)
     elif logo_file:
-        # delete old logo if exists
         if db_employer.company_logo:
             old_path = os.path.join(UPLOAD_DIR, db_employer.company_logo)
             if os.path.exists(old_path):
@@ -257,6 +245,16 @@ def update_profile_employer(
 
     db.commit()
     db.refresh(db_employer)
+    
+    db_user.company_name = db_employer.company_name
+    db_user.company_email = db_employer.company_email
+    db_user.company_contact = db_employer.company_contact
+    db_user.company_address = db_employer.company_address
+    db_user.company_description = db_employer.company_description
+    db_user.company_website = db_employer.company_website
+    db_user.company_logo = db_employer.company_logo
+    db_user.categories = db_employer.categories
+    
     return db_user
 
 def delete_company_logo(db: Session, current_user_id: int):

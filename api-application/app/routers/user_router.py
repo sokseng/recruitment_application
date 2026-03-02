@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, Body, Header, File, UploadFile
 from sqlalchemy.orm import Session
 from app.schemas.user_schema import JobOut
-from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword, ResponseUserProfile, UpdateUserProfile
+from app.schemas.user_schema import UserCreate, DeleteUser, AccessToken, UserLogin, UserResponse, ChangePassword, ResponseSingleUserProfile, UpdateUserProfile
 from app.controllers import user_controller
 from typing import List
 from passlib.context import CryptContext
@@ -88,6 +88,7 @@ def create_login(request: Request,data: UserLogin, db: Session = Depends(get_db)
         user_type=user.user_type,
         pk_id=user.pk_id,
         user_name=user.user_name,
+        profile_image=user.profile_image,
         email=user.email,
         gender=user.gender,
         phone=user.phone,
@@ -168,13 +169,13 @@ def change_password(data: ChangePassword, db: Session = Depends(get_db), current
 
 
 #get user by id
-@router.get("/profile", response_model=ResponseUserProfile)
+@router.get("/profile", response_model=ResponseSingleUserProfile)
 def get_user_by_id(db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     return user_controller.get_user_by_id(db, current_user_id)
 
 
 #update user profile
-@router.put("/profile", response_model=ResponseUserProfile)
+@router.put("/profile", response_model=ResponseSingleUserProfile)
 def update_user_profile(request: Request, data: UpdateUserProfile, db: Session = Depends(get_db), current_user_id: int = Depends(verify_access_token)):
     ip_address = request.client.host
     return user_controller.update_user_profile(db, current_user_id, data, ip_address)

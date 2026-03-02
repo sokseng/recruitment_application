@@ -1004,7 +1004,7 @@ def upload_profile(
 
     return {
         "message": "Profile image uploaded successfully",
-        "profile_image": f"/uploads/user/profile/{filename}"
+        "profile_image": f"{filename}"
     }
     
 def delete_user_profile(db: Session, current_user_id: int):
