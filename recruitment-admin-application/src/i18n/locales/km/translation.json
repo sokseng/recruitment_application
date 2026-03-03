@@ -544,5 +544,11 @@
   },
   "application": "ពាក្យសុំ",
   "back_to_jobs": "ត្រឡប់ទៅការងារដាក់ពាក្យសុំ",
-  "connecting": "កំពុងតភ្ជាប់..."
+  "connecting": "កំពុងតភ្ជាប់...",
+    "profile_image": "រូបភាពប្រវត្តិរូប",
+  "profile_image_deleted": "លុបរូបភាពប្រវត្តិរូបដោយជោគជ័យ",
+  "profile_image_delete_failed": "បរាជ័យក្នុងការលុបរូបភាពប្រវត្តិរូប",
+  "profile_image_uploaded": "បង្ហោះរូបភាពប្រវត្តិរូបដោយជោគជ័យ",
+  "profile_image_upload_failed": "បរាជ័យក្នុងការបង្ហោះរូបភាពប្រវត្តិរូប",
+  "no_profile_image": "មិនមានរូបភាពប្រវត្តិរូបទេ"
 }

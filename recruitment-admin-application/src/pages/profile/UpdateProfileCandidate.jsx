@@ -4,7 +4,9 @@ import {
   Delete as DeleteIcon,
   Description as DescriptionIcon,
   Edit as EditIcon,
+  EmailOutlined,
   FileDownload as FileDownloadIcon,
+  LocationOnOutlined,
   MoreVert as MoreVertIcon,
   PhotoCamera,
   Star as StarIcon
@@ -92,6 +94,7 @@ export default function CandidateProfileDashboard() {
   const setAnchorEl = (cvId, el) => {
     setAnchorEls((prev) => ({ ...prev, [cvId]: el }));
   };
+  
   // ----- CV Handlers -----
   const handleCvChange = (e) => {
     const files = Array.from(e.target.files)
@@ -249,11 +252,17 @@ export default function CandidateProfileDashboard() {
         setJobCategories(categoriesRes.data);
         const candidate = Array.isArray(candidatesRes.data) ? candidatesRes.data[0] : candidatesRes.data;
 
+        // Ensure profile_image is null, not "null" string
+        if (candidate?.user?.profile_image === 'null' || candidate?.user?.profile_image === 'undefined') {
+          candidate.user.profile_image = null;
+        }
+
         // merge candidate profile into form
         setUserData({
           ...user_data,
           user_data: {
             ...user_data.user_data,
+            ...candidate.user,
             experience_level: candidate?.profile?.experience_level || "",
             min_monthly_salary: candidate?.profile?.expected_salary || "",
             jobCategoryId: candidate?.profile?.job_category_id || "",
@@ -528,7 +537,23 @@ export default function CandidateProfileDashboard() {
 
   const [secondAnchor, setSecondAnchor] = useState(null);
   const open = Boolean(secondAnchor);
-  const profileUrl = `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${user_data.user_data.profile_image}`;
+
+  // Safe profile URL construction - CRITICAL FIX
+  const getSafeProfileUrl = () => {
+    const profileImage = user_data?.user_data?.profile_image;
+    
+    // Check for null, undefined, or string "null"/"undefined"
+    if (!profileImage || 
+        profileImage === 'null' || 
+        profileImage === 'undefined' || 
+        profileImage.trim() === '') {
+      return null;
+    }
+    
+    return `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${profileImage}`;
+  };
+
+  const profileUrl = getSafeProfileUrl();
 
   const handleMenuOpen = (event) => {
     setSecondAnchor(event.currentTarget);
@@ -552,7 +577,11 @@ export default function CandidateProfileDashboard() {
   };
 
   const handleView = () => {
-    setOpenProfile(true);
+    if (profileUrl) {
+      setOpenProfile(true);
+    } else {
+      showSnackbar(t('no_profile_image'), 'info');
+    }
     handleMenuClose();
   };
 
@@ -565,39 +594,49 @@ export default function CandidateProfileDashboard() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      // Ensure we're setting the actual filename, not a string "null"
+      const newProfileImage = res.data.profile_image || res.data.profile_image_url || res.data.filename;
+      
       setUserData({
         ...user_data,
         user_data: {
           ...user_data.user_data,
-          profile_image: res.data.profile_image,
+          profile_image: newProfileImage, // This should be the actual filename
         }
       });
 
+      showSnackbar(t('profile_image_uploaded'), 'success');
     } catch (error) {
       console.error("Upload failed:", error);
+      showSnackbar(t('profile_image_upload_failed'), 'error');
     }
   };
 
   const handleDeleteUserProfile = async () => {
     setLoading(true);
     try {
-      await api.delete("/user/delete-profile");
-      setUserData({
-        ...user_data,
-        user_data: {
-          ...user_data.user_data,
-          profile_image: null,
-        }
-      });
+      const response = await api.delete("/user/delete-profile");
 
+      if (response.status === 200) {
+        // CRITICAL: Set to null, NOT empty string or "null"
+        setUserData({
+          ...user_data,
+          user_data: {
+            ...user_data.user_data,
+            profile_image: null  // This MUST be null, not "null"
+          }
+        });
+        
+        showSnackbar(t('profile_image_deleted'), 'success');
+      }
     } catch (error) {
       console.error("Delete failed:", error);
+      showSnackbar(t('profile_image_delete_failed'), 'error');
     } finally {
       setLoading(false);
-      setSecondAnchor(null);
       setOpenDeleteProfile(false);
+      setSecondAnchor(null);
     }
-
   };
 
   return (
@@ -632,9 +671,13 @@ export default function CandidateProfileDashboard() {
                     fontWeight: 'bold',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                   }}
-                  src={profileUrl}
+                  src={profileUrl || undefined}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                  }}
                 >
-                  {user_data?.user_name?.charAt(0).toUpperCase() || '?'}
+                  {user_data?.user_data?.user_name?.charAt(0).toUpperCase() || '?'}
                 </Avatar>
               </IconButton>
 
@@ -681,6 +724,7 @@ export default function CandidateProfileDashboard() {
                   id="upload-file"
                   style={{ display: 'none' }}
                   onChange={handleUpload}
+                  accept="image/*"
                 />
               </MenuItem>
 
@@ -688,6 +732,24 @@ export default function CandidateProfileDashboard() {
                 <DeleteIcon sx={{ mr: 1 }} /> Delete
               </MenuItem>
             </Menu>
+
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {user_data.user_data?.user_name || t('unnamed')}
+              </Typography>
+
+              {user_data?.user_data?.address && (
+                <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
+                  <LocationOnOutlined fontSize="small" />
+                  <Typography variant="body2">{user_data?.user_data?.address}</Typography>
+                </Stack>
+              )}
+
+              <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
+                <EmailOutlined fontSize="small" />
+                <Typography variant="body2">{user_data?.user_data?.email}</Typography>
+              </Stack>
+            </Box>
           </Stack>
 
           {/* Edit Profile Button */}
@@ -1185,6 +1247,7 @@ export default function CandidateProfileDashboard() {
         open={openProfile}
         onClose={() => setOpenProfile(false)}
         imageUrl={profileUrl}
+        userName={user_data?.user_data?.user_name}
       />
       <DeleteProfileDialog
         open={openDeleteProfile}
@@ -1213,15 +1276,25 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
       setLoading(true)
       const { data } = await api.post('/user', form)
       showSnackbar(t('profile_updated'), 'success')
+      
+      // Ensure profile_image is properly handled
+      const updatedUserData = {
+        ...data,
+        experience_level: form.experience_level || "",
+        min_monthly_salary: form.min_monthly_salary || "",
+        jobCategoryId: form.jobCategoryId || "",
+      };
+      
+      // If profile_image is "null" string, convert to null
+      if (updatedUserData.profile_image === 'null' || updatedUserData.profile_image === 'undefined') {
+        updatedUserData.profile_image = null;
+      }
+      
       setUserData({
         ...user_data,
-        user_data: {
-          ...data,
-          experience_level: form.experience_level || "",
-          min_monthly_salary: form.min_monthly_salary || "",
-          jobCategoryId: form.jobCategoryId || "",
-        },
+        user_data: updatedUserData,
       });
+      
       setCandidates((prev) => ({
         ...prev,
         profile: {
@@ -1242,7 +1315,12 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
 
   useEffect(() => {
     if (open && user_data?.user_data) {
-      setForm(user_data.user_data);
+      // Ensure we don't set "null" string in form
+      const userData = { ...user_data.user_data };
+      if (userData.profile_image === 'null' || userData.profile_image === 'undefined') {
+        userData.profile_image = null;
+      }
+      setForm(userData);
     }
   }, [open, user_data])
 

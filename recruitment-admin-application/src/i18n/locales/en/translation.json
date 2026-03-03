@@ -543,5 +543,11 @@
   },
   "application": "Application",
   "back_to_jobs": "Back to job applications",
-  "connecting": "Connecting..."
+  "connecting": "Connecting...",
+  "profile_image": "Profile Image",
+  "profile_image_deleted": "Profile image deleted successfully",
+  "profile_image_delete_failed": "Failed to delete profile image",
+  "profile_image_uploaded": "Profile image uploaded successfully",
+  "profile_image_upload_failed": "Failed to upload profile image",
+  "no_profile_image": "No profile image available"
 }
