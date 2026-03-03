@@ -1,11 +1,11 @@
 // src/pages/AppliedCandidates.jsx
 import {
+  ArrowBack,
   CalendarToday as CalendarIcon,
   CancelOutlined,
   CheckCircleOutline,
   DescriptionOutlined,
   FileDownload as FileDownloadIcon,
-  Home,
   HourglassEmpty,
   PersonOutlineSharp,
   Visibility as VisibilityIcon,
@@ -143,25 +143,28 @@ export default function AppliedCandidates() {
 
   useEffect(() => {
     if (candidateDetailOpen && selectedCandidateApp?.candidate_resume_id) {
-      loadCandidateImages(selectedCandidateApp.candidate_resume_id);
+      loadCandidateAttach(selectedCandidateApp.candidate_resume_id);
     } else {
       setCandidateImages([]);
     }
   }, [candidateDetailOpen, selectedCandidateApp]);
 
-  const loadCandidateImages = async (resumeId) => {
-    if (!resumeId) return;
+  const loadCandidateAttach = async (resumeId) => {
+    if (!resumeId || !selectedCandidateApp?.pk_id) return;
 
     try {
       setLoadingImages(true);
       const res = await api.get(
-        `/applications/attach-file/${selectedCandidateApp.pk_id}/resume-images`,
+        `/applications/attach-file/${selectedCandidateApp.pk_id}/attachments`,
       );
-      console.log("Loaded images from API:", res.data);
       setCandidateImages(res.data || []);
     } catch (err) {
-      console.error("Image load error:", err?.response?.data);
       setCandidateImages([]);
+      setSnackbar({
+        open: true,
+        message: "Failed to load candidate attachments",
+        severity: "error",
+      });
     } finally {
       setLoadingImages(false);
     }
@@ -634,10 +637,10 @@ export default function AppliedCandidates() {
                   variant="outlined"
                   size="small"
                   onClick={handleBackToList}
-                  startIcon={<Home />}
+                  startIcon={<ArrowBack />}
                   sx={{ textTransform: "none" }}
                 >
-                  Back
+                  {t('back_to_jobs')}
                 </Button>
               )}
             </Stack>
@@ -1016,6 +1019,8 @@ export default function AppliedCandidates() {
           setCandidateDetailOpen(false);
           setSelectedCandidateApp(null);
         }}
+        fullScreen={isMobile}
+        fullWidth
         maxWidth="md"
         PaperProps={{ sx: { height: "100vh", overflow: "hidden" } }}
         PaperComponent={DraggablePaper}
@@ -1069,14 +1074,7 @@ export default function AppliedCandidates() {
                     candidateName,
                   ),
               });
-            } else {
-              documentRows.push({
-                id: "cover-letter",
-                documentType: "Cover Letter",
-                fileName: "Not uploaded",
-                hasFile: false,
-              });
-            }
+            } 
 
             // 3. Attached Images / Files
             (candidateImages || []).forEach((img, index) => {
@@ -1152,7 +1150,17 @@ export default function AppliedCandidates() {
                 headerName: t("applications.documents"),
                 width: 160,
                 renderCell: (params) => (
-                  <Typography variant="body2" fontWeight={500}>
+                  <Typography 
+                    variant="caption" 
+                    fontWeight={500}
+                    sx={{ 
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      width: "100%",
+                      height: "100%", 
+                    }}
+                  >
                     {params.value}
                   </Typography>
                 ),
@@ -1164,10 +1172,17 @@ export default function AppliedCandidates() {
                 minWidth: 220,
                 renderCell: (params) => (
                   <Typography
-                    variant="body2"
+                    variant="caption"
                     color={
                       params.row.hasFile ? "text.primary" : "text.disabled"
                     }
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      width: "100%",
+                      height: "100%",
+                    }}
                   >
                     {params.value}
                   </Typography>
@@ -1370,7 +1385,7 @@ export default function AppliedCandidates() {
 
                         <Box
                           sx={{
-                            height: "calc(45vh - 100px)",
+                            height: "calc(50vh - 100px)",
                             borderRadius: 2,
                             overflow: "hidden",
                             border: "1px solid",
@@ -1382,57 +1397,12 @@ export default function AppliedCandidates() {
                             rows={documentRows}
                             columns={documentColumns}
                             disableRowSelectionOnClick
+                            rowHeight={45}
                             density="compact"
-                            headerHeight={34}
                             pageSizeOptions={[5, 10]}
                             initialState={{
                               pagination: {
                                 paginationModel: { pageSize: 5 },
-                              },
-                            }}
-                            sx={{
-                              height: "100%",
-                              fontSize: 12,
-                              bgcolor: "background.paper",
-
-                              "& .MuiDataGrid-columnHeaders": {
-                                bgcolor: "#f8fafc",
-                                borderBottom: "1px solid #e5e7eb",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                minHeight: "34px !important",
-                                maxHeight: "34px !important",
-                              },
-
-                              "& .MuiDataGrid-columnHeaderTitle": {
-                                fontWeight: 600,
-                              },
-
-                              "& .MuiDataGrid-cell": {
-                                py: 0.3,
-                              },
-
-                              "& .MuiDataGrid-row": {
-                                minHeight: "30px !important",
-                                maxHeight: "30px !important",
-                              },
-
-                              "& .MuiDataGrid-row:hover": {
-                                bgcolor: "#f1f5f9",
-                              },
-
-                              "& .MuiDataGrid-footerContainer": {
-                                minHeight: 30,
-                                borderTop: "1px solid #e5e7eb",
-                              },
-
-                              "& .MuiTablePagination-root": {
-                                fontSize: 11,
-                                minHeight: 30,
-                              },
-
-                              "& .MuiTablePagination-actions": {
-                                transform: "scale(0.8)",
                               },
                             }}
                           />

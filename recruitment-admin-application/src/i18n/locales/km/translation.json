@@ -242,10 +242,10 @@
   "upload_new_cover_letter": "ផ្ទុកលិខិតគម្របថ្មីឡើង (ជំនួសបច្ចុប្បន្ន)",
   "upload_cover_letter_optional": "ផ្ទុកលិខិតគម្របឡើង (ជម្រើស)",
   "file_too_large": "ឯកសារធំពេក (អតិបរមា 5MB)",
-  "attached_images_optional": "ឯកសារបន្ថែម (PDF, JPG, PNG) – ជម្រើស",
-  "attached_images_count": "រូបភាពភ្ជាប់ ({{count}})",
-  "images_marked_for_removal": "រូបភាព {{count}} បានសម្គាល់សម្រាប់ការលុប (នឹងត្រូវបានលុបនៅពេលអ្នករក្សាទុក)",
-  "add_more_images": "បន្ថែមឯកសារបន្ថែម",
+  "attached_files_optional": "ឯកសារបន្ថែម (PDF, JPG, PNG) – ជម្រើស",
+  "attached_files_count": "ឯកសារភ្ជាប់",
+  "files_marked_for_removal": "ឯកសារ {{count}} បានសម្គាល់សម្រាប់ការលុប (នឹងត្រូវបានលុបនៅពេលអ្នករក្សាទុក)",
+  "add_more_files": "បន្ថែមឯកសារបន្ថែម",
   "new_files_to_upload": "ឯកសារថ្មីដែលត្រូវផ្ទុកឡើង ({{count}})",
   "submitting": "កំពុងដាក់ស្នើ...",
   "update": "ធ្វើបច្ចុប្បន្នភាព",
@@ -543,6 +543,6 @@
     }
   },
   "application": "ពាក្យសុំ",
+  "back_to_jobs": "ត្រឡប់ទៅការងារដាក់ពាក្យសុំ",
   "connecting": "កំពុងតភ្ជាប់..."
-
 }

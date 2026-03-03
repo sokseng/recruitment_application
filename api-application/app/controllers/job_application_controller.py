@@ -2,6 +2,7 @@
 import os
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
+from app.models.application_attachment_model import ApplicationAttachment
 from app.models.audit_trace_model import AuditTrace
 from app.models.job_application_model import JobApplication, ApplicationStatus
 from app.models.job_model import Job, JobStatus
@@ -10,7 +11,6 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import func, select
 from app.models.candidate_model import Candidate
-from app.models.resume_image_model import ResumeImage
 from app.models.user_model import User
 from app.routers import job_application_router
 from app.schemas.job_application_schema import ApplicationOutForEmployer
@@ -19,17 +19,17 @@ def apply_to_job(
     db: Session,
     job_id: int,
     candidate_id: int,
-    resume_id: int,                           
-    cover_letter_filename: Optional[str] = None,  
-    new_image_filenames: Optional[List[str]] = None,
+    resume_id: int,
+    cover_letter_filename: Optional[str] = None,
+    cover_letter_original: Optional[str] = None,
+    cover_letter_size: Optional[int] = None,
+    new_attachments: Optional[List[dict]] = None, 
     delete_cover_letter: bool = False,
     reset_status_on_reapply: bool = True,
 ) -> JobApplication:
-    
     job = db.get(Job, job_id)
     if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
+        raise HTTPException(404, "Job not found")
     if job.status != JobStatus.OPEN:
         raise HTTPException(400, "This job is no longer accepting applications")
 
@@ -37,76 +37,71 @@ def apply_to_job(
     if not resume or resume.candidate_id != candidate_id:
         raise HTTPException(400, "Invalid or unauthorized resume")
 
-    update_needed = False
-
-    if cover_letter_filename is not None:
-        resume.cover_letter_file = cover_letter_filename
-        update_needed = True
-    
-    elif delete_cover_letter:
-        if resume.cover_letter_file:
-            file_path = os.path.join(job_application_router.UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
-            try:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            except Exception:
-                pass
-
-            resume.cover_letter_file = None
-            update_needed = True
-
-    if new_image_filenames and len(new_image_filenames) > 0:
-        current_max_order = (
-            db.query(func.max(ResumeImage.sort_order))
-            .filter(ResumeImage.resume_id == resume.pk_id)
-            .scalar() or -1
-        )
-        for fname in new_image_filenames:
-            new_img = ResumeImage(
-                resume_id=resume.pk_id,
-                filename=fname,
-                original_name=fname,  # you can improve this later
-                size_bytes=None,
-                sort_order=current_max_order + 1
-            )
-            db.add(new_img)
-        update_needed = True
-
-    if update_needed:
-        db.add(resume)
-        db.commit()
-        db.refresh(resume)
-
-    # ─── Look for existing application ───────────────────────────
-    existing = db.query(JobApplication).filter(
+    # Find or create application
+    application = db.query(JobApplication).filter(
         JobApplication.job_id == job_id,
         JobApplication.candidate_id == candidate_id
     ).first()
 
-    if existing:
-        # Only update resume_id if it actually changed
-        if existing.candidate_resume_id != resume_id:
-            existing.candidate_resume_id = resume_id
-            if reset_status_on_reapply:
-                existing.application_status = ApplicationStatus.PENDING
-            db.add(existing)
-            db.commit()
-            db.refresh(existing)
-        return existing
-
-    else:
-        # ─── CREATE new application ──────────────────────────────
-        new_application = JobApplication(
+    if not application:
+        application = JobApplication(
             job_id=job_id,
             candidate_id=candidate_id,
             candidate_resume_id=resume_id,
             application_status=ApplicationStatus.PENDING,
             applied_date=datetime.utcnow(),
         )
-        db.add(new_application)
-        db.commit()
-        db.refresh(new_application)
-        return new_application
+        db.add(application)
+        db.flush()  # get pk_id before adding attachments
+    else:
+        if application.candidate_resume_id != resume_id:
+            application.candidate_resume_id = resume_id
+        if reset_status_on_reapply:
+            application.application_status = ApplicationStatus.PENDING
+            application.cancelled = False
+
+    # Cover letter logic
+    if cover_letter_filename:
+        application.cover_letter_file     = cover_letter_filename
+        application.cover_letter_original = cover_letter_original or cover_letter_filename
+        application.cover_letter_size     = cover_letter_size
+    elif delete_cover_letter:
+        if application.cover_letter_file:
+            file_path = os.path.join(
+                job_application_router.UPLOAD_FOLDER_COVER_LETTER,
+                application.cover_letter_file
+            )
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
+
+        application.cover_letter_file     = None
+        application.cover_letter_original = None
+        application.cover_letter_size     = None
+
+    # NEW: Application-specific attachments
+    if new_attachments:
+        max_order = (
+            db.query(func.max(ApplicationAttachment.sort_order))
+            .filter(ApplicationAttachment.application_id == application.pk_id)
+            .scalar() or -1
+        )
+        for item in new_attachments:
+            att = ApplicationAttachment(
+                application_id=application.pk_id,
+                filename=item["filename"],
+                original_name=item.get("original_name", item["filename"]),
+                file_type=item.get("file_type", "other"),
+                size_bytes=item.get("size_bytes"),
+                sort_order=max_order + 1
+            )
+            db.add(att)
+
+    db.commit()
+    db.refresh(application)
+    return application
 
 
 def get_applications_for_job(
@@ -124,6 +119,7 @@ def get_applications_for_job(
         .options(
             joinedload(JobApplication.candidate).joinedload(Candidate.user),
             joinedload(JobApplication.resume).joinedload(CandidateResume.images),
+            joinedload(JobApplication.attachments)
         )
         .where(JobApplication.job_id == job_id)
         .order_by(JobApplication.applied_date.desc())
@@ -134,22 +130,19 @@ def get_applications_for_job(
     applications = db.scalars(stmt).unique().all()
 
     result = []
-
     for app in applications:
-        resume_images = []
-        if app.resume:
-            resume_images = [
-                {
-                    "id": img.id,
-                    "filename": img.filename,
-                    "original_name": img.original_name,
-                    "sort_order": img.sort_order,
-                }
-                for img in app.resume.images
-            ]
-            resume_images.sort(key=lambda x: x["sort_order"])
-        else:
-            resume_images = []
+        attachments_list = [
+            {
+                "id": att.id,
+                "filename": att.filename,
+                "original_name": att.original_name,
+                "file_type": att.file_type,
+                "size_bytes": att.size_bytes,
+                "sort_order": att.sort_order,
+            }
+            for att in app.attachments
+        ]
+        attachments_list.sort(key=lambda x: x["sort_order"])
 
         app_data = ApplicationOutForEmployer.model_validate({
             "pk_id": app.pk_id,
@@ -174,9 +167,11 @@ def get_applications_for_job(
                     "address": app.candidate.user.address,
                 } if app.candidate.user else None
             } if app.candidate else None,
-            "has_cover_letter": app.resume.cover_letter_file is not None if app.resume else False,
+            "has_cover_letter": app.cover_letter_file is not None,
+            "cover_letter_filename": app.cover_letter_original or app.cover_letter_file,
+            "attachments": attachments_list,           # ← new field
             "reason": getattr(app, "reason", None),
-            "resume_images": resume_images,
+            "resume_images": [],
         }).model_dump()   
 
         result.append(app_data)

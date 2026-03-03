@@ -8,12 +8,14 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
+
+import urllib.parse
 from app.dependencies.auth import verify_access_token, get_db
 from app.dependencies.candidate import get_current_candidate_id
+from app.models.application_attachment_model import ApplicationAttachment
 from app.models.employer_model import Employer
 from app.models.job_application_model import JobApplication
 from app.models.candidate_resume_model import CandidateResume
-from app.models.resume_image_model import ResumeImage
 from app.models.chat_message import MessageType
 from app.models.user_model import User
 from app.controllers.chat_controller import get_or_create_chat_room
@@ -32,12 +34,13 @@ import os
 import mimetypes
 from app.controllers.chat_controller import send_text_message
 
-class ResumeImageOut(BaseModel):
+class ApplicationAttachmentOut(BaseModel):
     id: int
     filename: str
     original_name: str | None
-    uploaded_at: datetime
+    file_type: str | None
     size_bytes: int | None
+    uploaded_at: datetime
     sort_order: int
 
     class Config:
@@ -53,36 +56,28 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER_ATTACHMENTS, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER_COVER_LETTER, exist_ok=True)
 
-ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".pdf"}
+ALLOWED_ATTACHMENT_EXT = {".jpg", ".jpeg", ".png", ".pdf"}
 
-@router.get("/resumes/{resume_id}/images", response_model=List[ResumeImageOut])
-def get_resume_images(
-    resume_id: int,
+@router.get("/{application_id}/attachments", response_model=List[ApplicationAttachmentOut])
+def get_application_attachments(
+    application_id: int,
     db: Session = Depends(get_db),
     candidate_id: int = Depends(get_current_candidate_id)
 ):
-    resume = db.query(CandidateResume).filter(
-        CandidateResume.pk_id == resume_id,
-        CandidateResume.candidate_id == candidate_id
-    ).first()
-    if not resume:
-        raise HTTPException(404, "Resume not found or not owned by you")
-
-    images = (
-        db.query(ResumeImage)
-        .filter(ResumeImage.resume_id == resume_id)
-        .order_by(ResumeImage.sort_order)
+    attachments = (
+        db.query(ApplicationAttachment)
+        .filter(ApplicationAttachment.application_id == application_id)
+        .order_by(ApplicationAttachment.sort_order)
         .all()
     )
-    return images
+    return attachments
 
-@router.get("/attach-file/{application_id}/resume-images", response_model=List[ResumeImageOut])
-def get_resume_images_for_employer(
+@router.get("/attach-file/{application_id}/attachments", response_model=List[ApplicationAttachmentOut])
+def get_application_attachments_for_employer(
     application_id: int,
     db: Session = Depends(get_db),
     current_user_id: int = Depends(verify_access_token)
 ):
-    # Get application
     app = (
         db.query(JobApplication)
         .options(joinedload(JobApplication.job))
@@ -92,36 +87,31 @@ def get_resume_images_for_employer(
     if not app:
         raise HTTPException(404, "Application not found")
 
-    # Security: must own the job
     employer = db.query(Employer).filter(Employer.user_id == current_user_id).first()
     if not employer or app.job.employer_id != employer.pk_id:
-        raise HTTPException(403, "You can only view images for applications to your own jobs")
+        raise HTTPException(403, "You can only view attachments for applications to your own jobs")
 
-    resume_id = app.candidate_resume_id
-    if not resume_id:
-        return []
-
-    images = (
-        db.query(ResumeImage)
-        .filter(ResumeImage.resume_id == resume_id)
-        .order_by(ResumeImage.sort_order)
+    attachments = (
+        db.query(ApplicationAttachment)
+        .filter(ApplicationAttachment.application_id == application_id)
+        .order_by(ApplicationAttachment.sort_order)
         .all()
     )
-    return images
+    return attachments
 
-@router.post("/resumes/{resume_id}/images", response_model=List[ResumeImageOut])
-async def upload_resume_images(
-    resume_id: int,
+@router.post("/{application_id}/attachments", response_model=List[ApplicationAttachmentOut])
+async def upload_application_attachments(
+    application_id: int,
     files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
     candidate_id: int = Depends(get_current_candidate_id)
 ):
-    resume = db.query(CandidateResume).filter(
-        CandidateResume.pk_id == resume_id,
-        CandidateResume.candidate_id == candidate_id
+    app = db.query(JobApplication).filter(
+        JobApplication.pk_id == application_id,
+        JobApplication.candidate_id == candidate_id
     ).first()
-    if not resume:
-        raise HTTPException(404, "Resume not found or not owned by you")
+    if not app:
+        raise HTTPException(404, "Application not found or not owned by you")
 
     uploaded = []
 
@@ -129,26 +119,27 @@ async def upload_resume_images(
         if not file.filename:
             continue
         ext = os.path.splitext(file.filename)[1].lower()
-        if ext not in [".jpg", ".jpeg", ".png"]:
+        if ext not in ALLOWED_ATTACHMENT_EXT:
             continue
 
         filename = await save_uploaded_file(file, UPLOAD_FOLDER_ATTACHMENTS)
 
         max_order = (
-            db.query(func.max(ResumeImage.sort_order))
-            .filter(ResumeImage.resume_id == resume_id)
+            db.query(func.max(ApplicationAttachment.sort_order))
+            .filter(ApplicationAttachment.application_id == application_id)
             .scalar() or -1
         )
 
-        new_img = ResumeImage(
-            resume_id=resume_id,
+        new_att = ApplicationAttachment(
+            application_id=application_id,
             filename=filename,
             original_name=file.filename,
-            size_bytes=None,
+            file_type="image" if ext in {".jpg", ".jpeg", ".png"} else "pdf",
+            size_bytes=file.size,
             sort_order=max_order + 1
         )
-        db.add(new_img)
-        uploaded.append(new_img)
+        db.add(new_att)
+        uploaded.append(new_att)
 
     db.commit()
     return uploaded
@@ -225,65 +216,53 @@ def get_application_counts_per_my_jobs(
 @router.post("/", response_model=JobApplicationOut, status_code=201)
 async def apply_to_job_endpoint(
     job_id: int = Form(...),
-    candidate_resume_id: int = Form(...),              
-    cover_letter_file: Optional[UploadFile] = File(None, description="Cover letter (PDF or DOCX)"),
-    images: List[UploadFile] = File(default=[]),
-    delete_cover_letter: Optional[str] = Form(
-        None,
-        description="Set to 'true' to remove existing cover letter"
-    ),
+    candidate_resume_id: int = Form(...),
+    cover_letter_file: Optional[UploadFile] = File(None),
+    attachments: List[UploadFile] = File(default=[]),
+    delete_cover_letter: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     candidate_id: int = Depends(get_current_candidate_id)
 ):
-    cover_filename = None
-    new_image_filenames = []
+    cover_filename = cover_original = cover_size = None
 
     if cover_letter_file:
         ext = os.path.splitext(cover_letter_file.filename)[1].lower()
-        allowed = [".pdf", ".docx"]
-        if ext not in allowed:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cover letter must be PDF or DOCX. Got: {ext}"
-            )
+        if ext not in [".pdf", ".docx"]:
+            raise HTTPException(400, "Cover letter must be PDF or DOCX")
         cover_filename = await save_uploaded_file(cover_letter_file, UPLOAD_FOLDER_COVER_LETTER)
+        cover_original = cover_letter_file.filename
+        cover_size = cover_letter_file.size
+
     delete_cover = delete_cover_letter == "true"
 
     if delete_cover and cover_letter_file:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot both upload new cover letter and delete existing one"
-        )
+        raise HTTPException(400, "Cannot both upload new cover letter and delete existing one")
 
-    if images:
-        for file in images:
-            if not file.filename:
-                continue
-            ext = os.path.splitext(file.filename)[1].lower()
-            if ext not in ALLOWED_IMAGE_EXT:
-                continue
-            filename = await save_uploaded_file(file, UPLOAD_FOLDER_ATTACHMENTS)
-            new_image_filenames.append(filename)
-
-    job = db.query(JobApplication).filter(
-        JobApplication.job_id == job_id,
-        JobApplication.candidate_id == candidate_id
-    ).first()
-
-    if job:
-        job.cancelled = False
-        db.commit()
-        db.refresh(job)
+    new_attachments = []
+    for file in attachments:
+        if not file.filename:
+            continue
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ALLOWED_ATTACHMENT_EXT:
+            continue
+        fname = await save_uploaded_file(file, UPLOAD_FOLDER_ATTACHMENTS)
+        new_attachments.append({
+            "filename": fname,
+            "original_name": file.filename,
+            "size_bytes": file.size,
+            "file_type": "image" if ext in {".jpg",".jpeg",".png"} else "pdf"
+        })
 
     application = apply_to_job(
         db=db,
         job_id=job_id,
         candidate_id=candidate_id,
         resume_id=candidate_resume_id,
-        cover_letter_filename=cover_filename,   
-        delete_cover_letter=delete_cover,       
-        new_image_filenames=new_image_filenames,       
-        reset_status_on_reapply=True,
+        cover_letter_filename=cover_filename,
+        cover_letter_original=cover_original,
+        cover_letter_size=cover_size,
+        new_attachments=new_attachments,           # ← updated parameter name
+        delete_cover_letter=delete_cover,
     )
 
     return application
@@ -363,22 +342,27 @@ def get_my_application_status(
     app = db.query(JobApplication).filter(
         JobApplication.job_id == job_id,
         JobApplication.candidate_id == candidate_id
-    ).first()
-    
+    ).order_by(JobApplication.applied_date.desc()).first()
+
     if not app:
-        return {"applied": False}
-    
+        return {
+            "applied": False,
+            "application_id": None,
+            "status": None,
+            "resume_id": None,
+            "applied_date": None,
+            "cover_letter_filename": None,
+            "has_attachments": False,
+            "close_date": None,
+            "job_status": None,
+            "cancelled": False,
+        }
+
     resume = None
-    cover_letter_filename = None
-    has_images = False
-    
     if app.candidate_resume_id:
         resume = db.query(CandidateResume).filter(
             CandidateResume.pk_id == app.candidate_resume_id
         ).first()
-        if resume:
-            cover_letter_filename = resume.cover_letter_file
-            has_images = len(resume.images) > 0  
 
     return {
         "applied": True,
@@ -386,8 +370,8 @@ def get_my_application_status(
         "status": app.application_status.value,
         "resume_id": app.candidate_resume_id,
         "applied_date": app.applied_date,
-        "cover_letter_filename": cover_letter_filename,     
-        "has_images": has_images,
+        "cover_letter_filename": app.cover_letter_original or app.cover_letter_file,
+        "has_attachments": len(app.attachments) > 0,           # ← changed
         "close_date": app.job.closing_date if app.job else None,
         "job_status": app.job.status if app.job else None,
         "cancelled": app.cancelled,
@@ -420,37 +404,22 @@ def download_cover_letter(
     application_id: int,
     db: Session = Depends(get_db)
 ):
-    application = (
-        db.query(JobApplication)
-        .filter(JobApplication.pk_id == application_id)
-        .first()
-    )
+    application = db.query(JobApplication).filter(JobApplication.pk_id == application_id).first()
     if not application:
-        raise HTTPException(status_code=404, detail="Application not found")
+        raise HTTPException(404, "Application not found")
 
-    resume = db.query(CandidateResume).filter(
-        CandidateResume.pk_id == application.candidate_resume_id
-    ).first()
+    if not application.cover_letter_file:
+        raise HTTPException(404, "No cover letter available for this application")
 
-    if not resume or not resume.cover_letter_file:
-        raise HTTPException(status_code=404, detail="No cover letter available for this application")
-
-    file_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
-
+    file_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, application.cover_letter_file)
     if not os.path.exists(file_path):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Cover letter file {resume.cover_letter_file} not found on server"
-        )
+        raise HTTPException(404, "Cover letter file not found on server")
 
     mime_type, _ = mimetypes.guess_type(file_path)
-    if not mime_type:
-        mime_type = "application/octet-stream"
-
     return FileResponse(
         path=file_path,
-        filename=resume.cover_letter_file,
-        media_type=mime_type
+        filename=application.cover_letter_original or application.cover_letter_file,
+        media_type=mime_type or "application/octet-stream"
     )
 
 @router.get("/attachments/{filename}")
@@ -460,91 +429,72 @@ def get_attachment_file(
     db: Session = Depends(get_db),
 ):
     file_path = os.path.join(UPLOAD_FOLDER_ATTACHMENTS, filename)
-    
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
+        raise HTTPException(404, "File not found")
+    
+    attachment = db.query(ApplicationAttachment).filter(
+        ApplicationAttachment.filename == filename
+    ).first()
+
+    display_name = attachment.original_name if attachment and attachment.original_name else filename
     
     mime_type, _ = mimetypes.guess_type(file_path)
-    if not mime_type:
-        mime_type = "application/octet-stream"
+    mime_type = mime_type or "application/octet-stream"
 
-    cd = 'inline' if disposition == 'inline' else 'attachment'
+    cd_value = "inline" if disposition == "inline" else "attachment"
 
     return FileResponse(
         path=file_path,
-        filename=filename,
+        filename=display_name,               
         media_type=mime_type,
         headers={
-            "Content-Disposition": f'{cd}; filename="{filename}"'
+            "Content-Disposition": safe_content_disposition(display_name, cd_value)
         }
     )
 
-@router.delete("/resumes/{resume_id}/images/{image_id}")
-def delete_resume_image(
-    resume_id: int,
-    image_id: int,
+@router.delete("/{application_id}/attachments/{attachment_id}")
+def delete_application_attachment(
+    application_id: int,
+    attachment_id: int,
     db: Session = Depends(get_db),
     candidate_id: int = Depends(get_current_candidate_id)
 ):
-    image = (
-        db.query(ResumeImage)
+    attachment = (
+        db.query(ApplicationAttachment)
         .filter(
-            ResumeImage.id == image_id,
-            ResumeImage.resume_id == resume_id
+            ApplicationAttachment.id == attachment_id,
+            ApplicationAttachment.application_id == application_id
         )
         .first()
     )
 
-    if not image:
-        raise HTTPException(404, "Image not found")
+    if not attachment:
+        raise HTTPException(404, "Attachment not found")
 
-    resume = db.query(CandidateResume).filter(
-        CandidateResume.pk_id == resume_id,
-        CandidateResume.candidate_id == candidate_id
+    app = db.query(JobApplication).filter(
+        JobApplication.pk_id == application_id,
+        JobApplication.candidate_id == candidate_id
     ).first()
 
-    if not resume:
+    if not app:
         raise HTTPException(403, "Not authorized")
 
-    db.delete(image)
+    db.delete(attachment)
     db.commit()
 
     try:
-        os.remove(os.path.join(UPLOAD_FOLDER_ATTACHMENTS, image.filename))
+        os.remove(os.path.join(UPLOAD_FOLDER_ATTACHMENTS, attachment.filename))
     except OSError:
         pass  
 
-    return {"message": "Image deleted"}
+    return {"message": "Attachment deleted"}
 
-@router.delete("/resumes/{resume_id}/cover-letter")
-def delete_cover_letter(
-    resume_id: int,
-    db: Session = Depends(get_db),
-    candidate_id: int = Depends(get_current_candidate_id)
-):
-    resume = db.query(CandidateResume).filter(
-        CandidateResume.pk_id == resume_id,
-        CandidateResume.candidate_id == candidate_id
-    ).first()
+def safe_content_disposition(filename: str, disposition: str = "attachment") -> str:
 
-    if not resume:
-        raise HTTPException(status_code=404, detail="Resume not found or not yours")
+    encoded = urllib.parse.quote(filename, safe="")
+    value = f"{disposition}; filename*=UTF-8''{encoded}"
+    
+    return value
 
-    if not resume.cover_letter_file:
-        raise HTTPException(status_code=400, detail="No cover letter to delete")
-
-    file_path = os.path.join(UPLOAD_FOLDER_COVER_LETTER, resume.cover_letter_file)
-    if os.path.exists(file_path):
-        try:
-            os.remove(file_path)
-            print(f"Deleted cover letter file: {file_path}") 
-        except Exception as e:
-            print(f"Failed to delete file {file_path}: {e}")
-
-    resume.cover_letter_file = None
-    db.add(resume)
-    db.commit()
-
-    return {"message": "Cover letter deleted successfully"}
 
 

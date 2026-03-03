@@ -140,14 +140,15 @@ export default function Dashboard() {
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
   const [coverLetterFile, setCoverLetterFile] = useState(null);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
+  const [attachmentFiles, setAttachmentFiles] = useState([]);
+  const [existingAttachments, setExistingAttachments] = useState([]);
   const [previousCoverLetterName, setPreviousCoverLetterName] = useState(null);
-  const [imagesToDelete, setImagesToDelete] = useState([]);
+  const [attachmentsToDelete, setAttachmentsToDelete] = useState([]);
   const [coverLetterToDelete, setCoverLetterToDelete] = useState(false);
   const [originalResumeId, setOriginalResumeId] = useState(null);
   const canUploadNewCoverLetter = !previousCoverLetterName || coverLetterToDelete;
   const [checkButtonApply, setCheckButtonApply] = useState(true);
+  const [currentApplicationId, setCurrentApplicationId] = useState(null);
 
   const handleStageDeleteCoverLetter = () => {
     setCoverLetterToDelete(true);
@@ -158,14 +159,14 @@ export default function Dashboard() {
     setCoverLetterToDelete(false);
   };
 
-  const handleStageDeleteImage = (imageId) => {
-    if (!imagesToDelete.includes(imageId)) {
-      setImagesToDelete((prev) => [...prev, imageId]);
+  const handleStageDeleteAttachment = (attId) => {
+    if (!attachmentsToDelete.includes(attId)) {
+      setAttachmentsToDelete((prev) => [...prev, attId]);
     }
   };
 
-  const handleUndoDeleteImage = (imageId) => {
-    setImagesToDelete((prev) => prev.filter((id) => id !== imageId));
+  const handleUndoDeleteAttachment = (attId) => {
+    setAttachmentsToDelete((prev) => prev.filter((id) => id !== attId));
   };
 
   var job_id = jobId && !isNaN(Number(jobId)) ? Number(jobId) : null;
@@ -316,56 +317,51 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (applyDialogOpen && selectedResumeId) {
-      loadResumeExtras(selectedResumeId);
+      // loadApplicationAttachments(selectedResumeId);
     }
   }, [selectedResumeId, applyDialogOpen]);
+  
 
-  const loadResumeExtras = async (resumeId) => {
-    if (!resumeId) {
-      setExistingImages([]);
-      setPreviousCoverLetterName(null);
+  const loadApplicationAttachments = async (applicationId) => {
+    if (!applicationId) {
+      setExistingAttachments([]);
       return;
     }
 
     try {
-      const imagesRes = await api.get(
-        `/applications/resumes/${resumeId}/images`,
-      );
-      setExistingImages(imagesRes.data || []);
+      const res = await api.get(`/applications/${applicationId}/attachments`);
+      setExistingAttachments(res.data || []);
 
-      const foundResume = resumes.find(
-        (r) => String(r.pk_id) === String(resumeId),
-      );
+      // const statusRes = await api.get(
+      //   `/applications/job/${selectedJob.pk_id}/my-status`
+      // );
+      // setPreviousCoverLetterName(statusRes.data.cover_letter_filename || null);
 
-      if (foundResume) {
-        setPreviousCoverLetterName(foundResume.cover_letter_file || null);
-      } else {
-        console.warn(`Resume ${resumeId} not found in loaded resumes list`);
-        setPreviousCoverLetterName(null);
-      }
     } catch (err) {
       console.error("Failed to load resume extras:", err);
-      setSnackbar({
-        open: true,
-        message: t('could_not_load_attachments'),
-        severity: "warning",
-      });
+      if (err.response?.status >= 500 || err.response?.status === 403) {
+        setSnackbar({
+          open: true,
+          message: t('could_not_load_attachments'),
+          severity: "warning",
+        });
+      }
 
-      setExistingImages([]);
-      setPreviousCoverLetterName(null);
+      setExistingAttachments([]);
     }
   };
 
   const handleOpenApplyDialog = async () => {
     if (!selectedJob) return;
-
     setJobToApply(selectedJob);
     setApplyDialogOpen(true);
-
-    setImagesToDelete([]);
-    setImageFiles([]);
+    setAttachmentsToDelete([]);
+    setAttachmentFiles([]);
     setCoverLetterFile(null);
-    setCoverLetterToDelete(null);
+    setCoverLetterToDelete(false);
+    setCurrentApplicationId(null);
+    setExistingAttachments([]);
+    setPreviousCoverLetterName(null);
 
     try {
       const res = await api.get(
@@ -375,32 +371,103 @@ export default function Dashboard() {
 
       let initialResumeId = null;
 
-      if (data.applied && data.resume_id) {
+      if (data.applied && data.resume_id && data.application_id) {
         initialResumeId = String(data.resume_id);
         setOriginalResumeId(initialResumeId);
         setPreviousCoverLetterName(data.cover_letter_filename || null);
+        setCurrentApplicationId(data.application_id);
+        await loadApplicationAttachments(data.application_id);
       } else {
         const primary = resumes.find((r) => r.is_primary);
-        if (primary) {
-          initialResumeId = String(primary.pk_id);
-        }
+        if (primary) initialResumeId = String(primary.pk_id);
+        setExistingAttachments([]);
+        setPreviousCoverLetterName(null);
       }
 
       if (initialResumeId) {
         setSelectedResumeId(initialResumeId);
-        await loadResumeExtras(initialResumeId);
-      } else {
-        setOriginalResumeId(null);
-        setPreviousCoverLetterName(null);
-        setExistingImages([]);
       }
     } catch (err) {
       const primary = resumes.find((r) => r.is_primary);
-      if (primary) {
-        const pid = String(primary.pk_id);
-        setSelectedResumeId(pid);
-        await loadResumeExtras(pid);
+      if (primary) setSelectedResumeId(String(primary.pk_id));
+      setExistingAttachments([]);
+      setPreviousCoverLetterName(null);
+    }
+  };
+
+  const handleApplyWithResume = async () => {
+    if (!jobToApply || !selectedResumeId) return;
+
+    try {
+      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: true }));
+
+      if (attachmentsToDelete.length > 0 && currentApplicationId) {
+        await Promise.all(
+          attachmentsToDelete.map((attId) =>
+            api.delete(
+              `/applications/${currentApplicationId}/attachments/${attId}`,
+            ),
+          ),
+        );
       }
+
+      const formData = new FormData();
+      formData.append("job_id", jobToApply.pk_id.toString());
+      formData.append("candidate_resume_id", selectedResumeId);
+
+      if (coverLetterToDelete && !coverLetterFile) {
+        formData.append("delete_cover_letter", "true");
+      }
+      if (coverLetterFile) {
+        formData.append("cover_letter_file", coverLetterFile);
+      }
+
+      attachmentFiles.forEach((file) => {
+        formData.append("attachments", file);
+      });
+
+      await api.post("/applications/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const statusRes = await api.get(`/applications/job/${jobToApply.pk_id}/my-status`);
+      const data = statusRes.data;
+
+      setHasAppliedToThisJob(data.applied);
+
+      if (data.applied && data.application_id && Number.isInteger(data.application_id)) {
+        const newAppId = data.application_id;
+        setCurrentApplicationId(newAppId);
+
+        await loadApplicationAttachments(newAppId);
+
+      }else {
+        setCurrentApplicationId(null);
+        setExistingAttachments([]);
+      }
+
+      setCoverLetterFile(null);
+      setCoverLetterToDelete(false);
+      setAttachmentsToDelete([]);
+      setAttachmentFiles([]);
+
+      setSnackbar({
+        open: true,
+        message: hasAppliedToThisJob ? t('application_updated') : t('application_submitted'),
+        severity: "success",
+      });
+
+      setApplyDialogOpen(false);
+      setAppliedJobIds((prev) => new Set([...prev, jobToApply.pk_id]));
+    } catch (err) {
+      console.error("Apply failed:", err);
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.detail || t('application_failed'),
+        severity: "error",
+      });
+    } finally {
+      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: false }));
     }
   };
 
@@ -617,86 +684,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleApplyWithResume = async () => {
-    if (!jobToApply || !selectedResumeId) return;
-
-    try {
-      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: true }));
-
-      if (imagesToDelete.length > 0) {
-        await Promise.all(
-          imagesToDelete.map((imageId) =>
-            api.delete(
-              `/applications/resumes/${selectedResumeId}/images/${imageId}`,
-            ),
-          ),
-        );
-      }
-
-      const formData = new FormData();
-      formData.append("job_id", jobToApply.pk_id.toString());
-      formData.append("candidate_resume_id", selectedResumeId);
-
-      if (coverLetterToDelete && !coverLetterFile) {
-        formData.append("delete_cover_letter", "true");
-      }
-      if (coverLetterFile) {
-        formData.append("cover_letter_file", coverLetterFile);
-      }
-
-      imageFiles.forEach((file) => {
-        formData.append("images", file);
-      });
-
-      await api.post("/applications/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const resumesRes = await api.get("/candidate/resumes/");
-      setResumes(resumesRes.data || []);
-
-      const statusRes = await api.get(
-        `/applications/job/${jobToApply.pk_id}/my-status`,
-      );
-      const data = statusRes.data;
-
-      setHasAppliedToThisJob(data.applied);
-
-      if (data.applied && data.resume_id) {
-        const newResumeId = String(data.resume_id);
-        setSelectedResumeId(newResumeId);
-        await loadResumeExtras(newResumeId);
-      } else {
-        setPreviousCoverLetterName(null);
-        setExistingImages([]);
-      }
-
-      setCoverLetterFile(null);
-      setCoverLetterToDelete(false);
-      setImagesToDelete([]);
-      setImageFiles([]);
-
-      setSnackbar({
-        open: true,
-        message: hasAppliedToThisJob
-          ? t('application_updated')
-          : t('application_submitted'),
-        severity: "success",
-      });
-
-      setApplyDialogOpen(false);
-      setHasAppliedToThisJob(true);
-      setAppliedJobIds((prev) => new Set([...prev, jobToApply.pk_id]));
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.detail || t('application_failed'),
-        severity: "error",
-      });
-    } finally {
-      setApplying((prev) => ({ ...prev, [jobToApply.pk_id]: false }));
-    }
-  };
+  
 
   const handleSnackbarClose = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -2234,34 +2222,32 @@ export default function Dashboard() {
                           backgroundColor: "background.paper",
                         }}
                       >
-                        {t('attached_images_optional')}
+                        {t('attached_files_optional')}
                       </Typography>
 
                       {/* Existing images (from DB) */}
-                      {existingImages.length > 0 && (
+                      {existingAttachments.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {t('attached_images_count', { count: existingImages.length })}:
+                            {t('attached_files_count')}: {existingAttachments.length}
                           </Typography>
                           <Stack
                             direction="row"
                             spacing={1}
                             sx={{ mt: 1, flexWrap: "wrap" }}
                           >
-                            {existingImages.map((img) => {
-                              const willBeDeleted = imagesToDelete.includes(
-                                img.id,
-                              );
+                            {existingAttachments.map((att) => {
+                              const willBeDeleted = attachmentsToDelete.includes(att.id);
 
                               return (
                                 <Chip
-                                  key={img.id}
-                                  label={img.original_name || img.filename}
+                                  key={att.id}
+                                  label={att.original_name || att.filename}
                                   size="small"
                                   onDelete={
                                     willBeDeleted
-                                      ? () => handleUndoDeleteImage(img.id) // Undo
-                                      : () => handleStageDeleteImage(img.id) // Stage delete
+                                      ? () => handleUndoDeleteAttachment(att.id) // Undo
+                                      : () => handleStageDeleteAttachment(att.id) // Stage delete
                                   }
                                   color={willBeDeleted ? "error" : "default"}
                                   variant={
@@ -2291,13 +2277,13 @@ export default function Dashboard() {
                               );
                             })}
                           </Stack>
-                          {imagesToDelete.length > 0 && (
+                          {attachmentsToDelete.length > 0 && (
                             <Typography
                               variant="caption"
                               color="error"
                               sx={{ mt: 1, display: "block" }}
                             >
-                              {t('images_marked_for_removal', { count: imagesToDelete.length })}
+                              {t('files_marked_for_removal', { count: attachmentsToDelete.length })}
                             </Typography>
                           )}
                         </Box>
@@ -2310,11 +2296,11 @@ export default function Dashboard() {
                         fullWidth
                         startIcon={<UploadFile />}
                         sx={{
-                          mb: imageFiles.length > 0 ? 1.5 : 0,
+                          mb: attachmentFiles.length > 0 ? 1.5 : 0,
                           textTransform: "none",
                         }}
                       >
-                        {t('add_more_images')}
+                        {t('add_more_files')}
                         <input
                           type="file"
                           hidden
@@ -2322,30 +2308,28 @@ export default function Dashboard() {
                           multiple
                           onChange={(e) => {
                             const newFiles = Array.from(e.target.files || []);
-                            setImageFiles((prev) => [...prev, ...newFiles]);
+                            setAttachmentFiles((prev) => [...prev, ...newFiles]);
                           }}
                         />
                       </Button>
 
-                      {imageFiles.length > 0 && (
+                      {attachmentFiles.length > 0 && (
                         <Box>
                           <Typography variant="caption">
-                            {t('new_files_to_upload', { count: imageFiles.length })}:
+                            {t('new_files_selected')}: {attachmentFiles.length}
                           </Typography>
                           <Stack
                             direction="row"
                             spacing={1}
                             sx={{ mt: 1, flexWrap: "wrap" }}
                           >
-                            {imageFiles.map((f, i) => (
+                            {attachmentFiles.map((f, i) => (
                               <Chip
                                 key={i}
                                 label={f.name}
                                 size="small"
                                 onDelete={() =>
-                                  setImageFiles((prev) =>
-                                    prev.filter((_, idx) => idx !== i),
-                                  )
+                                  setAttachmentFiles((prev) => prev.filter((_, idx) => idx !== i))
                                 }
                                 color="primary"
                                 variant="outlined"
