@@ -26,6 +26,7 @@ import BackHandIcon from '@mui/icons-material/BackHand';
 import BlockIcon from '@mui/icons-material/Block';
 import MediaPreviewDialog from './MediaPreviewDialog';
 import { useTranslation } from 'react-i18next';
+import ViewProfileDialog from './ViewProfileDialog';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -47,6 +48,7 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
     const loadMoreRef = useRef(null);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [openProfile, setOpenProfile] = useState(false);
     const [actionType, setActionType] = useState('block');
 
     const TAB_TYPES = ['media', 'voice', 'file'];
@@ -186,8 +188,18 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
                 <DialogTitle>
                     <Box sx={{ position: 'relative', textAlign: 'center', py: 1 }}>
                         <Avatar
-                            src={user?.avatar_url || undefined}
-                            sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
+                            src={`${BASE_URL}/uploads/user/profile/${user?.profile_image}`}
+                            sx={{
+                                width: 80,
+                                height: 80,
+                                mx: 'auto',
+                                mb: 1,
+                                transition: 'transform 0.1s ease-in-out',
+                                '&:hover': {
+                                    transform: '(1.1)'
+                                }
+                            }}
+                            onClick={() => setOpenProfile(true)}
                         >
                             {user?.username?.charAt(0)?.toUpperCase() || '?'}
                         </Avatar>
@@ -334,15 +346,39 @@ function ChatMenuDialog({ open, onClose, user, roomId, currentUserId, onBlockUse
             )}
 
             <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-                <DialogTitle>{actionType === 'block' ? t('block_user') : t('unblock_user')}</DialogTitle>
+                <DialogTitle>
+                    {actionType === 'block' ? t('block_user') : t('unblock_user')}
+                </DialogTitle>
+
                 <DialogContent>
-                    {t('confirm_block_message', { username: user?.username || t('this_user') })}
+                    {t('confirm_block_message', {
+                        action: actionType === 'block' ? t('block') : t('unblock'),
+                        username: user?.username || t('this_user')
+                    })}
                 </DialogContent>
+
                 <DialogActions>
-                    <Button onClick={() => setConfirmOpen(false)} color="primary">{t('cancel')}</Button>
-                    <Button onClick={handleConfirm} color="error">{actionType === 'block' ? t('block') : t('unblock')}</Button>
+                    <Button
+                        onClick={() => setConfirmOpen(false)}
+                        color="primary"
+                    >
+                        {t('cancel')}
+                    </Button>
+
+                    <Button
+                        onClick={handleConfirm}
+                        color="error"
+                    >
+                        {actionType === 'block' ? t('block') : t('unblock')}
+                    </Button>
                 </DialogActions>
             </Dialog>
+
+            <ViewProfileDialog
+                open={openProfile}
+                onClose={() => setOpenProfile(false)}
+                imageUrl={`${BASE_URL}/uploads/user/profile/${user?.profile_image}`}
+            />
         </>
     );
 }

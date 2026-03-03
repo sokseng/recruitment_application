@@ -541,5 +541,6 @@
       "accepted": "Accepté"
     }
   },
-  "application": "Candidature"
+  "application": "Candidature",
+  "connecting": "de liaison..."
 } 

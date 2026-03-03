@@ -118,6 +118,7 @@ class ChatMessageUpdateOut(BaseModel):
 
 class ConversationSummary(BaseModel):
     user_id: int
+    profile_image: Optional[str] = None
     username: str
     last_message: Optional[ChatMessageOut]
     unread_count: int
@@ -142,7 +143,7 @@ class ChatRoomOut(BaseModel):
 class UserSearchOut(BaseModel):
     pk_id: int
     user_name: str
-    avatar_url: str | None = None
+    profile_image: str | None = None
     email: str
 
     class Config:
