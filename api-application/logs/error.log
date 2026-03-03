@@ -1392,3 +1392,57 @@ Status Code: 404
 Detail: File candidate_2_20260217_163317.pdf not found on server
 ==============================================
         
+2026-03-03 10:59:53,857 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages/file
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:00:12,884 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:16:08,073 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:39:44,823 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:54:03,201 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:54:09,346 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        

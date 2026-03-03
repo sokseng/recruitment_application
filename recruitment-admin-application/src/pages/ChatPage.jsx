@@ -3,7 +3,9 @@ import {
     Box, List, ListItemAvatar, Avatar, Typography, TextField,
     InputAdornment, useMediaQuery, useTheme, ListItemText,
     Divider,
-    ListItemButton
+    ListItemButton,
+    Snackbar,
+    Alert
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -85,6 +87,24 @@ function ChatPage() {
     const [isCallBusy, setIsCallBusy] = useState(false);
     const scrollContainerRef = useRef(null);
     const audioRef = useRef(null);
+
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "info"
+    });
+
+    const showSnackbar = (message, severity = "info") => {
+        setSnackbar(prev => ({ ...prev, open: false }));
+        setTimeout(() => {
+            setSnackbar({ open: true, message, severity });
+        }, 50);
+    };
+
+    const handleCloseSnackbar = (_, reason) => {
+        if (reason === "clickaway") return;
+        setSnackbar(prev => ({ ...prev, open: false }));
+    };
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -497,6 +517,13 @@ function ChatPage() {
                             blocked_at: data.blocked_at
                         })
                     }
+                    break;
+
+                case "error":
+                    stopRingtone();
+                    setCallRequest(null);
+                    showSnackbar(data.message, "error");
+                    break;
 
                 default:
                     // console.log("WS event", data);
@@ -510,6 +537,7 @@ function ChatPage() {
     }, [connected, send]);
 
     const { send: sendGlobal, connected: globalConnected } = useGlobalWebSocket((data) => {
+        // console.log("WS EVENT RECEIVED:", data);
         switch (data.type) {
             case "chat_list_update":
                 setChats(prev => {
@@ -555,7 +583,7 @@ function ChatPage() {
                     setCallRequest(null);
                     setIsCallBusy(false);
                 }, 2000);
-                
+
                 setMessages(prev => {
                     const exists = prev.some(msg => msg.id === data.message.id);
                     if (exists) return prev; // skip duplicate
@@ -575,6 +603,12 @@ function ChatPage() {
                     incrementChat(data.message.room_id);
                 }
 
+                break;
+
+            case "error":
+                stopRingtone();
+                setCallRequest(null);
+                showSnackbar(data.message, "error");
                 break;
 
             default:
@@ -687,6 +721,19 @@ function ChatPage() {
 
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
+
+            {snackbar && (
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: "top", horizontal: "center", zIndex: 2000 }}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
+            )}
 
             {(!isMobile || !selectedChat) && (
                 <Box
