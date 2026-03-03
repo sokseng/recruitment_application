@@ -94,7 +94,7 @@ export default function CandidateProfileDashboard() {
   const setAnchorEl = (cvId, el) => {
     setAnchorEls((prev) => ({ ...prev, [cvId]: el }));
   };
-  
+
   // ----- CV Handlers -----
   const handleCvChange = (e) => {
     const files = Array.from(e.target.files)
@@ -541,15 +541,15 @@ export default function CandidateProfileDashboard() {
   // Safe profile URL construction - CRITICAL FIX
   const getSafeProfileUrl = () => {
     const profileImage = user_data?.user_data?.profile_image;
-    
+
     // Check for null, undefined, or string "null"/"undefined"
-    if (!profileImage || 
-        profileImage === 'null' || 
-        profileImage === 'undefined' || 
-        profileImage.trim() === '') {
+    if (!profileImage ||
+      profileImage === 'null' ||
+      profileImage === 'undefined' ||
+      profileImage.trim() === '') {
       return null;
     }
-    
+
     return `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${profileImage}`;
   };
 
@@ -596,7 +596,7 @@ export default function CandidateProfileDashboard() {
 
       // Ensure we're setting the actual filename, not a string "null"
       const newProfileImage = res.data.profile_image || res.data.profile_image_url || res.data.filename;
-      
+
       setUserData({
         ...user_data,
         user_data: {
@@ -626,7 +626,7 @@ export default function CandidateProfileDashboard() {
             profile_image: null  // This MUST be null, not "null"
           }
         });
-        
+
         showSnackbar(t('profile_image_deleted'), 'success');
       }
     } catch (error) {
@@ -658,7 +658,7 @@ export default function CandidateProfileDashboard() {
           justifyContent="space-between"
           mb={3}
         >
-          {/* Avatar and Basic Info */}
+          {/* Avatar and Basic Info - THIS PART STAYS INSIDE */}
           <Stack direction="row" spacing={3} alignItems="center" flexGrow={1}>
             <Box sx={{ position: 'relative' }}>
               <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
@@ -714,7 +714,6 @@ export default function CandidateProfileDashboard() {
               <MenuItem onClick={handleView}>
                 <VisibilityIcon sx={{ mr: 1 }} /> View
               </MenuItem>
-
               <MenuItem>
                 <label htmlFor="upload-file" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                   <UploadIcon sx={{ mr: 1 }} /> Upload
@@ -727,7 +726,6 @@ export default function CandidateProfileDashboard() {
                   accept="image/*"
                 />
               </MenuItem>
-
               <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
                 <DeleteIcon sx={{ mr: 1 }} /> Delete
               </MenuItem>
@@ -737,14 +735,12 @@ export default function CandidateProfileDashboard() {
               <Typography variant="h5" fontWeight={700}>
                 {user_data.user_data?.user_name || t('unnamed')}
               </Typography>
-
               {user_data?.user_data?.address && (
                 <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
                   <LocationOnOutlined fontSize="small" />
                   <Typography variant="body2">{user_data?.user_data?.address}</Typography>
                 </Stack>
               )}
-
               <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
                 <EmailOutlined fontSize="small" />
                 <Typography variant="body2">{user_data?.user_data?.email}</Typography>
@@ -752,7 +748,7 @@ export default function CandidateProfileDashboard() {
             </Box>
           </Stack>
 
-          {/* Edit Profile Button */}
+          {/* Edit Profile Button - NOW INSIDE THE MAIN STACK */}
           <Button
             size="medium"
             variant="contained"
@@ -1267,52 +1263,64 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
   const [form, setForm] = useState(user_data || {})
   const [loading, setLoading] = useState(false)
 
+  // Safe profile URL construction for dialog
+  const getDialogProfileUrl = () => {
+    const profileImage = form?.profile_image;
+    if (!profileImage || profileImage === 'null' || profileImage === 'undefined' || profileImage.trim() === '') {
+      return null;
+    }
+    return `${import.meta.env.VITE_API_BASE_URL}/uploads/user/profile/${profileImage}`;
+  };
+
+  const dialogProfileUrl = getDialogProfileUrl();
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    try {
-      form.password = "123";
-      setLoading(true)
-      const { data } = await api.post('/user', form)
-      showSnackbar(t('profile_updated'), 'success')
-      
-      // Ensure profile_image is properly handled
-      const updatedUserData = {
-        ...data,
-        experience_level: form.experience_level || "",
-        min_monthly_salary: form.min_monthly_salary || "",
-        jobCategoryId: form.jobCategoryId || "",
-      };
-      
-      // If profile_image is "null" string, convert to null
-      if (updatedUserData.profile_image === 'null' || updatedUserData.profile_image === 'undefined') {
-        updatedUserData.profile_image = null;
-      }
-      
-      setUserData({
-        ...user_data,
-        user_data: updatedUserData,
-      });
-      
-      setCandidates((prev) => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          experience_level: form.experience_level || "",
-          expected_salary: form.min_monthly_salary || "",
-          job_category_id: form.jobCategoryId || "",
-        },
-      }));
-      onClose()
-    } catch (err) {
-      const errorMsg = err.response?.data?.detail || t('profile_update_failed')
-      showSnackbar(errorMsg, 'error')
-    } finally {
-      setLoading(false)
+  e.preventDefault();
+  try {
+    form.password = "123";
+    setLoading(true)
+    const { data } = await api.post('/user', form)
+    showSnackbar(t('profile_updated'), 'success')
+    
+    // CRITICAL FIX: Preserve the existing profile_image if not returned in response
+    const updatedUserData = {
+      ...data,
+      // If the API doesn't return profile_image, keep the existing one
+      profile_image: data.profile_image || form.profile_image || user_data?.user_data?.profile_image,
+      experience_level: form.experience_level || "",
+      min_monthly_salary: form.min_monthly_salary || "",
+      jobCategoryId: form.jobCategoryId || "",
+    };
+    
+    // If profile_image is "null" string, convert to null
+    if (updatedUserData.profile_image === 'null' || updatedUserData.profile_image === 'undefined') {
+      updatedUserData.profile_image = null;
     }
+    
+    setUserData({
+      ...user_data,
+      user_data: updatedUserData,
+    });
+    
+    setCandidates((prev) => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        experience_level: form.experience_level || "",
+        expected_salary: form.min_monthly_salary || "",
+        job_category_id: form.jobCategoryId || "",
+      },
+    }));
+    onClose()
+  } catch (err) {
+    const errorMsg = err.response?.data?.detail || t('profile_update_failed')
+    showSnackbar(errorMsg, 'error')
+  } finally {
+    setLoading(false)
   }
-
+}
   useEffect(() => {
     if (open && user_data?.user_data) {
       // Ensure we don't set "null" string in form
@@ -1334,7 +1342,20 @@ function EditProfileDialog({ open, onClose, showSnackbar, candidates, setCandida
       <DialogContent dividers>
         <Stack spacing={2} component="form" onSubmit={handleSave} id="edit-form">
           <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar sx={{ width: 64, height: 64, bgcolor: '#3b5998', fontSize: 24 }}>
+            {/* Fixed Avatar - Now shows image if available */}
+            <Avatar 
+              sx={{ 
+                width: 64, 
+                height: 64, 
+                bgcolor: '#3b5998', 
+                fontSize: 24 
+              }}
+              src={dialogProfileUrl || undefined}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.style.display = 'none';
+              }}
+            >
               {form.user_name?.charAt(0)?.toUpperCase() || '?'}
             </Avatar>
             <TextField size="small" fullWidth label={t('full_name')} name="user_name" required value={form.user_name} onChange={handleChange} />
