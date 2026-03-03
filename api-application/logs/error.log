@@ -1150,3 +1150,299 @@ Status Code: 400
 Detail: Invalid password
 ==============================================
         
+2026-03-02 11:14:15,641 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 11:14:15,825 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 11:14:15,985 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 11:14:16,120 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 11:14:16,271 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 13:58:12,627 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 13:58:12,901 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 13:58:13,023 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 13:58:13,153 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/delete-profile
+Method: DELETE
+Client: 127.0.0.1
+Status Code: 400
+Detail: No profile image to delete
+==============================================
+        
+2026-03-02 14:26:10,487 | ERROR | 
+================= UNHANDLED ERROR =================
+URL: http://localhost:8000/user/profile
+Method: GET
+Client: 127.0.0.1
+Error: 7 validation errors:
+  {'type': 'missing', 'loc': ('response', 'company_name'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_email'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_contact'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_address'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_description'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_website'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_logo'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 123, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 109, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 411, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 252, in serialize_response
+    raise ResponseValidationError(
+        errors=_normalize_errors(errors), body=response_content
+    )
+fastapi.exceptions.ResponseValidationError: 7 validation errors:
+  {'type': 'missing', 'loc': ('response', 'company_name'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_email'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_contact'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_address'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_description'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_website'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+  {'type': 'missing', 'loc': ('response', 'company_logo'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1370>}
+
+
+===================================================
+        
+2026-03-02 14:26:10,572 | ERROR | 
+================= UNHANDLED ERROR =================
+URL: http://localhost:8000/user/profile
+Method: GET
+Client: 127.0.0.1
+Error: 7 validation errors:
+  {'type': 'missing', 'loc': ('response', 'company_name'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_email'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_contact'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_address'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_description'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_website'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_logo'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 123, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 109, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 411, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\fastapi\routing.py", line 252, in serialize_response
+    raise ResponseValidationError(
+        errors=_normalize_errors(errors), body=response_content
+    )
+fastapi.exceptions.ResponseValidationError: 7 validation errors:
+  {'type': 'missing', 'loc': ('response', 'company_name'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_email'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_contact'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_address'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_description'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_website'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+  {'type': 'missing', 'loc': ('response', 'company_logo'), 'msg': 'Field required', 'input': <app.models.user_model.User object at 0x0000014E343E1130>}
+
+
+===================================================
+        
+2026-03-02 14:46:11,442 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user
+Method: GET
+Client: 127.0.0.1
+Status Code: 401
+Detail: Authorization header missing
+==============================================
+        
+2026-03-02 14:46:14,745 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/profile
+Method: GET
+Client: 127.0.0.1
+Status Code: 401
+Detail: Authorization header missing
+==============================================
+        
+2026-03-02 17:16:03,256 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/applications/resumes/1/file
+Method: GET
+Client: 127.0.0.1
+Status Code: 404
+Detail: File candidate_2_20260217_163317.pdf not found on server
+==============================================
+        
+2026-03-03 10:59:53,857 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages/file
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:00:12,884 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:16:08,073 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:39:44,823 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:54:03,201 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        
+2026-03-03 11:54:09,346 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/chat/messages
+Method: POST
+Client: 127.0.0.1
+Status Code: 403
+Detail: Cannot sent message because this chat is blocked.
+==============================================
+        

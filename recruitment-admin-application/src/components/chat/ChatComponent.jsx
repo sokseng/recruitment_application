@@ -327,7 +327,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
         try {
             const addMessage = (msg) => {
                 setMessages(prev => {
-                    // skip if duplicate
+                    // skip duplicates
                     if (prev.some(m => m.id === msg.id)) return prev;
                     const updated = [...prev, msg];
                     if (isNearBottom() || prev.length === 0) {
@@ -335,72 +335,65 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                     }
                     return updated;
                 });
-            }
+            };
 
             if (editingMessage) {
                 if (!newMessage.trim()) return;
 
-                await api.put(`/chat/room/${chat.room_id}/messages/${editingMessage.id}/text`, {
-                    content: newMessage.trim()
-                });
-
-                stopTyping();
-                setEditingMessage(null);
-                setNewMessage('');
+                try {
+                    await api.put(`/chat/room/${chat.room_id}/messages/${editingMessage.id}/text`, {
+                        content: newMessage.trim()
+                    });
+                    stopTyping();
+                    setEditingMessage(null);
+                    setNewMessage('');
+                } catch (err) {
+                    const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+                    console.error(err);
+                    setError(t(`Failed to edit message: ${errorMessage}`));
+                }
                 return;
             }
 
             if (isRecording) {
-                const blob = await stopRecordingAndGetBlob();
-                if (blob) {
-                    const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
-                    const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
-                    addMessage(res.data);
-                    setReplyingTo(null);
-                    setAudioBlob(null);
-                    setRecordTime(0);
-                    setTimeout(scrollToBottom, 50);
-                    return;
+                try {
+                    const blob = await stopRecordingAndGetBlob();
+                    if (blob) {
+                        const audioFile = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+                        const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
+                        addMessage(res.data);
+                        setReplyingTo(null);
+                        setAudioBlob(null);
+                        setRecordTime(0);
+                        setTimeout(scrollToBottom, 50);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setError(t("Failed to send recorded audio"));
                 }
+                return;
             }
 
             if (audioBlob) {
                 const id = `temp-voice-${Date.now()}`;
-
                 setUploadingFiles(prev => [
                     ...prev,
-                    {
-                        id,
-                        sender_id: currentUserId,
-                        type: 'voice',
-                        isUploading: true,
-                        progress: 0
-                    }
+                    { id, sender_id: currentUserId, type: 'voice', isUploading: true, progress: 0 }
                 ]);
 
                 try {
-                    const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
-                        type: audioBlob.type,
-                    });
-
-                    const res = await uploadFileMessage({
-                        file: audioFile,
-                        type: 'voice'
-                    });
-
+                    const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, { type: audioBlob.type });
+                    const res = await uploadFileMessage({ file: audioFile, type: 'voice' });
                     addMessage(res.data);
-
-                    setUploadingFiles(prev =>
-                        prev.filter(f => f.id !== id)
-                    );
                 } catch (err) {
-                    setUploadingFiles(prev =>
-                        prev.filter(f => f.id !== id)
-                    );
+                    const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+                    console.error(err);
+                    setError(t(`Failed to send audio: ${errorMessage}`));
+                } finally {
+                    setUploadingFiles(prev => prev.filter(f => f.id !== id));
+                    setAudioBlob(null);
+                    setRecordTime(0);
                 }
-
-                setAudioBlob(null);
-                setRecordTime(0);
                 return;
             }
 
@@ -408,7 +401,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 const filesToUpload = selectedFiles.map(file => ({
                     file,
                     id: `temp-${file.name}-${Date.now()}`,
-                    type: getFileType(file), // image | video | file
+                    type: getFileType(file),
                     progress: 0
                 }));
 
@@ -432,25 +425,19 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             onUploadProgress: (e) => {
                                 const progress = Math.round((e.loaded * 100) / e.total);
                                 setUploadingFiles(prev =>
-                                    prev.map(f =>
-                                        f.id === item.id ? { ...f, progress } : f
-                                    )
+                                    prev.map(f => f.id === item.id ? { ...f, progress } : f)
                                 );
                             }
                         });
 
                         addMessage(res.data);
-
-                        setUploadingFiles(prev =>
-                            prev.filter(f => f.id !== item.id)
-                        );
-
                         setSelectedFiles(prev => prev.filter(f => f !== item.file));
                     } catch (err) {
+                        const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
                         console.error(err);
-                        setUploadingFiles(prev =>
-                            prev.filter(f => f.id !== item.id)
-                        );
+                        setError(t(`Failed to upload ${item.file.name}: ${errorMessage}`));
+                    } finally {
+                        setUploadingFiles(prev => prev.filter(f => f.id !== item.id));
                     }
                 }
 
@@ -462,14 +449,19 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             }
 
             if (newMessage.trim()) {
-
-                await sendTextMessage(newMessage.trim());
-
-                setNewMessage('');
-                setReplyingTo(null);
-                stopTyping();
-                setTimeout(scrollToBottom, 50);
+                try {
+                    await sendTextMessage(newMessage.trim());
+                    setNewMessage('');
+                    setReplyingTo(null);
+                    stopTyping();
+                    setTimeout(scrollToBottom, 50);
+                } catch (err) {
+                    const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+                    console.error(err);
+                    setError(t(`Failed to send message: ${errorMessage}`));
+                }
             }
+
         } finally {
             setIsSending(false);
         }
@@ -496,6 +488,10 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
 
             setOpenConfirm(false);
             setMessageToDelete(null);
+        } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+            console.error(err);
+            setError(t(`Failed to delete: ${errorMessage}`));
         } finally {
             setDeleting(false);
         }
@@ -560,11 +556,17 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
             target_room_ids: Array.from(selectedRooms),
         };
 
-        await api.post("/chat/messages/forward", payload);
+        try {
+            await api.post("/chat/messages/forward", payload);
 
-        setForwardOpen(false);
-        setForwardMessage(null);
-        setSelectedRooms(new Set());
+            setForwardOpen(false);
+            setForwardMessage(null);
+            setSelectedRooms(new Set());
+        } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+            console.error(err);
+            setError(t(`Failed to forward ${errorMessage}`));
+        }
     };
 
     const handleReplaceMessage = (message) => {
@@ -616,8 +618,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 )
 
             } catch (err) {
+                const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
                 console.error(err);
-                setError(t('replace_failed'));
+                setError(t(`replace_failed ${errorMessage}`));
             }
         };
 
@@ -625,12 +628,24 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
     };
 
     const handlePinMessage = async (message) => {
-        await api.post(`/chat/rooms/${chat.room_id}/messages/${message.id}/pin`)
+        try {
+            await api.post(`/chat/rooms/${chat.room_id}/messages/${message.id}/pin`)
+        } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+            console.error("Unpin failed", err);
+            setError(`Unpin failed: ${errorMessage}`);
+        }
 
     }
 
     const handleUnpinMessage = async () => {
-        await api.delete(`/chat/rooms/${chat.room_id}/pin`)
+        try {
+            await api.delete(`/chat/rooms/${chat.room_id}/pin`)
+        } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
+            console.error("Unpin failed", err);
+            setError(`Unpin failed: ${errorMessage}`);
+        }
 
     }
 
@@ -642,7 +657,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 { reaction: reactionType }
             );
         } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
             console.error("Reaction failed", err);
+            setError(`Reaction failed ${errorMessage}`);
         }
     };
 
@@ -653,17 +670,24 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 `/chat/rooms/${chat.room_id}/messages/${messageId}/react`
             );
         } catch (err) {
+            const errorMessage = err?.response?.data?.message || err.message || err?.response?.data || "Unknown error";
             console.error("Reaction failed", err);
+            setError(`Reaction failed ${errorMessage}`);
         }
     }
 
     const isBlocked = blockMessage?.is_blocked ?? false;
 
     const handleBlockUser = async () => {
-        if (!isBlocked) {
-            await api.post(`/chat/rooms/${chat.room_id}/block`);
-        } else {
-            await api.post(`/chat/rooms/${chat.room_id}/unblock`);
+        try {
+            if (!isBlocked) {
+                await api.post(`/chat/rooms/${chat.room_id}/block`);
+            } else {
+                await api.post(`/chat/rooms/${chat.room_id}/unblock`);
+            }
+        } catch (e) {
+            console.error(`Failed to ${!isBlocked ? 'block' : 'unblock'}`, e);
+            setError(`Failed to ${!isBlocked ? 'block' : 'unblock'}`);
         }
     }
 
@@ -674,6 +698,16 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 height: '100%',
             }}
         >
+            <Snackbar
+                open={!!error}
+                autoHideDuration={5000}
+                onClose={() => setError('')}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center', zIndex: 2000 }}
+            >
+                <Alert severity="error" onClose={() => setError('')}>
+                    {error}
+                </Alert>
+            </Snackbar>
             {chat !== null ? (
                 <Box
                     sx={{
@@ -722,7 +756,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         borderColor: 'divider',
                                         fontSize: 28
                                     }}
-                                    src={chat?.avatar_url}
+                                    src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`}
                                 // onClick={() => setOpen(true)}
                                 >
                                     {chat?.username?.charAt(0).toUpperCase() || 'P'}
@@ -1017,16 +1051,6 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     })}
                                 </Box>
 
-                                <Snackbar
-                                    open={!!error}
-                                    autoHideDuration={5000}
-                                    onClose={() => setError('')}
-                                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                                >
-                                    <Alert severity="error" onClose={() => setError('')}>
-                                        {error}
-                                    </Alert>
-                                </Snackbar>
                             </Paper>
                         )}
 

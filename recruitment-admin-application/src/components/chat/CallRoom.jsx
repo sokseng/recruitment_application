@@ -32,6 +32,7 @@ function LocalTracksPublisher({ startWithVideo = true }) {
     let videoTrack, audioTrack;
 
     async function initTracks() {
+      if (room.localParticipant.videoTrackPublications.size > 0) return;
 
       videoTrack = await createLocalVideoTrack();
       audioTrack = await createLocalAudioTrack();
@@ -66,7 +67,7 @@ function LocalTracksPublisher({ startWithVideo = true }) {
 function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, setCamEnabled, roomId }) {
   const { t } = useTranslation();
   const room = useRoomContext();
-  const connectionState = useConnectionState();
+  // const connectionState = useConnectionState();
 
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
 
@@ -105,7 +106,7 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
     };
   }, [room]);
 
-  if (!room || connectionState !== ConnectionState.Connected) return null;
+  if (!room) return null;
 
   const toggleMic = async () => {
     if (!room) return;
@@ -146,7 +147,7 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
     onEndCall?.();
   };
 
-  if (!room || connectionState !== ConnectionState.Connected) return null;
+  if (!room) return null;
 
   return (
     <>
@@ -215,11 +216,19 @@ function CallControls({ onEndCall, send, micEnabled, setMicEnabled, camEnabled, 
   );
 }
 
-function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
+function CallParticipants({ userData, remoteParticipantsWS, firstData, BASE_URL }) {
   const { t } = useTranslation();
   const [seconds, setSeconds] = useState(0);
+  const safeUsername = userData?.username || "User";
+  const safeProfileImage = userData?.profileImage
+    ? `${BASE_URL}/uploads/user/profile/${userData.profileImage}`
+    : undefined;
 
   const [remoteParticipants, setRemoteParticipants] = useState(remoteParticipantsWS);
+  const connectionState = useConnectionState();
+
+  const isReconnecting =
+    connectionState === ConnectionState.Reconnecting;
 
   const tracks = useTracks(
     [
@@ -251,7 +260,27 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh", background: "#000" }}>
 
-      {remoteVideos.map(trackRef => {
+      {connectionState !== ConnectionState.Connected && (
+        <Box sx={{
+          position: "absolute",
+          top: 0,
+          width: "100%",
+          textAlign: "center",
+          backgroundColor:
+            connectionState === ConnectionState.Reconnecting
+              ? "orange"
+              : "primary.main",
+          color: "white",
+          zIndex: 3000,
+          py: 1
+        }}>
+          {connectionState === ConnectionState.Reconnecting
+            ? "Reconnecting..."
+            : "Connecting..."}
+        </Box>
+      )}
+
+      {!isReconnecting && remoteVideos.map(trackRef => {
         const key = trackRef.trackSid ?? `${trackRef.participant?.identity}-camera`;
         const participantState = remoteParticipants.find(p => p.userId === trackRef.participant?.identity);
 
@@ -282,10 +311,10 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
                 gap: 1,
                 fontSize: 24
               }}>
-                <Avatar sx={{ width: 45, height: 45 }}>
-                  {userData.username?.charAt(0).toUpperCase()}
+                <Avatar sx={{ width: 45, height: 45 }} src={safeProfileImage}>
+                  {safeUsername?.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography sx={{ color: "white" }}>{userData.username}</Typography>
+                <Typography sx={{ color: "white" }}>{safeUsername}</Typography>
               </Box>
             )}
 
@@ -300,7 +329,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
                 borderRadius: 20,
                 fontSize: 12
               }}>
-                {t('user_muted', { username: userData.username })}
+                {t('user_muted', { username: safeUsername })}
               </div>
             )}
           </div>
@@ -354,7 +383,7 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
         color: 'white',
         zIndex: 1200
       }}>
-        <Typography variant="h6" sx={{ color: "white" }}>{userData.username}</Typography>
+        <Typography variant="h6" sx={{ color: "white" }}>{isReconnecting ? 'Reconnecting...' : safeUsername}</Typography>
         <Typography variant="body2">
           {formatTime(seconds)}
         </Typography>
@@ -364,15 +393,18 @@ function CallParticipants({ userData, remoteParticipantsWS, firstData }) {
   );
 }
 
-export default function CallRoom({ roomId, userId, mode, onEndCall, userData, send, remoteParticipants, firstData }) {
+export default function CallRoom({ roomId, userId, mode, onEndCall, userData, send, remoteParticipants, firstData, BASE_URL }) {
   const { t } = useTranslation();
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
 
   const [tokenData, setTokenData] = useState(null);
   const isVideoCall = mode === "video";
+  // const [lkReconnecting, setLkReconnecting] = useState(false);
 
   useEffect(() => {
+    if (tokenData) return;
+
     async function fetchToken() {
       try {
         const res = await api.post(`/call/token`, { user_id: userId, room_name: `chat_${roomId}` });
@@ -384,7 +416,21 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData, se
     fetchToken();
   }, [roomId, userId]);
 
-  if (!tokenData) return <div>{t('loading')}</div>;
+  if (!tokenData) {
+    return (
+      <Box sx={{
+        position: 'fixed',
+        inset: 0,
+        background: '#111',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white'
+      }}>
+        {t('connecting')}...
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ position: 'fixed', zIndex: 1600, top: 0, left: 0, width: '100%', height: '100%', background: '#111' }}>
@@ -392,11 +438,17 @@ export default function CallRoom({ roomId, userId, mode, onEndCall, userData, se
         serverUrl={tokenData.url}
         token={tokenData.token}
         connect={true}
-        onConnected={() => console.log("LiveKit connected")}
-        onDisconnected={() => console.log("LiveKit disconnected")}
+        options={{
+          autoSubscribe: true,
+          reconnectPolicy: {
+            maxRetries: Infinity
+          }
+        }}
+        // onReconnecting={() => setLkReconnecting(true)}
+        // onReconnected={() => setLkReconnecting(false)}
       >
         <LocalTracksPublisher startWithVideo={isVideoCall} />
-        <CallParticipants userData={userData} remoteParticipantsWS={remoteParticipants} firstData={firstData} />
+        <CallParticipants userData={userData} remoteParticipantsWS={remoteParticipants} firstData={firstData} BASE_URL={BASE_URL} />
         <CallControls onEndCall={onEndCall} send={send} micEnabled={micEnabled} setMicEnabled={setMicEnabled} camEnabled={camEnabled} setCamEnabled={setCamEnabled} roomId={roomId} />
       </LiveKitRoom>
     </Box>

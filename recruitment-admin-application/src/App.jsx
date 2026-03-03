@@ -11,6 +11,7 @@ import ringtone from './assets/ringing1.mp3';
 
 export default function App() {
   const hydrate = useAuthStore((s) => s.hydrate);
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [incomingCall, setIncomingCall] = useState(null);
   const [activeCallRoom, setActiveCallRoom] = useState(null);
   const [userData, setUserData] = useState(null);
@@ -22,13 +23,15 @@ export default function App() {
   const [remoteParticipants, setRemoteParticipants] = useState([]);
 
   const { send } = useGlobalWebSocket((data) => {
+    // console.log("data", data);
     switch (data.type) {
       case "call.incoming":
-        setIncomingCall({ roomId: data.roomId, fromUserId: data.fromUserId, fromUsername: data.fromUsername, mode: data.mode || "video" })
-        setUserData({ username: data.fromUsername, mode: data.mode || "video" });
+        setIncomingCall({ roomId: data.roomId, fromUserId: data.fromUserId, fromUsername: data.fromUsername, profileImage: data.fromProfileImage, mode: data.mode || "video" })
+        setUserData({ username: data.fromUsername, profileImage: data.fromProfileImage, mode: data.mode || "video" });
         setRemoteParticipants([{
           userId: data.fromUserId,
           username: data.fromUsername,
+          profileImage: data.fromProfileImage,
           mic: true,
           cam: true
         }]);
@@ -40,10 +43,9 @@ export default function App() {
         setActiveCallRoom({
           roomId: data.roomId,
           mode: data.mode,
-          fromUsername: data.fromUsername
         });
         ;
-        setUserData({ username: data.fromUsername, mode: data.mode || "video" });
+        setUserData({ username: data.fromUsername, profileImage: data.fromProfileImage, mode: data.mode || "video" });
         setRemoteParticipants([{
           userId: data.fromUserId,
           username: data.fromUsername,
@@ -53,19 +55,36 @@ export default function App() {
         setFirstData(data.mode || "video");
         break;
 
+      case "call.restore":
+        setIncomingCall(null);
+
+        setActiveCallRoom({
+          roomId: data.roomId,
+          mode: data.mode,
+        });
+
+        setUserData({
+          username: data.fromUsername,
+          profileImage: data.fromProfileImage,
+          mode: data.mode
+        });
+
+        setRemoteParticipants([{
+          userId: data.fromUserId,
+          username: data.fromUsername,
+          profileImage: data.fromProfileImage,
+          mic: true,
+          cam: true
+        }]);
+
+        setFirstData(data.mode);
+        break;
+
       case "call.declined":
-        setIncomingCall(null);
-        setActiveCallRoom(null);
-        break;
-
       case "call.missed":
-        setIncomingCall(null);
-        setActiveCallRoom(null);
-        break;
-
       case "call.ended":
-        setActiveCallRoom(null);
         setIncomingCall(null);
+        setActiveCallRoom(null);
         break
 
       case "call.toggle":
@@ -187,12 +206,13 @@ export default function App() {
           <CallRoom
             roomId={activeCallRoom.roomId}
             userId={userId}
-            mode={userData.mode}
+            mode={userData?.mode}
             onEndCall={endCall}
             userData={userData}
             send={send}
             remoteParticipants={remoteParticipants}
             firstData={firstData}
+            BASE_URL={BASE_URL}
           />
         </Box>
       )}
@@ -231,6 +251,7 @@ export default function App() {
                 width: 50,
                 height: 50
               }}
+              src={`${BASE_URL}/uploads/user/profile/${incomingCall.profileImage}`}
             >
               {incomingCall.fromUsername.charAt(0).toUpperCase()}
             </Avatar>

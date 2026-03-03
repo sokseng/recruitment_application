@@ -17,7 +17,7 @@ i18n
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'fr', 'km'],     
-    debug: import.meta.env.DEV,            
+    debug: false,            
     interpolation: {
       escapeValue: false
     },

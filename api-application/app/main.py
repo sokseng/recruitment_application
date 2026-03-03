@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -108,18 +110,21 @@ app.include_router(audit_trace_router.router)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    endpoint = request.scope.get("endpoint")
+    tb = traceback.extract_tb(exc.__traceback__) if exc.__traceback__ else None
+
+    file = tb[-1].filename if tb else "Unknown"
+    line = tb[-1].lineno if tb else "Unknown"
+    function_name = endpoint.__name__ if endpoint else "Unknown"
+    client_ip = request.client.host if request.client else "Unknown"
+    detail = str(exc)
 
     logger.error(
-        f"""
-================= UNHANDLED ERROR =================
-URL: {request.url}
-Method: {request.method}
-Client: {request.client.host if request.client else 'Unknown'}
-Error: {str(exc)}
-Traceback:
-{traceback.format_exc()}
-===================================================
-        """
+        f"Function={function_name} --> "
+        f"File={file} --> "
+        f"Line={line} --> "
+        f"Client={client_ip} --> "
+        f"Detail={detail}"
     )
 
     return JSONResponse(
@@ -134,20 +139,24 @@ Traceback:
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    endpoint = request.scope.get("endpoint")
+    tb = traceback.extract_tb(exc.__traceback__) if exc.__traceback__ else None
+
+    file = tb[-1].filename if tb else "Unknown"
+    line = tb[-1].lineno if tb else "Unknown"
+    function_name = endpoint.__name__ if endpoint else "Unknown"
+    client_ip = request.client.host if request.client else "Unknown"
+    detail = exc.detail
 
     logger.error(
-        f"""
-================= HTTP ERROR =================
-URL: {request.url}
-Method: {request.method}
-Client: {request.client.host if request.client else 'Unknown'}
-Status Code: {exc.status_code}
-Detail: {exc.detail}
-==============================================
-        """
+        f"Function={function_name} --> "
+        f"File={file} --> "
+        f"Line={line} --> "
+        f"Client={client_ip} --> "
+        f"Detail={detail}"
     )
 
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail}
+        content={"detail": detail}
     )

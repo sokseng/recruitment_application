@@ -3,23 +3,30 @@ import useAuthStore from "../store/useAuthStore";
 import { useUnreadStore } from "../store/unreadStore";
 
 export function useGlobalWebSocket(onGlobalEvent) {
-  const WS_BASE_URI = import.meta.env.VITE_API_BASE_URL.replace(/^http:/, "ws:").replace(/^https:/, "wss:");
+  const WS_BASE_URI = import.meta.env.VITE_API_BASE_URL.replace(
+    /^http:/,
+    "ws:",
+  ).replace(/^https:/, "wss:");
   const socketRef = useRef(null);
   const reconnectTimeout = useRef(null);
   const reconnectAttempts = useRef(0);
   const intentionalClose = useRef(false);
   const messageQueue = useRef([]);
   const [connect, setConnect] = useState(false);
+  const heartbeatTimeout = useRef(null);
 
   const setAllChats = useUnreadStore((state) => state.setAllChats);
   const token = useAuthStore((state) => state.access_token);
 
   useEffect(() => {
     if (!token) return;
+    intentionalClose.current = false;
 
     const wsUrl = `${WS_BASE_URI}/ws/?token=${token}`;
 
     const connectWS = () => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) return;
+
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
 
@@ -45,10 +52,24 @@ export function useGlobalWebSocket(onGlobalEvent) {
 
           if (data.type === "ping") {
             ws.send(JSON.stringify({ type: "pong" }));
+
+            clearTimeout(heartbeatTimeout.current);
+            heartbeatTimeout.current = setTimeout(() => {
+              ws.close(); // force reconnect if no ping for too long
+            }, 30000);
             return;
           }
 
-          if (["call.incoming", "call.ended", "call.accepted", "call.declined"].includes(data.type)) {
+          if (
+            [
+              "call.incoming",
+              "call.ended",
+              "call.accepted",
+              "call.declined",
+              "call.restore",
+              "call.toggle",
+            ].includes(data.type)
+          ) {
             if (onGlobalEvent) onGlobalEvent(data);
             return;
           }
@@ -60,6 +81,8 @@ export function useGlobalWebSocket(onGlobalEvent) {
       };
 
       ws.onclose = () => {
+        setConnect(false);
+
         if (intentionalClose.current) return;
 
         const attempt = reconnectAttempts.current;
@@ -77,7 +100,7 @@ export function useGlobalWebSocket(onGlobalEvent) {
     return () => {
       intentionalClose.current = true;
       if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-      // socketRef.current?.close();
+      socketRef.current?.close();
     };
   }, [token]);
 

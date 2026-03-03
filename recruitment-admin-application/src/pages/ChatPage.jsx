@@ -3,7 +3,9 @@ import {
     Box, List, ListItemAvatar, Avatar, Typography, TextField,
     InputAdornment, useMediaQuery, useTheme, ListItemText,
     Divider,
-    ListItemButton
+    ListItemButton,
+    Snackbar,
+    Alert
 } from "@mui/material";
 import ChatComponent from '../components/chat/ChatComponent';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -43,6 +45,7 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore(s => s.access_token);
     const currentUserId = useAuthStore(s => s.user_data?.pk_id);
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -84,6 +87,24 @@ function ChatPage() {
     const [isCallBusy, setIsCallBusy] = useState(false);
     const scrollContainerRef = useRef(null);
     const audioRef = useRef(null);
+
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: "",
+        severity: "info"
+    });
+
+    const showSnackbar = (message, severity = "info") => {
+        setSnackbar(prev => ({ ...prev, open: false }));
+        setTimeout(() => {
+            setSnackbar({ open: true, message, severity });
+        }, 50);
+    };
+
+    const handleCloseSnackbar = (_, reason) => {
+        if (reason === "clickaway") return;
+        setSnackbar(prev => ({ ...prev, open: false }));
+    };
 
     useEffect(() => {
         const search = chatSearch.trim();
@@ -496,6 +517,13 @@ function ChatPage() {
                             blocked_at: data.blocked_at
                         })
                     }
+                    break;
+
+                case "error":
+                    stopRingtone();
+                    setCallRequest(null);
+                    showSnackbar(data.message, "error");
+                    break;
 
                 default:
                     // console.log("WS event", data);
@@ -509,6 +537,7 @@ function ChatPage() {
     }, [connected, send]);
 
     const { send: sendGlobal, connected: globalConnected } = useGlobalWebSocket((data) => {
+        // console.log("WS EVENT RECEIVED:", data);
         switch (data.type) {
             case "chat_list_update":
                 setChats(prev => {
@@ -529,7 +558,7 @@ function ChatPage() {
                             {
                                 room_id: data.room_id,
                                 username: data.username || t('new_user'),
-                                avatar_url: data.avatar_url || null,
+                                profile_image: data.profile_image || null,
                                 last_message: data.last_message,
                                 last_message_at: data.last_message?.created_at,
                                 unread_count: 0
@@ -554,6 +583,32 @@ function ChatPage() {
                     setCallRequest(null);
                     setIsCallBusy(false);
                 }, 2000);
+
+                setMessages(prev => {
+                    const exists = prev.some(msg => msg.id === data.message.id);
+                    if (exists) return prev; // skip duplicate
+
+                    const updated = [...prev, data.message];
+
+                    if (isNearBottom() || prev.length === 0) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+
+                    return updated;
+                });
+
+                const isCurrentRoom = selectedChatRef.current?.room_id === data.message.room_id;
+
+                if (!isCurrentRoom && data.message.sender_id !== currentUserId) {
+                    incrementChat(data.message.room_id);
+                }
+
+                break;
+
+            case "error":
+                stopRingtone();
+                setCallRequest(null);
+                showSnackbar(data.message, "error");
                 break;
 
             default:
@@ -667,6 +722,19 @@ function ChatPage() {
     return (
         <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
 
+            {snackbar && (
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: "top", horizontal: "center", zIndex: 2000 }}
+                >
+                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
+            )}
+
             {(!isMobile || !selectedChat) && (
                 <Box
                     sx={{
@@ -757,7 +825,7 @@ function ChatPage() {
                                         }}
                                     >
                                         <ListItemAvatar sx={{ minWidth: 48 }}>
-                                            <Avatar src={chat?.avatar_url} sx={{ borderRadius: 12 }}>
+                                            <Avatar src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`} sx={{ borderRadius: 12 }}>
                                                 {chat.username?.charAt(0).toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
@@ -827,7 +895,7 @@ function ChatPage() {
                                             onClick={() => handleStartChat(user)}
                                         >
                                             <ListItemAvatar>
-                                                <Avatar src={user.avatar_url}>
+                                                <Avatar src={`${BASE_URL}/uploads/user/profile/${user.profile_image}`}>
                                                     {user.user_name?.[0]?.toUpperCase()}
                                                 </Avatar>
                                             </ListItemAvatar>
@@ -897,6 +965,7 @@ function ChatPage() {
                     callRequest={callRequest}
                     onDeclinedCall={declinedCall}
                     isCallBusy={isCallBusy}
+                    BASE_URL={BASE_URL}
                 />
             )}
 

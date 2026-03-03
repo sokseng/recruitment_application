@@ -541,6 +541,7 @@
       "accepted": "Accepted"
     }
   },
-  "back_to_jobs": "Back to job applications"
-  
+  "application": "Application",
+  "back_to_jobs": "Back to job applications",
+  "connecting": "Connecting..."
 }

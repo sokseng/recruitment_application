@@ -542,5 +542,6 @@
     }
   },
   "application": "Candidature",
-  "back_to_jobs": "Retour aux candidatures d'emploi"
+  "back_to_jobs": "Retour aux candidatures d'emploi",
+  "connecting": "de liaison..."
 } 
