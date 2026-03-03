@@ -242,10 +242,10 @@
   "upload_new_cover_letter": "Upload new cover letter (replaces current one)",
   "upload_cover_letter_optional": "Upload cover letter (optional)",
   "file_too_large": "File too large (max 5MB)",
-  "attached_images_optional": "Supporting Documents (PDF, JPG, PNG) – optional",
-  "attached_images_count": "Attached images ({{count}})",
-  "images_marked_for_removal": "{{count}} image(s) marked for removal (will be deleted when you save)",
-  "add_more_images": "Add more documents",
+  "attached_files_optional": "Supporting Files (PDF, JPG, PNG) – optional",
+  "attached_files_count": "Attached Files",
+  "files_marked_for_removal": "{{count}} file(s) marked for removal (will be deleted when you save)",
+  "add_more_files": "Add more files",
   "new_files_to_upload": "New files to upload ({{count}})",
   "submitting": "Submitting...",
   "update": "Update",
@@ -540,6 +540,7 @@
       "rejected": "Rejected",
       "accepted": "Accepted"
     }
-  }
+  },
+  "back_to_jobs": "Back to job applications"
   
 }

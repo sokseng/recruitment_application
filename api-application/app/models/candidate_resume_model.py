@@ -23,8 +23,7 @@ class CandidateResume(Base):
     resume_type = Column(SQLEnum(ResumeType), nullable=False)
     resume_file = Column(String(255), nullable=True)  
     resume_content = Column(Text, nullable=True)
-    recommendation_letter = Column(Text, nullable=True)
-    cover_letter_file = Column(String(255), nullable=True)    
+    recommendation_letter = Column(Text, nullable=True)  
 
     is_primary = Column(Boolean, nullable=False, default=False)
 

@@ -241,10 +241,10 @@
   "upload_new_cover_letter": "Télécharger une nouvelle lettre (remplace l'actuelle)",
   "upload_cover_letter_optional": "Télécharger une lettre de motivation (facultatif)",
   "file_too_large": "Fichier trop volumineux (max 5 Mo)",
-  "attached_images_optional": "Documents de soutien (PDF, JPG, PNG) – facultatif",
-  "attached_images_count": "Images jointes ({{count}})",
-  "images_marked_for_removal": "{{count}} image(s) marquée(s) pour suppression (sera supprimée lors de l'enregistrement)",
-  "add_more_images": "Ajouter plus de documents",
+  "attached_files_optional": "fichiers de soutien (PDF, JPG, PNG) – facultatif",
+  "attached_files_count": "fichiers jointes",
+  "files_marked_for_removal": "{{count}} document(s) marquée(s) pour suppression (sera supprimée lors de l'enregistrement)",
+  "add_more_files": "Ajouter plus de fichiers",
   "new_files_to_upload": "Nouveaux fichiers à télécharger ({{count}})",
   "submitting": "Soumission...",
   "update": "Mettre à jour",
@@ -541,5 +541,6 @@
       "accepted": "Accepté"
     }
   },
-  "application": "Candidature"
+  "application": "Candidature",
+  "back_to_jobs": "Retour aux candidatures d'emploi"
 } 

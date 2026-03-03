@@ -1,7 +1,7 @@
 #job_application_schema.py
 from pydantic import BaseModel
 from datetime import date, datetime
-from typing import Optional
+from typing import List, Optional
 from app.models.job_application_model import ApplicationStatus
 from app.schemas.user_schema import JobOut
 
@@ -58,6 +58,8 @@ class ApplicationOutForEmployer(BaseModel):
     application_status: ApplicationStatus
     cancelled: bool
     has_cover_letter: bool
+    cover_letter_filename: Optional[str] = None
+    attachments: List[dict] = []
     reason: Optional[str] = None
     
     model_config = {"from_attributes": True}
