@@ -26,6 +26,7 @@ def apply_to_job(
     new_attachments: Optional[List[dict]] = None, 
     delete_cover_letter: bool = False,
     reset_status_on_reapply: bool = True,
+    ip_address: str = ""
 ) -> JobApplication:
     job = db.get(Job, job_id)
     if not job:
@@ -101,6 +102,33 @@ def apply_to_job(
 
     db.commit()
     db.refresh(application)
+
+    # ── ADD AUDIT LOGGING HERE ────────────────────────────────────────
+    candidate = db.query(Candidate).filter(Candidate.pk_id == candidate_id).first()
+    user = candidate.user if candidate else None
+    username = user.user_name if user else f"candidate_{candidate_id}"
+
+    job = db.get(Job, job_id) 
+
+    is_reapply = application.pk_id is not None 
+
+    action = "Re-apply to Job" if is_reapply else "Apply to Job"
+
+    detail = (
+        f"job_title: '{job.job_title}' | "
+        f"company: '{job.employer.company_name if job.employer else '—'}'"
+    )
+
+    audit = AuditTrace(
+        user_action = username,
+        action_datetime = datetime.now().replace(microsecond=0),
+        action = action,
+        ip = ip_address,                
+        detail_information = detail
+    )
+    db.add(audit)
+    db.commit()
+
     return application
 
 
