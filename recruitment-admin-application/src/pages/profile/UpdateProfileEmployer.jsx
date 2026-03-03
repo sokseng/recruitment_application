@@ -260,34 +260,6 @@ const UpdateProfileEmployer = () => {
                         ...response.data,
                     },
                 });
-
-                const updatedData = {
-                    user_name: response.data.user_name || "",
-                    profile_image: response.data.profile_image || "",
-                    email: response.data.email || "",
-                    phone: response.data.phone || "",
-                    gender: response.data.gender || "",
-                    date_of_birth: response.data.date_of_birth || "",
-                    address: response.data.address || "",
-                    company_name: response.data.company_name || "",
-                    company_email: response.data.company_email || "",
-                    company_contact: response.data.company_contact || "",
-                    company_address: response.data.company_address || "",
-                    company_description: response.data.company_description || "",
-                    company_website: response.data.company_website || "",
-                    category_ids: response.data.categories?.map(c => c.id) || [],
-                };
-
-                originalFormRef.current = updatedData;
-                setFormData(updatedData);
-
-                originalLogoRef.current = response.data.company_logo
-                    ? `${BASE_URL}/uploads/employers/${response.data.company_logo}`
-                    : null;
-
-                setCompanyLogoPreview(originalLogoRef.current);
-                setCompanyLogoFile(null);
-                setRemoveCompanyLogo(false);
             }
         } catch (error) {
             setOpenSnackbar(true);
