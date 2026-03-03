@@ -29,6 +29,7 @@ class UserBasicOut(BaseModel):
     gender: Optional[str] = None          
     date_of_birth: Optional[date] = None  
     address: Optional[str] = None
+    profile_image: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class CandidateBasicOut(BaseModel):

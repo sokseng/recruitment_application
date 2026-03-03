@@ -193,6 +193,7 @@ def get_applications_for_job(
                     "gender": app.candidate.user.gender,
                     "date_of_birth": app.candidate.user.date_of_birth,
                     "address": app.candidate.user.address,
+                    "profile_image": app.candidate.user.profile_image,
                 } if app.candidate.user else None
             } if app.candidate else None,
             "has_cover_letter": app.cover_letter_file is not None,

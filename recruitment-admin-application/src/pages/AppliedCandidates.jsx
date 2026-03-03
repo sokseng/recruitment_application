@@ -149,6 +149,23 @@ export default function AppliedCandidates() {
     }
   }, [candidateDetailOpen, selectedCandidateApp]);
 
+  const getProfileImageUrl = (app) => {
+    const filename = app?.candidate?.user?.profile_image;
+
+    if (
+      !filename ||
+      filename === null ||
+      filename === "null" ||
+      filename === "undefined" ||
+      typeof filename !== "string" ||
+      filename.trim() === ""
+    ) {
+      return null;
+    }
+
+    return `${baseURL}/uploads/user/profile/${filename}`;
+  };
+
   const loadCandidateAttach = async (resumeId) => {
     if (!resumeId || !selectedCandidateApp?.pk_id) return;
 
@@ -744,7 +761,13 @@ export default function AppliedCandidates() {
                               sx={{
                                 width: 40,
                                 height: 40,
-                                bgcolor: "primary.main",
+                              }}
+                              src={getProfileImageUrl(app)}
+                              imgProps={{
+                                onError: (e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "";
+                                },
                               }}
                             >
                               {candidateName?.[0]?.toUpperCase() || "?"}
@@ -1288,11 +1311,16 @@ export default function AppliedCandidates() {
                     <Stack direction="row" spacing={2} alignItems="center">
                       <Avatar
                         sx={{
-                          width: 50,
-                          height: 50,
-                          bgcolor: "primary.dark",
-                          fontSize: "1.6rem",
-                          fontWeight: "bold",
+                          width: 64,
+                          height: 64,
+                          fontSize: "2rem",
+                        }}
+                        src={getProfileImageUrl(selectedCandidateApp)}
+                        imgProps={{
+                          onError: (e) => {
+                            e.target.onerror = null;
+                            e.target.src = "";
+                          },
                         }}
                       >
                         {candidateName?.[0]?.toUpperCase() || "?"}

@@ -14,6 +14,7 @@ import {
   Send,
   UploadFile,
   HourglassEmpty,
+  Close,
 } from "@mui/icons-material";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -47,6 +48,7 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
+  Paper,
   Radio,
   RadioGroup,
   Snackbar,
@@ -71,12 +73,13 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import "quill/dist/quill.snow.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import ReactQuill from "react-quill-new";
 import { useParams } from 'react-router-dom';
 import api from "../services/api";
 import useAuthStore from "../store/useAuthStore";
+import Draggable from "react-draggable";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -149,6 +152,23 @@ export default function Dashboard() {
   const canUploadNewCoverLetter = !previousCoverLetterName || coverLetterToDelete;
   const [checkButtonApply, setCheckButtonApply] = useState(true);
   const [currentApplicationId, setCurrentApplicationId] = useState(null);
+
+  // ────────────────────────────────────────────────
+  //      Draggable Paper
+  // ────────────────────────────────────────────────
+  function DraggablePaper(props) {
+    const nodeRef = useRef(null);
+  
+    return (
+      <Draggable
+        nodeRef={nodeRef}
+        handle="#draggable-dialog-title"
+        cancel={'[class*="MuiDialogContent-root"]'}
+      >
+        <Paper ref={nodeRef} {...props} />
+      </Draggable>
+    );
+  }
 
   const handleStageDeleteCoverLetter = () => {
     setCoverLetterToDelete(true);
@@ -315,13 +335,6 @@ export default function Dashboard() {
     dateTo,
   ]);
 
-  useEffect(() => {
-    if (applyDialogOpen && selectedResumeId) {
-      // loadApplicationAttachments(selectedResumeId);
-    }
-  }, [selectedResumeId, applyDialogOpen]);
-  
-
   const loadApplicationAttachments = async (applicationId) => {
     if (!applicationId) {
       setExistingAttachments([]);
@@ -331,11 +344,6 @@ export default function Dashboard() {
     try {
       const res = await api.get(`/applications/${applicationId}/attachments`);
       setExistingAttachments(res.data || []);
-
-      // const statusRes = await api.get(
-      //   `/applications/job/${selectedJob.pk_id}/my-status`
-      // );
-      // setPreviousCoverLetterName(statusRes.data.cover_letter_filename || null);
 
     } catch (err) {
       console.error("Failed to load resume extras:", err);
@@ -1814,43 +1822,62 @@ export default function Dashboard() {
                     </Box>
                   </Stack>
                 </Popover>
+
                 {/* Apply Dialog with Resume Selection */}
                 <Dialog
                   open={applyDialogOpen && isCandidate}
-                  onClose={() => {
+                  onClose={(event, reason) => {
+                    if (reason === "backdropClick" || reason === "escapeKeyDown") return;
                     setApplyDialogOpen(false);
                   }}
+                  fullScreen={isMobile}
                   fullWidth
-                  maxWidth="sm"
+                  maxWidth="md"
                   PaperProps={{
                     sx: {
+                      maxHeight: "95vh",
                       borderRadius: 3,
                       overflow: "hidden",
                     },
                   }}
+                  PaperComponent={DraggablePaper}
                 >
                   {/* Header */}
                   <DialogTitle
+                    id="draggable-dialog-title"
                     sx={{
-                      background: "linear-gradient(135deg, #1976d2, #42a5f5)",
-                      color: "white",
-                      py: 1.8,
+                      borderBottom: "2px solid",
+                      borderColor: "divider",
+                      py: 1.5,
                       fontSize: 16,
                       fontWeight: 600,
+                      cursor: "move",
                     }}
                   >
                     {hasAppliedToThisJob
                       ? t('update_application')
                       : t('apply_to_position')}
+                    {/* icon close dialog */}
+                    <IconButton
+                      aria-label="close"
+                      size="small"
+                      onClick={() => setApplyDialogOpen(false)}
+                      sx={{
+                        position: "absolute",
+                        right: 8,
+                        top: 8,
+                      }}
+                    >
+                      <Cancel />
+                    </IconButton>
                   </DialogTitle>
 
-                  <DialogContent sx={{ mt: 1 }}>
+                  <DialogContent sx={{ mt: 0.5 }}>
                     {hasAppliedToThisJob && originalResumeId && (
                       <>
                         {selectedResumeId !== originalResumeId ? (
                           <Alert
                             severity="info"
-                            sx={{ mb: 2, fontSize: "0.9rem" }}
                           >
                             {t('changed_resume_notice')}
                           </Alert>
@@ -2342,18 +2369,12 @@ export default function Dashboard() {
                   </DialogContent>
 
                   {/* Footer */}
-                  <DialogActions>
-                    <Button
-                      onClick={() => setApplyDialogOpen(false)}
-                      size="small"
-                      variant="outlined"
-                      color="error"
-                      sx={{
-                        textTransform: "none",
-                      }}
-                    >
-                      {t('cancel')}
-                    </Button>
+                  <DialogActions
+                    sx={{
+                      borderTop: "2px solid",
+                      borderColor: "divider",
+                    }}
+                  >
                     <Button
                       variant="contained"
                       onClick={handleApplyWithResume}
