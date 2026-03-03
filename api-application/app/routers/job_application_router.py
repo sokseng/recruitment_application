@@ -216,6 +216,7 @@ def get_application_counts_per_my_jobs(
 @router.post("/", response_model=JobApplicationOut, status_code=201)
 async def apply_to_job_endpoint(
     job_id: int = Form(...),
+    request: Request = None,
     candidate_resume_id: int = Form(...),
     cover_letter_file: Optional[UploadFile] = File(None),
     attachments: List[UploadFile] = File(default=[]),
@@ -252,6 +253,8 @@ async def apply_to_job_endpoint(
             "size_bytes": file.size,
             "file_type": "image" if ext in {".jpg",".jpeg",".png"} else "pdf"
         })
+    
+    ip_address = request.client.host,
 
     application = apply_to_job(
         db=db,
@@ -263,6 +266,7 @@ async def apply_to_job_endpoint(
         cover_letter_size=cover_size,
         new_attachments=new_attachments,           # ← updated parameter name
         delete_cover_letter=delete_cover,
+        ip_address=ip_address
     )
 
     return application
