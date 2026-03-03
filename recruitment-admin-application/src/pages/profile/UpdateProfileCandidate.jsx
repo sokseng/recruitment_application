@@ -4,12 +4,13 @@ import {
   Delete as DeleteIcon,
   Description as DescriptionIcon,
   Edit as EditIcon,
-  Email as EmailIcon,
   FileDownload as FileDownloadIcon,
-  LocationOn as LocationOnIcon,
   MoreVert as MoreVertIcon,
-  Star as StarIcon,
+  PhotoCamera,
+  Star as StarIcon
 } from '@mui/icons-material'
+import UploadIcon from "@mui/icons-material/Upload"
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import {
   Alert,
   Avatar,
@@ -45,10 +46,8 @@ import { useTranslation } from 'react-i18next'
 import ReactQuill from "react-quill-new"
 import api from '../../services/api'
 import useAuthStore from '../../store/useAuthStore'
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import UploadIcon from "@mui/icons-material/Upload";
-import ViewProfileDialog from './dialog/ViewProfileDialog';
-import DeleteProfileDialog from "./dialog/DeleteProfileDialog";
+import DeleteProfileDialog from "./dialog/DeleteProfileDialog"
+import ViewProfileDialog from './dialog/ViewProfileDialog'
 
 export default function CandidateProfileDashboard() {
   const { t } = useTranslation();
@@ -622,8 +621,8 @@ export default function CandidateProfileDashboard() {
         >
           {/* Avatar and Basic Info */}
           <Stack direction="row" spacing={3} alignItems="center" flexGrow={1}>
-            <>
-              <IconButton onClick={handleMenuOpen}>
+            <Box sx={{ position: 'relative' }}>
+              <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
                 <Avatar
                   sx={{
                     width: 80,
@@ -639,50 +638,56 @@ export default function CandidateProfileDashboard() {
                 </Avatar>
               </IconButton>
 
-              <Menu
-                anchorEl={secondAnchor}
-                open={open}
-                onClose={handleMenuClose}
+              {/* Camera icon overlay */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  backgroundColor: 'primary.main',
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid white',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                }}
+                onClick={handleMenuOpen}
               >
-                <MenuItem onClick={handleView}>
-                  <VisibilityIcon sx={{ mr: 1 }} /> View
-                </MenuItem>
-
-                <MenuItem>
-                  <label htmlFor="upload-file" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <UploadIcon sx={{ mr: 1 }} /> Upload
-                  </label>
-                  <input
-                    type="file"
-                    id="upload-file"
-                    style={{ display: 'none' }}
-                    onChange={handleUpload}
-                  />
-                </MenuItem>
-
-                <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
-                  <DeleteIcon sx={{ mr: 1 }} /> Delete
-                </MenuItem>
-              </Menu>
-            </>
-
-            <Box>
-              <Typography variant="h5" fontWeight={700}>
-                {user_data.user_data?.user_name || t('unnamed')}
-              </Typography>
-
-              {user_data?.user_data?.address && (
-                <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
-                  <LocationOnIcon fontSize="small" />
-                  <Typography variant="body2">{user_data?.user_data?.address}</Typography>
-                </Stack>
-              )}
-
-              <Stack direction="row" spacing={1} alignItems="center" color="text.secondary" mt={0.5}>
-                <EmailIcon fontSize="small" />
-                <Typography variant="body2">{user_data?.user_data?.email}</Typography>
-              </Stack>
+                <PhotoCamera sx={{ color: 'white', fontSize: 16 }} />
+              </Box>
             </Box>
+
+            <Menu
+              anchorEl={secondAnchor}
+              open={open}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={handleView}>
+                <VisibilityIcon sx={{ mr: 1 }} /> View
+              </MenuItem>
+
+              <MenuItem>
+                <label htmlFor="upload-file" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <UploadIcon sx={{ mr: 1 }} /> Upload
+                </label>
+                <input
+                  type="file"
+                  id="upload-file"
+                  style={{ display: 'none' }}
+                  onChange={handleUpload}
+                />
+              </MenuItem>
+
+              <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
+                <DeleteIcon sx={{ mr: 1 }} /> Delete
+              </MenuItem>
+            </Menu>
           </Stack>
 
           {/* Edit Profile Button */}
