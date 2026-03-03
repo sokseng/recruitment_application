@@ -43,6 +43,7 @@ function ChatPage() {
     const initialRoomId = location.state?.roomId;
     const token = useAuthStore(s => s.access_token);
     const currentUserId = useAuthStore(s => s.user_data?.pk_id);
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -529,7 +530,7 @@ function ChatPage() {
                             {
                                 room_id: data.room_id,
                                 username: data.username || t('new_user'),
-                                avatar_url: data.avatar_url || null,
+                                profile_image: data.profile_image || null,
                                 last_message: data.last_message,
                                 last_message_at: data.last_message?.created_at,
                                 unread_count: 0
@@ -554,6 +555,26 @@ function ChatPage() {
                     setCallRequest(null);
                     setIsCallBusy(false);
                 }, 2000);
+                
+                setMessages(prev => {
+                    const exists = prev.some(msg => msg.id === data.message.id);
+                    if (exists) return prev; // skip duplicate
+
+                    const updated = [...prev, data.message];
+
+                    if (isNearBottom() || prev.length === 0) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+
+                    return updated;
+                });
+
+                const isCurrentRoom = selectedChatRef.current?.room_id === data.message.room_id;
+
+                if (!isCurrentRoom && data.message.sender_id !== currentUserId) {
+                    incrementChat(data.message.room_id);
+                }
+
                 break;
 
             default:
@@ -757,7 +778,7 @@ function ChatPage() {
                                         }}
                                     >
                                         <ListItemAvatar sx={{ minWidth: 48 }}>
-                                            <Avatar src={chat?.avatar_url} sx={{ borderRadius: 12 }}>
+                                            <Avatar src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`} sx={{ borderRadius: 12 }}>
                                                 {chat.username?.charAt(0).toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
@@ -827,7 +848,7 @@ function ChatPage() {
                                             onClick={() => handleStartChat(user)}
                                         >
                                             <ListItemAvatar>
-                                                <Avatar src={user.avatar_url}>
+                                                <Avatar src={`${BASE_URL}/uploads/user/profile/${user.profile_image}`}>
                                                     {user.user_name?.[0]?.toUpperCase()}
                                                 </Avatar>
                                             </ListItemAvatar>
@@ -897,6 +918,7 @@ function ChatPage() {
                     callRequest={callRequest}
                     onDeclinedCall={declinedCall}
                     isCallBusy={isCallBusy}
+                    BASE_URL={BASE_URL}
                 />
             )}
 

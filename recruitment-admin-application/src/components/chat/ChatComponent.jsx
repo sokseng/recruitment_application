@@ -722,7 +722,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         borderColor: 'divider',
                                         fontSize: 28
                                     }}
-                                    src={chat?.avatar_url}
+                                    src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`}
                                 // onClick={() => setOpen(true)}
                                 >
                                     {chat?.username?.charAt(0).toUpperCase() || 'P'}

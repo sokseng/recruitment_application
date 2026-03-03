@@ -43,6 +43,7 @@ async def websocket_global(ws: WebSocket):
 
     user_id = user.pk_id
     username = user.user_name
+    profile_image = user.profile_image
 
     await manager.connect(ws, user_id, room_id=None)
 
@@ -50,6 +51,24 @@ async def websocket_global(ws: WebSocket):
         "type": "unread_snapshot",
         "counts": unread_counts
     })
+    
+    restore = manager.get_restore_data(user_id)
+
+    if restore:
+        with get_db_ws() as db:
+            other_user = db.query(User).filter(
+                User.pk_id == restore["otherUserId"]
+            ).first()
+
+        await ws.send_json({
+            "type": "call.restore",
+            "roomId": restore["roomId"],
+            "mode": restore["mode"],
+            "status": restore["status"],
+            "fromUserId": restore["otherUserId"],
+            "fromUsername": other_user.user_name if other_user else None,
+            "fromProfileImage": other_user.profile_image if other_user else None,
+        })
 
     try:
         while True:
@@ -72,43 +91,79 @@ async def websocket_global(ws: WebSocket):
 
                     with get_db_ws() as db:
                         room = db.query(ChatRoom).filter(ChatRoom.id == room_id).first()
+                        if not room:
+                            await manager.broadcast_to_user(user_id, {
+                                "type": "error",
+                                "message": "Room not found"
+                            })
+                            continue
                         
-                    if not room:
-                        continue
-                    
-                    if room.is_blocked:
-                        await manager.broadcast_to_user(user_id,{
-                            "type": "error",
-                            "message": "Cannot start call. This chat is blocked"
-                        })
-                        continue
-
-                    receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
-
-                    caller_busy = any(
-                        user_id in call["participants"] and call["status"] in ("ringing", "active")
-                        for call in manager.active_calls.values()
-                    )
-                    receiver_busy = any(
-                        receiver_id in call["participants"] and call["status"] in ("ringing", "active")
-                        for call in manager.active_calls.values()
-                    )
-
-                    if caller_busy:
-                        await manager.broadcast_to_user(user_id, {
-                            "type": "call.busy",
-                            "message": "You are already in another call"
-                        })
+                        if user_id not in (room.candidate_user_id, room.employer_user_id):
+                            await manager.broadcast_to_user(user_id, {
+                                "type": "error",
+                                "message": "Unauthorized call attempt"
+                            })
+                            continue
                         
-                        continue
-
-                    if receiver_busy:
-                        await manager.broadcast_to_user(user_id, {
-                            "type": "call.busy",
-                            "message": "User is busy"
-                        })
+                        if room.is_blocked:
+                            await manager.broadcast_to_user(user_id,{
+                                "type": "error",
+                                "message": "Cannot start call. This chat is blocked"
+                            })
+                            continue
                         
-                        continue
+                        receiver_id = room.employer_user_id if user_id == room.candidate_user_id else room.candidate_user_id
+
+                        receiver = db.query(User).filter(User.pk_id == receiver_id).first()
+                        if not receiver:
+                            await manager.broadcast_to_user(user_id, {
+                                "type": "error",
+                                "message": "Invalid receiver"
+                            })
+                            continue
+                        
+                        sender = db.query(User).filter(User.pk_id == user_id).first()
+                        if not sender:
+                            continue
+
+                        caller_busy = any(
+                            user_id in call["participants"] and call["status"] in ("ringing", "active")
+                            for call in manager.active_calls.values()
+                        )
+                        receiver_busy = any(
+                            receiver_id in call["participants"] and call["status"] in ("ringing", "active")
+                            for call in manager.active_calls.values()
+                        )
+
+                        if caller_busy:
+                            await manager.broadcast_to_user(user_id, {
+                                "type": "call.busy",
+                                "message": "You are already in another call"
+                            })
+                            
+                            await send_text_message(
+                                db=db,
+                                current_user=sender,
+                                room=room,
+                                content="📞 Call not started (user is busy)",
+                                message_type=MessageType.CALL
+                            )
+                            continue
+
+                        if receiver_busy:
+                            await manager.broadcast_to_user(user_id, {
+                                "type": "call.busy",
+                                "message": "User is busy"
+                            })
+                            
+                            await send_text_message(
+                                db=db,
+                                current_user=sender,
+                                room=room,
+                                content="📞 Call not started (user is busy))",
+                                message_type=MessageType.CALL
+                            )
+                            continue
 
                     manager.active_calls[room_id] = {
                         "mode": mode,
@@ -129,6 +184,7 @@ async def websocket_global(ws: WebSocket):
                         {
                             "fromUserId": user_id,
                             "fromUsername": username,
+                            "fromProfileImage": profile_image,
                             "roomId": room_id,
                             "mode": mode
                         }
@@ -168,6 +224,7 @@ async def websocket_global(ws: WebSocket):
                     {
                         "fromUserId": user_id,
                         "fromUsername": username,
+                        "fromProfileImage": profile_image,
                         "roomId": room_id,
                         "mode": call_data["mode"]
                     }

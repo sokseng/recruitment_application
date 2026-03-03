@@ -174,7 +174,7 @@ async def send_text_message(
             "room_id": room.id,
             "last_message": payload,
             "username": other_user.user_name,
-            "avatar_url": None
+            "profile_image": other_user.profile_image
         })
 
     return payload
@@ -277,7 +277,7 @@ async def send_file_message(
             "room_id": room.id,
             "last_message": payload,
             "username": other_user.user_name,
-            "avatar_url": None
+            "profile_image": other_user.profile_image
         })
 
     return payload

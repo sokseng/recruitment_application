@@ -539,7 +539,8 @@
       "shortlisted": "Shortlisted",
       "rejected": "Rejected",
       "accepted": "Accepted"
-    }
+    },
+    "connecting": "Connecting..."
   }
   
 }

@@ -2,7 +2,7 @@ import { Box, Typography, Stack, IconButton, Avatar } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import { useTranslation } from 'react-i18next';
 
-function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy }) {
+function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy, BASE_URL }) {
     const { t } = useTranslation();
 
     return (
@@ -32,11 +32,12 @@ function CallRequestDialog({ callRequest, onDeclinedCall, isCallBusy }) {
                         height: 45,
                         mx: 'auto'
                     }}
+                    src={`${BASE_URL}/uploads/user/profile/${callRequest.profile_image}`}
                 >
                     {callRequest.username?.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: isCallBusy ? 'red' : 'white' }}>
-                    {isCallBusy 
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white', mt: 1 }}>
+                    {isCallBusy
                         ? t('user_in_another_call', { username: callRequest.username })
                         : t('calling_to', { username: callRequest.username })}
                 </Typography>

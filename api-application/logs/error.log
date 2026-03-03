@@ -1365,3 +1365,30 @@ fastapi.exceptions.ResponseValidationError: 7 validation errors:
 
 ===================================================
         
+2026-03-02 14:46:11,442 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user
+Method: GET
+Client: 127.0.0.1
+Status Code: 401
+Detail: Authorization header missing
+==============================================
+        
+2026-03-02 14:46:14,745 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/user/profile
+Method: GET
+Client: 127.0.0.1
+Status Code: 401
+Detail: Authorization header missing
+==============================================
+        
+2026-03-02 17:16:03,256 | ERROR | 
+================= HTTP ERROR =================
+URL: http://localhost:8000/applications/resumes/1/file
+Method: GET
+Client: 127.0.0.1
+Status Code: 404
+Detail: File candidate_2_20260217_163317.pdf not found on server
+==============================================
+        

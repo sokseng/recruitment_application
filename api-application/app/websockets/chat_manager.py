@@ -13,6 +13,8 @@ class ConnectionManager:
         self.active_calls: Dict[int, dict] = {}
         self.call_timeouts: Dict[int, asyncio.Task] = {}
         self.call_lock = asyncio.Lock()
+        self.reconnect_tasks: Dict[int, asyncio.Task] = {}
+        self.reconnect_grace_seconds = 25
 
     async def start_heartbeat(self, websocket: WebSocket, interval: int = 20):
         try:
@@ -34,6 +36,11 @@ class ConnectionManager:
         self.remove_socket_everywhere(websocket)
         websocket.state.user_id = user_id
         self.user_connections.setdefault(user_id, set()).add(websocket)
+        
+        reconnect_task = self.reconnect_tasks.pop(user_id, None)
+        if reconnect_task:
+            reconnect_task.cancel()
+            self.user_connections.setdefault(user_id, set()).add(websocket)
 
         if room_id is not None:
             self.active_connections.setdefault(room_id, []).append((websocket, user_id))
@@ -79,6 +86,12 @@ class ConnectionManager:
 
         for r_id, call_data in list(self.active_calls.items()):
             if user_id in call_data["participants"]:
+                
+                if user_id not in self.reconnect_tasks:
+                    self.reconnect_tasks[user_id] = asyncio.create_task(
+                        self._handle_reconnect_grace(user_id, r_id)
+                    )
+            
                 timeout_task = self.call_timeouts.pop(r_id, None)
                 if timeout_task:
                     timeout_task.cancel()
@@ -170,5 +183,20 @@ class ConnectionManager:
                         for ws in self.user_connections.get(uid, [])])
         if coros:
             await asyncio.gather(*coros)
+            
+    def get_restore_data(self, user_id: int):
+        for r_id, call_data in self.active_calls.items():
+            if user_id in call_data.get("participants", []):
+                other_user_id = next(
+                    uid for uid in call_data["participants"]
+                    if uid != user_id
+                )
+                return {
+                    "roomId": r_id,
+                    "mode": call_data.get("mode"),
+                    "status": call_data.get("status"),
+                    "otherUserId": other_user_id
+                }
+        return None
 
 manager = ConnectionManager()
