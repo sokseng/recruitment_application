@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.dependencies.auth import verify_access_token
-from app.schemas.user_schema import ResponseUserProfile, UserResponse
+from app.schemas.user_schema import  UserResponse
 
 from app.database.deps import get_db
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, EmployerOut, UserProfileEmployer, UserUpdateProfile
@@ -93,6 +93,7 @@ def get_employer_profile(db: Session = Depends(get_db), current_user_id: int = D
 
 @router.post("/profile/updates", response_model=UserResponse)
 async def update_profile(
+    request: Request,
     user_name: str = Form(...),
     gender: str = Form(None),
     phone: str = Form(None),
@@ -127,7 +128,9 @@ async def update_profile(
         company_website=company_website,
     )
 
-    return update_profile_employer(db, user_data, employer_data, company_logo, remove_logo, category_ids, current_user_id)
+    ip_address = request.client.host
+
+    return update_profile_employer(db, user_data, employer_data, company_logo, remove_logo, category_ids, current_user_id, ip_address)
 
 @router.delete("/profile/company-logo")
 def delete_company_logo_endpoint(

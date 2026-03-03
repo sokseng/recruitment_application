@@ -5,6 +5,8 @@ from app.models.employer_model import Employer
 from app.schemas.employer_schema import EmployerCreate, EmployerUpdate, UserProfileEmployer, UserUpdateProfile
 from shutil import copyfileobj
 from app.models.user_model import User
+from datetime import datetime
+from app.models.audit_trace_model import AuditTrace
 from sqlalchemy import func
 from app.models.job_model import Job
 from app.models.category_model import Category
@@ -190,11 +192,47 @@ def update_profile_employer(
     logo_file: UploadFile = None,
     remove_logo: bool = False,
     category_ids: list[int] | None = None,
-    user_id: int = None
+    user_id: int = None,
+    ip_address: str = None
 ):
     db_user = db.query(User).filter(User.pk_id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    #------------------- AUDIT LOG ----------------------
+    detail_info = None
+    action_type = None
+    changes = []
+    
+    if db_user.user_name != user_data.user_name:
+        changes.append(f"user_name: '{db_user.user_name}' → '{user_data.user_name}'")
+
+    if db_user.gender != user_data.gender:
+        changes.append(f"gender: '{db_user.gender if db_user.gender else 'NULL'}' → '{user_data.gender if user_data.gender else 'NULL'}'")
+
+    if db_user.phone != user_data.phone:
+        changes.append(f"phone: '{db_user.phone if db_user.phone else 'NULL'}' → '{user_data.phone if user_data.phone else 'NULL'}'")
+    
+    if db_user.date_of_birth != user_data.date_of_birth:
+        changes.append(f"date_of_birth: '{db_user.date_of_birth if db_user.date_of_birth else 'NULL'}' → '{user_data.date_of_birth if user_data.date_of_birth else 'NULL'}'")
+
+    if db_user.address != user_data.address:
+        changes.append(f"address: '{db_user.address if db_user.address else 'NULL'}' → '{user_data.address if user_data.address else 'NULL'}'")
+
+    
+    if changes:
+        detail_info = "UPDATED: " + " | ".join(changes)
+        action_type = "Update User"
+
+    if detail_info and changes:
+        audit = AuditTrace(
+            user_action=db_user.user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type,
+            ip=ip_address,
+            detail_information=detail_info
+        )
+        db.add(audit)
 
     db_user.user_name = user_data.user_name
     db_user.gender = user_data.gender
@@ -202,12 +240,50 @@ def update_profile_employer(
     db_user.date_of_birth = user_data.date_of_birth
     db_user.address = user_data.address
 
+
     db_employer = db.query(Employer).filter(
         Employer.user_id == db_user.pk_id
     ).first()
 
     if not db_employer:
         raise HTTPException(status_code=404, detail="Employer profile not found")
+
+
+    detail_info_emp = None
+    action_type_emp = None
+    changes_emp = []
+
+    if db_employer.company_name != employer_data.company_name:
+        changes_emp.append(f"company_name: '{db_employer.company_name}' → '{employer_data.company_name}'")
+
+    if db_employer.company_email != employer_data.company_email:
+        changes_emp.append(f"company_email: '{db_employer.company_email}' → '{employer_data.company_email}'")
+
+    if db_employer.company_contact != employer_data.company_contact:
+        changes_emp.append(f"company_contact: '{db_employer.company_contact if db_employer.company_contact else 'NULL'}' → '{employer_data.company_contact if employer_data.company_contact else 'NULL'}'")
+
+    if db_employer.company_address != employer_data.company_address:
+        changes_emp.append(f"company_address: '{db_employer.company_address if db_employer.company_address else 'NULL'}' → '{employer_data.company_address if employer_data.company_address else 'NULL'}'")
+
+    if db_employer.company_description != employer_data.company_description:
+        changes_emp.append(f"company_description: '{db_employer.company_description if db_employer.company_description else 'NULL'}' → '{employer_data.company_description if employer_data.company_description else 'NULL'}'")
+
+    if db_employer.company_website != employer_data.company_website:
+        changes_emp.append(f"company_website: '{db_employer.company_website if db_employer.company_website else 'NULL'}' → '{employer_data.company_website if employer_data.company_website else 'NULL'}'")
+
+    if changes_emp:
+        detail_info_emp = "UPDATED: " + " | ".join(changes_emp)
+        action_type_emp = "Update Employer"
+
+    if detail_info_emp and changes_emp:
+        audit = AuditTrace(
+            user_action=db_user.user_name,# who did it
+            action_datetime=datetime.now().replace(microsecond=0),
+            action=action_type_emp,
+            ip=ip_address,
+            detail_information=detail_info_emp
+        )
+        db.add(audit)
 
     db_employer.company_contact = employer_data.company_contact
     db_employer.company_name = employer_data.company_name
@@ -246,14 +322,6 @@ def update_profile_employer(
     db.commit()
     db.refresh(db_employer)
     
-    db_user.company_name = db_employer.company_name
-    db_user.company_email = db_employer.company_email
-    db_user.company_contact = db_employer.company_contact
-    db_user.company_address = db_employer.company_address
-    db_user.company_description = db_employer.company_description
-    db_user.company_website = db_employer.company_website
-    db_user.company_logo = db_employer.company_logo
-    db_user.categories = db_employer.categories
     
     return db_user
 
