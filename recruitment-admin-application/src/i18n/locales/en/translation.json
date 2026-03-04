@@ -542,12 +542,13 @@
     }
   },
   "application": "Application",
-  "back_to_jobs": "Back to job applications",
+  "back_to_jobs": "Back",
   "connecting": "Connecting...",
   "profile_image": "Profile Image",
   "profile_image_deleted": "Profile image deleted successfully",
   "profile_image_delete_failed": "Failed to delete profile image",
   "profile_image_uploaded": "Profile image uploaded successfully",
   "profile_image_upload_failed": "Failed to upload profile image",
-  "no_profile_image": "No profile image available"
+  "no_profile_image": "No profile image available",
+  "canceled_by_the_candidate": "Canceled by the candidate"
 }

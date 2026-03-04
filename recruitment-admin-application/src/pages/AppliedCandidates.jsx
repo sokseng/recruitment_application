@@ -838,47 +838,68 @@ export default function AppliedCandidates() {
                                 sx={{
                                   display: "flex",
                                   flexWrap: "wrap",
-                                  gap: 1.5,
+                                  gap: 1,
                                   alignItems: "center",
                                   mt: { xs: 1, sm: 0.5 },
                                 }}
                               >
                                 <Chip
-                                  label="Canceled by the candidate"
+                                  label={t("canceled_by_the_candidate")}
+                                  variant="outlined"
                                   color="error"
-                                  size="medium"
+                                  size="small"
                                   sx={{
                                     fontWeight: 600,
-                                    borderRadius: "12px",
-                                    backgroundColor: "rgba(211, 47, 47, 0.14)",
+                                    borderRadius: 2,
+                                    backgroundColor: "rgba(211, 47, 47, 0.04)",
                                     color: "error.dark",
                                     height: 36,
                                     px: 1.5,
+                                    cursor: "auto"
                                   }}
                                 />
 
                                 {app.reason && (
-  
-                                <Chip
-                                    label={`Reason: ${app.reason}`}
-                                    variant="outlined"
-                                    size="medium"
+                                  <Box
                                     sx={{
-                                      borderRadius: "12px",
-                                      borderColor: "error.light",
-                                      color: "error.main",
-                                      backgroundColor:
-                                        "rgba(211, 47, 47, 0.05)",
-                                      fontWeight: 500,
-                                      height: 36,
+                                      p: 0.9,
+                                      border: "1.5px solid",
+                                      borderColor: "error.main",
+                                      borderRadius: 2,
+                                      position: "relative",
                                       maxWidth: 380,
-                                      "& .MuiChip-label": {
-                                        paddingLeft: 1.5,
-                                        paddingRight: 1.5,
-                                      },
+                                      backgroundColor: "rgba(211, 47, 47, 0.04)",
+                                      cursor: "auto"
                                     }}
-                                  />
-                                  
+                                  >
+                                    {/* Floating Label */}
+                                    <Typography
+                                      sx={{
+                                        position: "absolute",
+                                        top: -10,
+                                        left: 14,
+                                        px: 1,
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        backgroundColor: "#fff",
+                                        borderRadius: 3,
+                                        color: "error.main",
+                                      }}
+                                    >
+                                      {t("reason")}
+                                    </Typography>
+
+                                    {/* Content */}
+                                    <Typography
+                                      sx={{
+                                        fontSize: 14,
+                                        color: "error.dark",
+                                        wordBreak: "break-word",
+                                      }}
+                                    >
+                                      {app.reason}
+                                    </Typography>
+                                  </Box>
                                 )}
                               </Box>
                             )}

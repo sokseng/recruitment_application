@@ -542,12 +542,13 @@
     }
   },
   "application": "Candidature",
-  "back_to_jobs": "Retour aux candidatures d'emploi",
+  "back_to_jobs": "Retour",
   "connecting": "de liaison...",
   "profile_image": "Image de profil",
   "profile_image_deleted": "Image de profil supprimée avec succès",
   "profile_image_delete_failed": "Échec de la suppression de l'image de profil",
   "profile_image_uploaded": "Image de profil téléchargée avec succès",
   "profile_image_upload_failed": "Échec du téléchargement de l'image de profil",
-  "no_profile_image": "Aucune image de profil disponible"
+  "no_profile_image": "Aucune image de profil disponible",
+  "canceled_by_the_candidate": "Annulé par le candidat"
 } 
