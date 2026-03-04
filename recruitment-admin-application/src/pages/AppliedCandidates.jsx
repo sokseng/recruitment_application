@@ -646,7 +646,7 @@ export default function AppliedCandidates() {
                 <Typography variant="subtitle2" color="text.secondary">
                   {selectedJob?.employer?.company_name} • {applications.length}{" "}
                   {t('application')}
-                  {applications.length !== 1 ? "s" : ""}
+                  {/* {applications.length !== 1} */}
                 </Typography>
               </Box>
               {isMobile && (
