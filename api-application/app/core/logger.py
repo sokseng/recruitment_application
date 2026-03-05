@@ -13,8 +13,8 @@ log_file = os.path.join(LOG_DIR, "error.log")
 
 handler = RotatingFileHandler(
     log_file,
-    maxBytes=100 * 1024 * 1024,  # 100MB
-    backupCount=5
+    maxBytes=20 * 1024 * 1024,  # 20MB
+    backupCount=10
 )
 
 formatter = logging.Formatter(
