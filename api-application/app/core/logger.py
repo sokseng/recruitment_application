@@ -13,7 +13,7 @@ log_file = os.path.join(LOG_DIR, "error.log")
 
 handler = RotatingFileHandler(
     log_file,
-    maxBytes=20 * 1024 * 1024,  # 20MB
+    maxBytes=10 * 1024 * 1024,  # 10MB
     backupCount=10
 )
 
