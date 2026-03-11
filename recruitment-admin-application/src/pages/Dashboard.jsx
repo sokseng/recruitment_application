@@ -1858,19 +1858,19 @@ export default function Dashboard() {
                       ? t('update_application')
                       : t('apply_to_position')}
                     {/* icon close dialog */}
-                    <IconButton
-                      aria-label="close"
-                      size="small"
-                      onClick={() => setApplyDialogOpen(false)}
-                      sx={{
-                        position: "absolute",
-                        right: 8,
-                        top: 8,
-                      }}
-                    >
-                      <Cancel />
-                    </IconButton>
                   </DialogTitle>
+                  <IconButton
+                    aria-label="close"
+                    size="small"
+                    onClick={() => setApplyDialogOpen(false)}
+                    sx={{
+                      position: "absolute",
+                      right: 8,
+                      top: 8,
+                    }}
+                  >
+                    <Cancel />
+                  </IconButton>
 
                   <DialogContent sx={{ mt: 0.5 }}>
                     {hasAppliedToThisJob && originalResumeId && (

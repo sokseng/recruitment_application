@@ -1066,7 +1066,6 @@ export default function AppliedCandidates() {
         fullScreen={isMobile}
         fullWidth
         maxWidth="md"
-        PaperProps={{ sx: { height: "100vh", overflow: "hidden" } }}
         PaperComponent={DraggablePaper}
       >
         {selectedCandidateApp &&
@@ -1308,9 +1307,8 @@ export default function AppliedCandidates() {
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
-                  id="draggable-dialog-title"
                 >
-                  <Typography variant="subtitle1" fontWeight={600}>
+                  <Typography id="draggable-dialog-title" variant="subtitle1" fontWeight={600}>
                     {t('applications.candidate_details')}
                   </Typography>
                   <IconButton

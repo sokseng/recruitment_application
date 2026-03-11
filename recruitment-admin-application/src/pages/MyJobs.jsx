@@ -240,7 +240,6 @@ function JobFormDialog({
       PaperComponent={DraggablePaper}
     >
       <DialogTitle
-        id="draggable-dialog-title"
         sx={{
           background: "#023F6B",
           color: "white",
@@ -249,7 +248,7 @@ function JobFormDialog({
         }}
       >
         <div>
-          <Typography variant={isMobile ? "h6" : "h7"} fontWeight="bold">
+          <Typography id="draggable-dialog-title" variant={isMobile ? "h6" : "h7"} fontWeight="bold">
             {title}
           </Typography>
         </div>
@@ -649,23 +648,14 @@ function JobFormDialog({
 // ────────────────────────────────────────────────
 function DraggablePaper(props) {
   const nodeRef = useRef(null);
+
   return (
     <Draggable
       nodeRef={nodeRef}
       handle="#draggable-dialog-title"
       cancel={'[class*="MuiDialogContent-root"]'}
     >
-      <div
-        ref={nodeRef}
-        style={{
-          height: "100vh",
-          width: "100%",
-          justifyContent: "center",
-          display: "flex",
-        }}
-      >
-        <Paper {...props} />
-      </div>
+      <Paper ref={nodeRef} {...props} />
     </Draggable>
   );
 }
@@ -1385,6 +1375,7 @@ export default function MyJobs() {
         isDuplicate={!!editingJob && !editingJob.pk_id}
         categories={categories}
       />
+
       <Dialog
         open={openCloseDialog}
         onClose={() => setOpenCloseDialog(false)}
@@ -1479,6 +1470,7 @@ export default function MyJobs() {
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         open={openDuplicateDialog}
         onClose={() => setOpenDuplicateDialog(false)}
@@ -1573,6 +1565,7 @@ export default function MyJobs() {
           </Button>
         </DialogActions>
       </Dialog>
+
       {/* Dialog approve */}
       <Dialog
         open={openApprovalWarning}
