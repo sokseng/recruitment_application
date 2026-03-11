@@ -240,6 +240,7 @@ function JobFormDialog({
       PaperComponent={DraggablePaper}
     >
       <DialogTitle
+        id="draggable-dialog-title"
         sx={{
           background: "#023F6B",
           color: "white",
@@ -248,7 +249,7 @@ function JobFormDialog({
         }}
       >
         <div>
-          <Typography id="draggable-dialog-title" variant={isMobile ? "h6" : "h7"} fontWeight="bold">
+          <Typography variant={isMobile ? "h6" : "h7"} fontWeight="bold">
             {title}
           </Typography>
         </div>
@@ -653,7 +654,7 @@ function DraggablePaper(props) {
     <Draggable
       nodeRef={nodeRef}
       handle="#draggable-dialog-title"
-      cancel={'[class*="MuiDialogContent-root"]'}
+      cancel={'[class*="MuiDialogContent-root"], [class*="MuiButtonBase-root"]'}
     >
       <Paper ref={nodeRef} {...props} />
     </Draggable>
