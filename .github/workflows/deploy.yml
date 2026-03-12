@@ -1,40 +1,25 @@
-name: Deploy Recruitment App
+name: Docker CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: 1. Download Repository
-        uses: actions/checkout@v4
 
-      - name: 2. Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: 3. Install Backend Dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-      - name: 4. Create Environment File
-        run: |
-          echo "APP_NAME=${{ secrets.APP_NAME }}" >> backend/.env
-          echo "ENVIRONMENT=${{ secrets.ENVIRONMENT }}" >> backend/.env
-          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> backend/.env
-          echo "JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }}" >> backend/.env
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> backend/.env
-          echo "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }}" >> backend/.env
-          echo "LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" >> backend/.env
-          echo "LIVEKIT_URL=${{ secrets.LIVEKIT_URL }}" >> backend/.env
+    - name: Build Backend
+      run: docker build ./backend -t fastapi-app
 
-      - name: 5. Run Backend Test
-        run: |
-          cd backend
-          python -m pytest
+    - name: Build Frontend
+      run: docker build ./frontend -t react-app
