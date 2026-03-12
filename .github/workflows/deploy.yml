@@ -11,17 +11,14 @@ jobs:
 
     steps:
 
-      - name: 1. Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 2. Show Project Structure (debug)
+      - name: Show Project Structure
         run: ls -R
 
-      - name: 3. Build Docker Containers
-        run: docker compose -f docker-compose.prod.yml up -d
+      - name: Build and Start Containers
+        run: docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 
-      - name: 4. Start Containers
-        run: docker compose -f docker-compose.prod.yml up -d
-
-      - name: 5. Show Running Containers
+      - name: Show Running Containers
         run: docker ps

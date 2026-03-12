@@ -4,9 +4,9 @@ services:
       context: ./api-application
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"  # Map API port
+      - "${API_PORT}:8000"
     environment:
-      DATABASE_URL: postgresql://postgres_adm:postgres@db:5432/recruitment
+      DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - db
     restart: unless-stopped
@@ -16,11 +16,11 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres_adm
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: recruitment
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"  # Map Postgres port
+      - "${DB_PORT}:${DB_INTERNAL_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
       context: ./recruitment-admin-application
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"  # Map Admin frontend port
+      - "${ADMIN_PORT}:3000"
     restart: unless-stopped
     networks:
       - backend

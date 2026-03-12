@@ -12,6 +12,17 @@ class Settings(BaseSettings):
     LIVEKIT_API_SECRET: str
     LIVEKIT_URL: str
     LOG_DIR: str = "logs"
+    API_PORT: int
+    DB_PORTL int
+    DB_INTERNAL_PORT: int
+    ADMIN_PORT: int
+    POSTGRES_USER=postgres_adm: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    DB_INTERNAL_PORT: int
+    API_PORT: int
+    DB_PORT: int
+    ADMIN_PORT: int
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
