@@ -60,7 +60,7 @@ function DraggablePaper(props) {
     <Draggable
       nodeRef={nodeRef}
       handle="#draggable-dialog-title"
-      cancel={'[class*="MuiDialogContent-root"]'}
+      cancel={'[class*="MuiDialogContent-root"], [class*="MuiButtonBase-root"]'}
     >
       <Paper ref={nodeRef} {...props} />
     </Draggable>
@@ -1298,6 +1298,7 @@ export default function AppliedCandidates() {
               <>
                 {/* Header */}
                 <Stack
+                  id="draggable-dialog-title"
                   direction="row"
                   sx={{
                     p: 1.5,
@@ -1308,7 +1309,7 @@ export default function AppliedCandidates() {
                     alignItems: "center",
                   }}
                 >
-                  <Typography id="draggable-dialog-title" variant="subtitle1" fontWeight={600}>
+                  <Typography variant="subtitle1" fontWeight={600}>
                     {t('applications.candidate_details')}
                   </Typography>
                   <IconButton
