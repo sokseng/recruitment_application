@@ -18,7 +18,7 @@ jobs:
         run: ls -R
 
       - name: 3. Build Docker Containers
-        run: docker compose build
+        run: docker compose -f docker-compose.prod.yml up -d
 
       - name: 4. Start Containers
         run: docker compose up -d
