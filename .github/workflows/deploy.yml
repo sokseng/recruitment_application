@@ -21,7 +21,7 @@ jobs:
         run: docker compose -f docker-compose.prod.yml up -d
 
       - name: 4. Start Containers
-        run: docker compose up -d
+        run: docker compose -f docker-compose.prod.yml up -d
 
       - name: 5. Show Running Containers
         run: docker ps
