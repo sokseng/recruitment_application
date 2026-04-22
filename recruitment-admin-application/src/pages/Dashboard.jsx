@@ -734,10 +734,10 @@ export default function Dashboard() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: "rgba(255, 255, 255, 0.75)",
+          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.6)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+          border: "1px solid rgba(59, 130, 246, 0.2)",
+          boxShadow: "0 8px 32px rgba(30, 58, 138, 0.15)",
           borderRadius: 3,
           overflow: "hidden",
         }}
@@ -749,8 +749,8 @@ export default function Dashboard() {
           justifyContent="space-between"
           alignItems="center"
           sx={{
-            background: "rgba(255, 255, 255, 0.9)",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+            borderBottom: "1px solid rgba(59, 130, 246, 0.15)",
           }}
         >
           {/* Search Field - unchanged */}
@@ -767,18 +767,18 @@ export default function Dashboard() {
                 borderRadius: 2.5,
                 backgroundColor: "rgba(255, 255, 255, 0.95)",
                 "& fieldset": {
-                  borderColor: "rgba(0, 0, 0, 0.1)",
+                  borderColor: "rgba(59, 130, 246, 0.2)",
                 },
                 "&:hover fieldset": {
-                  borderColor: "rgba(0, 128, 128, 0.4)",
+                  borderColor: "rgba(59, 130, 246, 0.5)",
                 },
                 "&.Mui-focused fieldset": {
-                  borderColor: "teal",
+                  borderColor: "#3b82f6",
                 },
               },
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                  <SearchIcon sx={{ fontSize: 20, color: "#3b82f6" }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm && (
@@ -788,7 +788,7 @@ export default function Dashboard() {
                     onClick={() => setSearchTerm("")}
                     sx={{ p: 0.25 }}
                   >
-                    <Cancel sx={{ fontSize: 18, color: "text.secondary" }} />
+                    <Cancel sx={{ fontSize: 18, color: "#f97316" }} />
                   </IconButton>
                 </InputAdornment>
               ),
@@ -805,13 +805,13 @@ export default function Dashboard() {
                 width: 38,
                 height: 38,
                 borderRadius: 2.5,
-                background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+                background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 90%)",
                 color: "#fff",
-                boxShadow: "0 4px 15px rgba(20, 184, 166, 0.4)",
+                boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #0d9488 0%, #0f766e 50%, #115e59 100%)",
+                  background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 90%)",
                   transform: "scale(1.05)",
-                  boxShadow: "0 6px 20px rgba(20, 184, 166, 0.5)",
+                  boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
                 },
                 transition: "all 0.2s ease",
               }}
@@ -828,7 +828,6 @@ export default function Dashboard() {
             onClose={(event, reason) => {
               if (reason === "backdropClick") return;
               setFilterDialogOpen(false);
-              // Reset dropdown states when closing
               setShowCategoryDropdown(false);
               setShowTypeDropdown(false);
               setShowDateFilterDropdown(false);
@@ -840,24 +839,22 @@ export default function Dashboard() {
             PaperProps={{
               sx: {
                 borderRadius: 4,
-                background: "rgba(255, 255, 255, 0.85)",
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(239, 246, 255, 0.85) 100%)",
                 backdropFilter: "blur(20px)",
-                border: "1px solid rgba(20, 184, 166, 0.3)",
-                boxShadow: "0 25px 50px -12px rgba(20, 184, 166, 0.25)",
+                border: "1px solid rgba(59, 130, 246, 0.25)",
+                boxShadow: "0 25px 50px -12px rgba(30, 58, 138, 0.3)",
                 overflow: "hidden",
                 maxHeight: "80vh",
               },
             }}
-            PaperComponent={DraggablePaper}
           >
             <DialogTitle
-              id="draggable-dialog-title"
               sx={{
-                background: "linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.08) 100%)",
-                borderBottom: "1px solid rgba(20, 184, 166, 0.2)",
+                background: "linear-gradient(135deg, rgba(30, 58, 138, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
                 py: 2,
                 px: 3,
-                cursor: "move",
+                mb: 1,
               }}
             >
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -865,7 +862,7 @@ export default function Dashboard() {
                   variant="h6"
                   fontWeight={700}
                   sx={{
-                    background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 10%, #f97316 90%)",
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
@@ -877,9 +874,9 @@ export default function Dashboard() {
                   size="small"
                   onClick={() => setFilterDialogOpen(false)}
                   sx={{
-                    color: "#0f766e",
+                    color: "#f97316",
                     "&:hover": {
-                      bgcolor: "rgba(20, 184, 166, 0.1)",
+                      bgcolor: "rgba(249, 115, 22, 0.1)",
                     },
                   }}
                 >
@@ -895,14 +892,14 @@ export default function Dashboard() {
                   variant="subtitle2"
                   fontWeight={600}
                   sx={{
-                    color: "#0f766e",
+                    color: "#1e3a8a",
                     mb: 1.5,
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                   }}
                 >
-                  <CategoryRoundedIcon fontSize="small" />
+                  <CategoryRoundedIcon fontSize="small" sx={{ color: "#3b82f6" }} />
                   {t('filters')}
                 </Typography>
 
@@ -919,16 +916,16 @@ export default function Dashboard() {
                         px: 2,
                         borderRadius: 2,
                         textTransform: "none",
-                        color: "#0f766e",
-                        borderColor: "rgba(20, 184, 166, 0.3)",
-                        background: "rgba(255, 255, 255, 0.5)",
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
                         backdropFilter: "blur(8px)",
                         "&:hover": {
-                          borderColor: "#14b8a6",
-                          background: "rgba(20, 184, 166, 0.08)",
+                          borderColor: "#3b82f6",
+                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                         },
                       }}
-                      startIcon={<CategoryRoundedIcon />}
+                      startIcon={<CategoryRoundedIcon sx={{ color: "#3b82f6" }}/>}
                       endIcon={
                         <Stack direction="row" spacing={1} alignItems="center">
                           {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
@@ -936,7 +933,7 @@ export default function Dashboard() {
                               size="small"
                               label={categoryFilter.length}
                               sx={{
-                                bgcolor: "#14b8a6",
+                                background: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%)",
                                 color: "#fff",
                                 height: 20,
                                 fontSize: "0.7rem",
@@ -946,6 +943,7 @@ export default function Dashboard() {
                           <ArrowDownward
                             sx={{
                               fontSize: 18,
+                              color: "#f97316",
                               transform: showCategoryDropdown ? "rotate(180deg)" : "none",
                               transition: "transform 0.2s",
                             }}
@@ -965,22 +963,31 @@ export default function Dashboard() {
                           maxHeight: 250,
                           overflowY: "auto",
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.7)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(239, 246, 255, 0.75) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                         }}
                       >
                         <List dense disablePadding>
                           <ListItemButton
                             selected={categoryFilter.includes("All")}
                             onClick={() => setCategoryFilter(["All"])}
-                            sx={{ borderRadius: 1, py: 1 }}
+                            sx={{ 
+                              borderRadius: 1, 
+                              py: 1,
+                              "&.Mui-selected": {
+                                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                                "&:hover": {
+                                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(249, 115, 22, 0.12) 100%)",
+                                },
+                              },
+                            }}
                           >
                             <Checkbox
                               size="small"
                               checked={categoryFilter.includes("All")}
                               icon={<CheckBoxOutlineBlank fontSize="small" />}
-                              checkedIcon={<CheckBox fontSize="small" />}
+                              checkedIcon={<CheckBox fontSize="small" sx={{ color: "#3b82f6" }}/>}
                             />
                             <ListItemText primary={t("all")} />
                           </ListItemButton>
@@ -990,7 +997,13 @@ export default function Dashboard() {
                               <ListItemButton
                                 key={cat.pk_id}
                                 selected={checked}
-                                sx={{ borderRadius: 1, py: 1 }}
+                                sx={{ 
+                                  borderRadius: 1, 
+                                  py: 1,
+                                  "&.Mui-selected": {
+                                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                                  }, 
+                                }}
                                 onClick={() => {
                                   let updated = [...categoryFilter];
                                   if (checked) {
@@ -1006,7 +1019,7 @@ export default function Dashboard() {
                                   size="small"
                                   checked={checked}
                                   icon={<CheckBoxOutlineBlank fontSize="small" />}
-                                  checkedIcon={<CheckBox fontSize="small" />}
+                                  checkedIcon={<CheckBox fontSize="small" sx={{ color: "#3b82f6" }}/>}
                                 />
                                 <ListItemText primary={cat.name} />
                               </ListItemButton>
@@ -1029,16 +1042,16 @@ export default function Dashboard() {
                         px: 2,
                         borderRadius: 2,
                         textTransform: "none",
-                        color: "#0f766e",
-                        borderColor: "rgba(20, 184, 166, 0.3)",
-                        background: "rgba(255, 255, 255, 0.5)",
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
                         backdropFilter: "blur(8px)",
                         "&:hover": {
-                          borderColor: "#14b8a6",
-                          background: "rgba(20, 184, 166, 0.08)",
+                          borderColor: "#3b82f6",
+                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                         },
                       }}
-                      startIcon={<WorkOutlineIcon />}
+                      startIcon={<WorkOutlineIcon sx={{ color: "#3b82f6" }}/>}
                       endIcon={
                         <Stack direction="row" spacing={1} alignItems="center">
                           {Array.isArray(typeFilter) && typeFilter.length > 0 && !typeFilter.includes("All") && (
@@ -1046,7 +1059,7 @@ export default function Dashboard() {
                               size="small"
                               label={typeFilter.length}
                               sx={{
-                                bgcolor: "#14b8a6",
+                                background: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%)",
                                 color: "#fff",
                                 height: 20,
                                 fontSize: "0.7rem",
@@ -1056,6 +1069,7 @@ export default function Dashboard() {
                           <ArrowDownward
                             sx={{
                               fontSize: 18,
+                              color: "#f97316",
                               transform: showTypeDropdown ? "rotate(180deg)" : "none",
                               transition: "transform 0.2s",
                             }}
@@ -1086,27 +1100,40 @@ export default function Dashboard() {
                           maxHeight: 250,
                           overflowY: "auto",
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.7)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(239, 246, 255, 0.75) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                         }}
                       >
                         <List dense disablePadding>
                           <ListItemButton
                             selected={Array.isArray(typeFilter) ? typeFilter.includes("All") : typeFilter === "All"}
-                            sx={{ borderRadius: 1, py: 1 }}
+                            sx={{ 
+                              borderRadius: 1,
+                              py: 1,
+                              "&.Mui-selected": {
+                                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                              }, 
+                            }}
                             onClick={() => setTypeFilter(["All"])}
                           >
                             <Checkbox 
                               checked={Array.isArray(typeFilter) ? typeFilter.includes("All") : typeFilter === "All"} 
                               size="small" 
+                              sx={{ "&.Mui-checked": { color: "#3b82f6" } }}
                             />
                             <ListItemText primary={t("all")} />
                           </ListItemButton>
                           
                           <ListItemButton
                             selected={Array.isArray(typeFilter) && typeFilter.includes("Full-time")}
-                            sx={{ borderRadius: 1, py: 1 }}
+                            sx={{ 
+                              borderRadius: 1, 
+                              py: 1,
+                              "&.Mui-selected": {
+                                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                              }, 
+                            }}
                             onClick={() => {
                               let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
                               let updated = currentFilter.filter(v => v !== "All");
@@ -1122,13 +1149,20 @@ export default function Dashboard() {
                             <Checkbox 
                               checked={Array.isArray(typeFilter) && typeFilter.includes("Full-time")} 
                               size="small" 
+                              sx={{ "&.Mui-checked": { color: "#3b82f6" } }}
                             />
                             <ListItemText primary={t("full_time")} />
                           </ListItemButton>
                           
                           <ListItemButton
                             selected={Array.isArray(typeFilter) && typeFilter.includes("Part-time")}
-                            sx={{ borderRadius: 1, py: 1 }}
+                            sx={{ 
+                              borderRadius: 1, 
+                              py: 1,
+                              "&.Mui-selected": {
+                                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                              }, 
+                            }}
                             onClick={() => {
                               let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
                               let updated = currentFilter.filter(v => v !== "All");
@@ -1144,13 +1178,20 @@ export default function Dashboard() {
                             <Checkbox 
                               checked={Array.isArray(typeFilter) && typeFilter.includes("Part-time")} 
                               size="small" 
+                              sx={{ "&.Mui-checked": { color: "#3b82f6" } }}
                             />
                             <ListItemText primary={t("part_time")} />
                           </ListItemButton>
                           
                           <ListItemButton
                             selected={Array.isArray(typeFilter) && typeFilter.includes("Internship")}
-                            sx={{ borderRadius: 1, py: 1 }}
+                            sx={{ 
+                              borderRadius: 1, 
+                              py: 1,
+                              "&.Mui-selected": {
+                                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                              }, 
+                            }}
                             onClick={() => {
                               let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
                               let updated = currentFilter.filter(v => v !== "All");
@@ -1166,6 +1207,7 @@ export default function Dashboard() {
                             <Checkbox 
                               checked={Array.isArray(typeFilter) && typeFilter.includes("Internship")} 
                               size="small" 
+                              sx={{ "&.Mui-checked": { color: "#3b82f6" } }}
                             />
                             <ListItemText primary={t("internship")} />
                           </ListItemButton>
@@ -1186,16 +1228,16 @@ export default function Dashboard() {
                         px: 2,
                         borderRadius: 2,
                         textTransform: "none",
-                        color: "#0f766e",
-                        borderColor: "rgba(20, 184, 166, 0.3)",
-                        background: "rgba(255, 255, 255, 0.5)",
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
                         backdropFilter: "blur(8px)",
                         "&:hover": {
-                          borderColor: "#14b8a6",
-                          background: "rgba(20, 184, 166, 0.08)",
+                          borderColor: "#3b82f6",
+                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                         },
                       }}
-                      startIcon={<EventIcon />}
+                      startIcon={<EventIcon sx={{ color: "#3b82f6" }}/>}
                       endIcon={
                         <Stack direction="row" spacing={1} alignItems="center">
                           {dateFilterMode !== "all" && (
@@ -1212,14 +1254,15 @@ export default function Dashboard() {
                               sx={{
                                 height: 20,
                                 fontSize: "0.7rem",
-                                borderColor: "#14b8a6",
-                                color: "#0f766e",
+                                borderColor: "#f97316",
+                                color: "#f97316",
                               }}
                             />
                           )}
                           <ArrowDownward
                             sx={{
                               fontSize: 18,
+                              color: "#f97316",
                               transform: showDateFilterDropdown ? "rotate(180deg)" : "none",
                               transition: "transform 0.2s",
                             }}
@@ -1238,9 +1281,9 @@ export default function Dashboard() {
                           mt: 1,
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.7)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(239, 246, 255, 0.75) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                         }}
                       >
                         <RadioGroup
@@ -1254,10 +1297,10 @@ export default function Dashboard() {
                             }
                           }}
                         >
-                          <FormControlLabel value="all" control={<Radio size="small" />} label={t('all_dates')} />
-                          <FormControlLabel value="today" control={<Radio size="small" />} label={t('today')} />
-                          <FormControlLabel value="last7" control={<Radio size="small" />} label={t('last_7_days')} />
-                          <FormControlLabel value="custom" control={<Radio size="small" />} label={t('custom_range')} />
+                          <FormControlLabel value="all" control={<Radio size="small" sx={{ color: "#3b82f6", "&.Mui-checked": { color: "#3b82f6" } }}/>} label={t('all_dates')} />
+                          <FormControlLabel value="today" control={<Radio size="small" sx={{ color: "#3b82f6", "&.Mui-checked": { color: "#3b82f6" } }}/>} label={t('today')} />
+                          <FormControlLabel value="last7" control={<Radio size="small" sx={{ color: "#3b82f6", "&.Mui-checked": { color: "#3b82f6" } }}/>} label={t('last_7_days')} />
+                          <FormControlLabel value="custom" control={<Radio size="small" sx={{ color: "#3b82f6", "&.Mui-checked": { color: "#3b82f6" } }}/>} label={t('custom_range')} />
                         </RadioGroup>
 
                         {dateFilterMode === "custom" && (
@@ -1267,7 +1310,19 @@ export default function Dashboard() {
                               value={dateFrom}
                               onChange={(newValue) => setDateFrom(newValue)}
                               format="YYYY-MM-DD"
-                              slotProps={{ textField: { size: "small", fullWidth: true } }}
+                              slotProps={{ 
+                                textField: { 
+                                  size: "small", 
+                                  fullWidth: true,
+                                  sx: {
+                                    "& .MuiOutlinedInput-root": {
+                                      "&.Mui-focused fieldset": {
+                                        borderColor: "#3b82f6",
+                                      },
+                                    },
+                                  }, 
+                                } 
+                              }}
                               maxDate={dateTo || dayjs()}
                             />
                             <DatePicker
@@ -1275,7 +1330,19 @@ export default function Dashboard() {
                               value={dateTo}
                               onChange={(newValue) => setDateTo(newValue)}
                               format="YYYY-MM-DD"
-                              slotProps={{ textField: { size: "small", fullWidth: true } }}
+                              slotProps={{ 
+                                textField: { 
+                                  size: "small", 
+                                  fullWidth: true,
+                                  sx: {
+                                    "& .MuiOutlinedInput-root": {
+                                      "&.Mui-focused fieldset": {
+                                        borderColor: "#3b82f6",
+                                      },
+                                    },
+                                  },
+                                }  
+                              }}
                               minDate={dateFrom}
                               maxDate={dayjs()}
                             />
@@ -1302,7 +1369,7 @@ export default function Dashboard() {
                 </Stack>
               </Box>
 
-              <Divider sx={{ my: 2, borderColor: "rgba(20, 184, 166, 0.15)" }} />
+              <Divider sx={{ my: 2, borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
               {/* SORT SECTION */}
               <Box sx={{ mb: 2 }}>
@@ -1310,7 +1377,7 @@ export default function Dashboard() {
                   variant="subtitle2"
                   fontWeight={600}
                   sx={{
-                    color: "#0f766e",
+                    color: "#1e3a8a",
                     mb: 1.5,
                     display: "flex",
                     alignItems: "center",
@@ -1334,16 +1401,16 @@ export default function Dashboard() {
                         px: 2,
                         borderRadius: 2,
                         textTransform: "none",
-                        color: "#0f766e",
-                        borderColor: "rgba(20, 184, 166, 0.3)",
-                        background: "rgba(255, 255, 255, 0.5)",
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
                         backdropFilter: "blur(8px)",
                         "&:hover": {
-                          borderColor: "#14b8a6",
-                          background: "rgba(20, 184, 166, 0.08)",
+                          borderColor: "#3b82f6",
+                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                         },
                       }}
-                      startIcon={<EventIcon />}
+                      startIcon={<EventIcon sx={{ color: "#3b82f6" }}/>}
                       endIcon={
                         <Stack direction="row" spacing={1} alignItems="center">
                           {sortBy.startsWith("date-") && (
@@ -1354,14 +1421,15 @@ export default function Dashboard() {
                               sx={{
                                 height: 20,
                                 fontSize: "0.7rem",
-                                borderColor: "#14b8a6",
-                                color: "#0f766e",
+                                borderColor: "#f97316",
+                                color: "#f97316",
                               }}
                             />
                           )}
                           <ArrowDownward
                             sx={{
                               fontSize: 18,
+                              color: "#f97316",
                               transform: showDateSortDropdown ? "rotate(180deg)" : "none",
                               transition: "transform 0.2s",
                             }}
@@ -1379,9 +1447,9 @@ export default function Dashboard() {
                         sx={{
                           mt: 1,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.7)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(239, 246, 255, 0.75) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                         }}
                       >
                         <List dense disablePadding>
@@ -1396,11 +1464,17 @@ export default function Dashboard() {
                                 setSortBy(item.value);
                                 setShowDateSortDropdown(false);
                               }}
-                              sx={{ borderRadius: 1, py: 1.5 }}
+                              sx={{ 
+                                borderRadius: 1,
+                                py: 1.5,
+                                "&.Mui-selected": {
+                                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                                }, 
+                              }}
                             >
                               <ListItemText primary={item.label} />
                               {sortBy === item.value && (
-                                <CheckCircle sx={{ fontSize: 18, color: "#14b8a6" }} />
+                                <CheckCircle sx={{ fontSize: 18, color: "#3b82f6" }} />
                               )}
                             </ListItemButton>
                           ))}
@@ -1421,16 +1495,16 @@ export default function Dashboard() {
                         px: 2,
                         borderRadius: 2,
                         textTransform: "none",
-                        color: "#0f766e",
-                        borderColor: "rgba(20, 184, 166, 0.3)",
-                        background: "rgba(255, 255, 255, 0.5)",
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
                         backdropFilter: "blur(8px)",
                         "&:hover": {
-                          borderColor: "#14b8a6",
-                          background: "rgba(20, 184, 166, 0.08)",
+                          borderColor: "#3b82f6",
+                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                         },
                       }}
-                      startIcon={<BadgeIcon />}
+                      startIcon={<BadgeIcon sx={{ color: "#3b82f6" }} />}
                       endIcon={
                         <Stack direction="row" spacing={1} alignItems="center">
                           {sortBy.startsWith("title-") && (
@@ -1441,14 +1515,15 @@ export default function Dashboard() {
                               sx={{
                                 height: 20,
                                 fontSize: "0.7rem",
-                                borderColor: "#14b8a6",
-                                color: "#0f766e",
+                                borderColor: "#f97316",
+                                color: "#f97316",
                               }}
                             />
                           )}
                           <ArrowDownward
                             sx={{
                               fontSize: 18,
+                              color: "#f97316",
                               transform: showTitleSortDropdown ? "rotate(180deg)" : "none",
                               transition: "transform 0.2s",
                             }}
@@ -1466,9 +1541,9 @@ export default function Dashboard() {
                         sx={{
                           mt: 1,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.7)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(239, 246, 255, 0.75) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                         }}
                       >
                         <List dense disablePadding>
@@ -1483,11 +1558,17 @@ export default function Dashboard() {
                                 setSortBy(item.value);
                                 setShowTitleSortDropdown(false);
                               }}
-                              sx={{ borderRadius: 1, py: 1.5 }}
+                              sx={{ 
+                                borderRadius: 1, 
+                                py: 1.5,
+                                "&.Mui-selected": {
+                                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                                }, 
+                              }}
                             >
                               <ListItemText primary={item.label} />
                               {sortBy === item.value && (
-                                <CheckCircle sx={{ fontSize: 18, color: "#14b8a6" }} />
+                                <CheckCircle sx={{ fontSize: 18, color: "#3b82f6" }} />
                               )}
                             </ListItemButton>
                           ))}
@@ -1501,10 +1582,9 @@ export default function Dashboard() {
 
             <DialogActions
               sx={{
-                p: 3,
                 pt: 0,
                 gap: 1,
-                borderTop: "1px solid rgba(20, 184, 166, 0.1)",
+                borderTop: "1px solid rgba(59, 130, 246, 0.15)",
               }}
             >
               <Button
@@ -1521,7 +1601,6 @@ export default function Dashboard() {
                   setDateFrom(null);
                   setDateTo(null);
                   setSortBy("date-desc");
-                  // Reset dropdowns
                   setShowCategoryDropdown(false);
                   setShowTypeDropdown(false);
                   setShowDateFilterDropdown(false);
@@ -1529,6 +1608,7 @@ export default function Dashboard() {
                   setShowTitleSortDropdown(false);
                 }}
                 sx={{
+                  mt: 1,
                   textTransform: "none",
                   borderRadius: 2,
                   borderColor: "rgba(239, 68, 68, 0.3)",
@@ -1545,7 +1625,6 @@ export default function Dashboard() {
                 variant="contained"
                 onClick={() => {
                   setFilterDialogOpen(false);
-                  // Reset dropdowns
                   setShowCategoryDropdown(false);
                   setShowTypeDropdown(false);
                   setShowDateFilterDropdown(false);
@@ -1553,15 +1632,16 @@ export default function Dashboard() {
                   setShowTitleSortDropdown(false);
                 }}
                 sx={{
+                  mt: 1,
                   textTransform: "none",
                   fontWeight: 600,
                   borderRadius: 2,
                   px: 3,
-                  background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
-                  boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 90%)",
+                  boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)",
-                    boxShadow: "0 6px 20px rgba(20, 184, 166, 0.4)",
+                    background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 90%)",
+                    boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
                   },
                 }}
               >
@@ -1571,7 +1651,7 @@ export default function Dashboard() {
           </Dialog>
         </Stack>
 
-        <Divider />
+        <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
         {/* Job List - exactly the same as before */}
         <Box
@@ -1579,7 +1659,7 @@ export default function Dashboard() {
             flex: 1,
             overflowY: "auto",
             minHeight: 0,
-            background: "rgba(250, 250, 250, 0.6)",
+            background: "linear-gradient(135deg, rgba(250, 250, 250, 0.6) 0%, rgba(239, 246, 255, 0.4) 100%)",
           }}
         >
           {/* ... rest of the job list code remains unchanged ... */}
@@ -1619,18 +1699,21 @@ export default function Dashboard() {
                       cursor: "pointer",
                       position: "relative",
                       backgroundColor: active
-                        ? "rgba(45, 212, 191, 0.12)"
+                        ? "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)"
                         : "transparent",
                       borderLeft: active
-                        ? "4px solid #14b8a6"
+                        ? "4px solid"
                         : "4px solid transparent",
-                      borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                      borderImage: active
+                        ? "linear-gradient(180deg, #3b82f6 0%, #f97316 100%) 1"
+                        : "none",
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.1)",
                       transition: "all 0.2s ease",
                       "&:hover": {
-                        backgroundColor: active
-                          ? "rgba(45, 212, 191, 0.18)"
-                          : "rgba(255, 255, 255, 0.7)",
-                        transform: "translateX(4px)",
+                        background: active
+                          ? "linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(249, 115, 22, 0.12) 100%)"
+                          : "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
+                        transform: "translateY(2px)",
                       },
                     }}
                   >
@@ -1645,8 +1728,9 @@ export default function Dashboard() {
                         sx={{
                           width: { xs: 40, sm: 50 },
                           height: { xs: 40, sm: 50 },
-                          border: "2px solid rgba(255,255,255,0.9)",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          border: "2px solid",
+                          borderColor: "rgba(59, 130, 246, 0.3)",
+                          boxShadow: "0 2px 8px rgba(30, 58, 138, 0.15)",
                           "& img": { objectFit: "contain" },
                         }}
                       >
@@ -1666,7 +1750,7 @@ export default function Dashboard() {
                             sx={{
                               fontSize: "0.95rem",
                               lineHeight: 1.3,
-                              color: active ? "teal" : "text.primary",
+                              color: active ? "#1e3a8a" : "text.primary",
                             }}
                           >
                             {job.job_title}
@@ -1701,7 +1785,7 @@ export default function Dashboard() {
                             <CategoryRoundedIcon
                               sx={{
                                 fontSize: 16,
-                                color: "text.secondary",
+                                color: "#3b82f6",
                                 mr: 0.5,
                               }}
                             />
@@ -1722,9 +1806,9 @@ export default function Dashboard() {
                                   fontSize: "0.68rem",
                                   height: 20,
                                   borderRadius: "6px",
-                                  borderColor: "#14b8a6",
-                                  color: "#0f766e",
-                                  bgcolor: "rgba(20, 184, 166, 0.08)",
+                                  borderColor: "#3b82f6",
+                                  color: "#1e3a8a",
+                                  bgcolor: "rgba(59, 130, 246, 0.08)",
                                 }}
                               />
                             ))}
@@ -1735,7 +1819,8 @@ export default function Dashboard() {
                                 sx={{
                                   fontSize: "0.68rem",
                                   height: 20,
-                                  bgcolor: "rgba(0,0,0,0.06)",
+                                  bgcolor: "rgba(249, 115, 22, 0.1)",
+                                  color: "#f97316",
                                 }}
                               />
                             )}
@@ -1743,7 +1828,7 @@ export default function Dashboard() {
                         )}
                         <Stack direction="row" spacing={0.3} mt={0.5}>
                           <Chip
-                            icon={<EventIcon />}
+                            icon={<EventIcon sx={{ color: "#3b82f6" }}/>}
                             label={`${t("posted")}: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
                             size="small"
                             variant="outlined"
@@ -1751,7 +1836,8 @@ export default function Dashboard() {
                             sx={{
                               fontSize: "0.72rem",
                               height: 22,
-                              borderColor: "rgba(0,0,0,0.1)",
+                              borderColor: "rgba(59, 130, 246, 0.2)",
+                              color: "#1e3a8a",
                             }}
                           />
                         </Stack>
@@ -1768,15 +1854,18 @@ export default function Dashboard() {
                       onClick={() => loadJobs(true)}
                       disabled={loadingMore}
                       sx={{
-                        border: "2px solid #14b8a6",
-                        color: "#14b8a6",
+                        border: "2px solid",
+                        borderColor: "#3b82f6",
+                        color: "#3b82f6",
                         "&:hover": {
-                          bgcolor: "rgba(20, 184, 166, 0.1)",
+                          bgcolor: "rgba(59, 130, 246, 0.1)",
+                          borderColor: "#f97316",
+                          color: "#f97316",
                         },
                       }}
                     >
                       {loadingMore ? (
-                        <CircularProgress size={18} />
+                        <CircularProgress size={18} sx={{ color: "#3b82f6" }}/>
                       ) : (
                         <ArrowDownward />
                       )}
@@ -1786,7 +1875,7 @@ export default function Dashboard() {
               )}
               {!hasMore && filteredJobs.length > 0 && (
                 <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                  <Typography variant="body2">{t("no_more_jobs")}</Typography>
+                  <Typography variant="body2" sx={{ color: "#1e3a8a" }}>{t("no_more_jobs")}</Typography>
                 </Box>
               )}
             </>
