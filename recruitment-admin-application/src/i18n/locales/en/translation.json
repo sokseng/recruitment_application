@@ -551,5 +551,14 @@
   "profile_image_upload_failed": "Failed to upload profile image",
   "no_profile_image": "No profile image available",
   "canceled_by_the_candidate": "Canceled by the candidate",
-  "done": "Done"
+  "done": "Done",
+  "Today": "Today",
+  "Yesterday": "Yesterday",
+  "Days_ago": "{{count}} days ago",
+  "Week_ago": "1 week ago",
+  "Weeks_ago": "{{count}} weeks ago",
+  "Month_ago": "1 month ago",
+  "Months_ago": "{{count}} months ago",
+  "Year_ago": "1 year ago",
+  "Years_ago": "{{count}} years ago"
 }

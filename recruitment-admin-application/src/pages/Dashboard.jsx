@@ -728,6 +728,31 @@ export default function Dashboard() {
   }
 
   const ListContent = () => {
+    const getPostedInfo = (postingDate) => {
+      if (!postingDate) return { date: "—", daysAgo: null };
+      
+      const formattedDate = new Date(postingDate).toISOString().split("T")[0];
+      const today = dayjs().startOf("day");
+      const posted = dayjs(postingDate).startOf("day");
+      const diffDays = today.diff(posted, "day");
+      
+      let daysAgoText = "";
+      if (diffDays === 0) daysAgoText = t('Today');
+      else if (diffDays === 1) daysAgoText = t('Yesterday');
+      else if (diffDays < 7) daysAgoText = t('Days_ago', { count: diffDays });
+      else if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        daysAgoText = weeks === 1 ? t('Week_ago') : t('Weeks_ago', { count: weeks });
+      } else if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30);
+        daysAgoText = months === 1 ? t('Month_ago') : t('Months_ago', { count: months });
+      } else {
+        const years = Math.floor(diffDays / 365);
+        daysAgoText = years === 1 ? t('Year_ago') : t('Years_ago', { count: years });
+      }
+      
+      return { date: formattedDate, daysAgo: daysAgoText };
+    };
     return (
       <Card
         sx={{
@@ -1689,6 +1714,7 @@ export default function Dashboard() {
                 const companyName = job.employer?.company_name;
                 const logoFilename = job.employer?.company_logo;
                 const alreadyApplied = isCandidate && appliedJobIds.has(job.pk_id);
+                const postedInfo = getPostedInfo(job.posting_date);
                 return (
                   <Box
                     key={job.pk_id}
@@ -1826,10 +1852,10 @@ export default function Dashboard() {
                             )}
                           </Stack>
                         )}
-                        <Stack direction="row" spacing={0.3} mt={0.5}>
+                        <Stack direction="row" spacing={0.3} mt={0.5} alignItems="center" justifyContent="space-between" flexWrap="wrap">
                           <Chip
                             icon={<EventIcon sx={{ color: "#3b82f6" }}/>}
-                            label={`${t("posted")}: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
+                            label={`${t("posted")}: ${postedInfo.date}`}
                             size="small"
                             variant="outlined"
                             color="primary"
@@ -1840,6 +1866,27 @@ export default function Dashboard() {
                               color: "#1e3a8a",
                             }}
                           />
+                          {/* Days Count Chip - New addition */}
+                          {postedInfo.daysAgo && (
+                            <Tooltip title={postedInfo.date} arrow placement="top">
+                              <Chip
+                                label={postedInfo.daysAgo}
+                                size="small"
+                                sx={{
+                                  fontSize: "0.68rem",
+                                  height: 22,
+                                  fontWeight: 500,
+                                  background: "linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%)",
+                                  color: "#f97316",
+                                  border: "1px solid rgba(249, 115, 22, 0.3)",
+                                  cursor: "help",
+                                  "& .MuiChip-label": {
+                                    px: 1,
+                                  },
+                                }}
+                              />
+                            </Tooltip>
+                          )}
                         </Stack>
                       </Box>
                     </Stack>

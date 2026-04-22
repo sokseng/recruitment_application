@@ -551,5 +551,14 @@
   "profile_image_upload_failed": "Échec du téléchargement de l'image de profil",
   "no_profile_image": "Aucune image de profil disponible",
   "canceled_by_the_candidate": "Annulé par le candidat",
-  "done": "Terminé"
+  "done": "Terminé",
+  "Today": "Aujourd'hui",
+  "Yesterday": "Hier",
+  "Days_ago": "{{count}} jours plus tôt",
+  "Week_ago": "1 semaine plus tôt",
+  "Weeks_ago": "{{count}} semaines plus tôt",
+  "Month_ago": "1 mois plus tôt",
+  "Months_ago": "{{count}} mois plus tôt",
+  "Year_ago": "1 année plus tôt",
+  "Years_ago": "{{count}} années plus tôt"
 } 
