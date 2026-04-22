@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/pages/Dashboard.jsx
 import {
   Cancel,
@@ -102,18 +104,20 @@ export default function Dashboard() {
   const [categoryFilter, setCategoryFilter] = useState(["All"]);
   const [sortBy, setSortBy] = useState("date-desc");
 
-  const [categories, setCategories] = useState([]);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [showDateFilterDropdown, setShowDateFilterDropdown] = useState(false);
+  const [showDateSortDropdown, setShowDateSortDropdown] = useState(false);
+  const [showTitleSortDropdown, setShowTitleSortDropdown] = useState(false);
 
-  const [categoryAnchor, setCategoryAnchor] = useState(null);
-  const [typeAnchor, setTypeAnchor] = useState(null);
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+
+  const [categories, setCategories] = useState([]);
   const [dateSortAnchor, setDateSortAnchor] = useState(null);
   const [titleSortAnchor, setTitleSortAnchor] = useState(null);
   const [dateFilterAnchor, setDateFilterAnchor] = useState(null);
-  const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
-  const openFilterMenu = Boolean(filterMenuAnchor);
 
-  const openCategory = Boolean(categoryAnchor);
-  const openType = Boolean(typeAnchor);
   const openDateSort = Boolean(dateSortAnchor);
   const openTitleSort = Boolean(titleSortAnchor);
   const openDateFilter = Boolean(dateFilterAnchor);
@@ -723,747 +727,1074 @@ export default function Dashboard() {
     );
   }
 
-  // ────────────────────────────────────────────────
-  // Job List Content (shared between mobile & desktop)
-  // ────────────────────────────────────────────────
-  const ListContent = () => (
-    <Card
-      sx={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        background: "rgba(255, 255, 255, 0.75)",
-        backdropFilter: "blur(12px)",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-        borderRadius: 3,
-        overflow: "hidden",
-        // border: "3px solid",
-        // borderColor: "divider",
-        // backgroundColor: "#FAFAFA",
-      }}
-    >
-      {/* New: Category - multi select */}
-      <Stack
-        direction="row"
-        spacing={1}
-        p={1}
-        justifyContent="space-between"
-        alignItems="center"
+  const ListContent = () => {
+    return (
+      <Card
         sx={{
-          background: "rgba(255, 255, 255, 0.9)",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.6)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+          borderRadius: 3,
+          overflow: "hidden",
         }}
       >
-        {/* title */}
-        <TextField
-          size="small"
-          placeholder={t('search_placeholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-          InputProps={{
-            sx: {
-              fontSize: 13,
-              height: 38,
-              borderRadius: 2.5,
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              "& fieldset": {
-                borderColor: "rgba(0, 0, 0, 0.1)",
+        <Stack
+          direction="row"
+          spacing={1}
+          p={1}
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{
+            background: "rgba(255, 255, 255, 0.9)",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+          }}
+        >
+          {/* Search Field - unchanged */}
+          <TextField
+            size="small"
+            placeholder={t("search_placeholder")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth
+            InputProps={{
+              sx: {
+                fontSize: 13,
+                height: 38,
+                borderRadius: 2.5,
+                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                "& fieldset": {
+                  borderColor: "rgba(0, 0, 0, 0.1)",
+                },
+                "&:hover fieldset": {
+                  borderColor: "rgba(0, 128, 128, 0.4)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "teal",
+                },
               },
-              "&:hover fieldset": {
-                borderColor: "rgba(0, 128, 128, 0.4)",
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchTerm("")}
+                    sx={{ p: 0.25 }}
+                  >
+                    <Cancel sx={{ fontSize: 18, color: "text.secondary" }} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {/* Filter Button */}
+          <Tooltip title={t("filters_sorting")} arrow placement="bottom">
+            <IconButton
+              size="small"
+              onClick={() => setFilterDialogOpen(true)}
+              sx={{
+                p: 1,
+                width: 38,
+                height: 38,
+                borderRadius: 2.5,
+                background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+                color: "#fff",
+                boxShadow: "0 4px 15px rgba(20, 184, 166, 0.4)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #0d9488 0%, #0f766e 50%, #115e59 100%)",
+                  transform: "scale(1.05)",
+                  boxShadow: "0 6px 20px rgba(20, 184, 166, 0.5)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {/* ───────────────────────────────────────────────────────────────── */}
+          {/* MAIN FILTERS & SORTING DIALOG WITH DROPDOWNS */}
+          {/* ───────────────────────────────────────────────────────────────── */}
+          <Dialog
+            open={filterDialogOpen}
+            onClose={(event, reason) => {
+              if (reason === "backdropClick") return;
+              setFilterDialogOpen(false);
+              // Reset dropdown states when closing
+              setShowCategoryDropdown(false);
+              setShowTypeDropdown(false);
+              setShowDateFilterDropdown(false);
+              setShowDateSortDropdown(false);
+              setShowTitleSortDropdown(false);
+            }}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 4,
+                background: "rgba(255, 255, 255, 0.85)",
+                backdropFilter: "blur(20px)",
+                border: "1px solid rgba(20, 184, 166, 0.3)",
+                boxShadow: "0 25px 50px -12px rgba(20, 184, 166, 0.25)",
+                overflow: "hidden",
+                maxHeight: "80vh",
               },
-              "&.Mui-focused fieldset": {
-                borderColor: "teal",
-              },
-            },
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
+            }}
+            PaperComponent={DraggablePaper}
+          >
+            <DialogTitle
+              id="draggable-dialog-title"
+              sx={{
+                background: "linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.08) 100%)",
+                borderBottom: "1px solid rgba(20, 184, 166, 0.2)",
+                py: 2,
+                px: 3,
+                cursor: "move",
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  sx={{
+                    background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {t('filter_sort_jobs')}
+                </Typography>
                 <IconButton
                   size="small"
-                  onClick={() => setSearchTerm("")}
-                  sx={{ p: 0.25 }}
-                >
-                  <Cancel sx={{ fontSize: 18, color: "text.secondary" }} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-        {/* Single MoreVert button */}
-        <Tooltip title={t('filters_sorting')} arrow placement="bottom">
-          <IconButton
-            size="small"
-            onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
-            sx={{
-              p: 1,
-              width: 38,
-              height: 38,
-              borderRadius: 2.5,
-              background: "linear-gradient(135deg, #14b8a6, #0f766e)",
-              color: "#fff",
-              boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #0f766e, #14b8a6)",
-                transform: "scale(1.05)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        <Menu
-          anchorEl={filterMenuAnchor}
-          open={openFilterMenu}
-          onClose={() => setFilterMenuAnchor(null)}
-          PaperProps={{
-            sx: {
-              width: 220,
-              maxHeight: 480,
-              mt: 1,
-              borderRadius: 2,
-              boxShadow: 4,
-              border: "1px solid",
-              borderColor: "teal",
-            },
-          }}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "right",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "right",
-          }}
-        >
-          {/* Header */}
-          <Box p={1}>
-            <Typography
-              variant="subtitle2"
-              fontWeight={600}
-              color="text.primary"
-            >
-              {t('filter_sort_jobs')}
-            </Typography>
-          </Box>
-
-          <Divider />
-
-          {/* FILTERS GROUP */}
-          <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              fontWeight={500}
-            >
-              {t('filters')}
-            </Typography>
-          </Box>
-
-          {/* Categories */}
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setCategoryAnchor(e.currentTarget);
-            }}
-            sx={{ py: 1.1 }}
-          >
-            <ListItemIcon>
-              <CategoryRoundedIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('categories')}
-              primaryTypographyProps={{ fontSize: "15px" }}
-            />
-            {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
-              <Chip
-                size="small"
-                label={categoryFilter.length}
-                color="primary"
-                sx={{
-                  ml: "auto",
-                  minWidth: 32,
-                  height: 20,
-                  fontSize: "0.75rem",
-                }}
-              />
-            )}
-          </MenuItem>
-
-          {/* Job Type */}
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setTypeAnchor(e.currentTarget);
-            }}
-            sx={{ py: 1.1 }}
-          >
-            <ListItemIcon>
-              <WorkOutlineIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('job_type')}
-              primaryTypographyProps={{ fontSize: "15px" }}
-            />
-            {Array.isArray(typeFilter) &&
-              typeFilter.length > 0 &&
-              typeFilter[0] !== "All" && (
-                <Chip
-                  size="small"
-                  label={typeFilter.length}
-                  color="primary"
+                  onClick={() => setFilterDialogOpen(false)}
                   sx={{
-                    ml: "auto",
-                    minWidth: 32,
-                    height: 20,
-                    fontSize: "0.75rem",
-                  }}
-                />
-              )}
-          </MenuItem>
-
-          {/* Posted Date Filter */}
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setDateFilterAnchor(e.currentTarget);
-            }}
-            sx={{ py: 1.1 }}
-          >
-            <ListItemIcon>
-              <EventIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('posted_date')}
-              primaryTypographyProps={{ fontSize: "15px" }}
-            />
-            {dateFilterMode !== "all" && (
-              <Chip
-                size="small"
-                label={
-                  dateFilterMode === "today"
-                    ? t('today')
-                    : dateFilterMode === "last7"
-                      ? t('last_7_days')
-                      : t('custom')
-                }
-                variant="outlined"
-                sx={{
-                  ml: "auto",
-                  minWidth: 60,
-                  height: 20,
-                  fontSize: "0.75rem",
-                }}
-              />
-            )}
-          </MenuItem>
-          {/* RESET OPTIONS */}
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              startIcon={<Cancel />}
-              sx={{
-                textTransform: "none",
-                fontSize: "0.75rem",
-                py: 0.25,
-                px: 0.5,
-                mt: 0.5,
-              }}
-              onClick={() => {
-                setSearchTerm("");
-                setTypeFilter("All");
-                setLevelFilter("All");
-                setCategoryFilter(["All"]);
-                setDateFilterMode("all");
-                setDateFrom(null);
-                setDateTo(null);
-                setFilterMenuAnchor(null);
-              }}
-            >
-              {t('reset')}
-            </Button>
-          </Box>
-
-          <Divider variant="middle" sx={{ my: 1 }} />
-
-          {/* SORT GROUP */}
-          <Box p={1} sx={{ opacity: 1, py: 0.8 }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              fontWeight={500}
-            >
-              {t('sort_by')}
-            </Typography>
-          </Box>
-
-          {/* Sort by Date */}
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setDateSortAnchor(e.currentTarget);
-            }}
-            sx={{ py: 1.1 }}
-          >
-            <ListItemIcon>
-              <EventIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('date_posted')}
-              primaryTypographyProps={{ fontSize: "15px" }}
-            />
-            {sortBy.startsWith("date-") && (
-              <Chip
-                size="small"
-                label={sortBy === "date-desc" ? t('newest') : t('oldest')}
-                variant="outlined"
-                sx={{
-                  ml: "auto",
-                  minWidth: 60,
-                  height: 20,
-                  fontSize: "0.75rem",
-                }}
-              />
-            )}
-          </MenuItem>
-
-          {/* Sort by Title */}
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setTitleSortAnchor(e.currentTarget);
-            }}
-            sx={{ py: 1.1 }}
-          >
-            <ListItemIcon>
-              <BadgeIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            <ListItemText
-              primary={t('job_title')}
-              primaryTypographyProps={{ fontSize: "15px" }}
-            />
-            {sortBy.startsWith("title-") && (
-              <Chip
-                size="small"
-                label={sortBy === "title-asc" ? t('a_to_z') : t('z_to_a')}
-                variant="outlined"
-                sx={{
-                  ml: "auto",
-                  minWidth: 60,
-                  height: 20,
-                  fontSize: "0.75rem",
-                }}
-              />
-            )}
-          </MenuItem>
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button
-              variant="outlined"
-              color="warning"
-              size="small"
-              startIcon={<Cancel fontSize="small" />}
-              sx={{
-                textTransform: "none",
-                fontSize: "0.75rem",
-                py: 0.25,
-                px: 0.5,
-                mt: 0.5,
-              }}
-              onClick={() => {
-                setSortBy("date-desc");
-                setFilterMenuAnchor(null);
-              }}
-            >
-              {t('reset')}
-            </Button>
-          </Box>
-
-          <Divider sx={{ my: 1 }} />
-
-          <Box sx={{ display: "flex", justifyContent: "end" }} p={1}>
-            <Button
-              variant="contained"
-              size="small"
-              fullWidth
-              startIcon={<Cancel fontSize="small" />}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-              onClick={() => {
-                setSearchTerm("");
-                setTypeFilter("All");
-                setLevelFilter("All");
-                setCategoryFilter(["All"]);
-                setSortBy("date-desc");
-                setDateFilterMode("all");
-                setDateFrom(null);
-                setDateTo(null);
-                setFilterMenuAnchor(null);
-              }}
-            >
-              {t('reset_all')}
-            </Button>
-          </Box>
-        </Menu>
-
-        <Popover
-          open={openCategory}
-          anchorEl={categoryAnchor}
-          onClose={() => setCategoryAnchor(null)}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
-          }}
-          PaperProps={{
-            sx: {
-              width: 310,
-              maxHeight: 420,
-              borderRadius: 2,
-              p: 2.5,
-              overflowY: "auto",
-              border: "3px solid",
-              borderColor: "divider",
-            },
-          }}
-        >
-          <List dense disablePadding>
-            {/* ALL */}
-            <ListItemButton
-              selected={categoryFilter.includes("All")}
-              onClick={() => setCategoryFilter(["All"])}
-              sx={{ borderRadius: 1, py: 0.5 }}
-            >
-              <Checkbox
-                size="small"
-                checked={categoryFilter.includes("All")}
-                icon={<CheckBoxOutlineBlank fontSize="small" />}
-                checkedIcon={<CheckBox fontSize="small" />}
-              />
-              <ListItemText primary={t('all')} />
-            </ListItemButton>
-
-            {categories.map((cat) => {
-              const checked = categoryFilter.includes(cat.pk_id);
-
-              return (
-                <ListItemButton
-                  key={cat.pk_id}
-                  selected={checked}
-                  sx={{ borderRadius: 1, py: 0.5 }}
-                  onClick={() => {
-                    let updated = [...categoryFilter];
-
-                    if (checked) {
-                      updated = updated.filter((v) => v !== cat.pk_id);
-                    } else {
-                      updated = updated.filter((v) => v !== "All");
-                      updated.push(cat.pk_id);
-                    }
-
-                    setCategoryFilter(updated.length === 0 ? ["All"] : updated);
-                  }}
-                >
-                  <Checkbox
-                    size="small"
-                    checked={checked}
-                    icon={<CheckBoxOutlineBlank fontSize="small" />}
-                    checkedIcon={<CheckBox fontSize="small" />}
-                  />
-                  <ListItemText primary={cat.name} />
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Popover>
-        <Popover
-          open={openType}
-          anchorEl={typeAnchor}
-          onClose={() => setTypeAnchor(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
-          PaperProps={{
-            sx: {
-              width: 300,
-              maxHeight: 320,
-              borderRadius: 2,
-              p: 2.5,
-              overflowY: "auto",
-              border: "3px solid",
-              borderColor: "divider",
-            },
-          }}
-        >
-          <List dense disablePadding>
-            {[t('all'), t('full_time'), t('part_time'), t('internship')].map((type) => {
-              const checked = typeFilter.includes(type);
-
-              return (
-                <ListItemButton
-                  key={type}
-                  selected={checked}
-                  sx={{ borderRadius: 1 }}
-                  onClick={() => {
-                    let updated = [...typeFilter];
-
-                    if (type === t('all')) {
-                      updated = [t('all')];
-                    } else {
-                      updated = updated.filter((v) => v !== t('all'));
-
-                      if (updated.includes(type)) {
-                        updated = updated.filter((v) => v !== type);
-                      } else {
-                        updated.push(type);
-                      }
-
-                      if (updated.length === 0) updated = [t('all')];
-                    }
-
-                    setTypeFilter(updated);
-                  }}
-                >
-                  <Checkbox checked={checked} />
-                  <ListItemText primary={type} />
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Popover>
-      </Stack>
-
-      <Divider />
-
-      <Box 
-        sx={{ 
-          flex: 1, 
-          overflowY: "auto", 
-          minHeight: 0,
-          background: "rgba(250, 250, 250, 0.6)", 
-        }}
-      >
-        {filteredJobs.length === 0 ? (
-          <Box
-            sx={{
-              p: 4,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              color: "text.secondary",
-            }}
-          >
-            <Box component="img" src="/No-Data.gif" alt={t('no_data')} sx={{ maxWidth: 180, opacity: 0.7 }}/>
-          </Box>
-        ) : (
-          <>
-            {filteredJobs.map((job) => {
-              const active = selectedJob?.pk_id === job.pk_id;
-              const companyName = job.employer?.company_name;
-              const logoFilename = job.employer?.company_logo;
-              const alreadyApplied =
-                isCandidate && appliedJobIds.has(job.pk_id);
-              return (
-                <Box
-                  key={job.pk_id}
-                  onClick={() => handleSelectJob(job)}
-                  sx={{
-                    px: 2,
-                    py: { xs: 1, sm: 1.15 },
-                    cursor: "pointer",
-                    position: "relative",
-                    backgroundColor: active
-                      ? "rgba(45, 212, 191, 0.12)"
-                      : "transparent",
-                    borderLeft: active ? "4px solid #14b8a6" : "4px solid transparent",
-                    borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-                    transition: "all 0.2s ease",
+                    color: "#0f766e",
                     "&:hover": {
-                      backgroundColor: active
-                        ? "rgba(45, 212, 191, 0.18)"
-                        : "rgba(255, 255, 255, 0.7)",
-                      transform: "translateX(4px)",
+                      bgcolor: "rgba(20, 184, 166, 0.1)",
                     },
                   }}
                 >
-                  <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Avatar
-                      src={
-                        logoFilename
-                          ? `${baseURL}/uploads/employers/${logoFilename}`
-                          : undefined
-                      }
-                      alt={`${companyName} logo`}
+                  <Close fontSize="small" />
+                </IconButton>
+              </Stack>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 3, overflowY: "auto" }}>
+              {/* FILTERS SECTION */}
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={600}
+                  sx={{
+                    color: "#0f766e",
+                    mb: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <CategoryRoundedIcon fontSize="small" />
+                  {t('filters')}
+                </Typography>
+
+                <Stack spacing={1}>
+                  {/* CATEGORIES FILTER */}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                       sx={{
-                        width: { xs: 40, sm: 50 },
-                        height: { xs: 40, sm: 50 },
-                        border: "2px solid rgba(255,255,255,0.9)",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        "& img": { objectFit: "contain" },
+                        justifyContent: "flex-start",
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: "none",
+                        color: "#0f766e",
+                        borderColor: "rgba(20, 184, 166, 0.3)",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(8px)",
+                        "&:hover": {
+                          borderColor: "#14b8a6",
+                          background: "rgba(20, 184, 166, 0.08)",
+                        },
                       }}
-                    >
-                      {companyName?.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box minWidth={0} flex={1}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="flex-start"
-                        width="100%"
-                      >
-                        <Typography 
-                          variant="body1" 
-                          fontWeight={600} 
-                          noWrap
-                          sx={{
-                            fontSize: "0.95rem",
-                            lineHeight: 1.3,
-                            color: active ? "teal" : "text.primary",
-                          }}
-                        >
-                          {job.job_title}
-                        </Typography>
-
-                        {alreadyApplied && (
-                          <Chip
-                            label={t('applied')}
-                            size="small"
-                            color="success"
-                            variant="filled"
-                            icon={<CheckCircle />}
-                            sx={{
-                              fontSize: "0.60rem",
-                              fontWeight: 600,
-                              // minWidth: 50,
-                              height: 24,
-                              ml: 1,
-                              bgcolor: "rgba(16, 185, 129, 0.15)",
-                              color: "#10b981",
-                              border: "1px solid #10b981",
-                            }}
-                          />
-                        )}
-                      </Stack>
-
-                      {job.categories?.length > 0 && (
-                        <Stack
-                          direction="row"
-                          spacing={0.3}
-                          mt={0.75}
-                          flexWrap="wrap"
-                          alignItems="center"
-                        >
-                          <CategoryRoundedIcon
-                            // fontSize=""
-                            sx={{ fontSize: 16, color: "text.secondary", mr: 0.5 }}
-                          />
-
-                          <Typography
-                            variant="caption"
-                            fontWeight={600}
-                            color="text.secondary"
-                          >
-                            {t('categories')}:
-                          </Typography>
-
-                          {job.categories.slice(0, 2).map((cat) => (
+                      startIcon={<CategoryRoundedIcon />}
+                      endIcon={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
                             <Chip
-                              key={cat.pk_id}
-                              label={cat.name}
                               size="small"
-                              variant="outlined"
+                              label={categoryFilter.length}
                               sx={{
-                                fontSize: "0.68rem",
+                                bgcolor: "#14b8a6",
+                                color: "#fff",
                                 height: 20,
-                                borderRadius: "6px",
-                                borderColor: "#14b8a6",
-                                color: "#0f766e",
-                                bgcolor: "rgba(20, 184, 166, 0.08)",
+                                fontSize: "0.7rem",
                               }}
                             />
-                          ))}
-
-                          {job.categories.length > 2 && (
-                            <Chip
-                              label={`+${job.categories.length - 2}`}
+                          )}
+                          <ArrowDownward
+                            sx={{
+                              fontSize: 18,
+                              transform: showCategoryDropdown ? "rotate(180deg)" : "none",
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </Stack>
+                      }
+                    >
+                      <Box sx={{ flex: 1, textAlign: "left" }}>{t('categories')}</Box>
+                    </Button>
+                    
+                    {/* Categories Dropdown List */}
+                    {showCategoryDropdown && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          mt: 1,
+                          maxHeight: 250,
+                          overflowY: "auto",
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.7)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                        }}
+                      >
+                        <List dense disablePadding>
+                          <ListItemButton
+                            selected={categoryFilter.includes("All")}
+                            onClick={() => setCategoryFilter(["All"])}
+                            sx={{ borderRadius: 1, py: 1 }}
+                          >
+                            <Checkbox
                               size="small"
+                              checked={categoryFilter.includes("All")}
+                              icon={<CheckBoxOutlineBlank fontSize="small" />}
+                              checkedIcon={<CheckBox fontSize="small" />}
+                            />
+                            <ListItemText primary={t("all")} />
+                          </ListItemButton>
+                          {categories.map((cat) => {
+                            const checked = categoryFilter.includes(cat.pk_id);
+                            return (
+                              <ListItemButton
+                                key={cat.pk_id}
+                                selected={checked}
+                                sx={{ borderRadius: 1, py: 1 }}
+                                onClick={() => {
+                                  let updated = [...categoryFilter];
+                                  if (checked) {
+                                    updated = updated.filter((v) => v !== cat.pk_id);
+                                  } else {
+                                    updated = updated.filter((v) => v !== "All");
+                                    updated.push(cat.pk_id);
+                                  }
+                                  setCategoryFilter(updated.length === 0 ? ["All"] : updated);
+                                }}
+                              >
+                                <Checkbox
+                                  size="small"
+                                  checked={checked}
+                                  icon={<CheckBoxOutlineBlank fontSize="small" />}
+                                  checkedIcon={<CheckBox fontSize="small" />}
+                                />
+                                <ListItemText primary={cat.name} />
+                              </ListItemButton>
+                            );
+                          })}
+                        </List>
+                      </Paper>
+                    )}
+                  </Box>
+
+                  {/* JOB TYPE FILTER */}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: "none",
+                        color: "#0f766e",
+                        borderColor: "rgba(20, 184, 166, 0.3)",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(8px)",
+                        "&:hover": {
+                          borderColor: "#14b8a6",
+                          background: "rgba(20, 184, 166, 0.08)",
+                        },
+                      }}
+                      startIcon={<WorkOutlineIcon />}
+                      endIcon={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {Array.isArray(typeFilter) && typeFilter.length > 0 && !typeFilter.includes("All") && (
+                            <Chip
+                              size="small"
+                              label={typeFilter.length}
                               sx={{
-                                fontSize: "0.68rem",
+                                bgcolor: "#14b8a6",
+                                color: "#fff",
                                 height: 20,
-                                bgcolor: "rgba(0,0,0,0.06)",
+                                fontSize: "0.7rem",
+                              }}
+                            />
+                          )}
+                          <ArrowDownward
+                            sx={{
+                              fontSize: 18,
+                              transform: showTypeDropdown ? "rotate(180deg)" : "none",
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </Stack>
+                      }
+                    >
+                      <Box sx={{ flex: 1, textAlign: "left" }}>
+                        {Array.isArray(typeFilter) && typeFilter.includes("All") 
+                          ? t('job_type')
+                          : Array.isArray(typeFilter) && typeFilter.length > 0
+                            ? typeFilter.map(type => {
+                                if (type === "Full-time") return t('full_time');
+                                if (type === "Part-time") return t('part_time');
+                                if (type === "Internship") return t('internship');
+                                return type;
+                              }).join(", ")
+                            : t('job_type')}
+                      </Box>
+                    </Button>
+                    
+                    {/* Job Type Dropdown List */}
+                    {showTypeDropdown && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          mt: 1,
+                          maxHeight: 250,
+                          overflowY: "auto",
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.7)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                        }}
+                      >
+                        <List dense disablePadding>
+                          <ListItemButton
+                            selected={Array.isArray(typeFilter) ? typeFilter.includes("All") : typeFilter === "All"}
+                            sx={{ borderRadius: 1, py: 1 }}
+                            onClick={() => setTypeFilter(["All"])}
+                          >
+                            <Checkbox 
+                              checked={Array.isArray(typeFilter) ? typeFilter.includes("All") : typeFilter === "All"} 
+                              size="small" 
+                            />
+                            <ListItemText primary={t("all")} />
+                          </ListItemButton>
+                          
+                          <ListItemButton
+                            selected={Array.isArray(typeFilter) && typeFilter.includes("Full-time")}
+                            sx={{ borderRadius: 1, py: 1 }}
+                            onClick={() => {
+                              let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
+                              let updated = currentFilter.filter(v => v !== "All");
+                              
+                              if (updated.includes("Full-time")) {
+                                updated = updated.filter(v => v !== "Full-time");
+                              } else {
+                                updated.push("Full-time");
+                              }
+                              setTypeFilter(updated.length === 0 ? ["All"] : updated);
+                            }}
+                          >
+                            <Checkbox 
+                              checked={Array.isArray(typeFilter) && typeFilter.includes("Full-time")} 
+                              size="small" 
+                            />
+                            <ListItemText primary={t("full_time")} />
+                          </ListItemButton>
+                          
+                          <ListItemButton
+                            selected={Array.isArray(typeFilter) && typeFilter.includes("Part-time")}
+                            sx={{ borderRadius: 1, py: 1 }}
+                            onClick={() => {
+                              let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
+                              let updated = currentFilter.filter(v => v !== "All");
+                              
+                              if (updated.includes("Part-time")) {
+                                updated = updated.filter(v => v !== "Part-time");
+                              } else {
+                                updated.push("Part-time");
+                              }
+                              setTypeFilter(updated.length === 0 ? ["All"] : updated);
+                            }}
+                          >
+                            <Checkbox 
+                              checked={Array.isArray(typeFilter) && typeFilter.includes("Part-time")} 
+                              size="small" 
+                            />
+                            <ListItemText primary={t("part_time")} />
+                          </ListItemButton>
+                          
+                          <ListItemButton
+                            selected={Array.isArray(typeFilter) && typeFilter.includes("Internship")}
+                            sx={{ borderRadius: 1, py: 1 }}
+                            onClick={() => {
+                              let currentFilter = Array.isArray(typeFilter) ? [...typeFilter] : [typeFilter];
+                              let updated = currentFilter.filter(v => v !== "All");
+                              
+                              if (updated.includes("Internship")) {
+                                updated = updated.filter(v => v !== "Internship");
+                              } else {
+                                updated.push("Internship");
+                              }
+                              setTypeFilter(updated.length === 0 ? ["All"] : updated);
+                            }}
+                          >
+                            <Checkbox 
+                              checked={Array.isArray(typeFilter) && typeFilter.includes("Internship")} 
+                              size="small" 
+                            />
+                            <ListItemText primary={t("internship")} />
+                          </ListItemButton>
+                        </List>
+                      </Paper>
+                    )}
+                  </Box>
+
+                  {/* POSTED DATE FILTER */}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setShowDateFilterDropdown(!showDateFilterDropdown)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: "none",
+                        color: "#0f766e",
+                        borderColor: "rgba(20, 184, 166, 0.3)",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(8px)",
+                        "&:hover": {
+                          borderColor: "#14b8a6",
+                          background: "rgba(20, 184, 166, 0.08)",
+                        },
+                      }}
+                      startIcon={<EventIcon />}
+                      endIcon={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {dateFilterMode !== "all" && (
+                            <Chip
+                              size="small"
+                              label={
+                                dateFilterMode === "today"
+                                  ? t('today')
+                                  : dateFilterMode === "last7"
+                                    ? t('last_7_days')
+                                    : t('custom')
+                              }
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: "0.7rem",
+                                borderColor: "#14b8a6",
+                                color: "#0f766e",
+                              }}
+                            />
+                          )}
+                          <ArrowDownward
+                            sx={{
+                              fontSize: 18,
+                              transform: showDateFilterDropdown ? "rotate(180deg)" : "none",
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </Stack>
+                      }
+                    >
+                      <Box sx={{ flex: 1, textAlign: "left" }}>{t('posted_date')}</Box>
+                    </Button>
+                    
+                    {/* Date Filter Dropdown */}
+                    {showDateFilterDropdown && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          mt: 1,
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.7)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                        }}
+                      >
+                        <RadioGroup
+                          value={dateFilterMode}
+                          onChange={(e) => {
+                            const mode = e.target.value;
+                            setDateFilterMode(mode);
+                            if (mode !== "custom") {
+                              setDateFrom(null);
+                              setDateTo(null);
+                            }
+                          }}
+                        >
+                          <FormControlLabel value="all" control={<Radio size="small" />} label={t('all_dates')} />
+                          <FormControlLabel value="today" control={<Radio size="small" />} label={t('today')} />
+                          <FormControlLabel value="last7" control={<Radio size="small" />} label={t('last_7_days')} />
+                          <FormControlLabel value="custom" control={<Radio size="small" />} label={t('custom_range')} />
+                        </RadioGroup>
+
+                        {dateFilterMode === "custom" && (
+                          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                            <DatePicker
+                              label={t('from')}
+                              value={dateFrom}
+                              onChange={(newValue) => setDateFrom(newValue)}
+                              format="YYYY-MM-DD"
+                              slotProps={{ textField: { size: "small", fullWidth: true } }}
+                              maxDate={dateTo || dayjs()}
+                            />
+                            <DatePicker
+                              label={t('to')}
+                              value={dateTo}
+                              onChange={(newValue) => setDateTo(newValue)}
+                              format="YYYY-MM-DD"
+                              slotProps={{ textField: { size: "small", fullWidth: true } }}
+                              minDate={dateFrom}
+                              maxDate={dayjs()}
+                            />
+                          </Box>
+                        )}
+                        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => {
+                              setDateFilterMode("all");
+                              setDateFrom(null);
+                              setDateTo(null);
+                            }}
+                            sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                          >
+                            {t('clear')}
+                          </Button>
+                        </Box>
+                      </Paper>
+                    )}
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Divider sx={{ my: 2, borderColor: "rgba(20, 184, 166, 0.15)" }} />
+
+              {/* SORT SECTION */}
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={600}
+                  sx={{
+                    color: "#0f766e",
+                    mb: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <AutorenewRoundedIcon fontSize="small" />
+                  {t('sort_by')}
+                </Typography>
+
+                <Stack spacing={1}>
+                  {/* SORT BY DATE */}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setShowDateSortDropdown(!showDateSortDropdown)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: "none",
+                        color: "#0f766e",
+                        borderColor: "rgba(20, 184, 166, 0.3)",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(8px)",
+                        "&:hover": {
+                          borderColor: "#14b8a6",
+                          background: "rgba(20, 184, 166, 0.08)",
+                        },
+                      }}
+                      startIcon={<EventIcon />}
+                      endIcon={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {sortBy.startsWith("date-") && (
+                            <Chip
+                              size="small"
+                              label={sortBy === "date-desc" ? t('newest') : t('oldest')}
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: "0.7rem",
+                                borderColor: "#14b8a6",
+                                color: "#0f766e",
+                              }}
+                            />
+                          )}
+                          <ArrowDownward
+                            sx={{
+                              fontSize: 18,
+                              transform: showDateSortDropdown ? "rotate(180deg)" : "none",
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </Stack>
+                      }
+                    >
+                      <Box sx={{ flex: 1, textAlign: "left" }}>{t('date_posted')}</Box>
+                    </Button>
+                    
+                    {/* Date Sort Dropdown */}
+                    {showDateSortDropdown && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          mt: 1,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.7)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                        }}
+                      >
+                        <List dense disablePadding>
+                          {[
+                            { label: t('newest_first'), value: "date-desc" },
+                            { label: t('oldest_first'), value: "date-asc" },
+                          ].map((item) => (
+                            <ListItemButton
+                              key={item.value}
+                              selected={sortBy === item.value}
+                              onClick={() => {
+                                setSortBy(item.value);
+                                setShowDateSortDropdown(false);
+                              }}
+                              sx={{ borderRadius: 1, py: 1.5 }}
+                            >
+                              <ListItemText primary={item.label} />
+                              {sortBy === item.value && (
+                                <CheckCircle sx={{ fontSize: 18, color: "#14b8a6" }} />
+                              )}
+                            </ListItemButton>
+                          ))}
+                        </List>
+                      </Paper>
+                    )}
+                  </Box>
+
+                  {/* SORT BY TITLE */}
+                  <Box>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setShowTitleSortDropdown(!showTitleSortDropdown)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        py: 1.2,
+                        px: 2,
+                        borderRadius: 2,
+                        textTransform: "none",
+                        color: "#0f766e",
+                        borderColor: "rgba(20, 184, 166, 0.3)",
+                        background: "rgba(255, 255, 255, 0.5)",
+                        backdropFilter: "blur(8px)",
+                        "&:hover": {
+                          borderColor: "#14b8a6",
+                          background: "rgba(20, 184, 166, 0.08)",
+                        },
+                      }}
+                      startIcon={<BadgeIcon />}
+                      endIcon={
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {sortBy.startsWith("title-") && (
+                            <Chip
+                              size="small"
+                              label={sortBy === "title-asc" ? t('a_to_z') : t('z_to_a')}
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                fontSize: "0.7rem",
+                                borderColor: "#14b8a6",
+                                color: "#0f766e",
+                              }}
+                            />
+                          )}
+                          <ArrowDownward
+                            sx={{
+                              fontSize: 18,
+                              transform: showTitleSortDropdown ? "rotate(180deg)" : "none",
+                              transition: "transform 0.2s",
+                            }}
+                          />
+                        </Stack>
+                      }
+                    >
+                      <Box sx={{ flex: 1, textAlign: "left" }}>{t('job_title')}</Box>
+                    </Button>
+                    
+                    {/* Title Sort Dropdown */}
+                    {showTitleSortDropdown && (
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          mt: 1,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.7)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.2)",
+                        }}
+                      >
+                        <List dense disablePadding>
+                          {[
+                            { label: t('a_to_z'), value: "title-asc" },
+                            { label: t('z_to_a'), value: "title-desc" },
+                          ].map((item) => (
+                            <ListItemButton
+                              key={item.value}
+                              selected={sortBy === item.value}
+                              onClick={() => {
+                                setSortBy(item.value);
+                                setShowTitleSortDropdown(false);
+                              }}
+                              sx={{ borderRadius: 1, py: 1.5 }}
+                            >
+                              <ListItemText primary={item.label} />
+                              {sortBy === item.value && (
+                                <CheckCircle sx={{ fontSize: 18, color: "#14b8a6" }} />
+                              )}
+                            </ListItemButton>
+                          ))}
+                        </List>
+                      </Paper>
+                    )}
+                  </Box>
+                </Stack>
+              </Box>
+            </DialogContent>
+
+            <DialogActions
+              sx={{
+                p: 3,
+                pt: 0,
+                gap: 1,
+                borderTop: "1px solid rgba(20, 184, 166, 0.1)",
+              }}
+            >
+              <Button
+                variant="outlined"
+                color="error"
+                size="medium"
+                startIcon={<Cancel />}
+                onClick={() => {
+                  setSearchTerm("");
+                  setTypeFilter("All");
+                  setLevelFilter("All");
+                  setCategoryFilter(["All"]);
+                  setDateFilterMode("all");
+                  setDateFrom(null);
+                  setDateTo(null);
+                  setSortBy("date-desc");
+                  // Reset dropdowns
+                  setShowCategoryDropdown(false);
+                  setShowTypeDropdown(false);
+                  setShowDateFilterDropdown(false);
+                  setShowDateSortDropdown(false);
+                  setShowTitleSortDropdown(false);
+                }}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: 2,
+                  borderColor: "rgba(239, 68, 68, 0.3)",
+                  color: "#ef4444",
+                  "&:hover": {
+                    borderColor: "#ef4444",
+                    bgcolor: "rgba(239, 68, 68, 0.05)",
+                  },
+                }}
+              >
+                {t('reset_all')}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setFilterDialogOpen(false);
+                  // Reset dropdowns
+                  setShowCategoryDropdown(false);
+                  setShowTypeDropdown(false);
+                  setShowDateFilterDropdown(false);
+                  setShowDateSortDropdown(false);
+                  setShowTitleSortDropdown(false);
+                }}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 3,
+                  background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                  boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)",
+                    boxShadow: "0 6px 20px rgba(20, 184, 166, 0.4)",
+                  },
+                }}
+              >
+                {t('done')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Stack>
+
+        <Divider />
+
+        {/* Job List - exactly the same as before */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            minHeight: 0,
+            background: "rgba(250, 250, 250, 0.6)",
+          }}
+        >
+          {/* ... rest of the job list code remains unchanged ... */}
+          {filteredJobs.length === 0 ? (
+            <Box
+              sx={{
+                p: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                color: "text.secondary",
+              }}
+            >
+              <Box
+                component="img"
+                src="/No-Data.gif"
+                alt={t("no_data")}
+                sx={{ maxWidth: 180, opacity: 0.7 }}
+              />
+            </Box>
+          ) : (
+            <>
+              {filteredJobs.map((job) => {
+                const active = selectedJob?.pk_id === job.pk_id;
+                const companyName = job.employer?.company_name;
+                const logoFilename = job.employer?.company_logo;
+                const alreadyApplied = isCandidate && appliedJobIds.has(job.pk_id);
+                return (
+                  <Box
+                    key={job.pk_id}
+                    onClick={() => handleSelectJob(job)}
+                    sx={{
+                      px: 2,
+                      py: { xs: 1, sm: 1.15 },
+                      cursor: "pointer",
+                      position: "relative",
+                      backgroundColor: active
+                        ? "rgba(45, 212, 191, 0.12)"
+                        : "transparent",
+                      borderLeft: active
+                        ? "4px solid #14b8a6"
+                        : "4px solid transparent",
+                      borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        backgroundColor: active
+                          ? "rgba(45, 212, 191, 0.18)"
+                          : "rgba(255, 255, 255, 0.7)",
+                        transform: "translateX(4px)",
+                      },
+                    }}
+                  >
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Avatar
+                        src={
+                          logoFilename
+                            ? `${baseURL}/uploads/employers/${logoFilename}`
+                            : undefined
+                        }
+                        alt={`${companyName} logo`}
+                        sx={{
+                          width: { xs: 40, sm: 50 },
+                          height: { xs: 40, sm: 50 },
+                          border: "2px solid rgba(255,255,255,0.9)",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          "& img": { objectFit: "contain" },
+                        }}
+                      >
+                        {companyName?.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Box minWidth={0} flex={1}>
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="flex-start"
+                          width="100%"
+                        >
+                          <Typography
+                            variant="body1"
+                            fontWeight={600}
+                            noWrap
+                            sx={{
+                              fontSize: "0.95rem",
+                              lineHeight: 1.3,
+                              color: active ? "teal" : "text.primary",
+                            }}
+                          >
+                            {job.job_title}
+                          </Typography>
+                          {alreadyApplied && (
+                            <Chip
+                              label={t("applied")}
+                              size="small"
+                              color="success"
+                              variant="filled"
+                              icon={<CheckCircle />}
+                              sx={{
+                                fontSize: "0.60rem",
+                                fontWeight: 600,
+                                height: 24,
+                                ml: 1,
+                                bgcolor: "rgba(16, 185, 129, 0.15)",
+                                color: "#10b981",
+                                border: "1px solid #10b981",
                               }}
                             />
                           )}
                         </Stack>
+                        {job.categories?.length > 0 && (
+                          <Stack
+                            direction="row"
+                            spacing={0.3}
+                            mt={0.75}
+                            flexWrap="wrap"
+                            alignItems="center"
+                          >
+                            <CategoryRoundedIcon
+                              sx={{
+                                fontSize: 16,
+                                color: "text.secondary",
+                                mr: 0.5,
+                              }}
+                            />
+                            <Typography
+                              variant="caption"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t("categories")}:
+                            </Typography>
+                            {job.categories.slice(0, 2).map((cat) => (
+                              <Chip
+                                key={cat.pk_id}
+                                label={cat.name}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  fontSize: "0.68rem",
+                                  height: 20,
+                                  borderRadius: "6px",
+                                  borderColor: "#14b8a6",
+                                  color: "#0f766e",
+                                  bgcolor: "rgba(20, 184, 166, 0.08)",
+                                }}
+                              />
+                            ))}
+                            {job.categories.length > 2 && (
+                              <Chip
+                                label={`+${job.categories.length - 2}`}
+                                size="small"
+                                sx={{
+                                  fontSize: "0.68rem",
+                                  height: 20,
+                                  bgcolor: "rgba(0,0,0,0.06)",
+                                }}
+                              />
+                            )}
+                          </Stack>
+                        )}
+                        <Stack direction="row" spacing={0.3} mt={0.5}>
+                          <Chip
+                            icon={<EventIcon />}
+                            label={`${t("posted")}: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            sx={{
+                              fontSize: "0.72rem",
+                              height: 22,
+                              borderColor: "rgba(0,0,0,0.1)",
+                            }}
+                          />
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </Box>
+                );
+              })}
+              {hasMore && (
+                <Box sx={{ p: 2, textAlign: "end" }}>
+                  <Tooltip title={t("show_more")} arrow>
+                    <IconButton
+                      size="small"
+                      onClick={() => loadJobs(true)}
+                      disabled={loadingMore}
+                      sx={{
+                        border: "2px solid #14b8a6",
+                        color: "#14b8a6",
+                        "&:hover": {
+                          bgcolor: "rgba(20, 184, 166, 0.1)",
+                        },
+                      }}
+                    >
+                      {loadingMore ? (
+                        <CircularProgress size={18} />
+                      ) : (
+                        <ArrowDownward />
                       )}
-
-                      <Stack direction="row" spacing={0.3} mt={0.5}>
-                        <Chip
-                          icon={<EventIcon />}
-                          label={`${t('posted')}: ${job.posting_date ? new Date(job.posting_date).toISOString().split("T")[0] : "—"}`}
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          sx={{
-                            fontSize: "0.72rem",
-                            height: 22,
-                            borderColor: "rgba(0,0,0,0.1)",
-                          }}
-                        />
-                      </Stack>
-                    </Box>
-                  </Stack>
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-              );
-            })}
-            {/* ─── Load More Button ─── */}
-            {hasMore && (
-              <Box sx={{ p: 2, textAlign: "end" }}>
-                <Tooltip title={t('show_more')} arrow>
-                  <IconButton
-                    size="small"
-                    onClick={() => loadJobs(true)}
-                    disabled={loadingMore}
-                    sx={{
-                      border: "2px solid #14b8a6",
-                      color: "#14b8a6",
-                      "&:hover": {
-                        bgcolor: "rgba(20, 184, 166, 0.1)",
-                      },
-                    }}
-                  >
-                    {loadingMore ? (
-                      <CircularProgress size={18} />
-                    ) : (
-                      <ArrowDownward />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            )}
-
-            {!hasMore && filteredJobs.length > 0 && (
-              <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                <Typography variant="body2">{t('no_more_jobs')}</Typography>
-              </Box>
-            )}
-          </>
-        )}
-      </Box>
-    </Card>
-  );
+              )}
+              {!hasMore && filteredJobs.length > 0 && (
+                <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                  <Typography variant="body2">{t("no_more_jobs")}</Typography>
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+      </Card>
+    );
+  };
 
   const DateFilterPopover = () => (
     <Popover
@@ -1693,7 +2024,7 @@ export default function Dashboard() {
                 <Tooltip title={t('company_information')} arrow>
                   <Button
                     variant="outlined"
-                    onClick={(e) => setCompanyAnchor(e.currentTarget)}
+                    onClick={() => setCompanyDialogOpen(true)}
                     size="small"
                     color="info"
                     sx={{
@@ -1712,171 +2043,325 @@ export default function Dashboard() {
                   </Button>
                 </Tooltip>
 
-                {/* // Popover component */}
-                <Popover
-                  open={openCompanyPopover}
-                  anchorEl={companyAnchor}
-                  onClose={() => setCompanyAnchor(null)}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
+                {/* COMPANY INFORMATION DIALOG - Glassmorphism Style */}
+                <Dialog
+                  open={companyDialogOpen}
+                  onClose={(env, reason) => {
+                    if (reason !== "backdropClick")
+                    setCompanyDialogOpen(false)
                   }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
-                  }}
+                  maxWidth="md"
+                  fullWidth
                   PaperProps={{
                     sx: {
-                      width: { xs: "80vw", sm: 600 },
-                      height: { xs: "90vh", sm: 600 },
-                      maxHeight: 500,
-                      borderRadius: 2,
-                      p: 2.5,
-                      overflowY: "auto",
-                      backgroundColor: "#FAFAFA",
-                      border: "3px solid",
-                      borderColor: "divider",
+                      borderRadius: 4,
+                      background: "rgba(255, 255, 255, 0.85)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(20, 184, 166, 0.3)",
+                      boxShadow: "0 25px 50px -12px rgba(20, 184, 166, 0.25)",
+                      overflow: "hidden",
+                      maxHeight: "85vh",
                     },
                   }}
+                  PaperComponent={DraggablePaper}
                 >
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="center"
-                    spacing={1}
-                    mb={3}
+                  <DialogTitle
+                    id="draggable-dialog-title"
+                    sx={{
+                      background: "linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.08) 100%)",
+                      borderBottom: "1px solid rgba(20, 184, 166, 0.2)",
+                      py: 2,
+                      px: 3,
+                      cursor: "move",
+                    }}
                   >
-                    <Typography
-                      variant="h7"
-                      fontWeight={550}
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Stack direction="row" alignItems="center" spacing={1.5}>
+                        <Avatar
+                          src={
+                            logoFilename
+                              ? `${baseURL}/uploads/employers/${logoFilename}`
+                              : undefined
+                          }
+                          alt={`${companyName} logo`}
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            border: "2px solid rgba(20, 184, 166, 0.3)",
+                            "& img": { objectFit: "contain" },
+                          }}
+                        >
+                          {companyName?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography
+                          variant="h6"
+                          fontWeight={700}
+                          sx={{
+                            background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                          }}
+                        >
+                          {t('company_information')}
+                        </Typography>
+                      </Stack>
+                      <IconButton
+                        size="small"
+                        onClick={() => setCompanyDialogOpen(false)}
+                        sx={{
+                          color: "#0f766e",
+                          "&:hover": {
+                            bgcolor: "rgba(20, 184, 166, 0.1)",
+                          },
+                        }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </DialogTitle>
+
+                  <DialogContent sx={{ p: 3, overflowY: "auto", mt: 1 }}>
+                    <Stack spacing={3}>
+                      {/* Company Name */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <BadgeIcon sx={{ color: "#14b8a6" }} />
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t('company_name')}:
+                            </Typography>
+                            <Chip
+                              variant="outlined"
+                              size="small"
+                              label={selectedJob.employer?.company_name}
+                              sx={{
+                                mt: 0.5,
+                                borderColor: "#14b8a6",
+                                color: "#0f766e",
+                                fontWeight: 500,
+                              }}
+                            />
+                          </Box>
+                        </Stack>
+                      </Paper>
+
+                      {/* Address */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="flex-start" spacing={2}>
+                          <LocationCity sx={{ color: "#14b8a6", mt: 0.5 }} />
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t('address')}:
+                            </Typography>
+                            <Typography variant="body1" sx={{ mt: 0.5 }}>
+                              {selectedJob.employer?.company_address || "—"}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Paper>
+
+                      {/* Email */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <EmailOutlined sx={{ color: "#14b8a6" }} />
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t('email')}:
+                            </Typography>
+                            <Typography variant="body1" sx={{ mt: 0.5, color: "#0f766e" }}>
+                              {selectedJob.employer?.company_email || "—"}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Paper>
+
+                      {/* Contact */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <PhoneOutlined sx={{ color: "#14b8a6" }} />
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t('contact')}:
+                            </Typography>
+                            <Typography variant="body1" sx={{ mt: 0.5 }}>
+                              {selectedJob.employer?.company_contact || "—"}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Paper>
+
+                      {/* Website */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <LanguageOutlined sx={{ color: "#14b8a6" }} />
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                            >
+                              {t('website')}:
+                            </Typography>
+                            {selectedJob.employer?.company_website ? (
+                              <Button
+                                component="a"
+                                href={selectedJob.employer.company_website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                  mt: 0.5,
+                                  textTransform: "none",
+                                  color: "#14b8a6",
+                                  p: 0,
+                                  minWidth: 0,
+                                  "&:hover": {
+                                    bgcolor: "transparent",
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                {selectedJob.employer.company_website}
+                              </Button>
+                            ) : (
+                              <Typography variant="body1" sx={{ mt: 0.5 }}>—</Typography>
+                            )}
+                          </Box>
+                        </Stack>
+                      </Paper>
+
+                      {/* About Company */}
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                        }}
+                      >
+                        <Stack direction="row" alignItems="flex-start" spacing={2}>
+                          <Info sx={{ color: "#14b8a6", mt: 0.5 }} />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color="text.secondary"
+                              mb={1.5}
+                            >
+                              {t('about_company')}:
+                            </Typography>
+                            <Box
+                              sx={{
+                                "& .ql-editor": {
+                                  padding: 0,
+                                  fontSize: "0.95rem",
+                                },
+                                "& .ql-container": {
+                                  border: "none",
+                                },
+                              }}
+                            >
+                              <ReactQuill
+                                theme="snow"
+                                value={selectedJob.employer?.company_description || ""}
+                                readOnly
+                                modules={{ toolbar: false }}
+                              />
+                            </Box>
+                          </Box>
+                        </Stack>
+                      </Paper>
+                    </Stack>
+                  </DialogContent>
+
+                  <DialogActions
+                    sx={{
+                      pt: 1,
+                      borderTop: "1px solid rgba(20, 184, 166, 0.1)",
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      onClick={() => setCompanyDialogOpen(false)}
                       sx={{
-                        borderBottom: "2px solid",
-                        borderColor: "primary.main",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                        boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)",
+                          boxShadow: "0 6px 20px rgba(20, 184, 166, 0.4)",
+                        },
                       }}
                     >
-                      {t('company_information')}
-                    </Typography>
-                  </Stack>
-
-                  <Stack spacing={2.5}>
-                    <Stack direction="row" alignItems="flex-start" spacing={2}>
-                      <BadgeIcon color="action" sx={{ mt: 0.5 }} />
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          {t('company_name')}:
-                        </Typography>
-                        <Chip
-                          variant="outlined"
-                          size="small"
-                          label={selectedJob.employer?.company_name}
-                        ></Chip>
-                      </Box>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="flex-start" spacing={2}>
-                      <LocationCity color="action" sx={{ mt: 0.5 }} />
-                      <Stack>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          {t('address')}:
-                        </Typography>
-                        <Typography variant="subtitle2">
-                          {selectedJob.employer?.company_address}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <EmailOutlined color="action" />
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          {t('email')}:
-                        </Typography>
-                        <Typography variant="body1">
-                          {selectedJob.employer?.company_email || ""}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <PhoneOutlined color="action" />
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          {t('contact')}:
-                        </Typography>
-                        <Typography variant="body1">
-                          {selectedJob.employer?.company_contact || ""}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <LanguageOutlined color="action" />
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                        >
-                          {t('website')}:
-                        </Typography>
-                        {selectedJob.employer?.company_website ? (
-                          <a
-                            href={selectedJob.employer.company_website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: theme.palette.primary.main }}
-                          >
-                            {selectedJob.employer.company_website}
-                          </a>
-                        ) : (
-                          <Typography variant="body1"></Typography>
-                        )}
-                      </Box>
-                    </Stack>
-
-                    <Box sx={{ borderRadius: 3 }}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={2}
-                        mb={1}
-                      >
-                        <Info color="action" />
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color="text.secondary"
-                          mb={1}
-                        >
-                          {t('about_company')}
-                        </Typography>
-                      </Stack>
-
-                      <ReactQuill
-                        theme="snow"
-                        value={selectedJob.employer?.company_description || ""}
-                        readOnly
-                        modules={{ toolbar: false }}
-                      />
-                    </Box>
-                  </Stack>
-                </Popover>
+                      {t('close')}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
 
                 {/* Apply Dialog with Resume Selection */}
                 <Dialog

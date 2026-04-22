@@ -550,5 +550,6 @@
   "profile_image_uploaded": "Image de profil téléchargée avec succès",
   "profile_image_upload_failed": "Échec du téléchargement de l'image de profil",
   "no_profile_image": "Aucune image de profil disponible",
-  "canceled_by_the_candidate": "Annulé par le candidat"
+  "canceled_by_the_candidate": "Annulé par le candidat",
+  "done": "Terminé"
 } 

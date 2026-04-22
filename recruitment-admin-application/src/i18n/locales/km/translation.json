@@ -551,5 +551,6 @@
   "profile_image_uploaded": "បង្ហោះរូបភាពប្រវត្តិរូបដោយជោគជ័យ",
   "profile_image_upload_failed": "បរាជ័យក្នុងការបង្ហោះរូបភាពប្រវត្តិរូប",
   "no_profile_image": "មិនមានរូបភាពប្រវត្តិរូបទេ",
-  "canceled_by_the_candidate": "បានបោះបង់ដោយបេក្ខជន"
+  "canceled_by_the_candidate": "បានបោះបង់ដោយបេក្ខជន",
+  "done": "បានបញ្ចប់"
 }

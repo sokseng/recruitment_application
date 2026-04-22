@@ -550,5 +550,6 @@
   "profile_image_uploaded": "Profile image uploaded successfully",
   "profile_image_upload_failed": "Failed to upload profile image",
   "no_profile_image": "No profile image available",
-  "canceled_by_the_candidate": "Canceled by the candidate"
+  "canceled_by_the_candidate": "Canceled by the candidate",
+  "done": "Done"
 }
