@@ -15,6 +15,9 @@ import {
   UploadFile,
   HourglassEmpty,
   Close,
+  ArrowDownwardOutlined,
+  ArrowDownwardTwoTone,
+  ArrowDownward,
 } from "@mui/icons-material";
 import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -32,7 +35,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import {
   Alert,
-  alpha,
   AppBar,
   Avatar,
   Box,
@@ -138,7 +140,7 @@ export default function Dashboard() {
     severity: "success",
   });
   const [uploadLoading, setUploadLoading] = useState(false);
-  const [uploadError, setUploadError] = useState(null);
+  const [setUploadError] = useState(null);
   const [hasAppliedToThisJob, setHasAppliedToThisJob] = useState(false);
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
 
@@ -730,9 +732,15 @@ export default function Dashboard() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        border: "3px solid",
-        borderColor: "divider",
-        backgroundColor: "#FAFAFA",
+        background: "rgba(255, 255, 255, 0.75)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(255, 255, 255, 0.6)",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+        borderRadius: 3,
+        overflow: "hidden",
+        // border: "3px solid",
+        // borderColor: "divider",
+        // backgroundColor: "#FAFAFA",
       }}
     >
       {/* New: Category - multi select */}
@@ -742,6 +750,10 @@ export default function Dashboard() {
         p={1}
         justifyContent="space-between"
         alignItems="center"
+        sx={{
+          background: "rgba(255, 255, 255, 0.9)",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+        }}
       >
         {/* title */}
         <TextField
@@ -752,13 +764,23 @@ export default function Dashboard() {
           fullWidth
           InputProps={{
             sx: {
-              fontSize: 12,
-              height: 34,
-              borderRadius: 2,
+              fontSize: 13,
+              height: 38,
+              borderRadius: 2.5,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              "& fieldset": {
+                borderColor: "rgba(0, 0, 0, 0.1)",
+              },
+              "&:hover fieldset": {
+                borderColor: "rgba(0, 128, 128, 0.4)",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "teal",
+              },
             },
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon sx={{ fontSize: 18 }} />
+                <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
               </InputAdornment>
             ),
             endAdornment: searchTerm && (
@@ -768,7 +790,7 @@ export default function Dashboard() {
                   onClick={() => setSearchTerm("")}
                   sx={{ p: 0.25 }}
                 >
-                  <Cancel sx={{ fontSize: 16 }} />
+                  <Cancel sx={{ fontSize: 18, color: "text.secondary" }} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -780,13 +802,18 @@ export default function Dashboard() {
             size="small"
             onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
             sx={{
-              p: 0.5,
-              width: 34,
-              height: 34,
-              borderRadius: 1,
-              bgcolor: "teal",
+              p: 1,
+              width: 38,
+              height: 38,
+              borderRadius: 2.5,
+              background: "linear-gradient(135deg, #14b8a6, #0f766e)",
               color: "#fff",
-              "&:hover": { bgcolor: "teal" },
+              boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #0f766e, #14b8a6)",
+                transform: "scale(1.05)",
+              },
+              transition: "all 0.2s ease",
             }}
           >
             <MoreVertIcon fontSize="small" />
@@ -1218,19 +1245,27 @@ export default function Dashboard() {
 
       <Divider />
 
-      <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+      <Box 
+        sx={{ 
+          flex: 1, 
+          overflowY: "auto", 
+          minHeight: 0,
+          background: "rgba(250, 250, 250, 0.6)", 
+        }}
+      >
         {filteredJobs.length === 0 ? (
           <Box
             sx={{
-              p: 2,
+              p: 4,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
+              height: "100%",
               color: "text.secondary",
             }}
           >
-            <Box component="img" src="/No-Data.gif" alt={t('no_data')} />
+            <Box component="img" src="/No-Data.gif" alt={t('no_data')} sx={{ maxWidth: 180, opacity: 0.7 }}/>
           </Box>
         ) : (
           <>
@@ -1245,15 +1280,22 @@ export default function Dashboard() {
                   key={job.pk_id}
                   onClick={() => handleSelectJob(job)}
                   sx={{
-                    px: 1,
+                    px: 2,
                     py: { xs: 1, sm: 1.15 },
                     cursor: "pointer",
-                    bgcolor: active ? "action.selected" : "transparent",
-                    borderLeft: active ? "3px solid" : "3px solid transparent",
-                    borderColor: active ? "primary.main" : "transparent",
-                    borderBottom: "1px solid",
-                    borderBottomColor: "divider",
-                    "&:hover": { bgcolor: "action.hover" },
+                    position: "relative",
+                    backgroundColor: active
+                      ? "rgba(45, 212, 191, 0.12)"
+                      : "transparent",
+                    borderLeft: active ? "4px solid #14b8a6" : "4px solid transparent",
+                    borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      backgroundColor: active
+                        ? "rgba(45, 212, 191, 0.18)"
+                        : "rgba(255, 255, 255, 0.7)",
+                      transform: "translateX(4px)",
+                    },
                   }}
                 >
                   <Stack direction="row" spacing={1.5} alignItems="center">
@@ -1267,12 +1309,9 @@ export default function Dashboard() {
                       sx={{
                         width: { xs: 40, sm: 50 },
                         height: { xs: 40, sm: 50 },
-                        fontSize: "0.9rem",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        "& img": {
-                          objectFit: "contain",
-                        },
+                        border: "2px solid rgba(255,255,255,0.9)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        "& img": { objectFit: "contain" },
                       }}
                     >
                       {companyName?.charAt(0).toUpperCase()}
@@ -1281,10 +1320,19 @@ export default function Dashboard() {
                       <Stack
                         direction="row"
                         justifyContent="space-between"
-                        alignItems="center"
+                        alignItems="flex-start"
                         width="100%"
                       >
-                        <Typography variant="body2" fontWeight={600} noWrap>
+                        <Typography 
+                          variant="body1" 
+                          fontWeight={600} 
+                          noWrap
+                          sx={{
+                            fontSize: "0.95rem",
+                            lineHeight: 1.3,
+                            color: active ? "teal" : "text.primary",
+                          }}
+                        >
                           {job.job_title}
                         </Typography>
 
@@ -1298,11 +1346,12 @@ export default function Dashboard() {
                             sx={{
                               fontSize: "0.60rem",
                               fontWeight: 600,
-                              minWidth: 50,
+                              // minWidth: 50,
+                              height: 24,
                               ml: 1,
-                              bgcolor: alpha(theme.palette.success.main, 0.15),
-                              color: theme.palette.success.dark,
-                              border: `1px solid ${theme.palette.success.main}`,
+                              bgcolor: "rgba(16, 185, 129, 0.15)",
+                              color: "#10b981",
+                              border: "1px solid #10b981",
                             }}
                           />
                         )}
@@ -1317,8 +1366,8 @@ export default function Dashboard() {
                           alignItems="center"
                         >
                           <CategoryRoundedIcon
-                            fontSize=""
-                            sx={{ color: "text.secondary" }}
+                            // fontSize=""
+                            sx={{ fontSize: 16, color: "text.secondary", mr: 0.5 }}
                           />
 
                           <Typography
@@ -1335,18 +1384,14 @@ export default function Dashboard() {
                               label={cat.name}
                               size="small"
                               variant="outlined"
-                              sx={(theme) => ({
-                                fontSize: "0.65rem",
-                                height: 18,
-                                borderRadius: "8px",
-                                borderColor: theme.palette.warning.light,
-                                color: theme.palette.warning.dark,
-                                bgcolor: theme.palette.warning.light + "22",
-                                "& .MuiChip-label": {
-                                  px: 0.7,
-                                  fontWeight: 600,
-                                },
-                              })}
+                              sx={{
+                                fontSize: "0.68rem",
+                                height: 20,
+                                borderRadius: "6px",
+                                borderColor: "#14b8a6",
+                                color: "#0f766e",
+                                bgcolor: "rgba(20, 184, 166, 0.08)",
+                              }}
                             />
                           ))}
 
@@ -1355,12 +1400,9 @@ export default function Dashboard() {
                               label={`+${job.categories.length - 2}`}
                               size="small"
                               sx={{
-                                fontSize: "0.65rem",
-                                height: 18,
-                                borderRadius: "8px",
-                                fontWeight: 600,
-                                bgcolor: "action.hover",
-                                color: "text.secondary",
+                                fontSize: "0.68rem",
+                                height: 20,
+                                bgcolor: "rgba(0,0,0,0.06)",
                               }}
                             />
                           )}
@@ -1375,7 +1417,9 @@ export default function Dashboard() {
                           variant="outlined"
                           color="primary"
                           sx={{
-                            fontSize: 12,
+                            fontSize: "0.72rem",
+                            height: 22,
+                            borderColor: "rgba(0,0,0,0.1)",
                           }}
                         />
                       </Stack>
@@ -1386,22 +1430,24 @@ export default function Dashboard() {
             })}
             {/* ─── Load More Button ─── */}
             {hasMore && (
-              <Box sx={{ p: 1, textAlign: "end" }}>
-                <Tooltip title={t('show_more')} arrow placement="top">
+              <Box sx={{ p: 2, textAlign: "end" }}>
+                <Tooltip title={t('show_more')} arrow>
                   <IconButton
                     size="small"
                     onClick={() => loadJobs(true)}
                     disabled={loadingMore}
                     sx={{
-                      border: 2,
-                      borderColor: "warning.main",
-                      borderRadius: 2,
+                      border: "2px solid #14b8a6",
+                      color: "#14b8a6",
+                      "&:hover": {
+                        bgcolor: "rgba(20, 184, 166, 0.1)",
+                      },
                     }}
                   >
                     {loadingMore ? (
-                      <CircularProgress size={16} />
+                      <CircularProgress size={18} />
                     ) : (
-                      <AutorenewRoundedIcon fontSize="small" />
+                      <ArrowDownward />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -1521,24 +1567,41 @@ export default function Dashboard() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          bgcolor: "background.default",
-          border: "3px solid",
-          borderColor: "divider",
-          borderRadius: 1,
-          backgroundColor: "#FAFAFA",
+          background: "rgba(255, 255, 255, 0.75)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.6)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+          borderRadius: 3,
+          overflow: "hidden",
         }}
       >
         {/* Mobile top bar */}
         {isMobile && (
-          <AppBar position="sticky" color="default" elevation={1}>
-            <Toolbar variant="dense"></Toolbar>
+          <AppBar 
+            position="sticky" 
+            color="default" 
+            elevation={0}
+            sx={{
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(10px)",
+              borderBottom: "1px solid rgba(0,0,0,0.06)",
+            }}
+          >
+            <Toolbar variant="dense" />
           </AppBar>
         )}
 
         {selectedJob ? (
           <Box sx={{ flex: 1, overflowY: "auto", pb: { xs: 10, sm: 4 } }}>
             {/* Hero section – like screenshot */}
-            <Box sx={{ p: 3, pb: 2, bgcolor: "#FAFAFA" }}>
+            <Box 
+              sx={{ 
+                p: 3, 
+                pb: 2.5, 
+                background: "rgba(255, 255, 255, 0.95)",
+                borderBottom: "1px solid rgba(0, 0, 0, 0.06)" 
+              }}
+            >
               <Stack direction="row" spacing={2} alignItems="center">
                 <Stack direction="row" spacing={2} alignItems="center" flex={1}>
                   <Avatar
@@ -1549,46 +1612,37 @@ export default function Dashboard() {
                     }
                     alt={`${companyName} logo`}
                     sx={{
-                      width: { xs: 50, sm: 50 },
-                      height: { xs: 50, sm: 50 },
-                      border: "1px solid",
-                      borderColor: "divider",
-                      "& img": {
-                        objectFit: "contain",
-                      },
+                      width: { xs: 56, sm: 62 },
+                      height: { xs: 56, sm: 62 },
+                      border: "3px solid rgba(255,255,255,0.9)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                      "& img": { objectFit: "contain" },
                     }}
                   >
                     {companyName?.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Stack direction="column" spacing={1} flexWrap="wrap">
-                    <Typography variant="h7" fontWeight={700} lineHeight={1.2}>
+                  <Stack direction="column" spacing={0.8} flex={1}>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={700} 
+                      lineHeight={1.3}
+                      sx={{ color: "#0f766e" }}
+                    >
                       {selectedJob.job_title}
                     </Typography>
                     <Chip
-                      icon={<BusinessRoundedIcon sx={{ fontSize: 16 }} />}
+                      icon={<BusinessRoundedIcon sx={{ fontSize: 18 }} />}
                       label={`${t('company')}: ${companyName}`}
                       size="small"
-                      sx={(theme) => ({
-                        height: 22,
-                        fontSize: "0.72rem",
+                      sx={{
+                        height: 26,
+                        fontSize: "0.8rem",
+                        fontWeight: 500,
+                        backgroundColor: "rgba(20, 184, 166, 0.1)",
+                        color: "#0f766e",
+                        border: "1px solid rgba(20, 184, 166, 0.3)",
                         alignSelf: "flex-start",
-                        px: 0.5,
-                        backgroundColor: alpha(
-                          theme.palette.primary.main,
-                          0.08,
-                        ),
-                        color: alpha(theme.palette.primary.main, 0.9),
-
-                        "& .MuiChip-icon": {
-                          fontSize: 16,
-                          color: alpha(theme.palette.primary.main, 0.7),
-                          ml: 0.5,
-                        },
-
-                        "& .MuiChip-label": {
-                          px: 0.5,
-                        },
-                      })}
+                      }}
                     />
                   </Stack>
                 </Stack>
@@ -1603,42 +1657,36 @@ export default function Dashboard() {
                     onClick={handleOpenApplyDialog}
                     disabled={applying[selectedJob?.pk_id]}
                     sx={{
-                      display: {  xs: "none", sm: "none", md: "none", lg: "inline-flex",},
-                      whiteSpace: "nowrap",
+                      display: {  xs: "none", md: "inline-flex"},
+                      px: 3,
+                      py: 1,
+                      borderRadius: 2.5,
                       textTransform: "none",
+                      fontWeight: 600,
+                      boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
                     }}
                   >
                     {hasAppliedToThisJob ? t('reapply') : t('apply_now')}
                   </Button>
                 )}
                 {/* Mobile buttons */}
-                {isMobile && (
-                  <Stack
-                    direction="column"
-                    spacing={0.5}
-                    sx={{ mt: 1 }}
-                    justifyContent="flex-end"
-                  >
-                    {isCandidate && !checkButtonApply && (
-                      <Tooltip
-                        title={hasAppliedToThisJob ? t('reapply') : t('apply')}
-                        arrow
-                      >
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={handleOpenApplyDialog}
-                          sx={{
-                            minWidth: 36,
-                            px: 1,
-                          }}
-                        >
-                          <Send fontSize="small" />
-                        </Button>
-                      </Tooltip>
-                    )}
-                  </Stack>
+                {isMobile && isCandidate && !checkButtonApply && (
+                  <Tooltip title={hasAppliedToThisJob ? t('reapply') : t('apply')} arrow>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={handleOpenApplyDialog}
+                      sx={{
+                        minWidth: 42,
+                        height: 42,
+                        borderRadius: 2.5,
+                        boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                      }}
+                    >
+                      <Send fontSize="small" />
+                    </Button>
+                  </Tooltip>
                 )}
 
                 {/* Desktop */}
@@ -1649,11 +1697,18 @@ export default function Dashboard() {
                     size="small"
                     color="info"
                     sx={{
-                      minWidth: 0,
-                      px: 1,
+                      minWidth: 42,
+                      height: 42,
+                      borderRadius: 2.5,
+                      borderColor: "rgba(20, 184, 166, 0.4)",
+                      color: "#0f766e",
+                      "&:hover": {
+                        borderColor: "#14b8a6",
+                        backgroundColor: "rgba(20, 184, 166, 0.08)",
+                      },
                     }}
                   >
-                    <InfoOutlinedIcon color="warning" />
+                    <InfoOutlinedIcon />
                   </Button>
                 </Tooltip>
 
@@ -2397,218 +2452,143 @@ export default function Dashboard() {
               <Divider sx={{ mt: 1 }} />
 
               {/* Quick info chips / rows */}
-              <Stack spacing={1.5} sx={{ mt: 3 }}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <EventIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('posting_date')}:
-                  </Typography>
-                  <Chip
-                    label={
-                      selectedJob.posting_date
-                        ? new Date(selectedJob.posting_date)
-                            .toISOString()
-                            .split("T")[0]
-                        : "—"
-                    }
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <EventIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('closing_date')}:
-                  </Typography>
-                  <Chip
-                    label={
-                      selectedJob.closing_date
-                        ? new Date(selectedJob.closing_date).toLocaleDateString(
-                            "en-CA",
-                          ) // yyyy-mm-dd
-                        : "—"
-                    }
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <WorkOutlineIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('job_type')}:
-                  </Typography>
-                  <Chip
-                    label={selectedJob.job_type || "—"}
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <TrendingUpIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('level')}:
-                  </Typography>
-                  <Chip
-                    label={selectedJob.level || "—"}
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <PaymentsIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('salary')}:
-                  </Typography>
-                  <Chip
-                    label={
-                      selectedJob.salary_range
-                        ? `${selectedJob.salary_range}$`
-                        : t('negotiable')
-                    }
-                    size="small"
-                    variant="outlined"
-                    color="default"
-                  />
-                </Stack>
-
-                {selectedJob.categories?.length > 0 && (
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    <CategoryRoundedIcon color="action" fontSize="small" />
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      minWidth={110}
-                      color="text.secondary"
-                    >
-                      {t('categories')}:
-                    </Typography>
-                    {selectedJob.categories.map((cat) => (
-                      <Chip
-                        key={cat.pk_id}
-                        label={cat.name}
-                        size="small"
-                        variant="outlined"
-                        color="warning"
-                        sx={(theme) => ({
-                          fontSize: "0.70rem",
-                          height: 18,
-                          borderRadius: "8px",
-                          borderColor: theme.palette.warning.light,
-                          color: theme.palette.warning.dark,
-                          bgcolor: theme.palette.warning.light + "22",
-                          "& .MuiChip-label": {
-                            fontWeight: 600,
-                          },
-                        })}
-                      />
-                    ))}
-                  </Stack>
-                )}
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LocationOnIcon color="action" fontSize="small" />
-                  <Typography
-                    variant="body2"
-                    fontWeight={600}
-                    minWidth={110}
-                    color="text.secondary"
-                  >
-                    {t('location')}:
-                  </Typography>
-                  <Typography variant="subtitle2" color="">
-                    {selectedJob.location}
-                  </Typography>
-                </Stack>
-                {isCandidate && selectedJob.applications?.length > 0 && selectedJob.applications[0]?.application_status && (
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <HourglassEmpty color="action" fontSize="small" />
-                    <Typography
-                      variant="body2"
-                      fontWeight={600}
-                      minWidth={110}
-                      color="text.secondary"
-                    >
-                      {t('status')}:
+              
+              <Stack spacing={1.2} sx={{ mt: 3.5 }}>
+                {[
+                  { icon: <EventIcon />, label: t('posting_date'), value: selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—" },
+                  { icon: <EventIcon />, label: t('closing_date'), value: selectedJob.closing_date ? new Date(selectedJob.closing_date).toLocaleDateString("en-CA") : "—" },
+                  { icon: <WorkOutlineIcon />, label: t('job_type'), value: selectedJob.job_type || "—" },
+                  { icon: <TrendingUpIcon />, label: t('level'), value: selectedJob.level || "—" },
+                  { icon: <PaymentsIcon />, label: t('salary'), value: selectedJob.salary_range ? `${selectedJob.salary_range}$` : t('negotiable') },
+                ].map((item, idx) => (
+                  <Stack key={idx} direction="row" alignItems="center" spacing={1.5}>
+                    <Box sx={{ color: "text.secondary", minWidth: 24 }}>{item.icon}</Box>
+                    <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                      {item.label}:
                     </Typography>
                     <Chip
-                      label={selectedJob.applications[0]?.application_status}
+                      label={item.value}
                       size="small"
                       variant="outlined"
-                      color="info"
+                      sx={{
+                        fontSize: "0.78rem",
+                        borderColor: "rgba(0,0,0,0.12)",
+                        backgroundColor: "rgba(255,255,255,0.7)",
+                      }}
                     />
+                  </Stack>
+                ))}
+
+                {/* Location */}
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <LocationOnIcon sx={{ color: "text.secondary" }} fontSize="small" />
+                  <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
+                    {t('location')}:
+                  </Typography>
+                  <Typography variant="subtitle2">{selectedJob.location}</Typography>
+                </Stack>
+
+                {/* Categories */}
+                {selectedJob.categories?.length > 0 && (
+                  <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                    <CategoryRoundedIcon sx={{ color: "text.secondary", mt: 0.3 }} fontSize="small" />
+                    <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary" sx={{ mt: 0.3 }}>
+                      {t('categories')}:
+                    </Typography>
+                    <Stack direction="row" spacing={0.6} flexWrap="wrap">
+                      {selectedJob.categories.map((cat) => (
+                        <Chip
+                          key={cat.pk_id}
+                          label={cat.name}
+                          size="small"
+                          sx={{
+                            fontSize: "0.73rem",
+                            bgcolor: "rgba(20, 184, 166, 0.08)",
+                            color: "#0f766e",
+                            border: "1px solid rgba(20, 184, 166, 0.3)",
+                          }}
+                        />
+                      ))}
+                    </Stack>
                   </Stack>
                 )}
               </Stack>
             </Box>
 
-            <Divider />
+            <Divider sx={{ borderColor: "rgba(0,0,0,0.06)" }}/>
 
-            {/* Description */}
+            {/* Job Description & Requirements */}
             <Box
               sx={{
-                p: 2.5,
+                p: 3,
                 "& .ql-editor *": { backgroundColor: "transparent !important" },
               }}
             >
-              <Box mb={4}>
-                <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                  <DescriptionOutlinedIcon color="action" fontSize="medium" />
-                  <Typography variant="h7" fontWeight={700}>
-                    {t('job_description')}
-                  </Typography>
-                </Stack>
-                <ReactQuill
-                  theme="snow"
-                  value={selectedJob.job_description || ""}
-                  readOnly
-                  modules={{ toolbar: false }}
-                />
-              </Box>
+              <Stack spacing={2}>
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
+                    <DescriptionOutlinedIcon color="action" />
+                    <Typography variant="h6" fontWeight={700} color="#0f766e">
+                      {t('job_description')}
+                    </Typography>
+                  </Stack>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      background: "rgba(255,255,255,0.65)",
+                      border: "1px solid rgba(0,0,0,0.08)",
+                      borderRadius: 2,
+                      "& .ql-editor": {
+                        backgroundColor: "transparent !important",
+                        padding: 0,
+                      },
+                      "& .ql-container": {
+                        border: "none",
+                      },
+                    }}
+                  >
+                    <ReactQuill
+                      theme="snow"
+                      value={selectedJob.job_description || ""}
+                      readOnly
+                      modules={{ toolbar: false }}
+                    />
+                  </Paper>
+                </Box>
 
-              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                <ChecklistOutlinedIcon color="action" fontSize="medium" />
-                <Typography variant="h7" fontWeight={700}>
-                  {t('requirements')}
-                </Typography>
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
+                    <ChecklistOutlinedIcon color="action" />
+                    <Typography variant="h6" fontWeight={700} color="#0f766e">
+                      {t('requirements')}
+                    </Typography>
+                  </Stack>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      background: "rgba(255,255,255,0.65)",
+                      border: "1px solid rgba(0,0,0,0.08)",
+                      borderRadius: 2,
+                      "& .ql-editor": {
+                        backgroundColor: "transparent !important",
+                        padding: 0,
+                      },
+                      "& .ql-container": {
+                        border: "none",
+                      },
+                    }}
+                  >
+                    <ReactQuill
+                      theme="snow"
+                      value={selectedJob.experience_required || ""}
+                      readOnly
+                      modules={{ toolbar: false }}
+                    />
+                  </Paper>
+                </Box>
               </Stack>
-              <ReactQuill
-                theme="snow"
-                value={selectedJob.experience_required || ""}
-                readOnly
-                modules={{ toolbar: false }}
-              />
             </Box>
           </Box>
         ) : (
@@ -2619,11 +2599,10 @@ export default function Dashboard() {
               alignItems: "center",
               justifyContent: "center",
               p: 4,
+              color: "text.secondary",
             }}
           >
-            <Typography color="text.secondary">
-              {t('select_job_to_view')}
-            </Typography>
+            <Typography variant="body1">{t('select_job_to_view')}</Typography>
           </Box>
         )}
 
@@ -2635,28 +2614,27 @@ export default function Dashboard() {
               bottom: 0,
               left: 0,
               right: 0,
-              p: 1,
-              bgcolor: "#FAFAFA",
-              borderTop: "1px solid",
-              borderColor: "divider",
+              p: 1.5,
+              bgcolor: "rgba(255, 255, 255, 0.92)",
+              backdropFilter: "blur(12px)",
+              borderTop: "1px solid rgba(0,0,0,0.08)",
               zIndex: 10,
-              display: "flex",
-              justifyContent: "center",
             }}
           >
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleBackToList}
-                startIcon={<Home />}
-                sx={{
-                  textTransform: "none",
-                }}
-              >
-                {t('home')}
-              </Button>
-            </Stack>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleBackToList}
+              startIcon={<Home />}
+              fullWidth
+              sx={{
+                borderRadius: 2.5,
+                textTransform: "none",
+                py: 1,
+              }}
+            >
+              {t('home')}
+            </Button>
           </Box>
         )}
       </Box>
