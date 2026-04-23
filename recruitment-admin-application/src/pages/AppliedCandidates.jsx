@@ -471,7 +471,7 @@ export default function AppliedCandidates() {
           justifyContent: "center",
         }}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: "#3b82f6" }}/>
       </Box>
     );
   }
@@ -479,7 +479,7 @@ export default function AppliedCandidates() {
   if (error) {
     return (
       <Box sx={{ p: 3, height: "100%" }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert severity="error" sx={{ borderLeft: "4px solid #f97316" }}>{error}</Alert>
       </Box>
     );
   }
@@ -491,17 +491,29 @@ export default function AppliedCandidates() {
         height: { xs: "80vh", sm: "100%" },
         display: "flex",
         flexDirection: "column",
-        border: "3px solid",
-        borderColor: "divider",
-        backgroundColor: "#FAFAFA",
+        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(59, 130, 246, 0.2)",
+        boxShadow: "0 8px 32px rgba(30, 58, 138, 0.12)",
+        borderRadius: 3,
+        overflow: "hidden",
       }}
     >
       <Box sx={{ p: 2 }}>
-        <Typography variant="h7" fontWeight={700} color="primary.dark">
+        <Typography 
+          variant="h7" 
+          fontWeight={700} 
+          sx={{
+            background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           {t('your_applications')}
         </Typography>
       </Box>
-      <Divider />
+      <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
       <Box sx={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
         {myJobs.length === 0 ? (
           <Box
@@ -514,11 +526,11 @@ export default function AppliedCandidates() {
               color: "text.secondary",
             }}
           >
-            <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2 }} />
-            <Typography variant="subtitle2">
+            <WorkIcon sx={{ fontSize: 60, opacity: 0.3, mb: 2, color: "#3b82f6" }} />
+            <Typography variant="subtitle2" sx={{ color: "#1e3a8a" }}>
               {t('no_jobs_with_applications_yet')}
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+            <Typography variant="body2" sx={{ mt: 1, textAlign: "center", color: "#f97316" }}>
               {t('no_jobs_with_applications_yet_desc')}
             </Typography>
           </Box>
@@ -533,12 +545,16 @@ export default function AppliedCandidates() {
                   px: 2,
                   py: 1.5,
                   cursor: "pointer",
-                  bgcolor: isActive ? "action.selected" : "transparent",
+                  bgcolor: isActive ? "rgba(59, 130, 246, 0.08)" : "transparent",
                   borderLeft: isActive ? "4px solid" : "4px solid transparent",
-                  borderColor: isActive ? "primary.main" : "transparent",
+                  borderImage: isActive ? "linear-gradient(180deg, #3b82f6 0%, #f97316 100%) 1" : "none",
                   borderBottom: "1px solid",
-                  borderBottomColor: "divider",
-                  "&:hover": { bgcolor: "action.hover" },
+                  borderBottomColor: "rgba(59, 130, 246, 0.1)",
+                  transition: "all 0.2s ease",
+                  "&:hover": { 
+                    bgcolor: "rgba(249, 115, 22, 0.06)",
+                    transform: "translateY(2px)",
+                  },
                 }}
               >
                 <Stack direction="row" spacing={2} alignItems="center">
@@ -551,14 +567,15 @@ export default function AppliedCandidates() {
                     sx={{
                       width: 48,
                       height: 48,
-                      border: "1px solid",
-                      borderColor: "divider",
+                      border: "2px solid",
+                      borderColor: "rgba(59, 130, 246, 0.3)",
+                      boxShadow: "0 2px 8px rgba(30, 58, 138, 0.1)",
                     }}
                   >
                     {job.employer?.company_name?.[0]?.toUpperCase() || "?"}
                   </Avatar>
                   <Box flex={1}>
-                    <Typography variant="subtitle2" fontWeight={600}>
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ color: "#1e3a8a" }}>
                       {job.job_title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -577,6 +594,10 @@ export default function AppliedCandidates() {
                           : "warning"
                     }
                     variant="outlined"
+                    sx={{
+                      borderColor: job.status === "Open" ? "#10b981" : "#ef4444",
+                      color: job.status === "Open" ? "#10b981" : "#ef4444",
+                    }}
                   />
                 </Stack>
               </Box>
@@ -595,7 +616,7 @@ export default function AppliedCandidates() {
       <Typography
         variant="body2"
         fontWeight={500}
-        sx={{ flex: 1, textAlign: "right" }}
+        sx={{ flex: 1, textAlign: "right", color: "#1e3a8a" }}
       >
         {value}
       </Typography>
@@ -609,20 +630,32 @@ export default function AppliedCandidates() {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        border: "3px solid",
-        borderColor: "divider",
-        backgroundColor: "#FAFAFA",
+        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(59, 130, 246, 0.2)",
+        boxShadow: "0 8px 32px rgba(30, 58, 138, 0.12)",
+        borderRadius: 3,
+        overflow: "hidden",
       }}
     >
       {isMobile && (
-        <AppBar position="sticky" color="default" elevation={1}>
+        <AppBar 
+          position="sticky" 
+          olor="default" 
+          elevation={1}
+          sx={{
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(239, 246, 255, 0.85) 100%)",
+            backdropFilter: "blur(10px)",
+            borderBottom: "1px solid rgba(59, 130, 246, 0.15)",
+          }}
+        >
           <Toolbar variant="dense" />
         </AppBar>
       )}
 
       {selectedJobId ? (
         <>
-          <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: "#FAFAFA" }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: "transparent" }}>
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar
                 src={
@@ -633,17 +666,27 @@ export default function AppliedCandidates() {
                 sx={{
                   width: 60,
                   height: 60,
-                  border: "1px solid",
-                  borderColor: "divider",
+                  border: "2px solid",
+                  borderColor: "rgba(59, 130, 246, 0.3)",
+                  boxShadow: "0 4px 12px rgba(30, 58, 138, 0.15)",
                 }}
               >
                 {selectedJob?.employer?.company_name?.[0]?.toUpperCase() || "?"}
               </Avatar>
               <Box flex={1}>
-                <Typography variant="h6" fontWeight={700}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={700}
+                  sx={{
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
                   {selectedJob?.job_title}
                 </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="subtitle2" sx={{ color: "#f97316" }}>
                   {selectedJob?.employer?.company_name} • {applications.length}{" "}
                   {t('application')}
                   {/* {applications.length !== 1} */}
@@ -655,18 +698,27 @@ export default function AppliedCandidates() {
                   size="small"
                   onClick={handleBackToList}
                   startIcon={<ArrowBack />}
-                  sx={{ textTransform: "none" }}
+                  sx={{ 
+                    textTransform: "none",
+                    borderColor: "#3b82f6",
+                    color: "#3b82f6",
+                    "&:hover": {
+                      borderColor: "#f97316",
+                      color: "#f97316",
+                      bgcolor: "rgba(249, 115, 22, 0.08)",
+                    },
+                  }}
                 >
                   {t('back_to_jobs')}
                 </Button>
               )}
             </Stack>
           </Box>
-          <Divider />
+          <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
           <Box
             sx={{
               borderBottom: 1,
-              borderColor: "divider",
+              borderColor: "rgba(59, 130, 246, 0.15)",
               px: { xs: 1.5, sm: 2 },
             }}
           >
@@ -676,6 +728,15 @@ export default function AppliedCandidates() {
               variant="scrollable"
               scrollButtons="auto"
               allowScrollButtonsMobile
+              sx={{
+                "& .MuiTab-root": {
+                  color: "#1e3a8a",
+                  "&.Mui-selected": { color: "#f97316" },
+                },
+                "& .MuiTabs-indicator": {
+                  background: "linear-gradient(90deg, #3b82f6 0%, #f97316 120%)",
+                },
+              }}
             >
               {TAB_KEYS.map((key, i) => (
                 <Tab
@@ -700,7 +761,7 @@ export default function AppliedCandidates() {
                 alignItems="center"
                 height="100%"
               >
-                <CircularProgress />
+                <CircularProgress sx={{ color: "#3b82f6" }}/>
               </Box>
             ) : filteredApplications.length === 0 ? (
               <Box
@@ -711,8 +772,8 @@ export default function AppliedCandidates() {
                 height="100%"
                 color="text.secondary"
               >
-                <HourglassEmpty sx={{ fontSize: 60, opacity: 0.4, mb: 2 }} />
-                <Typography variant="h6">
+                <HourglassEmpty sx={{ fontSize: 60, opacity: 0.4, mb: 2, color: "#f97316" }} />
+                <Typography variant="h6" sx={{ color: "#1e3a8a" }}>
                   {tabValue === 0
                     ? t("applications.no_applications_yet")
                     : t("applications.no_status_applications", {
@@ -739,10 +800,17 @@ export default function AppliedCandidates() {
                       }}
                       sx={{
                         borderRadius: 2,
-                        boxShadow: 1,
-                        transition: "box-shadow 0.2s",
-                        "&:hover": { boxShadow: 3 },
+                        boxShadow: "0 2px 12px rgba(30, 58, 138, 0.08)",
+                        transition: "all 0.2s",
                         cursor: "pointer",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(239, 246, 255, 0.6) 100%)",
+                        backdropFilter: "blur(8px)",
+                        border: "1px solid rgba(59, 130, 246, 0.15)",
+                        "&:hover": { 
+                          boxShadow: "0 6px 20px rgba(59, 130, 246, 0.15)",
+                          borderColor: "#f97316",
+                          transform: "translateY(-2px)",
+                        },
                       }}
                     >
                       <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
@@ -761,6 +829,8 @@ export default function AppliedCandidates() {
                               sx={{
                                 width: 40,
                                 height: 40,
+                                border: "2px solid",
+                                borderColor: "rgba(59, 130, 246, 0.3)",
                               }}
                               src={getProfileImageUrl(app)}
                               imgProps={{
@@ -773,7 +843,7 @@ export default function AppliedCandidates() {
                               {candidateName?.[0]?.toUpperCase() || "?"}
                             </Avatar>
                             <Box>
-                              <Typography variant="body1" fontWeight={600}>
+                              <Typography variant="body1" fontWeight={600} sx={{ color: "#1e3a8a" }}>
                                 {candidateName}
                               </Typography>
                               <Typography
@@ -797,9 +867,14 @@ export default function AppliedCandidates() {
                           >
                             <FormControl
                               size="small"
-                              sx={{ minWidth: { xs: "100%", sm: 140 } }}
+                              sx={{ 
+                                minWidth: { xs: "100%", sm: 140 },
+                                "& .MuiOutlinedInput-root": {
+                                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                                }, 
+                              }}
                             >
-                              <InputLabel>{t('status')}</InputLabel>
+                              <InputLabel sx={{ color: "#1e3a8a" }}>{t('status')}</InputLabel>
                               <Select
                                 value={app.application_status || "PENDING"}
                                 label="Status"
@@ -851,50 +926,48 @@ export default function AppliedCandidates() {
                                   sx={{
                                     fontWeight: 600,
                                     borderRadius: 2,
-                                    backgroundColor: "rgba(211, 47, 47, 0.04)",
-                                    color: "error.dark",
+                                    backgroundColor: "rgba(239, 68, 68, 0.04)",
+                                    color: "#ef4444",
                                     height: 36,
                                     px: 1.5,
-                                    cursor: "auto"
+                                    cursor: "auto",
+                                    borderColor: "#ef4444",
                                   }}
                                 />
 
                                 {app.reason && (
                                   <Box
                                     sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
                                       p: 0.9,
-                                      border: "1.5px solid",
-                                      borderColor: "error.main",
+                                      border: "1px solid",
+                                      borderColor: "#ef4444",
                                       borderRadius: 2,
-                                      position: "relative",
                                       maxWidth: 380,
-                                      backgroundColor: "rgba(211, 47, 47, 0.04)",
-                                      cursor: "auto"
+                                      backgroundColor: "rgba(239, 68, 68, 0.04)",
                                     }}
                                   >
-                                    {/* Floating Label */}
+                                    {/* Label */}
                                     <Typography
                                       sx={{
-                                        position: "absolute",
-                                        top: -10,
-                                        left: 14,
-                                        px: 1,
                                         fontSize: 12,
                                         fontWeight: 600,
-                                        backgroundColor: "#fff",
-                                        borderRadius: 3,
-                                        color: "error.main",
+                                        color: "#ef4444",
+                                        whiteSpace: "nowrap",
                                       }}
                                     >
-                                      {t("reason")}
+                                      {t("reason")}:
                                     </Typography>
 
                                     {/* Content */}
                                     <Typography
                                       sx={{
                                         fontSize: 14,
-                                        color: "error.dark",
+                                        color: "#dc2626",
                                         wordBreak: "break-word",
+                                        flex: 1,
                                       }}
                                     >
                                       {app.reason}
@@ -912,8 +985,8 @@ export default function AppliedCandidates() {
                           alignItems="center"
                           mt={1.5}
                         >
-                          <CalendarIcon fontSize="small" color="action" />
-                          <Typography variant="caption" color="text.secondary">
+                          <CalendarIcon fontSize="small" sx={{ color: "#3b82f6" }} />
+                          <Typography variant="caption" sx={{ color: "#f97316" }}>
                             Applied:
                             {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
@@ -934,7 +1007,15 @@ export default function AppliedCandidates() {
           justifyContent="center"
           color="text.secondary"
         >
-          <Typography variant="h7">
+          <Typography 
+            variant="h7"
+            sx={{
+              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
             {t('select_a_job_to_view_applications')}
           </Typography>
         </Box>
@@ -1000,7 +1081,15 @@ export default function AppliedCandidates() {
         }}
         fullWidth
         maxWidth="md"
-        PaperProps={{ sx: { height: "90vh", overflow: "hidden" } }}
+        PaperProps={{ 
+          sx: { 
+            height: "90vh", 
+            overflow: "hidden",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
+          }
+        }}
       >
         <DialogContent
           sx={{ p: 0, height: "100%", overflow: "hidden", display: "flex" }}
@@ -1050,8 +1139,16 @@ export default function AppliedCandidates() {
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewFileOpen(false)}>Close</Button>
+        <DialogActions sx={{ borderTop: "1px solid rgba(59, 130, 246, 0.15)" }}>
+          <Button 
+            onClick={() => setViewFileOpen(false)}
+            sx={{
+              color: "#f97316",
+              "&:hover": { color: "#ea580c" },
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1067,6 +1164,15 @@ export default function AppliedCandidates() {
         fullWidth
         maxWidth="md"
         PaperComponent={DraggablePaper}
+        PaperProps={{
+          sx: {
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
+            borderRadius: 3,
+            overflow: "hidden",
+          },
+        }}
       >
         {selectedCandidateApp &&
           (() => {
@@ -1202,6 +1308,7 @@ export default function AppliedCandidates() {
                       gap: 1,
                       width: "100%",
                       height: "100%", 
+                      color: "#1e3a8a",
                     }}
                   >
                     {params.value}
@@ -1259,6 +1366,7 @@ export default function AppliedCandidates() {
                             e.stopPropagation();
                             params.row.view();
                           }}
+                          sx={{ color: "#3b82f6", "&:hover": { color: "#1e3a8a" } }}
                         >
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
@@ -1274,6 +1382,7 @@ export default function AppliedCandidates() {
                             e.stopPropagation();
                             params.row.download();
                           }}
+                          sx={{ color: "#f97316", "&:hover": { color: "#ea580c" } }}
                         >
                           <FileDownloadIcon fontSize="small" />
                         </IconButton>
@@ -1303,19 +1412,31 @@ export default function AppliedCandidates() {
                   sx={{
                     p: 1.5,
                     pb: 1.5,
-                    borderBottom: 1,
-                    borderColor: "divider",
+                    borderBottom: "2px solid",
+                    borderImage: "linear-gradient(90deg, #3b82f6 0%, #f97316 100%) 1",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    cursor: "move",
+                    background: "linear-gradient(135deg, rgba(30, 58, 138, 0.05) 0%, rgba(249, 115, 22, 0.03) 100%)",
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight={600}>
+                  <Typography 
+                    variant="subtitle1" 
+                    fontWeight={600}
+                    sx={{
+                      background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                    }}
+                  >
                     {t('applications.candidate_details')}
                   </Typography>
                   <IconButton
                     size="small"
                     color="error"
                     onClick={() => setCandidateDetailOpen(false)}
+                    sx={{ color: "#f97316", "&:hover": { color: "#ea580c" } }}
                   >
                     <CancelOutlined fontSize="small" />
                   </IconButton>
@@ -1334,6 +1455,9 @@ export default function AppliedCandidates() {
                           width: 64,
                           height: 64,
                           fontSize: "2rem",
+                          border: "3px solid",
+                          borderColor: "rgba(59, 130, 246, 0.4)",
+                          boxShadow: "0 4px 12px rgba(30, 58, 138, 0.15)",
                         }}
                         src={getProfileImageUrl(selectedCandidateApp)}
                         imgProps={{
@@ -1347,10 +1471,10 @@ export default function AppliedCandidates() {
                       </Avatar>
 
                       <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ color: "#1e3a8a" }}>
                           {candidateName}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: "#f97316" }}>
                           {selectedCandidateApp.candidate?.user?.email || "—"}
                         </Typography>
                       </Box>
@@ -1360,6 +1484,11 @@ export default function AppliedCandidates() {
                           color="success"
                           size="large"
                           onClick={() => handleSelect(userId)}
+                          sx={{
+                            color: "#3b82f6",
+                            "&:hover": { color: "#f97316", transform: "scale(1.1)" },
+                            transition: "all 0.2s",
+                          }}
                         >
                           <FaFacebookMessenger size={34} />
                         </IconButton>
@@ -1368,13 +1497,13 @@ export default function AppliedCandidates() {
                     {/* Personal Information */}
                     <Box>
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <PersonOutlineSharp color="primary" />
-                        <Typography variant="body1" fontWeight={700}>
+                        <PersonOutlineSharp sx={{ color: "#3b82f6" }} />
+                        <Typography variant="body1" fontWeight={700} sx={{ color: "#1e3a8a" }}>
                           {t('applications.personal_information')}
                         </Typography>
                       </Stack>
 
-                      <Divider sx={{ mb: 1 }} />
+                      <Divider sx={{ mb: 1, borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
                       <Stack spacing={1.2} sx={{ pl: 1 }}>
                         <InfoRow
@@ -1418,15 +1547,15 @@ export default function AppliedCandidates() {
                           }
                         />
                       </Stack>
-                      <Divider sx={{ mb: 1, mt: 1 }} />
+                      <Divider sx={{ mb: 1, mt: 1, borderColor: "rgba(59, 130, 246, 0.15)" }} />
                       <Box>
                         <Stack direction="row" alignItems="center" spacing={1}>
                           <DescriptionOutlined
                             fontSize="small"
-                            color="primary"
+                            sx={{ color: "#f97316" }}
                           />
 
-                          <Typography variant="subtitle1" fontWeight={600}>
+                          <Typography variant="subtitle1" fontWeight={600} sx={{ color: "#1e3a8a" }}>
                             {t('applications.application_documents')}
                           </Typography>
                         </Stack>
@@ -1437,8 +1566,18 @@ export default function AppliedCandidates() {
                             borderRadius: 2,
                             overflow: "hidden",
                             border: "1px solid",
-                            borderColor: "divider",
-                            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                            borderColor: "rgba(59, 130, 246, 0.2)",
+                            boxShadow: "0 1px 4px rgba(30, 58, 138, 0.06)",
+                            "& .MuiDataGrid-root": {
+                              border: "none",
+                            },
+                            "& .MuiDataGrid-columnHeaders": {
+                              background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.04) 100%)",
+                              borderBottom: "1px solid rgba(59, 130, 246, 0.15)",
+                            },
+                            "& .MuiDataGrid-row:hover": {
+                              background: "rgba(59, 130, 246, 0.04)",
+                            },
                           }}
                         >
                           <DataGrid
@@ -1468,22 +1607,12 @@ export default function AppliedCandidates() {
                         <FormControl
                           sx={{
                             minWidth: 140,
-                            "& .MuiInputBase-root": {
-                              height: 30,
-                              fontSize: 16,
-                              paddingTop: 0,
-                              paddingBottom: 0,
+                            "& .MuiOutlinedInput-root": {
+                              "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                             },
-                            // "& .MuiSelect-select": {
-                            //   paddingTop: 4,
-                            //   paddingBottom: 4,
-                            // },
-                            // "& .MuiInputLabel-root": {
-                            //   fontSize: 13,
-                            // },
                           }}
                         >
-                          <InputLabel>{t("applications.application_status")}</InputLabel>
+                          <InputLabel sx={{ color: "#1e3a8a" }}>{t("applications.application_status")}</InputLabel>
                           <Select
                             value={
                               selectedCandidateApp.application_status ||
@@ -1533,7 +1662,26 @@ export default function AppliedCandidates() {
                               ?.color || "warning"
                           }
                           size="small"
-                          sx={{ fontWeight: 600, minWidth: 100 }}
+                          sx={{ 
+                            fontWeight: 600, 
+                            minWidth: 100,
+                            ...(selectedCandidateApp.application_status === "ACCEPTED" && {
+                              bgcolor: "#10b981",
+                              color: "white",
+                            }),
+                            ...(selectedCandidateApp.application_status === "SHORTLISTED" && {
+                              bgcolor: "#3b82f6",
+                              color: "white",
+                            }),
+                            ...(selectedCandidateApp.application_status === "REJECTED" && {
+                              bgcolor: "#ef4444",
+                              color: "white",
+                            }),
+                            ...(selectedCandidateApp.application_status === "PENDING" && {
+                              bgcolor: "#f97316",
+                              color: "white",
+                            }),
+                          }}
                         />
                       </Stack>
                     </Box>
@@ -1553,6 +1701,14 @@ export default function AppliedCandidates() {
         }}
         maxWidth="xs"
         fullWidth
+        PaperProps={{
+          sx: {
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
+            borderRadius: 3,
+          },
+        }}
       >
         {/* Title */}
         <DialogTitle
@@ -1561,6 +1717,8 @@ export default function AppliedCandidates() {
             fontSize: 16,
             py: 1.2,
             px: 2,
+            color: "#1e3a8a",
+            borderBottom: "1px solid rgba(59, 130, 246, 0.15)",
           }}
         >
           {t('applications.confirm_status_change')}
@@ -1569,14 +1727,14 @@ export default function AppliedCandidates() {
 
         {/* Content */}
         <DialogContent sx={{ py: 1.5, px: 2 }}>
-          <Box component="p" sx={{ fontSize: 14, lineHeight: 1.5 }}>
+          <Box component="p" sx={{ fontSize: 14, lineHeight: 1.5, color: "#1e3a8a" }}>
             {t('applications.confirm_status_change_message')}{" "}
-            <Box component="span" sx={{ fontWeight: 600 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: "#f97316" }}>
               {STATUS_MAP[confirmDialog.currentStatus]?.label ||
                 confirmDialog.currentStatus}
             </Box>{" "}
             {t('applications.to')}{" "}
-            <Box component="span" sx={{ fontWeight: 600 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: "#f97316" }}>
               {confirmDialog.newStatusLabel}
             </Box>
             ?
@@ -1584,7 +1742,7 @@ export default function AppliedCandidates() {
         </DialogContent>
 
         {/* Actions */}
-        <DialogActions sx={{ px: 2, pb: 1.5 }}>
+        <DialogActions sx={{ px: 2, pb: 2, borderTop: "1px solid rgba(59, 130, 246, 0.1)" }}>
           <Stack direction="row" spacing={1}>
             <Button
               size="small"
@@ -1593,7 +1751,12 @@ export default function AppliedCandidates() {
               onClick={() =>
                 setConfirmDialog({ ...confirmDialog, open: false })
               }
-              sx={{ textTransform: "none" }}
+              sx={{ 
+                textTransform: "none",
+                borderColor: "#3b82f6",
+                color: "#3b82f6",
+                "&:hover": { borderColor: "#f97316", color: "#f97316" },
+              }}
             >
               {t('cancel')}
             </Button>
@@ -1602,16 +1765,13 @@ export default function AppliedCandidates() {
               size="small"
               variant="contained"
               startIcon={<CheckCircleOutline />}
-              sx={{ textTransform: "none" }}
-              color={
-                confirmDialog.newStatusLabel === "Rejected"
-                  ? "error"
-                  : confirmDialog.newStatusLabel === "Accepted"
-                    ? "success"
-                    : confirmDialog.newStatusLabel === "Shortlisted"
-                      ? "primary"
-                      : "warning"
-              }
+              sx={{ 
+                textTransform: "none",
+                background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 120%)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 120%)",
+                },
+              }}
               onClick={async () => {
                 if (!confirmDialog.appId || !confirmDialog.newStatusLabel)
                   return;
@@ -1639,7 +1799,25 @@ export default function AppliedCandidates() {
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{ 
+            width: "100%",
+            ...(snackbar.severity === "success" && {
+              bgcolor: "#10b981",
+              color: "white",
+            }),
+            ...(snackbar.severity === "error" && {
+              bgcolor: "#ef4444",
+              color: "white",
+            }),
+            ...(snackbar.severity === "warning" && {
+              bgcolor: "#f97316",
+              color: "white",
+            }),
+            ...(snackbar.severity === "info" && {
+              bgcolor: "#3b82f6",
+              color: "white",
+            }),
+          }}
         >
           {snackbar.message}
         </Alert>
