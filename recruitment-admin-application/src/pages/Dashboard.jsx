@@ -887,7 +887,7 @@ export default function Dashboard() {
                   variant="h6"
                   fontWeight={700}
                   sx={{
-                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 10%, #f97316 90%)",
+                    background: "#1e3a8a",
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
@@ -1662,10 +1662,10 @@ export default function Dashboard() {
                   fontWeight: 600,
                   borderRadius: 2,
                   px: 3,
-                  background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 90%)",
+                  background: "#1e3a8a",
                   boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 90%)",
+                    background: "#1e3a8a",
                     boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
                   },
                 }}
@@ -2034,10 +2034,10 @@ export default function Dashboard() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          background: "rgba(255, 255, 255, 0.75)",
+          background: "linear-gradient(135deg, rgba(30, 58, 138, 0.06) 0%, rgba(249, 115, 22, 0.04) 100%)",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.6)",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+          border: "1px solid rgba(59, 130, 246, 0.2)",
+          boxShadow: "0 8px 32px rgba(30, 58, 138, 0.12)",
           borderRadius: 3,
           overflow: "hidden",
         }}
@@ -2049,9 +2049,9 @@ export default function Dashboard() {
             color="default" 
             elevation={0}
             sx={{
-              background: "rgba(255, 255, 255, 0.85)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(239, 246, 255, 0.85) 100%)",
               backdropFilter: "blur(10px)",
-              borderBottom: "1px solid rgba(0,0,0,0.06)",
+              borderBottom: "1px solid rgba(59, 130, 246, 0.15)",
             }}
           >
             <Toolbar variant="dense" />
@@ -2065,8 +2065,8 @@ export default function Dashboard() {
               sx={{ 
                 p: 3, 
                 pb: 2.5, 
-                background: "rgba(255, 255, 255, 0.95)",
-                borderBottom: "1px solid rgba(0, 0, 0, 0.06)" 
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+                borderBottom: "1px solid rgba(59, 130, 246, 0.12)" 
               }}
             >
               <Stack direction="row" spacing={2} alignItems="center">
@@ -2081,8 +2081,9 @@ export default function Dashboard() {
                     sx={{
                       width: { xs: 56, sm: 62 },
                       height: { xs: 56, sm: 62 },
-                      border: "3px solid rgba(255,255,255,0.9)",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                      border: "3px solid",
+                      borderColor: "rgba(59, 130, 246, 0.3)",
+                      boxShadow: "0 4px 12px rgba(30, 58, 138, 0.15)",
                       "& img": { objectFit: "contain" },
                     }}
                   >
@@ -2093,21 +2094,26 @@ export default function Dashboard() {
                       variant="h6" 
                       fontWeight={700} 
                       lineHeight={1.3}
-                      sx={{ color: "#0f766e" }}
+                      sx={{ 
+                        background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #f97316 100%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
                     >
                       {selectedJob.job_title}
                     </Typography>
                     <Chip
-                      icon={<BusinessRoundedIcon sx={{ fontSize: 18 }} />}
+                      icon={<BusinessRoundedIcon sx={{ fontSize: 18, color: "#3b82f6" }} />}
                       label={`${t('company')}: ${companyName}`}
                       size="small"
                       sx={{
                         height: 26,
                         fontSize: "0.8rem",
                         fontWeight: 500,
-                        backgroundColor: "rgba(20, 184, 166, 0.1)",
-                        color: "#0f766e",
-                        border: "1px solid rgba(20, 184, 166, 0.3)",
+                        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                        color: "#1e3a8a",
+                        border: "1px solid rgba(59, 130, 246, 0.3)",
                         alignSelf: "flex-start",
                       }}
                     />
@@ -2130,56 +2136,70 @@ export default function Dashboard() {
                       borderRadius: 2.5,
                       textTransform: "none",
                       fontWeight: 600,
-                      boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                      background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 105%)",
+                      boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 105%)",
+                        boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
+                      },
                     }}
                   >
                     {hasAppliedToThisJob ? t('reapply') : t('apply_now')}
                   </Button>
                 )}
                 {/* Mobile buttons */}
-                {isMobile && isCandidate && !checkButtonApply && (
-                  <Tooltip title={hasAppliedToThisJob ? t('reapply') : t('apply')} arrow>
+                <Stack spacing={1}>
+                  {isMobile && isCandidate && !checkButtonApply && (
+                    <Tooltip title={hasAppliedToThisJob ? t('reapply') : t('apply')} arrow>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={handleOpenApplyDialog}
+                        sx={{
+                          minWidth: 42,
+                          height: 42,
+                          borderRadius: 2.5,
+                          background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 105%)",
+                          boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)",
+                          "&:hover": {
+                            background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 105%)",
+                          },
+                        }}
+                      >
+                        <Send fontSize="small" />
+                      </Button>
+                    </Tooltip>
+                  )}
+
+                  {/* Desktop */}
+                  <Tooltip title={t('company_information')} arrow>
                     <Button
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
+                      onClick={() => setCompanyDialogOpen(true)}
                       size="small"
-                      onClick={handleOpenApplyDialog}
+                      color="info"
                       sx={{
                         minWidth: 42,
                         height: 42,
                         borderRadius: 2.5,
-                        boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                        borderColor: "rgba(59, 130, 246, 0.4)",
+                        color: "#3b82f6",
+                        "&:hover": {
+                          borderColor: "#f97316",
+                          color: "#f97316",
+                          backgroundColor: "rgba(249, 115, 22, 0.08)",
+                        },
                       }}
                     >
-                      <Send fontSize="small" />
+                      <InfoOutlinedIcon />
                     </Button>
                   </Tooltip>
-                )}
-
-                {/* Desktop */}
-                <Tooltip title={t('company_information')} arrow>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setCompanyDialogOpen(true)}
-                    size="small"
-                    color="info"
-                    sx={{
-                      minWidth: 42,
-                      height: 42,
-                      borderRadius: 2.5,
-                      borderColor: "rgba(20, 184, 166, 0.4)",
-                      color: "#0f766e",
-                      "&:hover": {
-                        borderColor: "#14b8a6",
-                        backgroundColor: "rgba(20, 184, 166, 0.08)",
-                      },
-                    }}
-                  >
-                    <InfoOutlinedIcon />
-                  </Button>
-                </Tooltip>
+                </Stack>
+                
 
                 {/* COMPANY INFORMATION DIALOG - Glassmorphism Style */}
+
                 <Dialog
                   open={companyDialogOpen}
                   onClose={(env, reason) => {
@@ -2191,10 +2211,10 @@ export default function Dashboard() {
                   PaperProps={{
                     sx: {
                       borderRadius: 4,
-                      background: "rgba(255, 255, 255, 0.85)",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(239, 246, 255, 0.85) 100%)",
                       backdropFilter: "blur(20px)",
-                      border: "1px solid rgba(20, 184, 166, 0.3)",
-                      boxShadow: "0 25px 50px -12px rgba(20, 184, 166, 0.25)",
+                      border: "1px solid rgba(59, 130, 246, 0.25)",
+                      boxShadow: "0 25px 50px -12px rgba(30, 58, 138, 0.3)",
                       overflow: "hidden",
                       maxHeight: "85vh",
                     },
@@ -2204,8 +2224,8 @@ export default function Dashboard() {
                   <DialogTitle
                     id="draggable-dialog-title"
                     sx={{
-                      background: "linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.08) 100%)",
-                      borderBottom: "1px solid rgba(20, 184, 166, 0.2)",
+                      background: "linear-gradient(135deg, rgba(30, 58, 138, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)",
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
                       py: 2,
                       px: 3,
                       cursor: "move",
@@ -2223,7 +2243,8 @@ export default function Dashboard() {
                           sx={{
                             width: 48,
                             height: 48,
-                            border: "2px solid rgba(20, 184, 166, 0.3)",
+                            border: "2px solid",
+                            borderColor: "rgba(59, 130, 246, 0.3)",
                             "& img": { objectFit: "contain" },
                           }}
                         >
@@ -2233,7 +2254,7 @@ export default function Dashboard() {
                           variant="h6"
                           fontWeight={700}
                           sx={{
-                            background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
+                            background: "#1e3a8a",
                             backgroundClip: "text",
                             WebkitBackgroundClip: "text",
                             WebkitTextFillColor: "transparent",
@@ -2246,9 +2267,9 @@ export default function Dashboard() {
                         size="small"
                         onClick={() => setCompanyDialogOpen(false)}
                         sx={{
-                          color: "#0f766e",
+                          color: "#f97316",
                           "&:hover": {
-                            bgcolor: "rgba(20, 184, 166, 0.1)",
+                            bgcolor: "rgba(249, 115, 22, 0.1)",
                           },
                         }}
                       >
@@ -2263,15 +2284,17 @@ export default function Dashboard() {
                       <Paper
                         elevation={0}
                         sx={{
-                          p: 2,
+                          p: 2.5,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <BadgeIcon sx={{ color: "#14b8a6" }} />
+                          <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.15)", width: 40, height: 40 }}>
+                            <BadgeIcon sx={{ color: "#3b82f6" }} />
+                          </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
@@ -2280,17 +2303,9 @@ export default function Dashboard() {
                             >
                               {t('company_name')}:
                             </Typography>
-                            <Chip
-                              variant="outlined"
-                              size="small"
-                              label={selectedJob.employer?.company_name}
-                              sx={{
-                                mt: 0.5,
-                                borderColor: "#14b8a6",
-                                color: "#0f766e",
-                                fontWeight: 500,
-                              }}
-                            />
+                            <Typography variant="body1" fontWeight={500} sx={{ color: "#1e3a8a", mt: 0.5 }}>
+                              {selectedJob.employer?.company_name || "—"}
+                            </Typography>
                           </Box>
                         </Stack>
                       </Paper>
@@ -2301,13 +2316,15 @@ export default function Dashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="flex-start" spacing={2}>
-                          <LocationCity sx={{ color: "#14b8a6", mt: 0.5 }} />
+                          <Avatar sx={{ bgcolor: "rgba(249, 115, 22, 0.12)", width: 40, height: 40 }}>
+                            <LocationCity sx={{ color: "#f97316" }} />
+                          </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
@@ -2316,7 +2333,7 @@ export default function Dashboard() {
                             >
                               {t('address')}:
                             </Typography>
-                            <Typography variant="body1" sx={{ mt: 0.5 }}>
+                            <Typography variant="body1" sx={{ mt: 0.5, color: "#1e3a8a" }}>
                               {selectedJob.employer?.company_address || "—"}
                             </Typography>
                           </Box>
@@ -2329,13 +2346,15 @@ export default function Dashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <EmailOutlined sx={{ color: "#14b8a6" }} />
+                          <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.12)", width: 40, height: 40 }}>
+                            <EmailOutlined sx={{ color: "#3b82f6" }} />
+                          </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
@@ -2344,7 +2363,7 @@ export default function Dashboard() {
                             >
                               {t('email')}:
                             </Typography>
-                            <Typography variant="body1" sx={{ mt: 0.5, color: "#0f766e" }}>
+                            <Typography variant="body1" sx={{ mt: 0.5, color: "#3b82f6" }}>
                               {selectedJob.employer?.company_email || "—"}
                             </Typography>
                           </Box>
@@ -2357,13 +2376,15 @@ export default function Dashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <PhoneOutlined sx={{ color: "#14b8a6" }} />
+                          <Avatar sx={{ bgcolor: "rgba(249, 115, 22, 0.12)", width: 40, height: 40 }}>
+                            <PhoneOutlined sx={{ color: "#f97316" }} />
+                          </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
@@ -2372,7 +2393,7 @@ export default function Dashboard() {
                             >
                               {t('contact')}:
                             </Typography>
-                            <Typography variant="body1" sx={{ mt: 0.5 }}>
+                            <Typography variant="body1" sx={{ mt: 0.5, color: "#1e3a8a" }}>
                               {selectedJob.employer?.company_contact || "—"}
                             </Typography>
                           </Box>
@@ -2385,13 +2406,15 @@ export default function Dashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <LanguageOutlined sx={{ color: "#14b8a6" }} />
+                          <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.12)", width: 40, height: 40 }}>
+                            <LanguageOutlined sx={{ color: "#3b82f6" }} />
+                          </Avatar>
                           <Box>
                             <Typography
                               variant="body2"
@@ -2409,11 +2432,13 @@ export default function Dashboard() {
                                 sx={{
                                   mt: 0.5,
                                   textTransform: "none",
-                                  color: "#14b8a6",
+                                  color: "#3b82f6",
                                   p: 0,
                                   minWidth: 0,
+                                  fontWeight: 500,
                                   "&:hover": {
                                     bgcolor: "transparent",
+                                    color: "#f97316",
                                     textDecoration: "underline",
                                   },
                                 }}
@@ -2421,7 +2446,7 @@ export default function Dashboard() {
                                 {selectedJob.employer.company_website}
                               </Button>
                             ) : (
-                              <Typography variant="body1" sx={{ mt: 0.5 }}>—</Typography>
+                              <Typography variant="body1" sx={{ mt: 0.5, color: "#1e3a8a" }}>—</Typography>
                             )}
                           </Box>
                         </Stack>
@@ -2433,13 +2458,15 @@ export default function Dashboard() {
                         sx={{
                           p: 2,
                           borderRadius: 2,
-                          background: "rgba(255, 255, 255, 0.5)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.5) 100%)",
                           backdropFilter: "blur(8px)",
-                          border: "1px solid rgba(20, 184, 166, 0.15)",
+                          border: "1px solid rgba(59, 130, 246, 0.15)",
                         }}
                       >
                         <Stack direction="row" alignItems="flex-start" spacing={2}>
-                          <Info sx={{ color: "#14b8a6", mt: 0.5 }} />
+                          <Avatar sx={{ bgcolor: "rgba(249, 115, 22, 0.12)", width: 40, height: 40 }}>
+                            <Info sx={{ color: "#f97316" }} />
+                          </Avatar>
                           <Box sx={{ flex: 1 }}>
                             <Typography
                               variant="body2"
@@ -2454,6 +2481,7 @@ export default function Dashboard() {
                                 "& .ql-editor": {
                                   padding: 0,
                                   fontSize: "0.95rem",
+                                  color: "#1e3a8a",
                                 },
                                 "& .ql-container": {
                                   border: "none",
@@ -2476,7 +2504,7 @@ export default function Dashboard() {
                   <DialogActions
                     sx={{
                       pt: 1,
-                      borderTop: "1px solid rgba(20, 184, 166, 0.1)",
+                      borderTop: "1px solid rgba(59, 130, 246, 0.15)",
                     }}
                   >
                     <Button
@@ -2486,11 +2514,11 @@ export default function Dashboard() {
                         textTransform: "none",
                         fontWeight: 600,
                         borderRadius: 2,
-                        background: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
-                        boxShadow: "0 4px 15px rgba(20, 184, 166, 0.3)",
+                        background: "#1e3a8a",
+                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
                         "&:hover": {
-                          background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)",
-                          boxShadow: "0 6px 20px rgba(20, 184, 166, 0.4)",
+                          background: "#1e3a8a",
+                          boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
                         },
                       }}
                     >
@@ -2498,7 +2526,6 @@ export default function Dashboard() {
                     </Button>
                   </DialogActions>
                 </Dialog>
-
                 {/* Apply Dialog with Resume Selection */}
                 <Dialog
                   open={applyDialogOpen && isCandidate}
@@ -2514,6 +2541,10 @@ export default function Dashboard() {
                       maxHeight: "95vh",
                       borderRadius: 3,
                       overflow: "hidden",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(59, 130, 246, 0.25)",
+                      boxShadow: "0 25px 50px -12px rgba(30, 58, 138, 0.3)",
                     },
                   }}
                   PaperComponent={DraggablePaper}
@@ -2523,11 +2554,13 @@ export default function Dashboard() {
                     id="draggable-dialog-title"
                     sx={{
                       borderBottom: "2px solid",
-                      borderColor: "divider",
-                      py: 1.5,
-                      fontSize: 16,
-                      fontWeight: 600,
+                      borderImage: "linear-gradient(90deg, #3b82f6 0%, #f97316 50%, #3b82f6 100%) 1",
+                      py: 2,
+                      px: 3,
+                      fontSize: 18,
+                      fontWeight: 700,
                       cursor: "move",
+                      background: "linear-gradient(135deg, rgba(30, 58, 138, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
                     }}
                   >
                     {hasAppliedToThisJob
@@ -2542,26 +2575,41 @@ export default function Dashboard() {
                     sx={{
                       position: "absolute",
                       right: 8,
-                      top: 8,
+                      top: 10,
+                      color: "#f97316",
+                      "&:hover": {
+                        bgcolor: "rgba(249, 115, 22, 0.1)",
+                      },
                     }}
                   >
                     <Cancel />
                   </IconButton>
 
-                  <DialogContent sx={{ mt: 0.5 }}>
+                  <DialogContent sx={{ mt: 0.5, px: 3, pb: 2 }}>
                     {hasAppliedToThisJob && originalResumeId && (
                       <>
                         {selectedResumeId !== originalResumeId ? (
                           <Alert
                             severity="info"
+                            sx={{
+                              borderRadius: 2,
+                              background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)",
+                              border: "1px solid rgba(59, 130, 246, 0.2)",
+                              color: "#1e3a8a",
+                              "& .MuiAlert-icon": { color: "#3b82f6" },
+                            }}
                           >
                             {t('changed_resume_notice')}
                           </Alert>
                         ) : (
                           <Typography
                             variant="caption"
-                            color="text.secondary"
-                            sx={{ display: "block", mb: 1 }}
+                            sx={{ 
+                              display: "block", 
+                              mb: 1, 
+                              color: "#1e3a8a",
+                              fontStyle: "italic",
+                            }}
                           >
                             {t('using_same_resume')}
                           </Typography>
@@ -2573,12 +2621,13 @@ export default function Dashboard() {
                     <Box
                       sx={{
                         position: "relative",
-                        border: "2px solid",
+                        borderImage: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%) 1",
                         borderRadius: 2,
-                        borderColor: "divider",
-                        p: 2,
+                        p: 2.5,
                         pt: 3,
                         mt: 2,
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                        backdropFilter: "blur(8px)",
                       }}
                     >
                       {resumes.length > 0 ? (
@@ -2587,12 +2636,17 @@ export default function Dashboard() {
                           <Typography
                             sx={{
                               position: "absolute",
-                              top: -10,
-                              left: 14,
-                              px: 0.8,
+                              top: -12,
+                              left: 16,
+                              px: 1.5,
                               fontSize: 13,
-                              fontWeight: 500,
-                              backgroundColor: "background.paper",
+                              fontWeight: 600,
+                              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                              backgroundClip: "text",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              bgcolor: "background.paper",
+                              borderRadius: 1,
                             }}
                           >
                             {t('select_resume')}
@@ -2622,21 +2676,32 @@ export default function Dashboard() {
                                     key={r.pk_id}
                                     value={r.pk_id.toString()}
                                     control={
-                                      <Radio size="small" sx={{ p: 0.5 }} />
+                                      <Radio 
+                                        size="small" 
+                                        sx={{ 
+                                          p: 0.5,
+                                          color: "#3b82f6",
+                                          "&.Mui-checked": { color: "#f97316" },
+                                        }} 
+                                      />
                                     }
                                     sx={{
                                       mx: 0,
-                                      mb: 0.6,
-                                      px: 1,
-                                      py: 0.6,
-                                      borderRadius: 1.5,
+                                      mb: 0.8,
+                                      px: 1.5,
+                                      py: 0.8,
+                                      borderRadius: 2,
                                       border: "1px solid",
                                       borderColor: selected
-                                        ? "primary.main"
-                                        : "divider",
-                                      backgroundColor: selected
-                                        ? "rgba(25,118,210,0.08)"
-                                        : "transparent",
+                                        ? "#f97316"
+                                        : "rgba(59, 130, 246, 0.2)",
+                                      background: selected
+                                        ? "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)"
+                                        : "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                                      "&:hover": {
+                                        borderColor: "#f97316",
+                                        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
+                                      },
                                       "& .MuiFormControlLabel-label": {
                                         width: "100%",
                                       },
@@ -2650,28 +2715,30 @@ export default function Dashboard() {
                                           width: "100%",
                                         }}
                                       >
-                                        <Box sx={{ lineHeight: 1 }}>
+                                        <Box sx={{ lineHeight: 1, gap: 0.5, display: "flex" }}>
                                           <Typography
                                             variant="caption"
                                             sx={{
                                               fontWeight: 500,
                                               fontSize: 12,
+                                              color: selected ? "#1e3a8a" : "text.primary",
                                             }}
                                           >
                                             {r.resume_file || t('text_resume')}
                                           </Typography>
 
                                           {r.is_primary && (
-                                            <Typography
-                                              variant="caption"
+                                            <Chip
+                                              label={t('primary')}
+                                              size="small"
                                               sx={{
-                                                fontSize: 10,
-                                                color: "primary.main",
-                                                display: "block",
+                                                fontSize: 9,
+                                                height: 16,
+                                                mt: 0.3,
+                                                background: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%)",
+                                                color: "#fff",
                                               }}
-                                            >
-                                              {t('primary')}
-                                            </Typography>
+                                            />
                                           )}
                                         </Box>
 
@@ -2679,7 +2746,7 @@ export default function Dashboard() {
                                           variant="caption"
                                           sx={{
                                             fontSize: 10,
-                                            color: "text.secondary",
+                                            color: "#f97316",
                                             whiteSpace: "nowrap",
                                           }}
                                         >
@@ -2696,7 +2763,18 @@ export default function Dashboard() {
                           </Box>
                         </>
                       ) : (
-                        <Alert severity="warning" sx={{ mb: 2, fontSize: 13 }}>
+                        <Alert 
+                          severity="warning" 
+                          sx={{ 
+                            mb: 2, 
+                            fontSize: 13,
+                            borderRadius: 2,
+                            background: "linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.05) 100%)",
+                            border: "1px solid rgba(249, 115, 22, 0.2)",
+                            color: "#ea580c",
+                            "& .MuiAlert-icon": { color: "#f97316" },
+                          }}
+                        >
                           {t('no_resume_found')}
                         </Alert>
                       )}
@@ -2708,11 +2786,25 @@ export default function Dashboard() {
                         size="small"
                         fullWidth
                         sx={{
-                          borderRadius: 1.5,
+                          borderRadius: 2,
                           textTransform: "none",
-                          py: 0.7,
+                          py: 0.8,
+                          fontWeight: 500,
+                          color: "#1e3a8a",
+                          borderColor: "rgba(59, 130, 246, 0.3)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
+                          "&:hover": {
+                            borderColor: "#f97316",
+                            color: "#f97316",
+                            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
+                          },
                         }}
                       >
+                        {uploadLoading ? (
+                          <CircularProgress size={16} sx={{ color: "#3b82f6", mr: 1 }} />
+                        ) : (
+                          <UploadFile sx={{ fontSize: 16, mr: 1, color: "#3b82f6" }} />
+                        )}
                         {uploadLoading ? t('uploading') : t('choose_new_resume')}
                         <input
                           type="file"
@@ -2728,14 +2820,15 @@ export default function Dashboard() {
                     <Box
                       sx={{
                         position: "relative",
-                        border: "2px solid",
-                        borderColor: coverLetterToDelete
-                          ? "error.light"
-                          : "divider",
+                        borderImage: coverLetterToDelete
+                          ? "linear-gradient(135deg, #ef4444 0%, #dc2626 100%) 1"
+                          : "linear-gradient(135deg, #3b82f6 0%, #f97316 100%) 1",
                         borderRadius: 2,
                         p: 2.5,
                         mt: 3,
                         transition: "all 0.2s",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                        backdropFilter: "blur(8px)",
                       }}
                     >
                       <Typography
@@ -2743,13 +2836,18 @@ export default function Dashboard() {
                           position: "absolute",
                           top: -12,
                           left: 16,
-                          px: 1,
+                          px: 1.5,
                           fontSize: 13,
-                          fontWeight: 500,
+                          fontWeight: 600,
                           bgcolor: "background.paper",
-                          color: coverLetterToDelete
-                            ? "error.main"
-                            : "text.secondary",
+                          borderRadius: 1,
+                          color: coverLetterToDelete ? "#ef4444" : "#1e3a8a",
+                          background: coverLetterToDelete
+                            ? "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
+                            : "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                          backgroundClip: "text",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
                         }}
                       >
                         {t('cover_letter_optional')}
@@ -2774,9 +2872,7 @@ export default function Dashboard() {
                                 variant="body2"
                                 sx={{
                                   fontWeight: 500,
-                                  color: coverLetterToDelete
-                                    ? "error.main"
-                                    : "primary.main",
+                                  color: coverLetterToDelete ? "#ef4444" : "#3b82f6",
                                   textDecoration: coverLetterToDelete
                                     ? "line-through"
                                     : "none",
@@ -2804,11 +2900,18 @@ export default function Dashboard() {
                                     ? handleUndoDeleteCoverLetter
                                     : handleStageDeleteCoverLetter
                                 }
+                                sx={{
+                                  "&:hover": {
+                                    bgcolor: coverLetterToDelete
+                                      ? "rgba(16, 185, 129, 0.1)"
+                                      : "rgba(239, 68, 68, 0.1)",
+                                  },
+                                }}
                               >
                                 {coverLetterToDelete ? (
-                                  <CheckCircle fontSize="small" />
+                                  <CheckCircle fontSize="small" sx={{ color: "#10b981" }}/>
                                 ) : (
-                                  <Cancel fontSize="small" />
+                                  <Cancel fontSize="small" sx={{ color: "#ef4444" }}/>
                                 )}
                               </IconButton>
                             </Tooltip>
@@ -2818,7 +2921,7 @@ export default function Dashboard() {
                             <Typography
                               variant="caption"
                               color="error"
-                              sx={{ mt: 0.5, display: "block" }}
+                              sx={{ mt: 0.5, display: "block", color: "#ef4444" }}
                             >
                               {t('marked_for_deletion')}
                             </Typography>
@@ -2841,14 +2944,13 @@ export default function Dashboard() {
                           <Button
                             component="label"
                             variant="outlined"
-                            color={coverLetterToDelete ? "primary" : "primary"}
                             size="small"
                             fullWidth
                             startIcon={
                               coverLetterFile ? (
-                                <PictureAsPdf />
+                                <PictureAsPdf sx={{ color: "#ef4444" }}/>
                               ) : (
-                                <UploadFile />
+                                <UploadFile sx={{ color: "#3b82f6" }}/>
                               )
                             }
                             disabled={!canUploadNewCoverLetter}
@@ -2856,9 +2958,19 @@ export default function Dashboard() {
                               justifyContent: "flex-start",
                               textTransform: "none",
                               py: 1,
-                              borderStyle: coverLetterToDelete
-                                ? "dashed"
-                                : "solid",
+                              borderRadius: 2,
+                              borderStyle: coverLetterToDelete ? "dashed" : "solid",
+                              color: coverLetterFile ? "#ef4444" : "#1e3a8a",
+                              borderColor: coverLetterFile
+                                ? "rgba(239, 68, 68, 0.3)"
+                                : "rgba(59, 130, 246, 0.3)",
+                              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                              "&:hover": {
+                                borderColor: coverLetterFile ? "#ef4444" : "#f97316",
+                                background: coverLetterFile
+                                  ? "rgba(239, 68, 68, 0.05)"
+                                  : "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
+                              },
                             }}
                           >
                             {coverLetterFile
@@ -2896,8 +3008,7 @@ export default function Dashboard() {
                       {coverLetterFile && (
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={{ mt: 1, display: "block" }}
+                          sx={{ mt: 1, display: "block", color: "#1e3a8a" }}
                         >
                           {(coverLetterFile.size / (1024 * 1024)).toFixed(2)} MB
                         </Typography>
@@ -2908,21 +3019,28 @@ export default function Dashboard() {
                     <Box
                       sx={{
                         mt: 3,
-                        p: 2,
-                        border: "2px solid #ccc",
+                        p: 2.5,
+                        borderImage: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%) 1",
                         borderRadius: 2,
                         position: "relative",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                        backdropFilter: "blur(8px)",
                       }}
                     >
                       <Typography
                         sx={{
                           position: "absolute",
-                          top: -10,
-                          left: 14,
-                          px: 0.8,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          backgroundColor: "background.paper",
+                          top: -12,
+                          left: 16,
+                          px: 1.5,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                          backgroundClip: "text",
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          bgcolor: "background.paper",
+                          borderRadius: 1,
                         }}
                       >
                         {t('attached_files_optional')}
@@ -2968,12 +3086,16 @@ export default function Dashboard() {
                                       ? "line-through"
                                       : "none",
                                     bgcolor: willBeDeleted
-                                      ? "error.light"
+                                      ? "rgba(239, 68, 68, 0.1)"
                                       : undefined,
+                                    borderColor: willBeDeleted
+                                      ? "#ef4444"
+                                      : "#3b82f6",
+                                    color: willBeDeleted ? "#ef4444" : "#1e3a8a",
                                   }}
                                   icon={
                                     willBeDeleted ? (
-                                      <Cancel fontSize="small" />
+                                      <Cancel fontSize="small" sx={{ color: "#ef4444" }} />
                                     ) : undefined
                                   }
                                 />
@@ -2984,7 +3106,7 @@ export default function Dashboard() {
                             <Typography
                               variant="caption"
                               color="error"
-                              sx={{ mt: 1, display: "block" }}
+                              sx={{ mt: 1, display: "block", color: "#ef4444" }}
                             >
                               {t('files_marked_for_removal', { count: attachmentsToDelete.length })}
                             </Typography>
@@ -2997,10 +3119,19 @@ export default function Dashboard() {
                         component="label"
                         variant="outlined"
                         fullWidth
-                        startIcon={<UploadFile />}
+                        startIcon={<UploadFile sx={{ color: "#3b82f6" }}/>}
                         sx={{
                           mb: attachmentFiles.length > 0 ? 1.5 : 0,
                           textTransform: "none",
+                          borderRadius: 2,
+                          color: "#1e3a8a",
+                          borderColor: "rgba(59, 130, 246, 0.3)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(239, 246, 255, 0.4) 100%)",
+                          "&:hover": {
+                            borderColor: "#f97316",
+                            color: "#f97316",
+                            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)",
+                          },
                         }}
                       >
                         {t('add_more_files')}
@@ -3018,7 +3149,7 @@ export default function Dashboard() {
 
                       {attachmentFiles.length > 0 && (
                         <Box>
-                          <Typography variant="caption">
+                          <Typography variant="caption" sx={{ color: "#1e3a8a" }}> 
                             {t('new_files_selected')}: {attachmentFiles.length}
                           </Typography>
                           <Stack
@@ -3034,8 +3165,16 @@ export default function Dashboard() {
                                 onDelete={() =>
                                   setAttachmentFiles((prev) => prev.filter((_, idx) => idx !== i))
                                 }
-                                color="primary"
                                 variant="outlined"
+                                sx={{
+                                  bgcolor: "rgba(59, 130, 246, 0.1)",
+                                  borderColor: "#3b82f6",
+                                  color: "#1e3a8a",
+                                  "& .MuiChip-deleteIcon": {
+                                    color: "#f97316",
+                                    "&:hover": { color: "#ea580c" },
+                                  },
+                                }}  
                               />
                             ))}
                           </Stack>
@@ -3048,9 +3187,30 @@ export default function Dashboard() {
                   <DialogActions
                     sx={{
                       borderTop: "2px solid",
-                      borderColor: "divider",
+                      borderImage: "linear-gradient(90deg, #3b82f6 0%, #f97316 50%, #3b82f6 100%) 1",
+                      px: 3,
+                      py: 2,
+                      background: "linear-gradient(135deg, rgba(30, 58, 138, 0.05) 0%, rgba(249, 115, 22, 0.03) 100%)",
                     }}
                   >
+                    <Button
+                      variant="outlined"
+                      onClick={() => setApplyDialogOpen(false)}
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: 2,
+                        px: 3,
+                        color: "#1e3a8a",
+                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        "&:hover": {
+                          borderColor: "#f97316",
+                          color: "#f97316",
+                          bgcolor: "rgba(249, 115, 22, 0.05)",
+                        },
+                      }}
+                    >
+                      {t('cancel')}
+                    </Button>
                     <Button
                       variant="contained"
                       onClick={handleApplyWithResume}
@@ -3058,6 +3218,18 @@ export default function Dashboard() {
                       size="small"
                       sx={{
                         textTransform: "none",
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        px: 4,
+                        background: "#1e3a8a",
+                        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
+                        "&:hover": {
+                          background: "#1e3a8a",
+                          boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
+                        },
+                        "&:disabled": {
+                          background: "linear-gradient(135deg, #9ca3af 0%, #a1a1aa 100%)",
+                        },
                       }}
                     >
                       {applying[jobToApply?.pk_id]
@@ -3070,17 +3242,17 @@ export default function Dashboard() {
                 </Dialog>
               </Stack>
 
-              <Divider sx={{ mt: 1 }} />
+              <Divider sx={{ mt: 2, borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
               {/* Quick info chips / rows */}
               
-              <Stack spacing={1.2} sx={{ mt: 3.5 }}>
+              <Stack spacing={1.2} sx={{ mt: 3 }}>
                 {[
-                  { icon: <EventIcon />, label: t('posting_date'), value: selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—" },
-                  { icon: <EventIcon />, label: t('closing_date'), value: selectedJob.closing_date ? new Date(selectedJob.closing_date).toLocaleDateString("en-CA") : "—" },
-                  { icon: <WorkOutlineIcon />, label: t('job_type'), value: selectedJob.job_type || "—" },
-                  { icon: <TrendingUpIcon />, label: t('level'), value: selectedJob.level || "—" },
-                  { icon: <PaymentsIcon />, label: t('salary'), value: selectedJob.salary_range ? `${selectedJob.salary_range}$` : t('negotiable') },
+                  { icon: <EventIcon sx={{ color: "#3b82f6" }}/>, label: t('posting_date'), value: selectedJob.posting_date ? new Date(selectedJob.posting_date).toISOString().split("T")[0] : "—" },
+                  { icon: <EventIcon sx={{ color: "#f97316" }}/>, label: t('closing_date'), value: selectedJob.closing_date ? new Date(selectedJob.closing_date).toLocaleDateString("en-CA") : "—" },
+                  { icon: <WorkOutlineIcon sx={{ color: "#3b82f6" }}/>, label: t('job_type'), value: selectedJob.job_type || "—" },
+                  { icon: <TrendingUpIcon sx={{ color: "#f97316" }}/>, label: t('level'), value: selectedJob.level || "—" },
+                  { icon: <PaymentsIcon sx={{ color: "#3b82f6" }}/>, label: t('salary'), value: selectedJob.salary_range ? `${selectedJob.salary_range}$` : t('negotiable') },
                 ].map((item, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" spacing={1.5}>
                     <Box sx={{ color: "text.secondary", minWidth: 24 }}>{item.icon}</Box>
@@ -3093,8 +3265,9 @@ export default function Dashboard() {
                       variant="outlined"
                       sx={{
                         fontSize: "0.78rem",
-                        borderColor: "rgba(0,0,0,0.12)",
-                        backgroundColor: "rgba(255,255,255,0.7)",
+                        borderColor: "rgba(59, 130, 246, 0.2)",
+                        color: "#1e3a8a",
+                        backgroundColor: "rgba(255, 255, 255, 0.7)",
                       }}
                     />
                   </Stack>
@@ -3102,17 +3275,17 @@ export default function Dashboard() {
 
                 {/* Location */}
                 <Stack direction="row" alignItems="center" spacing={1.5}>
-                  <LocationOnIcon sx={{ color: "text.secondary" }} fontSize="small" />
+                  <LocationOnIcon sx={{ color: "#f97316" }} fontSize="small" />
                   <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary">
                     {t('location')}:
                   </Typography>
-                  <Typography variant="subtitle2">{selectedJob.location}</Typography>
+                  <Typography variant="subtitle2" sx={{ color: "#1e3a8a" }}>{selectedJob.location}</Typography>
                 </Stack>
 
                 {/* Categories */}
                 {selectedJob.categories?.length > 0 && (
                   <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                    <CategoryRoundedIcon sx={{ color: "text.secondary", mt: 0.3 }} fontSize="small" />
+                    <CategoryRoundedIcon sx={{ color: "#3b82f6", mt: 0.3 }} fontSize="small" />
                     <Typography variant="body2" fontWeight={600} minWidth={110} color="text.secondary" sx={{ mt: 0.3 }}>
                       {t('categories')}:
                     </Typography>
@@ -3124,9 +3297,9 @@ export default function Dashboard() {
                           size="small"
                           sx={{
                             fontSize: "0.73rem",
-                            bgcolor: "rgba(20, 184, 166, 0.08)",
-                            color: "#0f766e",
-                            border: "1px solid rgba(20, 184, 166, 0.3)",
+                            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(249, 115, 22, 0.06) 100%)",
+                            color: "#1e3a8a",
+                            border: "1px solid rgba(59, 130, 246, 0.3)",
                           }}
                         />
                       ))}
@@ -3136,7 +3309,7 @@ export default function Dashboard() {
               </Stack>
             </Box>
 
-            <Divider sx={{ borderColor: "rgba(0,0,0,0.06)" }}/>
+            <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.12)" }}/>
 
             {/* Job Description & Requirements */}
             <Box
@@ -3148,21 +3321,33 @@ export default function Dashboard() {
               <Stack spacing={2}>
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
-                    <DescriptionOutlinedIcon color="action" />
-                    <Typography variant="h6" fontWeight={700} color="#0f766e">
+                    <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.12)", width: 32, height: 32 }}>
+                      <DescriptionOutlinedIcon sx={{ color: "#3b82f6", fontSize: 18 }} />
+                    </Avatar>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={700} 
+                      sx={{
+                        background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
                       {t('job_description')}
                     </Typography>
                   </Stack>
                   <Paper
                     elevation={0}
                     sx={{
-                      p: 2,
-                      background: "rgba(255,255,255,0.65)",
-                      border: "1px solid rgba(0,0,0,0.08)",
+                      p: 2.5,
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
+                      border: "1px solid rgba(59, 130, 246, 0.12)",
                       borderRadius: 2,
                       "& .ql-editor": {
                         backgroundColor: "transparent !important",
                         padding: 0,
+                        color: "#1e3a8a",
                       },
                       "& .ql-container": {
                         border: "none",
@@ -3177,11 +3362,22 @@ export default function Dashboard() {
                     />
                   </Paper>
                 </Box>
-
+                {/* Requirements */}
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={1.5}>
-                    <ChecklistOutlinedIcon color="action" />
-                    <Typography variant="h6" fontWeight={700} color="#0f766e">
+                    <Avatar sx={{ bgcolor: "rgba(249, 115, 22, 0.12)", width: 32, height: 32 }}>
+                      <ChecklistOutlinedIcon sx={{ color: "#f97316", fontSize: 18 }} />
+                    </Avatar>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight={700} 
+                      sx={{
+                        background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                        backgroundClip: "text",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
                       {t('requirements')}
                     </Typography>
                   </Stack>
@@ -3189,12 +3385,13 @@ export default function Dashboard() {
                     elevation={0}
                     sx={{
                       p: 2,
-                      background: "rgba(255,255,255,0.65)",
-                      border: "1px solid rgba(0,0,0,0.08)",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(239, 246, 255, 0.5) 100%)",
+                      border: "1px solid rgba(249, 115, 22, 0.12)",
                       borderRadius: 2,
                       "& .ql-editor": {
                         backgroundColor: "transparent !important",
                         padding: 0,
+                        color: "#1e3a8a",
                       },
                       "& .ql-container": {
                         border: "none",
@@ -3223,7 +3420,7 @@ export default function Dashboard() {
               color: "text.secondary",
             }}
           >
-            <Typography variant="body1">{t('select_job_to_view')}</Typography>
+            <Typography variant="body1" sx={{ color: "#1e3a8a" }}>{t('select_job_to_view')}</Typography>
           </Box>
         )}
 
@@ -3236,9 +3433,9 @@ export default function Dashboard() {
               left: 0,
               right: 0,
               p: 1.5,
-              bgcolor: "rgba(255, 255, 255, 0.92)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
               backdropFilter: "blur(12px)",
-              borderTop: "1px solid rgba(0,0,0,0.08)",
+              borderTop: "1px solid rgba(59, 130, 246, 0.15)",
               zIndex: 10,
             }}
           >
@@ -3246,12 +3443,19 @@ export default function Dashboard() {
               variant="outlined"
               size="small"
               onClick={handleBackToList}
-              startIcon={<Home />}
+              startIcon={<Home sx={{ color: "#3b82f6" }}/>}
               fullWidth
               sx={{
                 borderRadius: 2.5,
                 textTransform: "none",
                 py: 1,
+                borderColor: "rgba(59, 130, 246, 0.3)",
+                color: "#1e3a8a",
+                "&:hover": {
+                  borderColor: "#f97316",
+                  color: "#f97316",
+                  bgcolor: "rgba(249, 115, 22, 0.08)",
+                },
               }}
             >
               {t('home')}
