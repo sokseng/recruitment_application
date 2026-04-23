@@ -627,8 +627,8 @@ export default function Topbar() {
             borderBottom: '1px solid',
             borderColor: 'divider',
             bgcolor: 'background.paper',
-            background: 'linear-gradient(135deg, rgba(245,247,255,0.8) 0%, rgba(255,255,255,0.95) 100%)',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+            background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)',
+            boxShadow: '0 4px 16px rgba(30, 58, 138, 0.08)',
           }}
         >
           <Box
@@ -639,7 +639,7 @@ export default function Topbar() {
               width: 120,
               height: 120,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(33,150,243,0.08) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(249, 115, 22, 0.06) 70%)',
               pointerEvents: 'none',
             }}
           />
@@ -649,14 +649,14 @@ export default function Topbar() {
               sx={{
                 width: 64,
                 height: 64,
-                bgcolor: 'primary.main',
+                bgcolor: '#3b82f6',
                 fontSize: 28,
                 fontWeight: 700,
-                boxShadow: '0 6px 20px rgba(0,0,0,0.14)',
+                boxShadow: '0 6px 20px rgba(30, 58, 138, 0.2)',
                 border: '3px solid',
                 borderColor: 'background.paper',
                 outline: '2px solid',
-                outlineColor: 'primary.light',
+                outlineColor: '#f97316',
                 outlineOffset: '-2px',
                 transition: 'transform 0.2s ease',
                 '&:hover': {
@@ -676,7 +676,10 @@ export default function Topbar() {
                 sx={{
                   lineHeight: 1.2,
                   letterSpacing: '-0.01em',
-                  color: 'text.primary',
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
                 }}
               >
                 {user_data?.user_data?.user_name || t('user')}
@@ -684,16 +687,15 @@ export default function Topbar() {
 
               <Typography
                 variant="body2"
-                color="text.secondary"
                 noWrap
                 sx={{
                   mt: 0.4,
                   fontWeight: 400,
                   opacity: 0.85,
+                  color: '#f97316',
                   transition: 'opacity 0.2s',
                   '&:hover': {
                     opacity: 1,
-                    color: 'text.primary',
                   },
                 }}
               >
@@ -719,18 +721,18 @@ export default function Topbar() {
                 px: 2.5,
                 transition: "all 0.2s ease",
                 "&.Mui-selected": {
-                  bgcolor: "primary.main",
+                  bgcolor: "#3b82f6",
                   color: "white",
-                  boxShadow: "0 4px 14px rgba(25, 118, 210, 0.25)",
+                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.3)",
                   "&:hover": {
-                    bgcolor: "primary.dark",
+                    bgcolor: "#2563eb",
                   },
                   "& .MuiListItemIcon-root": {
                     color: "white",
                   },
                 },
                 "&:hover": {
-                  bgcolor: "action.hover",
+                  bgcolor: "rgba(59, 130, 246, 0.08)",
                   transform: "translateX(4px)",
                 },
               }}
@@ -738,7 +740,7 @@ export default function Topbar() {
               <ListItemIcon
                 sx={{
                   minWidth: 44,
-                  color: location.pathname === item.path ? "white" : "primary.main",
+                  color: location.pathname === item.path ? "white" : "#3b82f6",
                 }}
               >
                 {item.icon}
@@ -764,16 +766,16 @@ export default function Topbar() {
                   transition: "all 0.2s ease",
 
                   "&.Mui-selected": {
-                    bgcolor: "primary.main",
-                    color: "black",
-                    boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                    bgcolor: "#f97316",
+                    color: "white",
+                    boxShadow: "0 4px 14px rgba(249, 115, 22, 0.3)",
                     "& .MuiListItemIcon-root": {
                       color: "white",
                     },
                   },
 
                   "&:hover": {
-                    bgcolor: "action.hover",
+                    bgcolor: "rgba(249, 115, 22, 0.08)",
                     transform: "translateX(4px)",
                   },
                 }}
@@ -781,7 +783,7 @@ export default function Topbar() {
                 <ListItemIcon
                   sx={{
                     minWidth: 44,
-                    color: isManagementActive ? "black" : "primary.main",
+                    color: isManagementActive ? "white" : "#f97316",
                   }}
                 >
                   <ArrowDropDownIcon />
@@ -811,16 +813,16 @@ export default function Topbar() {
                         px: 2,
 
                         "&.Mui-selected": {
-                          bgcolor: "primary.lighter",
-                          color: "black",
+                          bgcolor: "rgba(59, 130, 246, 0.12)",
+                          color: "#1e3a8a",
                         },
 
                         "&:hover": {
-                          bgcolor: "action.hover",
+                          bgcolor: "rgba(59, 130, 246, 0.06)",
                         },
                       }}
                     >
-                      <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                      <ListItemIcon sx={{ minWidth: 40, color: "#3b82f6" }}>
                         {item.icon}
                       </ListItemIcon>
 
@@ -846,16 +848,16 @@ export default function Topbar() {
                   transition: "all 0.2s ease",
 
                   "&.Mui-selected": {
-                    bgcolor: "primary.main",
-                    color: "black",
-                    boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                    bgcolor: "#3b82f6",
+                    color: "white",
+                    boxShadow: "0 4px 14px rgba(59, 130, 246, 0.3)",
                     "& .MuiListItemIcon-root": {
                       color: "white",
                     },
                   },
 
                   "&:hover": {
-                    bgcolor: "action.hover",
+                    bgcolor: "rgba(59, 130, 246, 0.08)",
                     transform: "translateX(4px)",
                   },
                 }}
@@ -863,7 +865,7 @@ export default function Topbar() {
                 <ListItemIcon
                   sx={{
                     minWidth: 44,
-                    color: isSettingsActive ? "black" : "primary.main",
+                    color: isSettingsActive ? "white" : "#3b82f6"
                   }}
                 >
                   <Settings />
@@ -891,16 +893,16 @@ export default function Topbar() {
                       px: 2,
 
                       "&.Mui-selected": {
-                        bgcolor: "primary.lighter",
-                        color: "black",
+                        bgcolor: "rgba(59, 130, 246, 0.12)",
+                        color: "#1e3a8a",
                       },
 
                       "&:hover": {
-                        bgcolor: "action.hover",
+                        bgcolor: "rgba(59, 130, 246, 0.06)",
                       },
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 40, color: "primary.main" }}>
+                    <ListItemIcon sx={{ minWidth: 40, color: "#3b82f6" }}>
                       <Settings fontSize="small" />
                     </ListItemIcon>
 
@@ -922,18 +924,18 @@ export default function Topbar() {
                   py: 1.4,
                   px: 2.5,
                   mt: 2,
-                  backgroundColor: openCv ? "action.selected" : "transparent",
-                  "&:hover": { bgcolor: "action.hover" },
+                  backgroundColor: openCv ? "rgba(249, 115, 22, 0.08)" : "transparent",
+                  "&:hover": { bgcolor: "rgba(249, 115, 22, 0.06)" },
                 }}
               >
-                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
+                <ListItemIcon sx={{ color: "#f97316", minWidth: 44 }}>
                   <DownloadIcon />
                 </ListItemIcon>
                 <ListItemText
                   primary={t('cv_templates')}
-                  primaryTypographyProps={{ fontWeight: 500 }}
+                  primaryTypographyProps={{ fontWeight: 500, color: "#1e3a8a" }}
                 />
-                {openCv ? <ExpandLess /> : <ExpandMore />}
+                {openCv ? <ExpandLess sx={{ color: "#f97316" }}/> : <ExpandMore sx={{ color: "#3b82f6" }}/>}
               </ListItemButton>
 
               <Collapse in={openCv} timeout={300}>
@@ -950,8 +952,8 @@ export default function Topbar() {
                         color: "text.secondary",
                         fontSize: "0.9rem",
                         "&:hover": {
-                          bgcolor: "primary.lighter",
-                          color: "primary.main",
+                          bgcolor: "rgba(59, 130, 246, 0.08)",
+                          color: "#3b82f6",
                           pl: 3,
                         },
                       }}
@@ -973,13 +975,13 @@ export default function Topbar() {
                   borderRadius: 2,
                   py: 1.5,
                   border: "2px solid",
-                  borderColor: "primary.main",
-                  color: "primary.main",
+                  borderColor: "#f97316",
+                  color: "#f97316",
                   mb: 1.5,
-                  "&:hover": { bgcolor: "primary.lighter" },
+                  "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)" },
                 }}
               >
-                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
+                <ListItemIcon sx={{ color: "#f97316", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary={t('register')} />
@@ -991,14 +993,14 @@ export default function Topbar() {
                   borderRadius: 2,
                   py: 1.5,
                   border: "2px solid",
-                  borderColor: "primary.main",
-                  color: "primary.main",
+                  borderColor: "#3b82f6",
+                  color: "#3b82f6",
                   "&:hover": {
-                    bgcolor: "primary.lighter",
+                    bgcolor: "rgba(59, 130, 246, 0.08)",
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: "primary.main", minWidth: 44 }}>
+                <ListItemIcon sx={{ color: "#3b82f6", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary={t('login')} />
@@ -1009,8 +1011,8 @@ export default function Topbar() {
       </Box>
 
       {/* 🌐 Language Switcher in Drawer */}
-      <Box sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "divider" }}>
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+      <Box sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "rgba(59, 130, 246, 0.15)" }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', color: '#1e3a8a' }}>
           {t('language')}
         </Typography>
         <LanguageSwitcher />
@@ -1018,20 +1020,20 @@ export default function Topbar() {
 
       {/* ── Logout at bottom ── */}
       {access_token && (
-        <Box sx={{ px: 2, py: 1, borderTop: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ px: 2, py: 1, borderTop: "1px solid", borderColor: "rgba(59, 130, 246, 0.15)" }}>
           <ListItemButton
             onClick={handleLogout}
             sx={{
               borderRadius: 2,
               py: 1.5,
-              color: "error.main",
+              color: "#ef4444",
               "&:hover": {
-                bgcolor: "error.lighter",
-                color: "error.dark",
+                bgcolor: "rgba(239, 68, 68, 0.08)",
+                color: "#dc2626",
               },
             }}
           >
-            <ListItemIcon sx={{ color: "error.main", minWidth: 44 }}>
+            <ListItemIcon sx={{ color: "#ef4444", minWidth: 44 }}>
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText primary={t('logout')} primaryTypographyProps={{ fontWeight: 500 }} />
@@ -1060,13 +1062,15 @@ export default function Topbar() {
         position="sticky"
         elevation={1}
         sx={{
-          background: "white",
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
         }}
       >
         <Toolbar sx={{ gap: 1 }}>
           {/* ☰ Mobile Drawer */}
           {isMobile && (
-            <IconButton onClick={() => setDrawerOpen(true)}>
+            <IconButton onClick={() => setDrawerOpen(true)} sx={{ color: "#3b82f6" }}>
               <MenuIcon />
             </IconButton>
           )}
@@ -1089,7 +1093,8 @@ export default function Topbar() {
                 objectFit: "contain",
                 borderRadius: "0.6rem",
                 cursor: "pointer",
-                p: 0.5
+                p: 0.5,
+                filter: "drop-shadow(0 2px 8px rgba(30, 58, 138, 0.15))",
               }}
               onClick={() => navigate("/")}
             />
@@ -1103,7 +1108,7 @@ export default function Topbar() {
               {/* Profile Avatar & Menu */}
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <IconButton onClick={() => navigate("/chat")} sx={{ p: 0, ml: 1 }}>
-                  <ChatBubbleIcon color="primary" />
+                  <ChatBubbleIcon sx={{ color: "#3b82f6" }} />
                 </IconButton>
 
                 {globalUnread > 0 && (
@@ -1114,7 +1119,7 @@ export default function Topbar() {
                       right: -4,
                       width: 15,
                       height: 15,
-                      bgcolor: 'red',
+                      bgcolor: '#f97316',
                       color: 'white',
                       borderRadius: '50%',
                       display: 'flex',
@@ -1133,7 +1138,11 @@ export default function Topbar() {
 
               <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
                 <Avatar
-                src={profileUrl}
+                  src={profileUrl}
+                  sx={{
+                    border: "2px solid #3b82f6",
+                    "&:hover": { borderColor: "#f97316" },
+                  }}
                 >
                   {user_data?.user_data?.user_name
                     ? user_data.user_data?.user_name.charAt(0).toUpperCase()
@@ -1152,9 +1161,10 @@ export default function Topbar() {
                     maxWidth: 360,
                     borderRadius: 3,
                     height: "fit-content",
-                    background: "rgba(255, 255, 255, 0.98)",
+                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
                     backdropFilter: "blur(12px)",
-                    boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
+                    boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
+                    border: "1px solid rgba(59, 130, 246, 0.2)",
                   },
                 }}
               >
@@ -1165,7 +1175,7 @@ export default function Topbar() {
                     position: "relative",
                     px: isMobile ? 3 : 4,
                     py: isMobile ? 3 : 3.5,
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 120%)",
                     color: "white",
                     overflow: "hidden",
                   }}
@@ -1174,8 +1184,7 @@ export default function Topbar() {
                     sx={{
                       position: "absolute",
                       inset: 0,
-                      background:
-                        "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22) 0%, transparent 70%)",
+                      background: "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.22) 0%, transparent 70%)",
                       pointerEvents: "none",
                     }}
                   />
@@ -1226,10 +1235,7 @@ export default function Topbar() {
                       px: isMobile ? 3 : 4,
                       fontSize: "1rem",
                       fontWeight: 500,
-                      "&:hover": {
-                        bgcolor: "rgba(102,126,234,0.12)",
-                        color: "#667eea",
-                      },
+                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.08)", color: "#3b82f6" },
                     }}
                   >
                     <ListItemIcon sx={{ color: "inherit" }}>
@@ -1247,10 +1253,7 @@ export default function Topbar() {
                           px: isMobile ? 3 : 4,
                           fontSize: "1rem",
                           fontWeight: 500,
-                          "&:hover": {
-                            bgcolor: "rgba(102,126,234,0.12)",
-                            color: "#667eea",
-                          },
+                          "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)", color: "#f97316" },
                         }}
                       >
                         <ListItemIcon sx={{ color: "inherit" }}>
@@ -1273,10 +1276,7 @@ export default function Topbar() {
                                 py: 1.3,
                                 fontSize: "0.93rem",
                                 color: "text.secondary",
-                                "&:hover": {
-                                  color: "#667eea",
-                                  bgcolor: "rgba(102,126,234,0.08)",
-                                },
+                                "&:hover": { color: "#3b82f6", bgcolor: "rgba(59, 130, 246, 0.06)" },
                               }}
                             >
                               {template.name}
@@ -1297,10 +1297,7 @@ export default function Topbar() {
                       px: isMobile ? 3 : 4,
                       fontSize: "1rem",
                       fontWeight: 500,
-                      "&:hover": {
-                        bgcolor: "rgba(102,126,234,0.12)",
-                        color: "#667eea",
-                      },
+                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.08)", color: "#3b82f6" },
                     }}
                   >
                     <ListItemIcon sx={{ color: "inherit" }}>
@@ -1310,7 +1307,7 @@ export default function Topbar() {
                   </MenuItem>
                 </Box>
 
-                <Divider sx={{ borderColor: "rgba(0,0,0,0.12)" }} />
+                <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
                 {/* Logout */}
                 <MenuItem
@@ -1319,11 +1316,8 @@ export default function Topbar() {
                     py: isMobile ? 2.2 : 1.8,
                     px: isMobile ? 3 : 4,
                     fontWeight: 600,
-                    color: "#d32f2f",
-                    "&:hover": {
-                      bgcolor: "rgba(211,47,47,0.09)",
-                      color: "#b71c1c",
-                    },
+                    color: "#ef4444",
+                    "&:hover": { bgcolor: "rgba(239, 68, 68, 0.08)", color: "#dc2626" },
                   }}
                 >
                   <ListItemIcon sx={{ color: "inherit" }}>
@@ -1345,7 +1339,7 @@ export default function Topbar() {
                   startIcon={item.icon}
                   sx={{
                     fontWeight: 500,
-                    color: "teal",
+                    color: "#1e3a8a",
                     position: "relative",
                     "&::after": {
                       content: '""',
@@ -1354,11 +1348,14 @@ export default function Topbar() {
                       height: "2px",
                       bottom: 0,
                       left: 0,
-                      backgroundColor: "#00B0FF",
+                      background: "linear-gradient(90deg, #3b82f6 0%, #f97316 120%)",
                       transition: "width 0.5s",
                     },
                     "&:hover::after": {
                       width: "100%",
+                    },
+                    "&:hover": {
+                      color: "#f97316",
                     },
                   }}
                 >
@@ -1371,7 +1368,7 @@ export default function Topbar() {
                           right: -4,
                           width: 15,
                           height: 15,
-                          bgcolor: 'red',
+                          bgcolor: '#f97316',
                           color: 'white',
                           borderRadius: '50%',
                           display: 'flex',
@@ -1397,7 +1394,7 @@ export default function Topbar() {
                   startIcon={<ArrowDropDownIcon />}
                   sx={{
                     fontWeight: 500,
-                    color: "teal",
+                    color: "#1e3a8a",
                     textTransform: "none",
                     position: "relative",
 
@@ -1416,11 +1413,14 @@ export default function Topbar() {
                       height: "2px",
                       bottom: 0,
                       left: 0,
-                      backgroundColor: "#00B0FF",
+                      background: "linear-gradient(90deg, #3b82f6 0%, #f97316 100%)",
                       transition: "width 0.3s",
                     },
                     "&:hover::after": {
                       width: "100%",
+                    },
+                    "&:hover": {
+                      color: "#f97316",
                     },
                   }}
                 >
@@ -1435,7 +1435,7 @@ export default function Topbar() {
                   startIcon={<Settings />}
                   sx={{
                     fontWeight: 500,
-                    color: "teal",
+                    color: "#1e3a8a",
                     textTransform: "none",
                     position: "relative",
 
@@ -1446,11 +1446,14 @@ export default function Topbar() {
                       height: "2px",
                       bottom: 0,
                       left: 0,
-                      backgroundColor: "#00B0FF",
+                      background: "linear-gradient(90deg, #3b82f6 0%, #f97316 100%)",
                       transition: "width 0.3s",
                     },
                     "&:hover::after": {
                       width: "100%",
+                    },
+                    "&:hover": {
+                      color: "#f97316",
                     },
                   }}
                 >
@@ -1468,7 +1471,12 @@ export default function Topbar() {
                   {/* Profile Avatar & Menu */}
                   <IconButton onClick={handleProfileClick} sx={{ p: 0, ml: 1 }}>
                     <Avatar
-                    src={profileUrl}
+                      src={profileUrl}
+                      sx={{
+                        border: "2px solid #3b82f6",
+                        transition: "all 0.2s",
+                        "&:hover": { borderColor: "#f97316", transform: "scale(1.05)" },
+                      }}
                     >
                       {user_data?.user_data?.user_name
                         ? user_data?.user_data?.user_name
@@ -1493,9 +1501,9 @@ export default function Topbar() {
                         mt: 1.5,
                         borderRadius: 3,
                         overflow: "hidden",
-                        border: "1px solid #e0e0e0",
-                        boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
-                        background: "rgba(255, 255, 255, 0.98)",
+                        border: "1px solid rgba(59, 130, 246, 0.2)",
+                        boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
                         backdropFilter: "blur(12px)",
                       },
                     }}
@@ -1507,7 +1515,7 @@ export default function Topbar() {
                         position: "relative",
                         px: 4,
                         py: 3.5,
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 120%)",
                         color: "white",
                         overflow: "hidden",
                       }}
@@ -1567,10 +1575,7 @@ export default function Topbar() {
                           px: 4,
                           fontSize: "1rem",
                           fontWeight: 500,
-                          "&:hover": {
-                            bgcolor: "rgba(102, 126, 234, 0.12)",
-                            color: "#667eea",
-                          },
+                          "&:hover": { bgcolor: "rgba(59, 130, 246, 0.08)", color: "#3b82f6" },
                         }}
                       >
                         <ListItemIcon sx={{ color: "inherit" }}>
@@ -1588,10 +1593,7 @@ export default function Topbar() {
                               px: 4,
                               fontSize: "1rem",
                               fontWeight: 500,
-                              "&:hover": {
-                                bgcolor: "rgba(102, 126, 234, 0.12)",
-                                color: "#667eea",
-                              },
+                              "&:hover": { bgcolor: "rgba(249, 115, 22, 0.08)", color: "#f97316" },
                             }}
                           >
                             <ListItemIcon sx={{ color: "inherit" }}>
@@ -1614,10 +1616,7 @@ export default function Topbar() {
                                     py: 1.3,
                                     fontSize: "0.93rem",
                                     color: "text.secondary",
-                                    "&:hover": {
-                                      color: "#667eea",
-                                      bgcolor: "rgba(102,126,234,0.08)",
-                                    },
+                                    "&:hover": { color: "#3b82f6", bgcolor: "rgba(59, 130, 246, 0.06)" },
                                   }}
                                 >
                                   {template.name}
@@ -1635,10 +1634,7 @@ export default function Topbar() {
                           px: 4,
                           fontSize: "1rem",
                           fontWeight: 500,
-                          "&:hover": {
-                            bgcolor: "rgba(102, 126, 234, 0.12)",
-                            color: "#667eea",
-                          },
+                          "&:hover": { bgcolor: "rgba(59, 130, 246, 0.08)", color: "#3b82f6" },
                         }}
                       >
                         <ListItemIcon sx={{ color: "inherit" }}>
@@ -1648,7 +1644,7 @@ export default function Topbar() {
                       </MenuItem>
                     </Box>
 
-                    <Divider sx={{ borderColor: "rgba(0,0,0,0.12)" }} />
+                    <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
                     {/* Logout */}
                     <MenuItem
@@ -1656,16 +1652,13 @@ export default function Topbar() {
                       sx={{
                         py: 1.8,
                         px: 4,
-                        color: "#d32f2f",
+                        color: "#ef4444",
                         fontWeight: 600,
-                        "&:hover": {
-                          bgcolor: "rgba(211, 47, 47, 0.09)",
-                          color: "#b71c1c",
-                        },
+                        "&:hover": { bgcolor: "rgba(239, 68, 68, 0.08)", color: "#dc2626" },
                       }}
                     >
                       <ListItemIcon>
-                        <Logout fontSize="medium" sx={{ color: "red" }} />
+                        <Logout fontSize="medium" sx={{ color: "#ef4444" }} />
                       </ListItemIcon>
                       {t('logout')}
                     </MenuItem>
@@ -1677,7 +1670,13 @@ export default function Topbar() {
                     variant="contained"
                     size="small"
                     onClick={() => setOpenLogin(true)}
-                    sx={{ textTransform: "none" }}
+                    sx={{ 
+                      textTransform: "none",
+                      background: "linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, #2563eb 0%, #1e40af 100%)",
+                      }, 
+                    }}
                   >
                     {t('login')}
                   </Button>
@@ -1686,7 +1685,15 @@ export default function Topbar() {
                     variant="outlined"
                     size="small"
                     onClick={() => setopenRegisterForm(true)}
-                    sx={{ textTransform: "none" }}
+                    sx={{ 
+                      textTransform: "none",
+                      borderColor: "#f97316",
+                      color: "#f97316",
+                      "&:hover": {
+                        borderColor: "#ea580c",
+                        bgcolor: "rgba(249, 115, 22, 0.08)",
+                      }, 
+                    }}
                   >
                     {t('register')}
                   </Button>
@@ -1708,14 +1715,17 @@ export default function Topbar() {
               width: 250,
               borderRadius: 2,
               mt: 1,
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+              backdropFilter: "blur(12px)",
             },
           }}
         >
-          <MenuItem disabled sx={{ fontWeight: 600 }}>
+          <MenuItem disabled sx={{ fontWeight: 600, color: "#1e3a8a" }}>
             {t('management')}
           </MenuItem>
 
-          <Divider />
+          <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
           {MANAGEMENT_ITEMS.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
@@ -1733,18 +1743,18 @@ export default function Topbar() {
                   mx: 1,
                   my: 0.5,
                   ...(isActive && {
-                    backgroundColor: 'primary.lighter',
-                    color: 'primary.dark',
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    color: '#1e3a8a',
                     fontWeight: 600,
                     '&:hover': {
-                      backgroundColor: 'primary.light',
+                      backgroundColor: 'rgba(59, 130, 246, 0.18)',
                     }
                   }),
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: isActive ? "primary.dark" : "primary.main",
+                    color: isActive ? "#1e3a8a" : "#3b82f6",
                     minWidth: 36,
                   }}
                 >
@@ -1768,29 +1778,33 @@ export default function Topbar() {
               width: 260,
               borderRadius: 2,
               mt: 1,
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+              backdropFilter: "blur(12px)",
             },
           }}
         >
-          <MenuItem disabled sx={{ fontWeight: 600 }}>
+          <MenuItem disabled sx={{ fontWeight: 600, color: "#1e3a8a" }}>
             {t('settings')}
           </MenuItem>
 
-          <Divider />
+          <Divider sx={{ borderColor: "rgba(59, 130, 246, 0.15)" }} />
 
           <MenuItem
             onClick={() => {
               navigate("/system_parameter");
               handleCloseSettings();
             }}
+            sx={{
+              "&:hover": { bgcolor: "rgba(59, 130, 246, 0.08)", color: "#3b82f6" },
+            }}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={{ color: "#3b82f6" }}>
               <Settings fontSize="small" />
             </ListItemIcon>
             {t('system_parameter')}
           </MenuItem>
         </Menu>
-
-
       </AppBar>
 
       {/* DRAWER */}
@@ -1800,7 +1814,8 @@ export default function Topbar() {
         anchor="left"
         PaperProps={{
           sx: {
-            backgroundColor: "#F6F7F8",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
           },
         }}
       >
@@ -1819,8 +1834,11 @@ export default function Topbar() {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: 3,
+            boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
             maxHeight: isMobile ? "100vh" : "85vh",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
           },
         }}
       >
@@ -1831,7 +1849,7 @@ export default function Topbar() {
             transition: "all 0.3s ease",
             "&::-webkit-scrollbar": { width: 6 },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(0,0,0,0.2)",
+              backgroundColor: "rgba(59, 130, 246, 0.3)",
               borderRadius: 3,
             },
           }}
@@ -1855,13 +1873,23 @@ export default function Topbar() {
                   borderRadius: "0.6rem",
                   cursor: "pointer",
                   p: 0.5,
+                  filter: "drop-shadow(0 2px 8px rgba(30, 58, 138, 0.15))",
                 }}
               />
             </Stack>
 
             {/* Header */}
             <Box textAlign="start">
-              <Typography variant="h7" fontWeight={700}>
+              <Typography 
+                variant="h7" 
+                fontWeight={700}
+                sx={{
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
                 {t("login_account")} 🚀
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -1880,7 +1908,12 @@ export default function Topbar() {
               value={formData.email}
               onChange={handleChange}
               margin="normal"
-              sx={{ borderRadius: 2 }}
+              sx={{
+                borderRadius: 2,
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
             />
 
             {/* Password */}
@@ -1900,23 +1933,29 @@ export default function Topbar() {
                     <IconButton
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      sx={{ color: "#f97316" }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
-              sx={{ borderRadius: 2 }}
+              sx={{
+                borderRadius: 2,
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
             />
 
             {/* Robot Section with Smooth Collapse */}
-            <Collapse in={showRobotCheck} sx={{ border: "2px solid rgba(0,0,0,0.1)", borderRadius: 2 }}>
-              <Box sx={{ p: 1, bgcolor: "grey.50", borderRadius: 2 }}>
-                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            <Collapse in={showRobotCheck} sx={{ border: "2px solid rgba(59, 130, 246, 0.2)", borderRadius: 2 }}>
+              <Box sx={{ p: 1, bgcolor: "rgba(239, 246, 255, 0.5)", borderRadius: 2 }}>
+                <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: "#1e3a8a" }}>
                   {t("security_check")}
                 </Typography>
 
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography variant="body2" color="#f97316" sx={{ mb: 2 }}>
                   {t('select')} {robotType}
                 </Typography>
 
@@ -1932,6 +1971,10 @@ export default function Topbar() {
                         color={selected ? "primary" : "default"}
                         variant={selected ? "filled" : "outlined"}
                         onClick={() => toggleRobotOption(opt.id)}
+                        sx={{
+                          ...(selected && { bgcolor: "#3b82f6" }),
+                          "&:hover": { borderColor: "#f97316" },
+                        }}
                       />
                     );
                   })}
@@ -1949,7 +1992,11 @@ export default function Topbar() {
                   fullWidth
                   onClick={verifyHuman}
                   disabled={robotAnswer.length === 0}
-                  sx={{ textTransform: "none" }}
+                  sx={{
+                    textTransform: "none",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #f97316 100%)",
+                    "&:hover": { background: "linear-gradient(135deg, #2563eb 0%, #ea580c 100%)" },
+                  }}
                 >
                   {t("verify")}
                 </Button>
@@ -1983,6 +2030,10 @@ export default function Topbar() {
                   borderRadius: 2,
                   fontWeight: 600,
                   textTransform: "none",
+                  background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 120%)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 120%)",
+                  },
                 }}
               >
                 {t("login")}
@@ -1997,8 +2048,8 @@ export default function Topbar() {
                 variant="body2"
                 onClick={handleForgotPassword}
                 sx={{
-                  color: "#764ba2",
-                  "&:hover": { textDecoration: "underline" },
+                  color: "#f97316",
+                  "&:hover": { textDecoration: "underline", color: "#ea580c" },
                 }}
               >
                 {t("forgot_password")}
@@ -2018,6 +2069,13 @@ export default function Topbar() {
         maxWidth="lg"
         fullScreen={isMobile}
         scroll="paper"
+        PaperProps={{
+          sx: {
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
+          },
+        }}
       >
         <DialogContent sx={{ p: { xs: 3, sm: 2 } }}>
           <Stack
@@ -2041,7 +2099,7 @@ export default function Topbar() {
                 // Custom scrollbar
                 "&::-webkit-scrollbar": { width: 6 },
                 "&::-webkit-scrollbar-thumb": {
-                  backgroundColor: "#c1c1c1",
+                  backgroundColor: "rgba(59, 130, 246, 0.3)",
                   borderRadius: 8,
                 },
               }}
@@ -2058,14 +2116,24 @@ export default function Topbar() {
                     objectFit: "contain",
                     borderRadius: "0.6rem",
                     cursor: "pointer",
-                    p: 0.5
+                    p: 0.5,
+                    filter: "drop-shadow(0 2px 8px rgba(30, 58, 138, 0.15))",
                   }}
                 />
               </Stack>
 
               {/* Form Header */}
               <Box textAlign="start">
-                <Typography variant="h7" fontWeight={700}>
+                <Typography 
+                  variant="h7" 
+                  fontWeight={700}
+                  sx={{
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
                   {t('create_account')} 🚀
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -2083,6 +2151,11 @@ export default function Topbar() {
                   required
                   defaultValue=""
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                 >
                   <MenuItem value="" disabled>
                     {t('select_user_type')}
@@ -2097,6 +2170,11 @@ export default function Topbar() {
                   label={t('username')}
                   required
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                 />
               </Stack>
 
@@ -2109,6 +2187,11 @@ export default function Topbar() {
                   type="email"
                   required
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                 />
 
                 <TextField
@@ -2118,12 +2201,18 @@ export default function Topbar() {
                   type={showPassword ? "text" : "password"}
                   required
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
                           edge="end"
                           onClick={() => setShowPassword(!showPassword)}
+                          sx={{ color: "#f97316" }}
                         >
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
@@ -2141,12 +2230,27 @@ export default function Topbar() {
                   label={t('gender')}
                   select
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                 >
                   <MenuItem value="Male">{t('male')}</MenuItem>
                   <MenuItem value="Female">{t('female')}</MenuItem>
                 </TextField>
 
-                <TextField size="small" name="phone" label={t('phone')} fullWidth />
+                <TextField 
+                  size="small" 
+                  name="phone" 
+                  label={t('phone')} 
+                  fullWidth 
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
+                />
               </Stack>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 {/* -------------------- Date of Birth -------------------- */}
@@ -2154,8 +2258,18 @@ export default function Topbar() {
                   label={t('date_of_birth')}
                   format="YYYY-MM-DD"
                   name="date_of_birth"
+                  sx={{ color: "#f97316" }}
+
                   slotProps={{
-                    textField: { size: "small", fullWidth: true },
+                    textField: { 
+                      size: "small", 
+                      fullWidth: true,
+                      sx: {
+                        "& .MuiOutlinedInput-root": {
+                          "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                        },
+                      }, 
+                    },
                   }}
                 />
 
@@ -2166,6 +2280,11 @@ export default function Topbar() {
                   label={t('address')}
                   multiline
                   fullWidth
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                 />
               </Stack>
 
@@ -2193,7 +2312,10 @@ export default function Topbar() {
                     borderRadius: 2,
                     fontWeight: 600,
                     textTransform: "none",
-                    background: "linear-gradient(135deg, #023F6B, #0A6BA8)",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 120%)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 120%)",
+                    },
                   }}
                 >
                   {t('register')}
@@ -2204,6 +2326,7 @@ export default function Topbar() {
         </DialogContent>
       </Dialog>
 
+      {/* CHANGE PASSWORD DIALOG */}
       <Dialog
         open={openChangePassword}
         onClose={() => setOpenChangePassword(false)}
@@ -2211,8 +2334,14 @@ export default function Topbar() {
         fullWidth
         fullScreen={isMobile}
         scroll="paper"
+        PaperProps={{
+          sx: {
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+          },
+        }}
       >
-        <DialogTitle>{t('change_password')}</DialogTitle>
+        <DialogTitle sx={{ color: "#1e3a8a", fontWeight: 700 }}>{t('change_password')}</DialogTitle>
 
         <DialogContent dividers>
           <Stack
@@ -2234,6 +2363,7 @@ export default function Topbar() {
                       onClick={() =>
                         setShowPass((p) => ({ ...p, old: !p.old }))
                       }
+                      sx={{ color: "#f97316" }}
                     >
                       {showPass.old ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -2256,6 +2386,7 @@ export default function Topbar() {
                       onClick={() =>
                         setShowPass((p) => ({ ...p, new: !p.new }))
                       }
+                      sx={{ color: "#f97316" }}
                     >
                       {showPass.new ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -2278,6 +2409,7 @@ export default function Topbar() {
                       onClick={() =>
                         setShowPass((p) => ({ ...p, confirm: !p.confirm }))
                       }
+                      sx={{ color: "#f97316" }}
                     >
                       {showPass.confirm ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -2289,13 +2421,17 @@ export default function Topbar() {
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ borderTop: 1, borderColor: "divider" }}>
-          <Button onClick={() => setOpenChangePassword(false)}>{t('cancel')}</Button>
+        <DialogActions sx={{ borderTop: 1, borderColor: "rgba(59, 130, 246, 0.15)" }}>
+          <Button onClick={() => setOpenChangePassword(false)} sx={{ color: "#1e3a8a" }}>{t('cancel')}</Button>
           <Button
             type="submit"
             variant="contained"
             disableElevation
             form="change-password-form"
+            sx={{
+              background: "linear-gradient(135deg, #3b82f6 0%, #f97316 120%)",
+              "&:hover": { background: "linear-gradient(135deg, #2563eb 0%, #ea580c 120%)" },
+            }}
           >
             {t('submit')}
           </Button>
