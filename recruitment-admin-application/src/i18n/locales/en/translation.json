@@ -257,7 +257,7 @@
   "location": "Location",
   "job_description": "Job Description",
   "requirements": "Requirements",
-  "select_job_to_view": "Select a job to view details",
+  "select_job_to_view": "Where talent meets opportunity - perfectly matched every time.",
   "clear_all_filters": "Clear all filters",
   "newest_first": "Newest first",
   "oldest_first": "Oldest first",
@@ -560,5 +560,6 @@
   "Month_ago": "1 month ago",
   "Months_ago": "{{count}} months ago",
   "Year_ago": "1 year ago",
-  "Years_ago": "{{count}} years ago"
+  "Years_ago": "{{count}} years ago",
+  "new_files_selected": "new file selected"
 }

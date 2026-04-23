@@ -257,7 +257,7 @@
   "location": "ទីតាំង",
   "job_description": "ការពិពណ៌នាការងារ",
   "requirements": "តម្រូវការ",
-  "select_job_to_view": "ជ្រើសរើសការងារដើម្បីមើលព័ត៌មានលម្អិត",
+  "select_job_to_view": "ជាមួយឱកាសការងារ - យ៉ាងល្អឥតខ្ចោះរាល់ពេល",
   "clear_all_filters": "សម្អាតតម្រងទាំងអស់",
   "newest_first": "ថ្មីបំផុតមុន",
   "oldest_first": "ចាស់បំផុតមុន",
@@ -561,5 +561,6 @@
   "Month_ago": "1 ខែមុន",
   "Months_ago": "{{count}} ខែមុន",
   "Year_ago": "1 ឆ្នាំមុន",
-  "Years_ago": "{{count}} ឆ្នាំមុន"
+  "Years_ago": "{{count}} ឆ្នាំមុន",
+  "new_files_selected": "ឯកសារថ្មីដែលបានជ្រើសរើស"
 }

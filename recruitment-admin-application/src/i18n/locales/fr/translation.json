@@ -256,7 +256,7 @@
   "location": "Lieu",
   "job_description": "Description du poste",
   "requirements": "Exigences",
-  "select_job_to_view": "Sélectionnez un emploi pour voir les détails",
+  "select_job_to_view": "Là où le talent rencontre l’opportunité - parfaitement assortis à chaque fois.",
   "clear_all_filters": "Effacer tous les filtres",
   "newest_first": "Plus récent d'abord",
   "oldest_first": "Plus ancien d'abord",
@@ -560,5 +560,6 @@
   "Month_ago": "1 mois plus tôt",
   "Months_ago": "{{count}} mois plus tôt",
   "Year_ago": "1 année plus tôt",
-  "Years_ago": "{{count}} années plus tôt"
+  "Years_ago": "{{count}} années plus tôt",
+  "new_files_selected": "nouveaux fichiers sélectionnés"
 } 

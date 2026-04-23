@@ -1691,21 +1691,51 @@ export default function Dashboard() {
           {filteredJobs.length === 0 ? (
             <Box
               sx={{
-                p: 4,
+                p: 2,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 height: "100%",
-                color: "text.secondary",
               }}
             >
-              <Box
-                component="img"
-                src="/No-Data.gif"
-                alt={t("no_data")}
-                sx={{ maxWidth: 180, opacity: 0.7 }}
-              />
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 4,
+                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(239, 246, 255, 0.3) 100%)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(59, 130, 246, 0.15)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/No_Data.gif"
+                  alt={t("no_data")}
+                  sx={{ 
+                    maxWidth: 100,
+                    opacity: 0.85,
+                    filter: "drop-shadow(0 4px 12px rgba(30, 58, 138, 0.15))",
+                  }}
+                />
+                <Typography 
+                  variant="h7" 
+                  sx={{ 
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 105%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    fontWeight: 600,
+                  }}
+                >
+                  {t("no_data")}
+                </Typography>
+              </Paper>
             </Box>
           ) : (
             <>
@@ -3414,13 +3444,191 @@ export default function Dashboard() {
             sx={{
               flex: 1,
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              p: 4,
-              color: "text.secondary",
+              p: 0,
+              width: "100%",
+              height: "100%",
+              minHeight: "100%",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <Typography variant="body1" sx={{ color: "#1e3a8a" }}>{t('select_job_to_view')}</Typography>
+            {/* Background decorative elements */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: "-20%",
+                right: "-10%",
+                width: "60%",
+                height: "60%",
+                background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+                borderRadius: "50%",
+                zIndex: 0,
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: "-20%",
+                left: "-10%",
+                width: "60%",
+                height: "60%",
+                background: "radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%)",
+                borderRadius: "50%",
+                zIndex: 0,
+              }}
+            />
+            
+            <Paper
+              elevation={0}
+              sx={{
+                width: "100%",
+                height: "100%",
+                minHeight: "100%",
+                borderRadius: 0,
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(239, 246, 255, 0.75) 100%)",
+                backdropFilter: "blur(15px)",
+                border: "none",
+                boxShadow: "none",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  maxWidth: 700,
+                  width: "90%",
+                  px: 3,
+                }}
+              >
+                {/* Logo with glow effect */}
+                <Box sx={{ position: "relative", display: "inline-block" }}>
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: "100%",
+                      height: "100%",
+                      background: "radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(249, 115, 22, 0.1) 40%, transparent 70%)",
+                      borderRadius: "50%",
+                      filter: "blur(50px)",
+                      zIndex: 0,
+                    }}
+                  />
+                  <Box
+                    component="img"
+                    src="/logo.png"
+                    alt="TrueMatch360 Logo"
+                    sx={{
+                      maxWidth: { xs: 300, sm: 400, md: 500, lg: 600 },
+                      width: "100%",
+                      height: "auto",
+                      position: "relative",
+                      zIndex: 1,
+                      filter: "drop-shadow(0 16px 48px rgba(30, 58, 138, 0.35))",
+                      animation: "fadeInScale 1s ease-out",
+                      "@keyframes fadeInScale": {
+                        from: { 
+                          opacity: 0, 
+                          transform: "scale(0.9)" 
+                        },
+                        to: { 
+                          opacity: 1, 
+                          transform: "scale(1)" 
+                        },
+                      },
+                      transition: "all 0.4s ease",
+                      "&:hover": {
+                        filter: "drop-shadow(0 20px 60px rgba(59, 130, 246, 0.45))",
+                        transform: "scale(1.02)",
+                      },
+                    }}
+                  />
+                </Box>
+                
+                <Divider 
+                  sx={{ 
+                    width: "80%", 
+                    my: 5,
+                    borderColor: "rgba(59, 130, 246, 0.2)",
+                    borderWidth: 1,
+                  }} 
+                />
+                
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Box
+                    sx={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%)",
+                      boxShadow: "0 0 20px rgba(59, 130, 246, 0.5)",
+                      animation: "pulse 2s infinite",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 0.6, transform: "scale(1)" },
+                        "50%": { opacity: 1, transform: "scale(1.2)" },
+                      },
+                    }}
+                  />
+                  <Typography 
+                    variant="h4" 
+                    sx={{ 
+                      color: "#1e3a8a",
+                      fontWeight: 700,
+                      fontSize: { xs: "1rem", sm: "1rem", md: "1rem" },
+                      background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 40%, #f97316 100%)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      textTransform: "none",
+                    }}
+                  >
+                    {t('select_job_to_view')}
+                  </Typography>
+                  <Box
+                    sx={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                      boxShadow: "0 0 20px rgba(249, 115, 22, 0.5)",
+                      animation: "pulse 2s infinite 0.7s",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 0.6, transform: "scale(1)" },
+                        "50%": { opacity: 1, transform: "scale(1.2)" },
+                      },
+                    }}
+                  />
+                </Stack>
+                
+                {/* Subtle hint text */}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    mt: 3,
+                    color: "#3b82f6",
+                    opacity: 0.6,
+                    fontSize: "0.8rem",
+                    letterSpacing: 3,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  TrueMatch360
+                </Typography>
+              </Box>
+            </Paper>
           </Box>
         )}
 
@@ -3480,82 +3688,6 @@ export default function Dashboard() {
           gap: 0.5,
         }}
       >
-        {!categoryFilter.includes("All") && categoryFilter.length > 0 && (
-          <Card
-            sx={{
-              p: 0.9,
-              border: "3px solid",
-              borderColor: "divider",
-            }}
-          >
-            <Stack
-              direction={{ xs: "row", sm: "row" }}
-              spacing={1}
-              flexWrap="wrap"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-            >
-              {/* LEFT: category chips */}
-              <Stack
-                direction="row"
-                spacing={1}
-                flexWrap="wrap"
-                sx={{ flex: 1 }}
-              >
-                {!categoryFilter.includes("All") &&
-                  categoryFilter.map((id) => {
-                    const cat = categories.find((c) => c.pk_id === id);
-                    if (!cat) return null;
-
-                    return (
-                      <Chip
-                        key={id}
-                        label={cat.name}
-                        onDelete={() => {
-                          const updated = categoryFilter.filter(
-                            (v) => v !== id,
-                          );
-                          setCategoryFilter(
-                            updated.length === 0 ? ["All"] : updated,
-                          );
-                        }}
-                      />
-                    );
-                  })}
-              </Stack>
-
-              {/* RIGHT: reset button */}
-              <Stack
-                direction="row"
-                justifyContent={{ xs: "flex-end", sm: "flex-end" }}
-              >
-                <Tooltip title={t('clear_all_filters')} arrow placement="top">
-                  <IconButton
-                    sx={{
-                      p: 0.5, // 🔥 shrink padding
-                      width: 28,
-                      height: 28,
-                      borderRadius: 1,
-                      bgcolor: "gray",
-                      color: "#fff",
-                      "&:hover": {
-                        bgcolor: "gray",
-                      },
-                    }}
-                    onClick={() => {
-                      setSearchTerm("");
-                      setTypeFilter("All");
-                      setLevelFilter("All");
-                      setCategoryFilter(["All"]);
-                    }}
-                  >
-                    <Cancel />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Stack>
-          </Card>
-        )}
-
         <Box
           sx={{
             flex: 1,
