@@ -226,7 +226,16 @@ function JobFormDialog({
   return (
     <Dialog
       open={open}
-      onClose={loading ? undefined : handleCloseDialog}
+      onClose={(event, reason) => {
+        if (loading) return;
+
+        if (reason === "backdropClick") {
+          return; 
+        }
+
+        handleCloseDialog();
+      }}
+      
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
@@ -235,6 +244,9 @@ function JobFormDialog({
         "& .MuiDialog-paper": {
           borderRadius: isMobile ? 0 : 3,
           overflow: "hidden",
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(59, 130, 246, 0.2)",
         },
       }}
       PaperComponent={DraggablePaper}
@@ -242,7 +254,7 @@ function JobFormDialog({
       <DialogTitle
         id="draggable-dialog-title"
         sx={{
-          background: "#023F6B",
+          background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)",
           color: "white",
           position: "relative",
           cursor: "move",
@@ -264,7 +276,7 @@ function JobFormDialog({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ backgroundColor: "#F4F1F1" }}>
+      <DialogContent dividers sx={{ backgroundColor: "#FAFAFA" }}>
         <form onSubmit={handleSubmit} id="job-form">
           <Box
             sx={{
@@ -297,12 +309,17 @@ function JobFormDialog({
                   error={!!errors.category_ids}
                   helperText={errors.category_ids}
                   InputLabelProps={{ required: true }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     startAdornment: (
                       <>
                         <InputAdornment position="start">
-                          <WorkIcon fontSize="small" />
+                          <WorkIcon fontSize="small" sx={{ color: "#3b82f6" }}/>
                         </InputAdornment>
                         {params.InputProps.startAdornment}
                       </>
@@ -318,6 +335,11 @@ function JobFormDialog({
                       key={key} // ← pass explicitly
                       label={option.name}
                       size="small"
+                      sx={{
+                        bgcolor: "rgba(59, 130, 246, 0.1)",
+                        borderColor: "#3b82f6",
+                        color: "#1e3a8a",
+                      }}
                       {...tagProps} // ← spread the rest (no key inside)
                     />
                   );
@@ -336,6 +358,11 @@ function JobFormDialog({
               helperText={errors.job_title}
               placeholder={t("please_enter_job_title")}
               size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
             />
 
             {/* Job Type */}
@@ -356,11 +383,16 @@ function JobFormDialog({
                 <TextField
                   {...params}
                   label={t("job_type") + " *"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     startAdornment: (
                       <InputAdornment position="start">
-                        <WorkIcon fontSize="small" />
+                        <WorkIcon fontSize="small" sx={{ color: "#3b82f6" }}/>
                       </InputAdornment>
                     ),
                   }}
@@ -384,11 +416,16 @@ function JobFormDialog({
                 <TextField
                   {...params}
                   label={t("level") + " *"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     startAdornment: (
                       <InputAdornment position="start">
-                        <WorkIcon fontSize="small" />
+                        <WorkIcon fontSize="small" sx={{ color: "#3b82f6" }}/>
                       </InputAdornment>
                     ),
                   }}
@@ -413,7 +450,16 @@ function JobFormDialog({
                 }));
               }}
               renderInput={(params) => (
-                <TextField {...params} label={t("status") + " *"} fullWidth />
+                <TextField 
+                  {...params} 
+                  label={t("status") + " *"} 
+                  fullWidth 
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  }}
+                />
               )}
             />
 
@@ -436,6 +482,11 @@ function JobFormDialog({
               size="small"
               error={!!errors.position_number}
               helperText={errors.position_number}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
             />
 
             {/* Salary Range */}
@@ -447,10 +498,15 @@ function JobFormDialog({
               onChange={handleChange}
               placeholder={t("salary")}
               size="small"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <AttachMoneyIcon fontSize="small" />
+                    <AttachMoneyIcon fontSize="small" sx={{ color: "#f97316" }}/>
                   </InputAdornment>
                 ),
               }}
@@ -474,13 +530,23 @@ function JobFormDialog({
                   fullWidth: true,
                   error: !!errors.closing_date,
                   helperText: errors.closing_date,
+                  sx: {
+                    "& .MuiOutlinedInput-root": {
+                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                    },
+                  },
                 },
               }}
             />
 
             {/* Location */}
             <TextField
-              sx={{ gridColumn: { xs: "1 / -1", sm: "1 / 3" } }}
+              sx={{ 
+                gridColumn: { xs: "1 / -1", sm: "1 / 3" },
+                "& .MuiOutlinedInput-root": {
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+                },
+              }}
               fullWidth
               label={t("location") + " *"}
               name="location"
@@ -490,7 +556,7 @@ function JobFormDialog({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LocationOnIcon fontSize="small" />
+                    <LocationOnIcon fontSize="small" sx={{ color: "#f97316" }}/>
                   </InputAdornment>
                 ),
               }}
@@ -502,16 +568,17 @@ function JobFormDialog({
           {/* Job Description - Rich Text Editor */}
           <Box mb={2} mt={2}>
             <FormControl fullWidth error={!!errors.job_description}>
-              <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
+              <InputLabel shrink sx={{ bgcolor: "#FAFAFA", px: 1, color: "#1e3a8a" }}>
                 {t("job_description") + " *"}
               </InputLabel>
 
               <Box
                 sx={{
                   border: 1,
-                  borderColor: "divider",
+                  borderColor: errors.job_description ? "#ef4444" : "rgba(59, 130, 246, 0.3)",
                   borderRadius: 1,
                   overflow: "hidden",
+                  "&:hover": { borderColor: "#3b82f6" },
                   "& .ql-container": {
                     minHeight: 170,
                     height: "auto",
@@ -563,16 +630,17 @@ function JobFormDialog({
           {/* Requirements - Rich Text Editor */}
           <Box>
             <FormControl fullWidth>
-              <InputLabel shrink sx={{ bgcolor: "#F4F1F1", px: 1 }}>
+              <InputLabel shrink sx={{ bgcolor: "#FAFAFA", px: 1, color: "#1e3a8a" }}>
                 {t("experience_required")}
               </InputLabel>
 
               <Box
                 sx={{
                   border: 1,
-                  borderColor: "divider",
+                  borderColor: "rgba(59, 130, 246, 0.3)",
                   borderRadius: 1,
                   overflow: "hidden",
+                  "&:hover": { borderColor: "#3b82f6" },
                   "& .ql-container": {
                     minHeight: 170,
                     height: "auto",
@@ -613,9 +681,9 @@ function JobFormDialog({
 
       <DialogActions
         sx={{
-          background: "#F4F1F1",
+          background: "#FAFAFA",
           borderTop: "1px solid",
-          borderColor: "divider",
+          borderColor: "rgba(59, 130, 246, 0.2)",
         }}
       >
         <Button
@@ -626,7 +694,12 @@ function JobFormDialog({
           disabled={loading}
           sx={{
             textTransform: "none",
-            backgroundColor: "#023F6B",
+            background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)",
+            boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 150%)",
+              boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
+            },
           }}
           startIcon={<Save />}
         >
@@ -803,7 +876,7 @@ export default function MyJobs() {
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: "#3b82f6" }}/>
       </Box>
     );
   }
@@ -853,9 +926,18 @@ export default function MyJobs() {
             mb: -0.5,
           }}
         >
-          <PostAdd />
+          <PostAdd sx={{ color: "#3b82f6" }}/>
 
-          <Typography variant="h7" fontWeight={700}>
+          <Typography 
+            variant="h7" 
+            fontWeight={700}
+            sx={{
+              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
             {t("job_posts")}
           </Typography>
         </Stack>
@@ -869,18 +951,19 @@ export default function MyJobs() {
             gridColumn: { xs: "1 / -1", sm: "span 2" },
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
+              "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
             },
           }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon color="action" />
+                <SearchIcon sx={{ color: "#3b82f6" }} />
               </InputAdornment>
             ),
             endAdornment: search && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={() => setSearch("")}>
-                  <Cancel fontSize="small" />
+                  <Cancel fontSize="small" sx={{ color: "#f97316" }}/>
                 </IconButton>
               </InputAdornment>
             ),
@@ -894,9 +977,10 @@ export default function MyJobs() {
           options={categories}
           getOptionLabel={(option) => option.name}
           sx={{
-            gridColumn: { xs: "1 / -1", sm: "span 2" }, // ← added
+            gridColumn: { xs: "1 / -1", sm: "span 2" },
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
+              "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
             },
           }}
           value={
@@ -925,7 +1009,7 @@ export default function MyJobs() {
                 startAdornment: (
                   <>
                     <InputAdornment position="start">
-                      <AllInboxRoundedIcon color="action" fontSize="small" />
+                      <AllInboxRoundedIcon sx={{ color: "#3b82f6" }} fontSize="small" />
                     </InputAdornment>
                     {params.InputProps.startAdornment}
                   </>
@@ -944,7 +1028,12 @@ export default function MyJobs() {
                 label={option.name}
                 size="small"
                 {...getTagProps({ index })}
-                sx={{ maxWidth: 140 }}
+                sx={{ 
+                  maxWidth: 140,
+                  bgcolor: "rgba(59, 130, 246, 0.1)",
+                  borderColor: "#3b82f6",
+                  color: "#1e3a8a",
+                }}
               />
             ))
           }
@@ -966,7 +1055,7 @@ export default function MyJobs() {
                 startAdornment: (
                   <>
                     <InputAdornment position="start">
-                      <WorkOutlineIcon color="action" fontSize="small" />
+                      <WorkOutlineIcon sx={{ color: "#3b82f6" }} fontSize="small" />
                     </InputAdornment>
                     {params.InputProps.startAdornment}
                   </>
@@ -975,6 +1064,7 @@ export default function MyJobs() {
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 3,
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
               }}
             />
@@ -996,7 +1086,7 @@ export default function MyJobs() {
                 startAdornment: (
                   <>
                     <InputAdornment position="start">
-                      <TrendingUpIcon color="action" fontSize="small" />
+                      <TrendingUpIcon sx={{ color: "#f97316" }} fontSize="small" />
                     </InputAdornment>
                     {params.InputProps.startAdornment}
                   </>
@@ -1005,6 +1095,7 @@ export default function MyJobs() {
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 3,
+                  "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
                 },
               }}
             />
@@ -1033,9 +1124,15 @@ export default function MyJobs() {
               sx={{
                 borderRadius: 3,
                 textTransform: "none",
+                borderColor: "#ef4444",
+                color: "#ef4444",
+                "&:hover": {
+                  borderColor: "#dc2626",
+                  bgcolor: "rgba(239, 68, 68, 0.05)",
+                },
                 "& .MuiButton-startIcon": {
-                  marginRight: 0.5, 
-                }, 
+                  marginRight: 0.5,
+                },
               }}
               onClick={() => {
                 setSearch("");
@@ -1053,12 +1150,18 @@ export default function MyJobs() {
               variant="contained"
               startIcon={<PostAdd />}
               onClick={openCreate}
-              sx={{ 
-                borderRadius: 3, 
+               sx={{
+                borderRadius: 3,
                 textTransform: "none",
+                background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)",
+                boxShadow: "0 4px 15px rgba(59, 130, 246, 0.3)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 150%)",
+                  boxShadow: "0 6px 20px rgba(249, 115, 22, 0.4)",
+                },
                 "& .MuiButton-startIcon": {
-                  marginRight: 0.5, 
-                }, 
+                  marginRight: 0.5,
+                },
               }}
             >
               {t("post")}
@@ -1080,6 +1183,11 @@ export default function MyJobs() {
             fontSize: "0.875rem",
             px: 1.5,
             textTransform: "none",
+            color: "#1e3a8a",
+            "&.Mui-selected": { color: "#f97316" },
+          },
+          "& .MuiTabs-indicator": {
+            background: "linear-gradient(90deg, #3b82f6 0%, #f97316 120%)",
           },
           "& .MuiBadge-root": { mr: 0.5 },
           mb: 0.5,
@@ -1096,6 +1204,7 @@ export default function MyJobs() {
                   height: 16,
                   fontSize: "0.65rem",
                   fontWeight: 600,
+                  bgcolor: "#10b981",
                 },
               }}
             >
@@ -1116,6 +1225,7 @@ export default function MyJobs() {
                   height: 16,
                   fontSize: "0.65rem",
                   fontWeight: 600,
+                  bgcolor: "#ef4444",
                 },
               }}
             >
@@ -1146,8 +1256,16 @@ export default function MyJobs() {
               borderRadius: 2,
               display: "flex",
               flexDirection: "column",
-              boxShadow: 1,
-              backgroundColor: "#FAFAFA",
+              boxShadow: "0 2px 12px rgba(30, 58, 138, 0.08)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(59, 130, 246, 0.15)",
+              transition: "all 0.2s",
+              "&:hover": {
+                boxShadow: "0 6px 20px rgba(59, 130, 246, 0.15)",
+                borderColor: "#f97316",
+                transform: "translateY(-2px)",
+              },
             }}
           >
             <CardContent sx={{ flexGrow: 1, pb: 1 }}>
@@ -1163,8 +1281,8 @@ export default function MyJobs() {
                   sx={{
                     width: { xs: 32, sm: 40 },
                     height: { xs: 32, sm: 40 },
-                    border: "1px solid",
-                    borderColor: "divider",
+                    border: "2px solid",
+                    borderColor: "rgba(59, 130, 246, 0.3)",
                     bgcolor: "grey.200",
                     fontWeight: 600,
                     fontSize: "1.1rem",
@@ -1184,7 +1302,7 @@ export default function MyJobs() {
                 >
                   <Typography
                     variant="subtitle1"
-                    color="primary"
+                    sx={{ color: "#1e3a8a" }}
                     fontWeight={500}
                   >
                     {job.job_title}
@@ -1198,10 +1316,9 @@ export default function MyJobs() {
                       fontWeight: 500,
                       justifyContent: "center",
                       borderWidth: 1.5,
-                      color:
-                        job.status === "Open" ? "success.main" : "error.main",
-                      borderColor:
-                        job.status === "Open" ? "success.main" : "error.main",
+                      color: job.status === "Open" ? "#10b981" : "#ef4444",
+                      borderColor: job.status === "Open" ? "#10b981" : "#ef4444",
+                      bgcolor: job.status === "Open" ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
                     }}
                   />
                 </Box>
@@ -1210,35 +1327,38 @@ export default function MyJobs() {
               {/* Type & Level */}
               <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
                 <Chip
-                  icon={<WorkIcon fontSize="small" />}
+                  icon={<WorkIcon fontSize="small" sx={{ color: "#3b82f6" }}/>}
                   label={job.job_type}
                   size="small"
                   variant="outlined"
+                  sx={{ borderColor: "#3b82f6", color: "#3b82f6" }}
                 />
                 {job.level && (
                   <Chip
-                    icon={<TrendingUpIcon fontSize="small" />}
+                    icon={<TrendingUpIcon fontSize="small" sx={{ color: "#f97316" }}/>}
                     label={job.level}
                     size="small"
                     color="primary"
                     variant="outlined"
+                    sx={{ borderColor: "#f97316", color: "#f97316" }}
                   />
                 )}
                 <Chip
-                  icon={<AttachMoneyIcon fontSize="small" />}
+                  icon={<AttachMoneyIcon sx={{ color: "#10b981" }} fontSize="small" />}
                   label={
                     job.salary_range ? `${job.salary_range}$` : "Negotiable"
                   }
                   size="small"
                   variant="outlined"
+                  sx={{ borderColor: "#10b981", color: "#10b981" }}
                 />
               </Stack>
               <Stack direction="row" spacing={0.5} mt={1}>
                 <LocationOnIcon
                   fontSize="small"
-                  sx={{ color: "text.secondary", mr: 0.5, opacity: 0.7 }}
+                  sx={{ color: "#f97316", mr: 0.5, opacity: 0.7 }}
                 />
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: "#1e3a8a" }}>
                   {job.location || "—"}
                 </Typography>
               </Stack>
@@ -1247,7 +1367,7 @@ export default function MyJobs() {
                 <Stack direction="row" spacing={0.5} flexWrap="wrap" mt={1}>
                   <CategoryRounded
                     fontSize=""
-                    sx={{ color: "text.secondary" }}
+                    sx={{ color: "#3b82f6" }}
                   />
                   <Typography
                     variant="caption"
@@ -1262,18 +1382,18 @@ export default function MyJobs() {
                       label={cat.name}
                       size="small"
                       variant="outlined"
-                      sx={(theme) => ({
+                      sx={{
                         fontSize: "0.70rem",
                         height: 18,
                         borderRadius: "8px",
-                        borderColor: theme.palette.warning.light,
-                        color: theme.palette.warning.dark,
-                        bgcolor: theme.palette.warning.light + "22",
+                        borderColor: "#f97316",
+                        color: "#f97316",
+                        bgcolor: "rgba(249, 115, 22, 0.06)",
                         "& .MuiChip-label": {
                           px: 0.7,
                           fontWeight: 600,
                         },
-                      })}
+                      }}
                     />
                   ))}
                   {job.categories.length > 2 && (
@@ -1285,8 +1405,8 @@ export default function MyJobs() {
                         height: 18,
                         borderRadius: "8px",
                         fontWeight: 600,
-                        bgcolor: "action.hover",
-                        color: "text.secondary",
+                        bgcolor: "rgba(59, 130, 246, 0.1)",
+                        color: "#3b82f6",
                       }}
                     />
                   )}
@@ -1296,7 +1416,7 @@ export default function MyJobs() {
               <Stack direction="row" spacing={1} mt={1}>
                 <Typography
                   variant="caption"
-                  color="text.disabled"
+                  sx={{ color: "#3b82f6" }}
                   mt={1.5}
                   display="block"
                 >
@@ -1308,7 +1428,7 @@ export default function MyJobs() {
 
                 <Typography
                   variant="caption"
-                  color="text.disabled"
+                  sx={{ color: "#f97316" }}
                   mt={1.5}
                   display="block"
                 >
@@ -1323,7 +1443,7 @@ export default function MyJobs() {
             <CardActions sx={{ justifyContent: "flex-end", px: 1, pb: 1 }}>
               <Tooltip title={t("edit_job")} arrow placement="bottom">
                 <IconButton size="small" onClick={() => openEdit(job)}>
-                  <EditIcon fontSize="small" sx={{ color: "teal" }} />
+                  <EditIcon fontSize="small" sx={{ color: "#3b82f6", "&:hover": { color: "#1e3a8a" } }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title={t("duplicate_job")} arrow placement="bottom">
@@ -1332,7 +1452,7 @@ export default function MyJobs() {
                   color="primary"
                   onClick={() => openDuplicate(job)}
                 >
-                  <ContentCopyIcon fontSize="small" />
+                  <ContentCopyIcon fontSize="small" sx={{ color: "#f97316", "&:hover": { color: "#ea580c" } }}/>
                 </IconButton>
               </Tooltip>
 
@@ -1343,7 +1463,7 @@ export default function MyJobs() {
                     color="warning"
                     onClick={() => openClose(job)}
                   >
-                    <CloseIcon fontSize="small" />
+                    <CloseIcon fontSize="small" sx={{ color: "#ef4444", "&:hover": { color: "#dc2626" } }}/>
                   </IconButton>
                 </Tooltip>
               )}
@@ -1356,7 +1476,7 @@ export default function MyJobs() {
             gridColumn="1 / -1"
             textAlign="center"
             py={6}
-            color="text.secondary"
+            sx={{ color: "#1e3a8a", opacity: 0.7 }}
           >
             {t("no_jobs_posted")}
           </Box>
@@ -1385,7 +1505,10 @@ export default function MyJobs() {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: 10,
+            boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
           },
         }}
       >
@@ -1395,8 +1518,10 @@ export default function MyJobs() {
             display: "flex",
             alignItems: "center",
             gap: 1.5,
-            background: "linear-gradient(135deg, #e8f5e9, #f1f8e9)",
+            background: "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%)",
             fontWeight: 600,
+            color: "#ef4444",
+            borderBottom: "1px solid rgba(239, 68, 68, 0.2)",
           }}
         >
           <CloseIcon color="warning" />
@@ -1409,12 +1534,12 @@ export default function MyJobs() {
         <DialogContent
           sx={{
             py: 3,
-            backgroundColor: "#fafafa",
+            backgroundColor: "#FAFAFA",
           }}
         >
-          <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
+          <DialogContentText sx={{ fontSize: "1rem", color: "#1e3a8a" }}>
             {t("are_you_sure_close")}
-            <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
+            <Box component="span" sx={{ fontWeight: 600, mx: 0.5, color: "#f97316" }}>
               {closingJob?.job_title}
             </Box>
             ?
@@ -1425,9 +1550,10 @@ export default function MyJobs() {
               mt: 2,
               p: 2,
               borderRadius: 2,
-              backgroundColor: "#f1f8e9",
+              backgroundColor: "rgba(249, 115, 22, 0.08)",
               fontSize: "0.9rem",
-              color: "text.secondary",
+              color: "#1e3a8a",
+              border: "1px solid rgba(249, 115, 22, 0.2)",
             }}
           >
             ⚠️ {t("close_warning")}
@@ -1439,7 +1565,8 @@ export default function MyJobs() {
           sx={{
             px: 3,
             py: 2,
-            backgroundColor: "#fafafa",
+            backgroundColor: "#FAFAFA", 
+            borderTop: "1px solid rgba(59, 130, 246, 0.1)"
           }}
         >
           <Button
@@ -1451,6 +1578,9 @@ export default function MyJobs() {
             sx={{
               textTransform: "none",
               borderRadius: 2,
+              borderColor: "#3b82f6",
+              color: "#3b82f6",
+              "&:hover": { borderColor: "#f97316", color: "#f97316" },
             }}
           >
             {t("cancel")}
@@ -1465,6 +1595,10 @@ export default function MyJobs() {
               textTransform: "none",
               borderRadius: 2,
               px: 2.5,
+              background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+              },
             }}
           >
             {t("close")}
@@ -1480,7 +1614,10 @@ export default function MyJobs() {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: 8,
+            boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
           },
         }}
       >
@@ -1490,11 +1627,13 @@ export default function MyJobs() {
             display: "flex",
             alignItems: "center",
             gap: 1.5,
-            background: "linear-gradient(135deg, #e8f5e9, #f1f8e9)",
+            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)",
             fontWeight: 600,
+            color: "#1e3a8a",
+            borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
           }}
         >
-          <ContentCopyIcon color="primary" />
+          <ContentCopyIcon sx={{ color: "#3b82f6" }} />
           {t("duplicate_job_posting")}
         </DialogTitle>
 
@@ -1504,12 +1643,12 @@ export default function MyJobs() {
         <DialogContent
           sx={{
             py: 3,
-            backgroundColor: "#fafafa",
+            backgroundColor: "#FAFAFA",
           }}
         >
-          <DialogContentText sx={{ fontSize: "1rem", color: "text.primary" }}>
+          <DialogContentText sx={{ fontSize: "1rem", color: "#1e3a8a" }}>
             {t("are_you_sure_duplicate")}
-            <Box component="span" sx={{ fontWeight: 600, mx: 0.5 }}>
+            <Box component="span" sx={{ fontWeight: 600, mx: 0.5, color: "#f97316" }}>
               {duplicateJob?.job_title}
             </Box>
             ?
@@ -1520,9 +1659,10 @@ export default function MyJobs() {
               mt: 2,
               p: 2,
               borderRadius: 2,
-              backgroundColor: "#f1f8e9",
+              backgroundColor: "rgba(59, 130, 246, 0.06)",
               fontSize: "0.9rem",
-              color: "text.secondary",
+              color: "#1e3a8a",
+              border: "1px solid rgba(59, 130, 246, 0.15)",
             }}
           >
             ⚠️ {t("duplicate_warning")}
@@ -1534,7 +1674,8 @@ export default function MyJobs() {
           sx={{
             px: 3,
             py: 2,
-            backgroundColor: "#fafafa",
+            backgroundColor: "#FAFAFA", 
+            borderTop: "1px solid rgba(59, 130, 246, 0.1)"
           }}
         >
           <Button
@@ -1545,6 +1686,9 @@ export default function MyJobs() {
             sx={{
               textTransform: "none",
               borderRadius: 2,
+              borderColor: "#ef4444",
+              color: "#ef4444",
+              "&:hover": { borderColor: "#dc2626" },
             }}
             startIcon={<Cancel />}
           >
@@ -1560,6 +1704,10 @@ export default function MyJobs() {
               textTransform: "none",
               borderRadius: 2,
               px: 2.5,
+              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 150%)",
+              },
             }}
           >
             {t("duplicate")}
@@ -1576,7 +1724,10 @@ export default function MyJobs() {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            boxShadow: 8,
+            boxShadow: "0 16px 48px rgba(30, 58, 138, 0.2)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(59, 130, 246, 0.2)",
           },
         }}
       >
@@ -1585,20 +1736,21 @@ export default function MyJobs() {
             display: "flex",
             alignItems: "center",
             gap: 1.5,
-            background: "linear-gradient(135deg, #fff3e0, #ffe0b2)",
+            background: "linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(234, 88, 12, 0.1) 100%)",
             fontWeight: 600,
-            color: "#e65100",
+            color: "#ea580c",
+            borderBottom: "1px solid rgba(249, 115, 22, 0.2)",
           }}
         >
-          <WarningAmber color="warning" />
+          <WarningAmber sx={{ color: "#f97316" }} />
           Account Awaiting Approval
         </DialogTitle>
 
         <Divider />
 
-        <DialogContent sx={{ py: 3, backgroundColor: "#fffaf0" }}>
+        <DialogContent sx={{ py: 3, backgroundColor: "#FAFAFA" }}>
           <DialogContentText
-            sx={{ fontSize: "1rem", color: "text.primary", mb: 2 }}
+            sx={{ fontSize: "1rem", color: "#1e3a8a", mb: 2 }}
           >
             Your employer account has not been approved yet.
           </DialogContentText>
@@ -1608,14 +1760,14 @@ export default function MyJobs() {
               mt: 1,
               p: 2.5,
               borderRadius: 2,
-              backgroundColor: "#fff8e1",
+              backgroundColor: "rgba(249, 115, 22, 0.06)",
               border: "1px solid",
-              borderColor: "warning.light",
+              borderColor: "#f97316",
               fontSize: "0.95rem",
-              color: "text.primary",
+              color: "#1e3a8a",
             }}
           >
-            <strong>
+            <strong style={{ color: "#ea580c" }}>
               You cannot post new jobs until admin approval is complete.
             </strong>
             <br />
@@ -1627,9 +1779,9 @@ export default function MyJobs() {
               <br />
               Contact us at:{" "}
               <Box sx={{ mt: 2 }}>
-                <Box>📞 Phone: <strong>+855 12 345 678</strong></Box>
+                <Box>📞 Phone: <strong style={{ color: "#3b82f6" }}>+855 12 345 678</strong></Box>
                 <Box sx={{ mt: 0.5 }}>
-                  ✉️ Email: <strong>truematch360@gmail.com</strong>
+                  ✉️ Email: <strong style={{ color: "#f97316" }}>truematch360@gmail.com</strong>
                 </Box>
               </Box>
             </Box>
@@ -1641,7 +1793,7 @@ export default function MyJobs() {
             sx={{
               mt: 2,
               display: "block",
-              color: "text.secondary",
+              color: "#3b82f6",
               textAlign: "center",
             }}
           >
@@ -1653,8 +1805,9 @@ export default function MyJobs() {
           sx={{
             px: 3,
             py: 2,
-            backgroundColor: "#fffaf0",
-            justifyContent: "center", // centered button looks nicer in small dialogs
+            backgroundColor: "#FAFAFA",
+            justifyContent: "center",
+            borderTop: "1px solid rgba(59, 130, 246, 0.1)",
           }}
         >
           <Button
@@ -1667,6 +1820,10 @@ export default function MyJobs() {
               borderRadius: 2,
               px: 5,
               minWidth: 140,
+              background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 150%)",
+              },
             }}
           >
             Close

@@ -987,8 +987,7 @@ export default function AppliedCandidates() {
                         >
                           <CalendarIcon fontSize="small" sx={{ color: "#3b82f6" }} />
                           <Typography variant="caption" sx={{ color: "#f97316" }}>
-                            Applied:
-                            {new Date(app.applied_date).toLocaleDateString()}
+                            {t("applied")}: {new Date(app.applied_date).toLocaleDateString()}
                           </Typography>
                         </Stack>
                       </CardContent>
