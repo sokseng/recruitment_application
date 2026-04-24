@@ -704,7 +704,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 onClose={() => setError('')}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center', zIndex: 2000 }}
             >
-                <Alert severity="error" onClose={() => setError('')}>
+                <Alert 
+                    severity="error" 
+                    onClose={() => setError('')}
+                    sx={{ bgcolor: '#ef4444', color: 'white' }}
+                >
                     {error}
                 </Alert>
             </Snackbar>
@@ -716,13 +720,11 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                 >
                     <AppBar
                         position="static"
-                        color="default"
                         elevation={2}
                         sx={{
-                            backgroundColor: error ? 'rgba(255, 232, 236, 0.8)' : 'white',
+                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)',
                             borderBottom: 1,
-                            borderColor: error ? 'red' : 'divider',
-                            '&:hover': { bgcolor: 'grey.200' },
+                            borderColor: 'rgba(249, 115, 22, 0.3)',
                             zIndex: 1300
                         }}
                         onClick={() => setPopup(true)}
@@ -740,7 +742,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     edge="start"
                                     color="inherit"
                                     sx={{
-                                        '&:hover': { bgcolor: 'grey.200' },
+                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
                                         display: { xs: 'block', md: 'none' }
                                     }}
                                     onClick={onBack}
@@ -753,7 +755,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         width: { xs: 38, md: 44 },
                                         height: { xs: 38, md: 44 },
                                         border: 1,
-                                        borderColor: 'divider',
+                                         borderColor: 'rgba(255,255,255,0.5)',
                                         fontSize: 28
                                     }}
                                     src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`}
@@ -763,11 +765,22 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 </Avatar>
 
                                 <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                                    <Typography variant="h6" fontWeight={600} noWrap>
+                                    <Typography variant="h6" fontWeight={600} noWrap sx={{ color: 'white' }}>
                                         {chat?.username || t('unknown_user')}
                                     </Typography>
 
-                                    <Typography variant="caption" sx={{ color: typingUsers[chat?.user_id] ? 'primary.main' : isOnline ? 'green' : 'grey', fontWeight: 'bold' }} noWrap>
+                                    <Typography 
+                                        variant="caption" 
+                                        sx={{ 
+                                            color: typingUsers[chat?.user_id] 
+                                                ? '#fbbf24' 
+                                                : isOnline 
+                                                    ? '#017110' 
+                                                    : 'rgba(255,255,255,0.7)', 
+                                            fontWeight: 'bold' 
+                                        }} 
+                                        noWrap
+                                    >
                                         {typingUsers[chat?.user_id] ? t('typing') : isOnline ? t('online') : t('offline')}
                                     </Typography>
                                 </Box>
@@ -783,11 +796,13 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 <CallIcon
                                     sx={{
                                         fontSize: { xs: 22, md: 26 },
-                                        color: isBlocked ? 'grey' : 'primary.main',
-                                        transition: 'transform 1s',
+                                        color: isBlocked ? 'rgba(255,255,255,0.4)' : 'white',
+                                        transition: 'transform 0.2s',
                                         '&:hover': {
-                                            scale: 1.1
-                                        }
+                                            transform: 'scale(1.15)',
+                                            color: isBlocked ? 'rgba(255,255,255,0.4)' : '#fbbf24',
+                                        },
+                                        cursor: isBlocked ? 'not-allowed' : 'pointer'
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -798,11 +813,13 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 <VideocamIcon
                                     sx={{
                                         fontSize: { xs: 24, md: 30 },
-                                        color: isBlocked ? 'grey' : 'primary.main',
-                                        transition: 'transform 1s',
+                                        color: isBlocked ? 'rgba(255,255,255,0.4)' : 'white',
+                                        transition: 'transform 0.2s',
                                         '&:hover': {
-                                            scale: 1.1
-                                        }
+                                            transform: 'scale(1.15)',
+                                            color: isBlocked ? 'rgba(255,255,255,0.4)' : '#fbbf24',
+                                        },
+                                        cursor: isBlocked ? 'not-allowed' : 'pointer'
                                     }}
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -818,14 +835,15 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             elevation={0}
                             sx={{
                                 position: 'absolute',
-                                top: 64,
+                                top: { xs: 56, md: 64 },
                                 width: '100%',
                                 p: 1,
                                 display: 'flex',
                                 alignItems: 'center',
                                 borderTop: 1,
-                                borderColor: 'divider',
-                                bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
+                                borderColor: 'rgba(59, 130, 246, 0.2)',
+                                bgcolor: 'rgba(239, 246, 255, 0.9)',
+                                backdropFilter: 'blur(8px)',
                                 zIndex: 1200,
                                 borderRadius: 0
                             }}
@@ -848,7 +866,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 overflowY: 'auto',
                                 px: 2,
                                 py: 1,
-                                bgcolor: error ? 'rgba(255, 241, 243, 0.8)' : 'grey.100',
+                                background: 'linear-gradient(180deg, rgba(239, 246, 255, 0.6) 0%, rgba(255, 255, 255, 0.9) 100%)',
                                 position: 'relative',
                             }}
                         >
@@ -862,7 +880,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         justifyContent: "center",
                                     }}
                                 >
-                                    <CircularProgress size={20} />
+                                    <CircularProgress size={20} sx={{ color: '#3b82f6' }}/>
                                 </Box>
                             )}
 
@@ -877,10 +895,19 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         flexDirection: 'column'
                                     }}
                                 >
-                                    <Typography variant='h6' fontWeight={600}>
+                                    <Typography 
+                                        variant='h6' 
+                                        fontWeight={600}
+                                        sx={{
+                                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                                            backgroundClip: 'text',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                        }}
+                                    >
                                         {t('say_something_to')}
                                     </Typography>
-                                    <Typography variant='h6' fontWeight={600}>
+                                    <Typography variant='h6' fontWeight={600} sx={{ color: '#f97316' }}>
                                         {chat?.username}
                                     </Typography>
                                 </Box>
@@ -959,8 +986,9 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     display: 'flex',
                                     alignItems: 'center',
                                     borderTop: 1,
-                                    borderColor: 'divider',
-                                    bgcolor: 'background.paper',
+                                    borderColor: 'rgba(59, 130, 246, 0.2)',
+                                    bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                    backdropFilter: 'blur(8px)',
                                     overflowX: 'hidden',
                                 }}
                             >
@@ -995,6 +1023,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     alignItems: 'center',
                                                     gap: 1,
                                                     position: 'relative',
+                                                    borderColor: 'rgba(59, 130, 246, 0.3)',
                                                 }}
                                             >
                                                 {isImage ? (
@@ -1008,7 +1037,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     <Typography
                                                         variant="body2"
                                                         noWrap
-                                                        sx={{ maxWidth: 100, textAlign: 'center' }}
+                                                        sx={{ maxWidth: 100, textAlign: 'center', color: '#1e3a8a' }}
                                                     >
                                                         {file.name}
                                                     </Typography>
@@ -1028,6 +1057,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                             value={progress}
                                                             size={40}
                                                             thickness={4}
+                                                            sx={{ color: '#3b82f6' }}
                                                         />
                                                     </Box>
                                                 )}
@@ -1042,6 +1072,8 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                         right: 4,
                                                         backgroundColor: 'white',
                                                         boxShadow: 1,
+                                                        color: '#f97316',
+                                                        '&:hover': { color: '#ef4444' },
                                                     }}
                                                 >
                                                     <CloseIcon sx={{ fontSize: 14 }} />
@@ -1063,11 +1095,12 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 display: 'flex',
                                 alignItems: 'center',
                                 borderTop: 1,
-                                borderColor: 'divider',
-                                bgcolor: 'background.paper',
+                                borderColor: 'rgba(59, 130, 246, 0.2)',
+                                bgcolor: 'rgba(239, 246, 255, 0.95)',
+                                backdropFilter: 'blur(8px)',
                                 justifyContent: 'space-between'
                             }}>
-                                <Typography >
+                                <Typography sx={{ color: '#3b82f6', fontWeight: 600 }}>
                                     {t('editing_message')}
                                 </Typography>
                                 <IconButton
@@ -1076,6 +1109,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         setEditingMessage(null);
                                         setNewMessage('');
                                     }}
+                                    sx={{ color: '#f97316' }}
                                 >
                                     <CloseIcon fontSize="small" />
                                 </IconButton>
@@ -1092,16 +1126,17 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                     display: 'flex',
                                     alignItems: 'center',
                                     borderTop: 1,
-                                    borderColor: 'divider',
-                                    bgcolor: 'background.paper',
+                                    borderColor: 'rgba(59, 130, 246, 0.2)',
+                                    bgcolor: 'rgba(239, 246, 255, 0.95)',
+                                    backdropFilter: 'blur(8px)',
                                     justifyContent: 'space-between'
                                 }}
                             >
                                 <Box sx={{ maxWidth: '80%' }}>
-                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                                    <Typography variant="caption" sx={{ opacity: 0.7, color: '#1e3a8a' }}>
                                         {t('replying_to')}
                                     </Typography>
-                                    <Typography variant="body2" noWrap>
+                                    <Typography variant="body2" noWrap  sx={{ color: '#f97316' }}>
                                         {replyingTo.content || replyingTo.type}
                                     </Typography>
                                 </Box>
@@ -1109,6 +1144,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                 <IconButton
                                     size="small"
                                     onClick={() => setReplyingTo(null)}
+                                    sx={{ color: '#f97316' }}
                                 >
                                     <CloseIcon fontSize="small" />
                                 </IconButton>
@@ -1119,14 +1155,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                             (
                                 <Box
                                     sx={{
-                                        backgroundColor: 'white',
+                                        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(249, 115, 22, 0.05) 100%)',
                                         p: 2,
                                         textAlign: 'center',
                                         borderTop: 1,
-                                        borderColor: 'divider',
+                                        borderColor: 'rgba(239, 68, 68, 0.2)',
                                     }}
                                 >
-                                    <Typography>
+                                    <Typography sx={{ color: '#ef4444', fontWeight: 500 }}>
                                         {t('user_not_contactable')}
                                     </Typography>
                                 </Box>
@@ -1141,17 +1177,18 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         display: 'flex',
                                         alignItems: 'center',
                                         borderTop: 1,
-                                        borderColor: 'divider',
-                                        bgcolor: error ? 'rgba(255, 232, 236, 0.8)' : 'background.paper',
+                                        borderColor: 'rgba(59, 130, 246, 0.2)',
+                                        bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
                                     }}
                                 >
                                     {(isRecording || audioBlob) && (
                                         <>
-                                            <IconButton color="error" onClick={cancelRecording}>
+                                            <IconButton color="error" sx={{ color: '#ef4444' }} onClick={cancelRecording}>
                                                 <CloseIcon />
                                             </IconButton>
 
-                                            <Typography sx={{ flexGrow: 1 }}>
+                                            <Typography sx={{ flexGrow: 1, color: '#1e3a8a' }}>
                                                 {isRecording
                                                     ? t('recording', { seconds: recordTime })
                                                     : t('audio_ready')}
@@ -1163,7 +1200,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                         <>
                                             {!showContent && (
                                                 <>
-                                                    <IconButton component="label">
+                                                    <IconButton component="label" sx={{ color: '#3b82f6', '&:hover': { color: '#1e3a8a' } }}>
                                                         <AttachFileIcon />
                                                         <input
                                                             ref={fileInputRef}
@@ -1181,6 +1218,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                         onMouseUp={handleSend}
                                                         onTouchStart={startRecording}
                                                         onTouchEnd={handleSend}
+                                                        sx={{ color: '#f97316', '&:hover': { color: '#ea580c' } }}
                                                     >
                                                         <MicIcon />
                                                     </IconButton>
@@ -1189,7 +1227,7 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                         <IconButton
                                                             ref={emojiButtonRef}
                                                             onClick={() => setShowEmojiPicker((v) => !v)}
-                                                            sx={{ color: 'orange' }}
+                                                            sx={{ color: '#f97316' }}
                                                         >
                                                             {showEmojiPicker
                                                                 ? <EmojiEmotionsIcon />
@@ -1235,13 +1273,21 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                                     }
                                                 }}
                                                 sx={{
-                                                    '& fieldset': { borderRadius: 25 },
+                                                    '& fieldset': { 
+                                                        borderRadius: 25,
+                                                        borderColor: 'rgba(59, 130, 246, 0.3)',
+                                                    },
+                                                    '& .MuiOutlinedInput-root': {
+                                                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+                                                        '&:hover fieldset': { borderColor: '#f97316' },
+                                                    },
                                                     '& .MuiInputBase-input': {
                                                         height: '30px',
                                                         lineHeight: '20px',
                                                         overflowY: 'auto',
                                                         whiteSpace: 'pre-wrap',
                                                         padding: '4px',
+                                                        color: '#1e3a8a',
                                                     },
                                                 }}
                                                 InputProps={{
@@ -1261,9 +1307,14 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                                             (!newMessage.trim() && !audioBlob && selectedFiles.length === 0 && !isRecording)
                                             || isSending
                                         }
+                                        sx={{
+                                            color: '#3b82f6',
+                                            '&:hover': { color: '#1e3a8a' },
+                                            '&.Mui-disabled': { color: 'rgba(59, 130, 246, 0.3)' },
+                                        }}
                                     >
                                         {isUploading ? (
-                                            <CircularProgress size={24} color="inherit" />
+                                            <CircularProgress size={24} sx={{ color: '#3b82f6' }} />
                                         ) : (
                                             <SendIcon />
                                         )}
@@ -1280,10 +1331,20 @@ function ChatComponent({ chat, onBack, messages, setMessages, send, currentUserI
                         height: '100%',
                         display: 'flex',
                         justifyContent: 'center',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        background: 'linear-gradient(135deg, rgba(239, 246, 255, 0.6) 0%, rgba(255, 255, 255, 0.9) 100%)',
                     }}
                 >
-                    <Typography variant='h6' fontWeight={600}>
+                    <Typography 
+                        variant='h6' 
+                        fontWeight={600}
+                        sx={{
+                            background: '#1e3a8a',
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                        }}
+                    >
                         {t('tab_chat_to_start')}
                     </Typography>
                 </Box>
