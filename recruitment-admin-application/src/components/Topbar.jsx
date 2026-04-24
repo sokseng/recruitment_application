@@ -953,7 +953,7 @@ export default function Topbar() {
                         fontSize: "0.9rem",
                         "&:hover": {
                           bgcolor: "rgba(59, 130, 246, 0.08)",
-                          color: "#3b82f6",
+                          color: "#1e3a8a",
                           pl: 3,
                         },
                       }}
@@ -993,14 +993,14 @@ export default function Topbar() {
                   borderRadius: 2,
                   py: 1.5,
                   border: "2px solid",
-                  borderColor: "#3b82f6",
-                  color: "#3b82f6",
+                  borderColor: "#1e3a8a",
+                  color: "#1e3a8a",
                   "&:hover": {
                     bgcolor: "rgba(59, 130, 246, 0.08)",
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: "#3b82f6", minWidth: 44 }}>
+                <ListItemIcon sx={{ color: "#1e3a8a", minWidth: 44 }}>
                   <PersonIcon />
                 </ListItemIcon>
                 <ListItemText primary={t('login')} />
@@ -1011,12 +1011,12 @@ export default function Topbar() {
       </Box>
 
       {/* 🌐 Language Switcher in Drawer */}
-      <Box sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "rgba(59, 130, 246, 0.15)" }}>
+      {/* <Box sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: "rgba(59, 130, 246, 0.15)" }}>
         <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', color: '#1e3a8a' }}>
           {t('language')}
         </Typography>
         <LanguageSwitcher />
-      </Box>
+      </Box> */}
 
       {/* ── Logout at bottom ── */}
       {access_token && (

@@ -158,7 +158,7 @@ export default function LanguageSwitcher() {
         onClick={handleClick}
         endIcon={<ArrowDropDownIcon />}
         sx={{
-          color: 'teal',
+          color: '#1e3a8a',
           textTransform: 'none',
           fontWeight: 500,
           border: '1px solid',

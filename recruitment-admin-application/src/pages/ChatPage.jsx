@@ -720,7 +720,19 @@ function ChatPage() {
     };
 
     return (
-        <Box sx={{ display: 'flex', width: '100%', height: '91vh', position: 'relative', border: 1, borderColor: 'divider' }}>
+        <Box 
+            sx={{ 
+                display: 'flex', 
+                width: '100%', 
+                height: '91vh', 
+                position: 'relative', 
+                border: 1, 
+                borderColor: 'rgba(59, 130, 246, 0.2)',
+                borderRadius: 2,
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)',
+            }}
+        >
 
             {snackbar && (
                 <Snackbar
@@ -729,7 +741,17 @@ function ChatPage() {
                     onClose={handleCloseSnackbar}
                     anchorOrigin={{ vertical: "top", horizontal: "center", zIndex: 2000 }}
                 >
-                    <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    <Alert 
+                        onClose={handleCloseSnackbar} 
+                        severity={snackbar.severity} 
+                        sx={{ 
+                            width: "100%",
+                            ...(snackbar.severity === "success" && { bgcolor: "#10b981", color: "white" }),
+                            ...(snackbar.severity === "error" && { bgcolor: "#ef4444", color: "white" }),
+                            ...(snackbar.severity === "warning" && { bgcolor: "#f97316", color: "white" }),
+                            ...(snackbar.severity === "info" && { bgcolor: "#3b82f6", color: "white" }),
+                        }}
+                    >
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
@@ -742,8 +764,9 @@ function ChatPage() {
                         width: { xs: '100%', md: 400 },
                         display: 'flex',
                         flexDirection: 'column',
-                        borderRight: { sm: '1px solid #ddd' },
-                        backgroundColor: 'white',
+                        borderRight: { sm: '1px solid rgba(59, 130, 246, 0.15)' },
+                        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%)',
+                        backdropFilter: 'blur(12px)',
                         zIndex: 2,
                     }}
                 >
@@ -768,14 +791,14 @@ function ChatPage() {
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
                                         borderRadius: '30px',
-                                        // backgroundColor: '#ffffffff',
                                         paddingRight: 1,
+                                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
                                     },
                                 }}
                                 InputProps={{
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <SearchIcon sx={{ color: 'grey.500' }} />
+                                            <SearchIcon sx={{ color: '#3b82f6' }} />
                                         </InputAdornment>
                                     ),
                                 }}
@@ -783,15 +806,20 @@ function ChatPage() {
 
                         </Box>
                     </Box>
-                    <Divider sx={{ py: 1 }} />
+                    <Divider sx={{ borderColor: 'rgba(59, 130, 246, 0.15)', py: 1 }} />
                     <Typography
                         sx={{
-                            color: 'primary.main',
+                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
                             fontWeight: 'bold',
                             px: 1,
                             pt: 0.5
                         }}
-                    >{t('all_chats')}</Typography>
+                    >
+                        {t('all_chats')}
+                    </Typography>
 
                     <Box
                         ref={scrollContainerRef}
@@ -805,6 +833,7 @@ function ChatPage() {
                     >
                         <List>
                             {filteredChats.map(chat => {
+                                const isSelected = selectedChat?.room_id === chat.room_id;
                                 return (
                                     <Box
                                         key={chat.room_id}
@@ -813,31 +842,55 @@ function ChatPage() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            p: 1,
+                                            p: 1.5,
+                                            mx: 0.5,
+                                            my: 0.3,
                                             cursor: 'pointer',
+                                            borderRadius: 2,
                                             transition: 'all 0.2s ease',
-                                            backgroundColor: selectedChat?.room_id === chat.room_id ? 'primary.main' : 'white',
+                                            background: isSelected 
+                                                ? 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 0%, #f97316 150%)'
+                                                : 'transparent',
                                             '&:hover': {
+                                                background: isSelected 
+                                                    ? 'linear-gradient(135deg, #1e40af 0%, #2563eb 0%, #ea580c 150%)'
+                                                    : 'rgba(59, 130, 246, 0.06)',
                                                 transform: { xs: 'none', sm: 'translateY(-2px)' },
-                                                boxShadow: { xs: 'none', sm: '0 4px 12px rgba(0,0,0,0.1)' },
+                                                boxShadow: { xs: 'none', sm: '0 4px 12px rgba(30, 58, 138, 0.1)' },
                                             },
                                             position: 'relative',
                                         }}
                                     >
                                         <ListItemAvatar sx={{ minWidth: 48 }}>
-                                            <Avatar src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`} sx={{ borderRadius: 12 }}>
+                                            <Avatar 
+                                                src={`${BASE_URL}/uploads/user/profile/${chat?.profile_image}`} 
+                                                sx={{ 
+                                                    borderRadius: 12,
+                                                    border: '2px solid',
+                                                    borderColor: isSelected ? 'rgba(255,255,255,0.5)' : 'rgba(59, 130, 246, 0.3)',
+                                                }}
+                                            >
                                                 {chat.username?.charAt(0).toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
 
                                         <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                                            <Typography sx={{ fontWeight: 'bold', fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: selectedChat?.room_id === chat.room_id ? 'white' : 'black' }}>
+                                            <Typography 
+                                                sx={{ 
+                                                    fontWeight: 'bold', 
+                                                    fontSize: 14, 
+                                                    whiteSpace: 'nowrap', 
+                                                    overflow: 'hidden', 
+                                                    textOverflow: 'ellipsis', 
+                                                    color: isSelected ? 'white' : '#1e3a8a' 
+                                                }}
+                                            >
                                                 {chat.username}
                                             </Typography>
                                             <Typography
                                                 sx={{
                                                     fontSize: 10,
-                                                    color: selectedChat?.room_id === chat.room_id ? "white" : "grey.600",
+                                                    color: isSelected ? "rgba(255,255,255,0.8)" : "#f97316",
                                                     whiteSpace: "nowrap",
                                                     overflow: "hidden",
                                                     textOverflow: "ellipsis",
@@ -855,22 +908,24 @@ function ChatPage() {
                                             flexDirection: 'column',
                                             alignItems: 'end'
                                         }}>
-                                            <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: selectedChat?.room_id === chat.room_id ? 'white' : 'grey.600' }}>
+                                            <Typography sx={{ fontSize: 10, fontWeight: 'bold', color: isSelected ? 'rgba(255,255,255,0.9)' : '#3b82f6' }}>
                                                 {chat.last_message_at && <FormatTime time={chat.last_message_at} />}
                                             </Typography>
                                             {(chatCounts[chat.room_id] || 0) > 0 && (
                                                 <Box
                                                     sx={{
-                                                        width: 15,
-                                                        height: 15,
-                                                        fontSize: 9,
+                                                        width: 20,
+                                                        height: 20,
+                                                        fontSize: 10,
                                                         mt: 0.25,
-                                                        backgroundColor: 'orange',
+                                                        background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
                                                         color: 'white',
                                                         display: 'flex',
                                                         justifyContent: 'center',
                                                         alignItems: 'center',
                                                         borderRadius: '50%',
+                                                        fontWeight: 700,
+                                                        boxShadow: '0 2px 8px rgba(249, 115, 22, 0.4)',
                                                     }}
                                                 >
                                                     <Typography sx={{ fontSize: 9 }}>
@@ -885,7 +940,7 @@ function ChatPage() {
                             })}
                             {chatSearch && newUsers.length > 0 && (
                                 <>
-                                    <Typography sx={{ px: 2, mt: 1, opacity: 0.6 }}>
+                                    <Typography sx={{ px: 2, mt: 1, color: '#1e3a8a', fontWeight: 600, }}>
                                         {t('start_new_chat')}
                                     </Typography>
 
@@ -893,15 +948,28 @@ function ChatPage() {
                                         <ListItemButton
                                             key={user.pk_id}
                                             onClick={() => handleStartChat(user)}
+                                            sx={{
+                                                borderRadius: 2,
+                                                mx: 0.5,
+                                                my: 0.3,
+                                                '&:hover': {
+                                                    bgcolor: 'rgba(59, 130, 246, 0.08)',
+                                                },
+                                            }}
                                         >
                                             <ListItemAvatar>
-                                                <Avatar src={`${BASE_URL}/uploads/user/profile/${user.profile_image}`}>
+                                                <Avatar 
+                                                    src={`${BASE_URL}/uploads/user/profile/${user.profile_image}`}
+                                                    sx={{ border: '2px solid rgba(59, 130, 246, 0.3)' }}
+                                                >
                                                     {user.user_name?.[0]?.toUpperCase()}
                                                 </Avatar>
                                             </ListItemAvatar>
                                             <ListItemText
                                                 primary={user.user_name}
                                                 secondary={user.email}
+                                                primaryTypographyProps={{ sx: { color: '#1e3a8a', fontWeight: 600 } }}
+                                                secondaryTypographyProps={{ sx: { color: '#f97316' } }}
                                             />
                                         </ListItemButton>
                                     ))}
@@ -911,7 +979,14 @@ function ChatPage() {
                                 filteredChats.length === 0 &&
                                 newUsers.length === 0 &&
                                 !searchLoading && (
-                                    <Typography sx={{ textAlign: 'center', mt: 2, opacity: 0.6 }}>
+                                    <Typography 
+                                        sx={{ 
+                                            textAlign: 'center', 
+                                            mt: 2, 
+                                            color: '#1e3a8a',
+                                            opacity: 0.7,
+                                        }}
+                                    >
                                         {t('no_chats_or_users_found')}
                                     </Typography>
                                 )}
@@ -926,7 +1001,7 @@ function ChatPage() {
                         flex: 1,
                         width: '100%',
                         position: 'relative',
-                        backgroundColor: '#f5f5f5',
+                        background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8) 0%, rgba(239, 246, 255, 0.6) 100%)',
                     }}
                 >
                     <ChatComponent
