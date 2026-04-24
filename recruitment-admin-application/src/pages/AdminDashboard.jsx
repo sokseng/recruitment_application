@@ -23,11 +23,15 @@ const StatCard = ({ icon, label, value, color, loading }) => (
     sx={{
       p: 2.5,
       borderRadius: 3,
-      boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-      transition: "0.25s",
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)',
+      backdropFilter: 'blur(12px)',
+      border: '1px solid rgba(59, 130, 246, 0.15)',
+      boxShadow: "0 6px 20px rgba(30, 58, 138, 0.08)",
+      transition: "all 0.3s ease",
       "&:hover": {
         transform: "translateY(-4px)",
-        boxShadow: "0 12px 28px rgba(0,0,0,0.12)",
+        boxShadow: "0 12px 28px rgba(30, 58, 138, 0.15)",
+        borderColor: '#f97316',
       },
     }}
   >
@@ -37,25 +41,34 @@ const StatCard = ({ icon, label, value, color, loading }) => (
           width: 46,
           height: 46,
           borderRadius: 2.5,
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette[color].light}, ${theme.palette[color].main})`,
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #f97316 100%)',
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           color: "#fff",
+          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
         }}
       >
         {icon}
       </Box>
 
       <Box>
-        <Typography fontSize={12} color="text.secondary">
+        <Typography fontSize={12} sx={{ color: '#3b82f6', fontWeight: 500 }}>
           {label}
         </Typography>
         {loading ? (
           <Skeleton width={60} />
         ) : (
-          <Typography fontSize={22} fontWeight={800}>
+          <Typography 
+            fontSize={22} 
+            fontWeight={800}
+            sx={{
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             {value}
           </Typography>
         )}
@@ -87,7 +100,13 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 3, minHeight: "100vh" }}>
+    <Box 
+      sx={{ 
+        p: 3, 
+        minHeight: "100vh",
+        background: 'linear-gradient(180deg, rgba(239, 246, 255, 0.4) 0%, rgba(255, 255, 255, 0.9) 100%)',
+      }}
+    >
       
       {/* TOP STATS */}
       <Box
@@ -182,11 +201,30 @@ const AdminDashboard = () => {
         gap={2.5}
       >
         {/* USER STATUS */}
-        <Card sx={{ p: 2.5, borderRadius: 3 }}>
-          <Typography fontSize={13} fontWeight={700} mb={1}>
+        <Card 
+          sx={{ 
+            p: 2.5, 
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(59, 130, 246, 0.15)',
+            boxShadow: '0 6px 20px rgba(30, 58, 138, 0.08)',
+          }}
+        >
+          <Typography 
+            fontSize={13} 
+            fontWeight={700} 
+            mb={1}
+            sx={{
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             {t('users_status')}
           </Typography>
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ mb: 2, borderColor: 'rgba(59, 130, 246, 0.15)' }} />
 
           {loading ? (
             <Skeleton height={28} />
@@ -199,6 +237,8 @@ const AdminDashboard = () => {
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
+                  bgcolor: '#10b981',
+                  color: '#fff',
                 }}
               />
               <Chip
@@ -207,6 +247,8 @@ const AdminDashboard = () => {
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
+                  bgcolor: '#f97316',
+                  color: '#fff',
                 }}
               />
             </Stack>
@@ -214,11 +256,30 @@ const AdminDashboard = () => {
         </Card>
 
         {/* JOB STATUS */}
-        <Card sx={{ p: 2.5, borderRadius: 3 }}>
-          <Typography fontSize={13} fontWeight={700} mb={1}>
+        <Card 
+          sx={{ 
+            p: 2.5, 
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(59, 130, 246, 0.15)',
+            boxShadow: '0 6px 20px rgba(30, 58, 138, 0.08)',
+          }}
+        >
+          <Typography 
+            fontSize={13} 
+            fontWeight={700} 
+            mb={1}
+            sx={{
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             {t('jobs_status')}
           </Typography>
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ mb: 2, borderColor: 'rgba(59, 130, 246, 0.15)' }} />
 
           {loading ? (
             <Skeleton height={28} />
@@ -231,6 +292,8 @@ const AdminDashboard = () => {
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
+                  bgcolor: '#10b981',
+                  color: '#fff',
                 }}
               />
               <Chip
@@ -240,6 +303,8 @@ const AdminDashboard = () => {
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
+                  bgcolor: '#ef4444',
+                  color: '#fff',
                 }}
               />
             </Stack>
@@ -247,11 +312,30 @@ const AdminDashboard = () => {
         </Card>
 
         {/* APPLICATION STATUS - Compact Version */}
-        <Card sx={{ p: 2.5, borderRadius: 3 }}>
-          <Typography fontSize={13} fontWeight={700} mb={1}>
+        <Card 
+          sx={{ 
+            p: 2.5, 
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 246, 255, 0.9) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(59, 130, 246, 0.15)',
+            boxShadow: '0 6px 20px rgba(30, 58, 138, 0.08)',
+          }}
+        >
+          <Typography 
+            fontSize={13} 
+            fontWeight={700} 
+            mb={1}
+            sx={{
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             {t('applications_status')}
           </Typography>
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ mb: 2, borderColor: 'rgba(59, 130, 246, 0.15)' }} />
 
           {loading ? (
             <Skeleton height={24} />
@@ -264,8 +348,8 @@ const AdminDashboard = () => {
               <Chip
                 label={`${t('pending')}: ${stats.applications.pending}`}
                 sx={{
-                  bgcolor: "#FFA500",
-                  color: "#fff",
+                  bgcolor: '#f97316',
+                  color: '#fff',
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
@@ -275,8 +359,8 @@ const AdminDashboard = () => {
               <Chip
                 label={`${t('shortlisted')}: ${stats.applications.shortlisted}`}
                 sx={{
-                  bgcolor: "#1976d2",
-                  color: "#fff",
+                  bgcolor: '#3b82f6',
+                  color: '#fff',
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
@@ -286,8 +370,8 @@ const AdminDashboard = () => {
               <Chip
                 label={`${t('rejected')}: ${stats.applications.rejected}`}
                 sx={{
-                  bgcolor: "#d32f2f",
-                  color: "#fff",
+                  bgcolor: '#ef4444',
+                  color: '#fff',
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
@@ -297,8 +381,8 @@ const AdminDashboard = () => {
               <Chip
                 label={`${t('accepted')}: ${stats.applications.accepted}`}
                 sx={{
-                  bgcolor: "#388e3c",
-                  color: "#fff",
+                  bgcolor: '#10b981',
+                  color: '#fff',
                   fontWeight: 600,
                   fontSize: 11,
                   py: 0.3,
